@@ -1,8 +1,5 @@
 # build output
-Public/
-
-# generated types
-.astro/
+dist/
 
 # dependencies
 node_modules/
@@ -17,11 +14,8 @@ pnpm-debug.log*
 .env
 .env.production
 
-# macOS-specific files
+# macOS-specific files (eftersom du använder Mac)
 .DS_Store
 
-# jetbrains setting folder
+# IDE-specifika filer (eftersom du använder Rider)
 .idea/
-
-# Astro
-.astro/
