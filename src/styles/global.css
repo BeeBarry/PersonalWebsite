@@ -344,7 +344,7 @@ html.light {
 }
 
 .light .icon__link {
-    border: 2px solid var(--text-light);
+    border: 2px solid var(--profile-border);
 }
 
 .light .icon__link:hover {
