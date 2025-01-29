@@ -26,19 +26,12 @@ const { pageTitle } = Astro.props;
         </main>
         <script>
             function colorMode() {
-                if (
-                    localStorage.theme === "light" ||
-                    (!("theme" in localStorage) &&
-                    window.matchMedia("(prefers-color-scheme: light)").matches)
-                ) {
-                    document.documentElement.classList.add("light");
-                } else {
-                    document.documentElement.classList.remove("light");
-                }
-              }
-            
-            colorMode();
-            document.addEventListener('astro:after-swap', colorMode);
+        // Alltid sätt light mode vid sidladdning
+        document.documentElement.classList.add("light");
+    }
+    
+    colorMode();
+    document.addEventListener('astro:after-swap', colorMode);
         </script>
 	</body>
 </html>
