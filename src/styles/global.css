@@ -1,7 +1,7 @@
 /* Global styles */
 :root {
-    --background: #1e1e2e; 
-    --background-light: #d9d9d9;
+    --background: #1e1e2e;
+    --background-light: #e8e8e8;
     --button: #ff6100;
     --text: #fdebf3;
     --text-light: #1e1e2e; 
@@ -378,6 +378,13 @@ html.light {
         width: 350px;
     }
 
+    h2 {
+        text-decoration: underline var(--underline);
+        text-decoration-thickness: 3px;  /* Lite tunnare för mobil */
+        text-underline-offset: 4px;      /* Lite mindre offset för mobil */
+        font-size: 1.8rem;               /* Mindre textstorlek för mobil */
+    }
+
     .navbar {
         display: initial;
     }
@@ -409,5 +416,8 @@ html.light {
         height: auto;
         width: 350px;
     }
+
+    
+
 }
 
