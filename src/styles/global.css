@@ -1,16 +1,16 @@
 /* Global styles */
 :root {
     --background: #1e1e2e;
-    --background-light: #e8e8e8;
+    --background-light: #f9f9f9;
     --button: #ff6100;
     --text: #fdebf3;
     --text-light: #1e1e2e; 
     --text-link: #ff6100;
     --profile-border: #000000;
-    --underline: #ff6100;
-    --highlight: #ff6100;
+    --underline: #1813bf;
+    --highlight: #1813bf;
     --header: 'Poetsen One', cursive;
-    --body: 'Itim', sans-serif;
+    --body: 'assistant', sans-serif;
 }
 
 html {
@@ -53,7 +53,7 @@ p {
     letter-spacing: 0px;
     word-spacing: 0.2px;
     margin-bottom: 1rem;
-    font-weight: 400;
+    font-weight: 500;
 }
 
 small, li {
