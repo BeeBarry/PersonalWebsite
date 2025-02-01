@@ -1,14 +1,14 @@
 /* Global styles */
 :root {
     --background: #1e1e2e;
-    --background-light: #f9f9f9;
-    --button: #ff6100;
-    --text: #fdebf3;
+    --background-light: #dddddd;
+    --button: #4e34f8;
+    --text: #ffffff;
     --text-light: #1e1e2e; 
-    --text-link: #ff6100;
+    --text-link: #4563ed;
     --profile-border: #000000;
-    --underline: #1813bf;
-    --highlight: #1813bf;
+    --underline: #4e34f8;
+    --highlight: #4e34f8;
     --header: 'Poetsen One', cursive;
     --body: 'assistant', sans-serif;
 }
@@ -129,7 +129,7 @@ small, li {
 
 /* Badge */
 .badge {
-    background-color: #000000;
+    background-color: #4e34f8;
     color: var(--text);
     border-radius: 6px;
     font-family: var(--body);
