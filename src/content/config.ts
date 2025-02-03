@@ -24,7 +24,24 @@ const projectsCollection = defineCollection({
     })
 });
 
+const learnCollection = defineCollection ({
+  type: 'content',
+  schema: z.object({
+    title: z.string(),
+    description: z.string(),
+    category: z.enum(['docker', 'kubernetes','terraform','cloud','cybersecurity']),
+    image: z.object({
+      url: z.string(),
+      alt: z.string()
+    }),
+    order: z.number(),
+    date: z.string()
+  })
+});
+	
+
 export const collections = {
   projects: projectsCollection,
+  learn: learnCollection,
 };
 
