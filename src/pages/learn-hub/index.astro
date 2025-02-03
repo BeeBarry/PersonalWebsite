@@ -1,0 +1,26 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import CardCategory from '../../components/CardCategory.astro';
+import { categories } from '../../data/categories';
+
+const pageTitle = "Learn Hub";
+---
+
+<Layout pageTitle={pageTitle}>
+    <div class="gif">
+        <img width="300" height="259" alt="LearnHubGif" src="/learning.webp"/>
+    </div>
+    <h2>Learn Hub</h2>
+    <p>Områden jag lär mig om och försöker förklara på ett lättbegripligt sätt.</p>
+
+    <ul role="list" class="link-card-grid">
+        {categories.map((category) => (
+                <CardCategory
+                        title={category.title}
+                        description={category.description}
+                        image={category.image}
+                        url={`/learn-hub/${category.slug}/`}
+                />
+        ))}
+    </ul>
+</Layout>

@@ -1,0 +1,42 @@
+---
+import { getCollection } from "astro:content";
+import Layout from '../../../layouts/Layout.astro';
+import ArticleCard from '../../../components/ArticleCard.astro';
+import { categories } from '../../../data/categories';
+
+export async function getStaticPaths() {
+    return categories.map(({ slug, title }) => {
+        return {
+            params: { category: slug },
+            props: { categoryTitle: title }
+        };
+    });
+}
+
+const { category } = Astro.params;
+const { categoryTitle } = Astro.props;
+
+const allLearningContent = await getCollection('learn', ({ data }) => {
+    return data.category === category;
+});
+
+const sortedContent = allLearningContent.sort((a, b) => a.data.order - b.data.order);
+---
+
+<Layout pageTitle={categoryTitle}>
+    <div class="gif">
+        <img width="300" height="259" alt="CategoryGif" src="/learning.webp"/>
+    </div>
+    <h2>{categoryTitle}</h2>
+
+    <ul role="list" class="link-card-grid">
+        {sortedContent.map((article) => (
+                <ArticleCard
+                        title={article.data.title}
+                        description={article.data.description}
+                        image={article.data.image}
+                        url={`/learn-hub/${category}/${article.id}/`}
+            />
+            ))}
+            </ul>
+            </Layout>

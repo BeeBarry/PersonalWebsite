@@ -1,0 +1,117 @@
+---
+import { getCollection } from 'astro:content';
+import Layout from '../../../layouts/Layout.astro';
+import { categories } from '../../../data/categories';
+
+export async function getStaticPaths() {
+    const allArticles = await getCollection('learn');
+
+    return allArticles.map(entry => ({
+        params: {
+            category: entry.data.category,
+            article: entry.id  // Använder entry.id istället för entry.slug
+        },
+        props: { entry },
+    }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await entry.render();
+
+// Hämta category från entry.data
+const currentCategory = entry.data.category;
+
+// Hitta kategori-informationen
+const categoryInfo = categories.find(c => c.slug === currentCategory);
+if (!categoryInfo) {
+    throw new Error(`Category ${currentCategory} not found`);
+}
+---
+
+<Layout pageTitle={entry.data.title}>
+    <article class="learn-article">
+        <nav class="breadcrumb">
+            <a href="/learn-hub/">Learn Hub</a> &gt;
+            <a href={`/learn-hub/${currentCategory}/`}>{categoryInfo.title}</a> &gt;
+            <span>{entry.data.title}</span>
+        </nav>
+
+        <div class="article-header">
+            <h1>{entry.data.title}</h1>
+            <p class="article-description">{entry.data.description}</p>
+        </div>
+
+        <div class="article-content">
+            <Content />
+        </div>
+    </article>
+</Layout>
+
+<style>
+    .learn-article {
+        max-width: 600px;
+        margin: 0 auto;
+        text-align: justify;
+    }
+
+    .breadcrumb {
+        margin-bottom: 2rem;
+        font-family: var(--body);
+    }
+
+    .breadcrumb a {
+        color: var(--text-link);
+        text-decoration: none;
+    }
+
+    .breadcrumb a:hover {
+        text-decoration: underline var(--underline);
+        text-decoration-thickness: 2px;
+        text-underline-offset: 6px;
+    }
+
+    .article-header {
+        margin-bottom: 2rem;
+    }
+
+    .article-header h1 {
+        font-family: var(--header);
+        font-weight: normal;
+        font-size: 2.6rem;
+        margin: 0;
+        margin-bottom: 5px;
+    }
+
+    .article-description {
+        font-family: var(--body);
+        font-size: 1.1rem;
+        color: var(--text);
+    }
+
+    .article-content {
+        font-family: var(--body);
+        line-height: 1.5;
+    }
+
+    .article-content h2 {
+        font-family: var(--header);
+        font-weight: normal;
+        text-decoration: underline var(--underline);
+        text-decoration-thickness: 4px;
+        text-underline-offset: 6px;
+        font-size: 2.1rem;
+        margin-bottom: 0;
+    }
+
+    .article-content p {
+        font-size: 1.1rem;
+        text-indent: 1rem;
+        line-height: 1.5;
+    }
+
+    @media only screen and (max-width: 600px) {
+        .learn-article {
+            width: 350px;
+        }
+    }
+</style>
