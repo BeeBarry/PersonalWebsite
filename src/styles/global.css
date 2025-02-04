@@ -63,9 +63,12 @@ small, li {
 /* Navigation Bar */
 .navbar {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr auto;
     margin-top: 0.8rem;
+    align-items: center;
+    gap: 1rem;
 }
+
 
 .navbar__title {
     font-family: var(--header);
@@ -73,9 +76,17 @@ small, li {
 }
 
 .navbar__menu {
-    font-family: var(--body);
-    font-size: 1.1rem;
-    text-align: right;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: nowrap;
+}
+
+/* För att korrekt aligna theme button*/
+.navbar__menu :global(button) {
+    display: flex;
+    align-items: center;
+    margin-left: 0.5rem;
 }
 
 .navbar__title > a, .navbar__menu > a {
@@ -83,8 +94,10 @@ small, li {
     text-decoration: none;
 }
 
-.navbar__menu > a {
-    margin: 0 10px;
+.navbar__menu a {
+    color: var(--text);
+    text-decoration: none;
+    white-space: nowrap;
 }
 
 .navbar__title > a:hover, .navbar__menu > a:hover, .navbar__menu > a:focus {
@@ -386,7 +399,8 @@ html.light {
     }
 
     .navbar {
-        display: initial;
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
     }
 
     .navbar__title {
@@ -394,11 +408,8 @@ html.light {
     }
 
     .navbar__menu {
-        text-align: center;
-    }
-
-    .navbar__menu > a {
-        margin: 0 11px;
+        justify-content: center;
+        gap: 0.8rem;
     }
 
     .skills__img {

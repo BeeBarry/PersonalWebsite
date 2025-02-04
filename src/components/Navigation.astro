@@ -1,16 +1,23 @@
 ---
 import ThemeIcon from './ThemeIcon.astro';
+import { navigationItems } from '../data/navigation';
 ---
 <div class="navbar">
     <div class="navbar__title">
         <a href="/">Barry.Namdari</a>
     </div>
     <div class="navbar__menu">
-        <a href="/works/">Works</a>
-        <a href="/posts/">Posts</a>
-        <a href="/learn-hub/">Learn Hub</a>
-        <a href="https://github.com/BeeBarry" target="_blank">GitHub</a>
+        {navigationItems
+            .filter(item => item.isEnabled)
+            .map(item => (
+                    <a
+                            href={item.path}
+                            target={item.isExternal ? "_blank" : undefined}
+                    >
+                        {item.title}
+                    </a>
+            ))
+        }
         <ThemeIcon />
     </div>
 </div>
-
