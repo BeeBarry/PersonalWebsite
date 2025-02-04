@@ -2,32 +2,77 @@
 interface Props {
     title: string;
     description: string;
-    image: {
+    image?: {
         url: string;
         alt: string;
     };
     url: string;
+    tags?: string[];
 }
 
-const { title, description, image, url } = Astro.props;
+const { title, description, url, tags = [] } = Astro.props;
 ---
 
-<li class="card">
-    <a class="card__link" href={url}>
-        <div class="center">
-            <img
-                    class="card__img"
-                    width="226"
-                    height="127"
-                    src={image.url}
-                    alt={image.alt}
-            />
+<li class="article-card">
+    <a href={url}>
+        <div class="article-content">
+            <div class="article-text">
+                <h3>{title}</h3>
+                <p>{description}</p>
+            </div>
+            {tags && tags.length > 0 && (
+                    <div class="article-tags">
+                        {tags.map(tag => <span class="tag">{tag}</span>)}
+                    </div>
+            )}
         </div>
-        <h3 class="card__title">
-            {title}
-        </h3>
-        <p class="card__txt">
-            {description}
-        </p>
     </a>
 </li>
+
+<style>
+    .article-card {
+        margin-bottom: 1rem;
+        list-style: none;
+    }
+
+    .article-card a {
+        text-decoration: none;
+        color: var(--text);
+    }
+
+    .article-content {
+        background: var(--button);
+        padding: 1.5rem;
+        border-radius: 0.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .article-text h3 {
+        font-family: var(--header);
+        font-size: 1.2rem;
+        margin: 0 0 0.5rem 0;
+    }
+
+    .article-text p {
+        font-family: var(--body);
+        font-size: 0.9rem;
+        margin: 0;
+        text-indent: 0;
+    }
+
+    .article-tags {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .tag {
+        background: var(--background);
+        padding: 0.2rem 0.8rem;
+        border-radius: 1rem;
+        font-size: 0.8rem;
+        font-family: var(--body);
+    }
+</style>

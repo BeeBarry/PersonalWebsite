@@ -21,6 +21,7 @@ const projectsCollection = defineCollection({
     stack: z.string(),
     website: z.string(),
     github: z.string(),
+
   })
 });
 
@@ -33,9 +34,10 @@ const learnCollection = defineCollection({
     image: z.object({
       url: z.string(),
       alt: z.string()
-    }),
+    }).optional(),
     order: z.number(),
-    date: z.string()
+    date: z.string(),
+    tags: z.array(z.string()).optional()
   })
 });
 
