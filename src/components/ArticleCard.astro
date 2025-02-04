@@ -37,11 +37,11 @@ const { title, description, url, tags = [] } = Astro.props;
 
     .article-card a {
         text-decoration: none;
-        color: var(--text);
+        color: var(--black);
     }
 
     .article-content {
-        background: var(--button);
+        background: var(--white);
         padding: 1.5rem;
         border-radius: 0.5rem;
         display: flex;
@@ -66,10 +66,11 @@ const { title, description, url, tags = [] } = Astro.props;
         display: flex;
         gap: 0.5rem;
         flex-wrap: wrap;
+        color: var(--white);
     }
 
     .tag {
-        background: var(--background);
+        background: var(--main-green);
         padding: 0.2rem 0.8rem;
         border-radius: 1rem;
         font-size: 0.8rem;
