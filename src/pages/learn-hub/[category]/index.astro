@@ -35,6 +35,7 @@ const sortedContent = allLearningContent.sort((a, b) => a.data.order - b.data.or
                         title={article.data.title}
                         description={article.data.description}
                         image={article.data.image}
+                        tags={article.data.tags || []}
                         url={`/learn-hub/${category}/${article.id}/`}
             />
             ))}
