@@ -37,7 +37,8 @@ const { title, description, url, tags = [] } = Astro.props;
 
     .article-card a {
         text-decoration: none;
-        color: var(--black);
+        display: block;
+        transition: transform 0.3s ease;
     }
 
     .article-content {
@@ -47,12 +48,15 @@ const { title, description, url, tags = [] } = Astro.props;
         display: flex;
         flex-direction: column;
         gap: 1rem;
+        transition: background-color 0.3s ease; /* transition for background colour*/
     }
 
     .article-text h3 {
         font-family: var(--header);
         font-size: 1.2rem;
         margin: 0 0 0.5rem 0;
+        color: var(--black);
+
     }
 
     .article-text p {
@@ -60,20 +64,43 @@ const { title, description, url, tags = [] } = Astro.props;
         font-size: 0.9rem;
         margin: 0;
         text-indent: 0;
+        color: var(--black);
+
     }
 
     .article-tags {
         display: flex;
         gap: 0.5rem;
         flex-wrap: wrap;
-        color: var(--white);
     }
 
     .tag {
         background: var(--main-green);
+        color: var(--white);
         padding: 0.2rem 0.8rem;
         border-radius: 1rem;
         font-size: 0.8rem;
         font-family: var(--body);
+        transition: all 0.3s ease;
     }
+
+    /* Hover effects*/
+    .article-card a:hover {
+        transform: translateY(-6px);  /* Lyfter kortet lätt */
+    }
+
+    .article-card a:hover .article-content {
+        background: var(--main-green);
+    }
+
+    .article-card a:hover .article-text h3,
+    .article-card a:hover .article-text p {
+        color: var(--text);  /* Vit text vid hover */
+    }
+
+    .article-card a:hover .tag {
+        background: var(--background);  /* Svart bakgrund för tags vid hover */
+        color: var(--text);  /* Vit text i tags behålls vid hover */
+    }
+
 </style>
