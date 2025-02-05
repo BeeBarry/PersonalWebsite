@@ -23,7 +23,7 @@ const articleCounts = categories.map(category => ({
     <p>Områden jag lär mig om och försöker förklara på ett lättbegripligt sätt.</p>
 
     <ul role="list" class="link-card-grid">
-        {categories.map((category) => (
+        {articleCounts.map((category) => (
                 <CardCategory
                         title={category.title}
                         iconUrl={category.iconUrl}
