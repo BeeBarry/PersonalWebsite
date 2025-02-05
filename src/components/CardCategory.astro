@@ -1,24 +1,25 @@
 ---
 interface Props {
     title: string;
-    image: string;
+    /* I had image: string, but deleted since we use Icon-Url */
+    iconUrl: string,
     url: string;
     articleCount: number;
 }
 
-const { title, image, url, articleCount } = Astro.props;
+const { title, iconUrl, url, articleCount } = Astro.props;
 ---
 
 <li class="category-card">
     <a href={url}>
-        <div class="image-circle">
+
             <img
-                    src={image}
+                    src={iconUrl}
                     alt={`${title} category`}
-                    width="80"
-                    height="80"
+                    width="65"
+                    height="65"
             />
-        </div>
+
         <h3>{title}</h3>
         <p>{articleCount} artiklar</p>
     </a>
@@ -34,23 +35,15 @@ const { title, image, url, articleCount } = Astro.props;
     }
 
     .category-card a {
-        color: var(--button);
+        color: var(--black);
         text-decoration: none;
     }
 
-    .image-circle {
-        width: 80px;
-        height: 80px;
-        border-radius: 50%;
-        background: var(--background);
-        margin: 0 auto;
-        overflow: hidden;
-    }
-
-    .image-circle img {
+    .category-icon {
         width: 100%;
         height: 100%;
-        object-fit: cover;
+        padding: 15px;
+        box-sizing: border-box;
     }
 
     h3 {

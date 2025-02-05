@@ -2,31 +2,32 @@ export const categories = [
     {
         title: "Docker",
         description: "Lär dig containerisering från grunden till avancerad nivå",
-        image: "/docker-category.webp",
+        /* I had image: src here but deleted since we use icon-urls*/
+        iconUrl: "https://api.iconify.design/skill-icons/docker.svg",
         slug: "docker"
     },
     {
         title: "Kubernetes",
         description: "Orkestrera och hantera containrar i produktion",
-        image: "/kubernetes-category.webp",
+        iconUrl: "https://api.iconify.design/skill-icons/kubernetes.svg",
         slug: "kubernetes"
     },
     {
         title: "Terraform",
         description: "Infrastructure as Code med Terraform",
-        image: "/terraform-category.webp",
+        iconUrl: "https://api.iconify.design/skill-icons/terraform-light.svg",
         slug: "terraform"
     },
     {
         title: "Cloud",
         description: "Molntjänster och cloud-native utveckling",
-        image: "/cloud-category.webp",
+        iconUrl: "https://api.iconify.design/skill-icons/azure-light.svg",
         slug: "cloud"
     },
     {
         title: "Cybersecurity",
         description: "Säkerhet i moderna applikationer",
-        image: "/security-category.webp",
+        iconUrl: "https://api.iconify.design/material-symbols:security.svg",
         slug: "cybersecurity"
     }
 ];

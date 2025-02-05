@@ -2,8 +2,17 @@
 import Layout from '../../layouts/Layout.astro';
 import CardCategory from '../../components/CardCategory.astro';
 import { categories } from '../../data/categories';
+import { getCollection } from "astro:content";
 
 const pageTitle = "Learn Hub";
+
+const allArticles = await getCollection('learn');
+const articleCounts = categories.map(category => ({
+    ...category,
+    articleCount: allArticles.filter(article =>
+        article.data.category === category.slug
+    ).length
+}));
 ---
 
 <Layout pageTitle={pageTitle}>
@@ -17,9 +26,9 @@ const pageTitle = "Learn Hub";
         {categories.map((category) => (
                 <CardCategory
                         title={category.title}
-                        description={category.description}
-                        image={category.image}
+                        iconUrl={category.iconUrl}
                         url={`/learn-hub/${category.slug}/`}
+                        articleCount={category.articleCount}
                 />
         ))}
     </ul>
