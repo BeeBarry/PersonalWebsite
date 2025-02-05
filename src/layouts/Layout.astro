@@ -2,44 +2,45 @@
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import '../styles/global.css';
-const { pageTitle } = Astro.props;
+/*Uppdatera props för att inkludera containerType*/
+const { pageTitle, containerType = "default" } = Astro.props;
 ---
 <!DOCTYPE html>
 <html transition:animate="none" lang="en">
-	<head>
-        <meta charset="utf-8" />
-        <meta name="description" content="Astro description">
-        <meta name="viewport" content="width=device-width" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-        <link rel="icon" type="image/png" sizes="192x192" href="/android-chrome-192x192.png">
-        <link rel="icon" type="image/png" sizes="512x512" href="/android-chrome-512x512.png">
+<head>
+    <meta charset="utf-8" />
+    <meta name="description" content="Astro description">
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/android-chrome-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/android-chrome-512x512.png">
 
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-<link rel="preload" href="https://fonts.googleapis.com/css2?family=Josefin+Sans&family=Pacifico&family=Rambla&family=Assistant:wght@300;400;500;600;700&family=Poetsen+One&family=Molengo&display=swap" as="style">
-<link href="https://fonts.googleapis.com/css2?family=Josefin+Sans&family=Pacifico&family=Rambla&family=Assistant:wght@300;400;500;600;700&family=Poetsen+One&family=Molengo&display=swap" rel="stylesheet">
-      
-        <meta name="generator" content={Astro.generator} />
-        <title>{pageTitle}</title>
-	</head>
-	<body>
-        <Header />
-        <main>
-	    <slot />
-            <Footer />
-        </main>
-        <script>
-            function colorMode() {
-        // Alltid sätt light mode vid sidladdning
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Josefin+Sans&family=Pacifico&family=Rambla&family=Assistant:wght@300;400;500;600;700&family=Poetsen+One&family=Molengo&display=swap" as="style">
+    <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans&family=Pacifico&family=Rambla&family=Assistant:wght@300;400;500;600;700&family=Poetsen+One&family=Molengo&display=swap" rel="stylesheet">
+
+    <meta name="generator" content={Astro.generator} />
+    <title>{pageTitle}</title>
+</head>
+<body>
+<Header />
+<!-- Uppdatera main-elementet med dynamisk container-klass -->
+<main class={`${containerType}-container`}>
+    <slot />
+    <Footer />
+</main>
+<script>
+    function colorMode() {
+        /* Alltid sätt light mode vid sidladdning */
         document.documentElement.classList.add("light");
     }
-    
+
     colorMode();
     document.addEventListener('astro:after-swap', colorMode);
-        </script>
-	</body>
+</script>
+</body>
 </html>
-

@@ -28,7 +28,7 @@ if (!categoryInfo) {
 }
 ---
 
-<Layout pageTitle={entry.data.title}>
+<Layout pageTitle={entry.data.title} containerType="wide">
     <article class="learn-article">
         <nav class="breadcrumb">
             <a href="/learn-hub/">Learn Hub</a> &gt;
@@ -48,20 +48,28 @@ if (!categoryInfo) {
 </Layout>
 
 <style>
+    /* Grundläggande container för artikeln */
     .learn-article {
-        max-width: 600px;
-        margin: 0 auto;
-        text-align: justify;
+        margin: 2rem 0; /* Ändrat från 2rem auto till 2rem 0 */
+        padding: 2rem;     /* Inre padding för innehållet */
+        background-color: #ffffff; /* Vit pappersbakgrund */
+        border-radius: 12px;      /* Rundade hörn för papperseffekt */
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), /* Subtil skugga för djup */
+        0 1px 3px rgba(0, 0, 0, 0.08);
+        color: #1e1e2e;    /* Mörk textfärg för kontrast mot vit bakgrund */
     }
 
+    /* Breadcrumb-navigation styling */
     .breadcrumb {
         margin-bottom: 2rem;
         font-family: var(--body);
+        color: #666666;    /* Dämpad färg för breadcrumbs */
     }
 
     .breadcrumb a {
         color: var(--text-link);
         text-decoration: none;
+        transition: color 0.3s ease; /* Mjuk övergång för hover */
     }
 
     .breadcrumb a:hover {
@@ -70,8 +78,11 @@ if (!categoryInfo) {
         text-underline-offset: 6px;
     }
 
+    /* Artikel-header styling */
     .article-header {
         margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #f0f0f0; /* Subtil linje för separation */
     }
 
     .article-header h1 {
@@ -79,39 +90,71 @@ if (!categoryInfo) {
         font-weight: normal;
         font-size: 2.6rem;
         margin: 0;
-        margin-bottom: 5px;
+        margin-bottom: 1rem;
+        color: #1e1e2e;    /* Mörk färg för rubriken */
     }
 
     .article-description {
         font-family: var(--body);
         font-size: 1.1rem;
-        color: var(--text);
+        color: #666666;    /* Dämpad färg för beskrivning */
+        line-height: 1.6;
     }
 
+    /* Artikel-innehåll styling */
     .article-content {
         font-family: var(--body);
-        line-height: 1.5;
+        line-height: 1.7;
     }
 
     .article-content h2 {
         font-family: var(--header);
         font-weight: normal;
+        color: #1e1e2e;
         text-decoration: underline var(--underline);
         text-decoration-thickness: 4px;
         text-underline-offset: 6px;
         font-size: 2.1rem;
-        margin-bottom: 0;
+        margin: 2rem 0 1rem;
     }
 
     .article-content p {
         font-size: 1.1rem;
         text-indent: 1rem;
-        line-height: 1.5;
+        line-height: 1.7;
+        color: #333333;    /* Mörkgrå för bättre läsbarhet */
+        margin-bottom: 1.5rem;
     }
 
+    /* Anpassning för mörkt läge */
+    :global(.dark) .learn-article {
+        background-color: #2a2a3c; /* Mörkare bakgrund i dark mode */
+        color: #ffffff;
+    }
+
+    :global(.dark) .article-header h1,
+    :global(.dark) .article-content h2 {
+        color: #ffffff;
+    }
+
+    :global(.dark) .article-description,
+    :global(.dark) .article-content p {
+        color: #e0e0e0;
+    }
+
+    /* Responsiv design för mobila enheter */
     @media only screen and (max-width: 600px) {
         .learn-article {
-            width: 350px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+
+        .article-header h1 {
+            font-size: 2rem;
+        }
+
+        .article-content h2 {
+            font-size: 1.8rem;
         }
     }
 </style>

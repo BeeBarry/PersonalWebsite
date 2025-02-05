@@ -23,7 +23,7 @@ const allLearningContent = await getCollection('learn', ({ data }) => {
 const sortedContent = allLearningContent.sort((a, b) => a.data.order - b.data.order);
 ---
 
-<Layout pageTitle={categoryTitle}>
+<Layout pageTitle={categoryTitle} containerType="default">
     <div class="gif">
         <img width="300" height="259" alt="CategoryGif" src="/learning.webp"/>
     </div>

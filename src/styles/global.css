@@ -22,9 +22,21 @@ html {
 }
 
 body {
-    max-width: 540px;
     margin: 0 auto;
     text-align: justify;
+    width: 100%;
+}
+
+.default-container {
+    max-width: 540px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+.wide-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 1rem;
 }
 
 h1, h2 {
@@ -396,8 +408,16 @@ html.light {
 
 /* Media Query */
 @media only screen and (max-width: 600px) {
-    body {
-        width: 350px;
+    .default-container {
+        width: 100%;         /* Använd full bredd */
+        max-width: 350px;    /* Max bredd för mindre skärmar */
+        padding: 0 1rem;     /* Padding för att innehåll inte ska klämmas mot kanter */
+    }
+
+    .wide-container {
+        width: 100%; /* Använd full bredd */
+        max-width: 100%; /* Låt artiklar använda full bredd på mobil */
+        padding: 0 1rem; /* Konsistent padding */
     }
 
     h2 {
@@ -436,8 +456,5 @@ html.light {
         height: auto;
         width: 350px;
     }
-
-    
-
 }
 
