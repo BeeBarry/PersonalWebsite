@@ -2,8 +2,11 @@
 import Navigation from './Navigation.astro';
 ---
 <header>
+    <div class={Astro.props.isWide ? "wide-container" : "default-container"}>
     <nav transition:persist >
         <Navigation />
     </nav>
+    </div>
 </header>
+
 

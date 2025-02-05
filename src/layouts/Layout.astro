@@ -27,7 +27,7 @@ const { pageTitle, containerType = "default" } = Astro.props;
     <title>{pageTitle}</title>
 </head>
 <body>
-<Header />
+<Header isWide={containerType === "wide"} />
 <!-- Uppdatera main-elementet med dynamisk container-klass -->
 <main class={`${containerType}-container`}>
     <slot />
