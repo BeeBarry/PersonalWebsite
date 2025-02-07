@@ -26,6 +26,17 @@ const { src, alt, caption } = Astro.props;
         cursor: zoom-in;
     }
 
+    /* Ny klass för att dölja originalbilden */
+    .zoomable-image.hidden {
+        opacity: 0;
+    }
+
+    @media (max-width: 600px) {
+        .zoomable-image {
+            cursor: default;
+        }
+    }
+
     .image-caption {
         font-size: 0.9rem;
         color: #666;
@@ -33,17 +44,17 @@ const { src, alt, caption } = Astro.props;
         font-style: italic;
     }
 
-    /* Enkel centrerad positionering utan transitions */
-    .zoomable-image.zoomed {
+    .zoomed-clone {
         position: fixed;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        max-width: 80%;      /* Tillbaka till luftig storlek */
-        max-height: 80vh;    /* Behåller god marginal i höjdled */
+        max-width: 80%;
+        max-height: 80vh;
         z-index: 1000;
         cursor: zoom-out;
         object-fit: contain;
+        border-radius: 8px;
     }
 
     .overlay {
@@ -60,13 +71,6 @@ const { src, alt, caption } = Astro.props;
     .overlay.active {
         display: block;
     }
-
-    @media (max-width: 600px) {
-        .zoomable-image.zoomed {
-            max-width: 90%;
-            max-height: 85vh;
-        }
-    }
 </style>
 
 <script>
@@ -74,29 +78,44 @@ const { src, alt, caption } = Astro.props;
     overlay.className = 'overlay';
     document.body.appendChild(overlay);
 
-    // Enkel scroll-hantering
     const toggleScroll = (disable: boolean) => {
         document.body.style.overflow = disable ? 'hidden' : '';
     };
 
+    const isMobile = () => window.innerWidth <= 600;
+
     document.querySelectorAll('.zoomable-image').forEach((img) => {
         img.addEventListener('click', (e) => {
+            if (isMobile()) return;
+
             e.stopPropagation();
-            const isZooming = !img.classList.contains('zoomed');
-            img.classList.toggle('zoomed');
-            overlay.classList.toggle('active');
-            toggleScroll(isZooming);
-            (img as HTMLElement).style.cursor = isZooming ? 'zoom-out' : 'zoom-in';
+
+            if (!document.querySelector('.zoomed-clone')) {
+                // Dölj originalbilden
+                img.classList.add('hidden');
+
+                const clone = img.cloneNode(true) as HTMLImageElement;
+                clone.classList.add('zoomed-clone');
+                clone.classList.remove('zoomable-image');
+                clone.classList.remove('hidden'); // Ta bort hidden från klonen
+                document.body.appendChild(clone);
+                overlay.classList.add('active');
+                toggleScroll(true);
+            }
         });
     });
 
     document.addEventListener('click', (e) => {
-        const zoomedImage = document.querySelector('.zoomable-image.zoomed');
-        if (zoomedImage && !(e.target as Element).closest('.zoomable-image')) {
-            zoomedImage.classList.remove('zoomed');
+        if (isMobile()) return;
+
+        const zoomedClone = document.querySelector('.zoomed-clone');
+        if (zoomedClone && !(e.target as Element).closest('.zoomed-clone')) {
+            // Visa originalbilden igen
+            document.querySelector('.zoomable-image.hidden')?.classList.remove('hidden');
+
+            zoomedClone.remove();
             overlay.classList.remove('active');
             toggleScroll(false);
-            (zoomedImage as HTMLElement).style.cursor = 'zoom-in';
         }
     });
 </script>
