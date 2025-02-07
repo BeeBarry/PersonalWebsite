@@ -129,12 +129,28 @@ if (!categoryInfo) {
         margin: 2rem 0 1rem;
     }
 
-    .article-content p {
+    .article-content > p {
         font-size: 1.1rem;
         text-indent: 1rem;
         line-height: 1.7;
         color: #333333;    /* Mörkgrå för bättre läsbarhet */
         margin-bottom: 1.5rem;
+    }
+
+    .article-content ul,
+    .article-content ol {
+
+        font-size: 1.1rem;
+        line-height: 1.7;
+        color: #333333;
+        margin-bottom: 1.5rem;
+        padding-left: 2rem;
+    }
+
+
+
+    .article-content li {
+        margin-bottom: 0.8rem;
     }
 
     /* Anpassning för mörkt läge */
