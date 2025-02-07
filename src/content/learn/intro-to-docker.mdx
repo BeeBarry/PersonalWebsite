@@ -10,16 +10,121 @@ date: '2025-02-03'
 tags: ['Beginner', 'Overview']
 ---
 
-# Vad är Docker?
+## Containers: Lådan som håller det viktiga
 
-Docker är ett verktyg vi använder till...
+En **container** är som en liten låda som innehåller allt din applikation behöver för att köras: programkod, bibliotek och konfigurationer. Den är isolerad från ditt operativsystem, vilket gör att den fungerar identiskt på alla datorer och servrar.
 
-## Vad är en Container?
+När Lisa, en ny utvecklare, börjar i teamet märker hon att det tar hela första dagen att bara installera alla verktyg och konfigurera miljön. "Det måste finnas ett bättre sätt", tänker hon. Här kommer containers in i bilden.
 
-En container är som en lätt, fristående...
+🔹 **Vad löser containers?**
 
-## Fördelar med Docker
+- Lisa kan nu starta utvecklingsmiljön med ett enda kommando
+- Alla i teamet får automatiskt samma versioner av Python, Node och databaser
+- Ingen risk att Lisas lokala Python-installation krockar med andra projekt
 
-1. Konsekvent utvecklingsmiljö
-2. Enkel distribution
-3. Skalbarhet
+🔹 Andra scenarion containers är nyttiga i**?**
+
+Med containers slipper vi den klassiska frustrationen: *"Men det funkar på min dator!"*.
+
+<ZoomableImage
+    src="/intro-to-docker-pic1.svg"
+    alt="Docker Container"
+    caption="En container är en låda som håller koll på innehållet"
+/>
+
+## Container Images: Det som finns och byggs i containers
+
+Om containers är lådorna som håller innehållet, så är **container images** innehållets ritningar alltså  specifikationen över vad finns i containern . En image är ritning som specifierar alla filer och inställningar som krävs för att starta en container (en container behöver ju ett innehåll för att kunna köras).
+
+Med containers på plats märker teamet att de behöver hantera olika versioner av sin applikation:
+
+- **Stabil version för produktion,** så att kunden alltid får använda en fungerande och säker version.
+- **Testversion för QA-teamet,** som pushar systemet och upptäcker problem innan koden går till produktion.
+- **Utvecklingsversion med de senaste funktionerna,** så teamet kan experimentera och  integrera sakerna utan att riskera att förstöra hela lösningen som kunden använder.
+
+🔹 **Hur hjälper container images?**
+
+- Peter kan snabbt växla mellan olika versioner av appen utan att installera om något
+- QA-teamet kan testa den exakta version som ska till produktion
+- När något går fel kan teamet enkelt rulla tillbaka till en tidigare fungerande version
+
+<ZoomableImage
+    src="/intro-to-docker-pic2.svg"
+    alt="Docker image"
+    caption="Vi skapar en image och lägger den i lådan för att specifiera innehållet"
+/>
+
+## Docker Registry: Dela och hantera dina containers
+
+När vi har byggt en container image vill vi kunna dela den med resten av teamet eller distribuera den till servrar. Det gör vi via en **Docker Registry**, som fungerar som ett gemensamt bibliotek där vi lagrar och hämtar images.
+
+Nu när teamet växer till 15 personer blir det viktigt att alla enkelt kan dela sina ändringar:
+
+- Maria har uppdaterat API:et med nya funktioner
+- Johan har optimerat databasen
+- QA-teamet behöver testa båda ändringarna tillsammans
+
+🔹 **Här kommer registry till undsättning:**
+
+- Maria pushar sin uppdaterade API-image till registret
+- Johan lagrar sin databasversion på samma ställe
+- QA-teamet kan direkt hämta och testa båda versionerna tillsammans
+
+<ZoomableImage
+    src="/8.png"
+    alt="Docker Registry"
+    caption="Vi förvarar våra images i ett Registry så andra behöriga lätt kan komma åt de"
+/>
+
+## Docker Compose: Alla pusselbitar på plats
+
+Många moderna applikationer består av flera tjänster som behöver samverka – en backend, en frontend och en databas. Att manuellt starta och koppla ihop alla dessa containers kan vara krångligt, och här kommer **Docker Compose** till undsättning.
+
+🔹 **Docker Compose binder ihop allt:**
+
+Vi definierar hela vår miljö och hur Docker Compose skall initiera alla delarna i en YAML-fil, den kan se ut såhär:
+
+
+<ZoomableImage
+    src="/6.svg"
+    alt="Docker Compose"
+    caption="Vi använder Docker compose för att med ett kommando få alla containers att samverka"
+/>
+
+```yaml
+version: '3.8'
+services:
+  webshop:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+  api:
+    build: ./backend
+    depends_on:
+      - db
+
+  db:
+    image: postgres:latest
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+```
+
+Nu kan hela teamet:
+
+- Starta hela miljön med ett kommando: `docker-compose up`
+- Vara säkra på att alla delar är korrekt konfigurerade
+- Fokusera på att utveckla nya funktioner istället för att fixa miljöproblem
+
+## Sammanfattning:
+
+En Container är som en låda med viktiga specifikationer av program och inställningar. Lådan kan vi enkelt skicka runt eller dela inom teamet så att alla sitter på likadana program och inställningar.
+
+Container Image är som ett recept som specifierar exakt vad som finns i lådan och skall initieras när lådan börjar köras.
+
+Docker Registry är som ett lager där vi gemensamt förvarar och hämtar våra lådor. Lådorna hålls uppdaterade så att att alla får tillgång till samma miljö.
+
+Docker Compose hjälper oss öppna och köra alla containers samtidigt så att de tillsammans får hela applikationen att fungera.
