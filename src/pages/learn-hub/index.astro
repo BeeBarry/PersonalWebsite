@@ -13,15 +13,16 @@ const articleCounts = categories.map(category => ({
         article.data.category === category.slug
     ).length
 }));
+
+const visibleCategories = articleCounts.filter(category => category.isVisible);
 ---
 
 <Layout pageTitle={pageTitle} containerType="default">
-
     <h2>Learn Hub</h2>
     <p>Områden jag lär mig om och försöker förklara på ett lättbegripligt sätt.</p>
 
     <ul role="list" class="link-card-grid">
-        {articleCounts.map((category) => (
+        {visibleCategories.map((category) => (
                 <CardCategory
                         title={category.title}
                         iconUrl={category.iconUrl}
