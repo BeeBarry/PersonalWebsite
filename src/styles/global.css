@@ -39,9 +39,10 @@ body {
     padding: 0 1rem;
 }
 
-h1, h2 {
+h1, h2, h3 {
     font-family: var(--header);
     font-weight: normal;
+    word-spacing: normal;
 }
 
 h1 {
@@ -51,11 +52,12 @@ h1 {
 }
 
 h2 {
-    text-decoration: underline var(--underline);
+    text-decoration: none;
     text-decoration-thickness: 4px;
     text-underline-offset: 6px;
     font-size: 2.1rem;
     margin-bottom: 0;
+    padding-bottom: 0.5rem;
 }
 
 p {
@@ -190,6 +192,44 @@ small, li {
 
 .badge__link:hover {
     text-decoration: underline;
+}
+
+/* Paper section styling */
+.paper-section {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 2rem;
+    margin: 2rem 0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1),
+    0 1px 3px rgba(0, 0, 0, 0.08);
+    position: relative;
+    color: var(--text-light);
+}
+
+/* Anpassa innehåll inom paper-section */
+.paper-section h2 {
+    color: var(--text-light);
+    margin-top: 0;
+}
+
+.paper-section p {
+    color: var(--text-light);
+}
+
+/* Dark mode support */
+html.light .paper-section {
+    background-color: #ffffff;
+    color: var(--text-light);
+}
+
+html:not(.light) .paper-section {
+    background-color: #2a2a3c;
+    color: var(--text);
+}
+
+html:not(.light) .paper-section h2,
+html:not(.light) .paper-section p {
+    color: var(--text);
 }
 
 /* Cards */

@@ -10,9 +10,9 @@ date: '2025-02-03'
 tags: ['Beginner', 'Overview']
 ---
 
-## Containers: Lådan som håller det viktiga
+## Containers
 
-En **container** är som en liten låda som innehåller allt din applikation behöver för att fungera: programkod, bibliotek och konfigurationer. **Grundtanken med containers är att säkerställa att applikationen fungerar på exakt samma sätt oavsett var den körs**—på din laptop, en kollegas dator eller i molnet.
+En **container** är som en liten låda som innehåller allt din applikation behöver för att fungera: programkod, bibliotek och konfigurationer. Grundtanken med containers är att säkerställa att **applikationen fungerar på exakt samma sätt oavsett var den körs**—på din laptop, en kollegas dator eller i molnet.
 
 När Lisa, en ny utvecklare, börjar i teamet förväntar hon sig att det kommer ta **flera timmar, kanske en hel dag**, att installera alla verktyg och konfigurera sin utvecklingsmiljö. Men hennes team har en bättre lösning.
 
@@ -35,7 +35,7 @@ Med containers slipper vi den klassiska frustrationen: *"**Men det funkar ju int
     caption="En container är en låda som håller koll på innehållet"
 />
 
-## Container Images: Ritningen för containers
+## Container Images
 
 Om containers är lådorna, så är **container images** ritningen över vad som ska finnas i lådan. En image specificerar alla filer, inställningar och program som ska ingå när containern startas.
 
@@ -60,7 +60,7 @@ Med container images kan teamet hantera olika versioner av sin applikation:
     caption="Vi skapar en image och lägger den i lådan för att specifiera innehållet"
 />
 
-## Docker Registry: Dela och hantera dina containers
+## Docker Registry
 
 När vi har byggt en container image vill vi kunna dela den med resten av teamet eller distribuera den till servrar. Det gör vi via en **Docker Registry**, som fungerar som ett gemensamt bibliotek där teamet lagrar och hämtar images.
 
@@ -91,7 +91,7 @@ Detta förenklar särskilt:
     caption="Vi förvarar våra images i ett Registry så andra behöriga lätt kan komma åt de"
 />
 
-## Docker Compose: Alla pusselbitar på plats
+## Docker Compose
 
 Många moderna applikationer består av flera tjänster som behöver samverka – en backend, en frontend och en databas. Att manuellt starta och koppla ihop alla dessa containers kan vara krångligt, och här kommer **Docker Compose** till användning.
 
