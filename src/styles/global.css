@@ -465,6 +465,7 @@ html.light {
         text-decoration-thickness: 3px;  /* Lite tunnare för mobil */
         text-underline-offset: 4px;      /* Lite mindre offset för mobil */
         font-size: 1.8rem;               /* Mindre textstorlek för mobil */
+        word-spacing: normal;
     }
 
     .navbar {
