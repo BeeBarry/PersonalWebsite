@@ -2,6 +2,7 @@
 import { getCollection } from 'astro:content';
 import Layout from '../../../layouts/Layout.astro';
 import { categories } from '../../../data/categories';
+import ZoomableImage from '../../../components/ZoomableImage.astro';
 
 export async function getStaticPaths() {
     const allArticles = await getCollection('learn');
@@ -54,7 +55,8 @@ if (!categoryInfo) {
 
 
         <div class="article-content">
-            <Content />
+            <!-- Här är förändringen - lägg till components prop -->
+            <Content components={{ ZoomableImage }} />
         </div>
     </article>
 </Layout>

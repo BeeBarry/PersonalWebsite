@@ -1,0 +1,88 @@
+---
+// components/ZoomableImage.astro
+interface Props {
+    src: string;
+    alt: string;
+    caption?: string;
+}
+
+const { src, alt, caption } = Astro.props;
+---
+
+<div class="image-container">
+    <img src={src} alt={alt} class="zoomable-image" loading="lazy" />
+    {caption && <p class="image-caption">{caption}</p>}
+</div>
+
+<style>
+    .image-container {
+        margin: 2rem 0;
+        text-align: center;
+    }
+
+    .zoomable-image {
+        max-width: 100%;
+        border-radius: 8px;
+        cursor: zoom-in;
+        transition: transform 0.3s ease;
+    }
+
+    .image-caption {
+        font-size: 0.9rem;
+        color: #666;
+        margin-top: 0.5rem;
+        font-style: italic;
+    }
+
+    /* Stil för förstoringsläge */
+    .zoomable-image.zoomed {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        max-width: 90vw;
+        max-height: 90vh;
+        z-index: 1000;
+        cursor: zoom-out;
+    }
+
+    /* Overlay bakgrund */
+    .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 999;
+        display: none;
+    }
+
+    .overlay.active {
+        display: block;
+    }
+</style>
+
+<script>
+    // Lägg till en overlay div i body
+    const overlay = document.createElement('div');
+    overlay.className = 'overlay';
+    document.body.appendChild(overlay);
+
+    // Hantera klick på bilder
+    document.querySelectorAll('.zoomable-image').forEach(img => {
+        img.addEventListener('click', () => {
+            img.classList.toggle('zoomed');
+            overlay.classList.toggle('active');
+
+            // Uppdatera cursor baserat på zoom-status
+            img.style.cursor = img.classList.contains('zoomed') ? 'zoom-out' : 'zoom-in';
+        });
+    });
+
+    // Stäng förstoring när man klickar på overlay
+    overlay.addEventListener('click', () => {
+        document.querySelector('.zoomable-image.zoomed')?.classList.remove('zoomed');
+        overlay.classList.remove('active');
+    });
+</script>
