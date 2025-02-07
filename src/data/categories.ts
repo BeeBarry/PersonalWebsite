@@ -4,7 +4,8 @@ export const categories = [
         description: "Lär dig containerisering från grunden till avancerad nivå",
         /* I had image: src here but deleted since we use icon-urls*/
         iconUrl: "https://api.iconify.design/skill-icons/docker.svg",
-        slug: "docker"
+        slug: "docker",
+        isVisible: true
     },
     {
         title: "Kubernetes",
@@ -19,10 +20,11 @@ export const categories = [
         slug: "terraform"
     },
     {
-        title: "Cloud",
+        title: "Azure",
         description: "Molntjänster och cloud-native utveckling",
         iconUrl: "https://api.iconify.design/skill-icons/azure-light.svg",
-        slug: "cloud"
+        slug: "cloud",
+        isVisible: true
     },
     {
         title: "Cybersecurity",
