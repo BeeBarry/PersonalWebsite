@@ -33,14 +33,6 @@ const { pageTitle, containerType = "default" } = Astro.props;
     <slot />
     <Footer />
 </main>
-<script>
-    function colorMode() {
-        /* Alltid sätt light mode vid sidladdning */
-        document.documentElement.classList.add("light");
-    }
 
-    colorMode();
-    document.addEventListener('astro:after-swap', colorMode);
-</script>
 </body>
 </html>

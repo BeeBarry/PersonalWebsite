@@ -32,7 +32,7 @@ const { title, iconUrl, url, articleCount } = Astro.props;
     }
 
     .category-card a {
-        color: var(--black);
+        color: var(--text-light);
         text-decoration: none;
         background: var(--white);
         padding: 1.5rem;
@@ -43,6 +43,9 @@ const { title, iconUrl, url, articleCount } = Astro.props;
         align-items: center;
         gap: 1rem;
         transition: transform 0.3s ease, background-color 0.3s ease;
+        /* Lägg till skugga för papperseffekt */
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1),
+        0 1px 3px rgba(0, 0, 0, 0.08);
     }
 
     .category-icon {
@@ -55,12 +58,13 @@ const { title, iconUrl, url, articleCount } = Astro.props;
     h3 {
         margin: 1rem 0 0.5rem;
         font-family: var(--header);
-        color: var(--black);
+        color: var(--text-light);
     }
 
     p {
         margin: 0;
         font-family: var(--body);
+        color: var(--text-light);
     }
 
     .article-count {
@@ -73,19 +77,49 @@ const { title, iconUrl, url, articleCount } = Astro.props;
         font-family: var(--body);
     }
 
-    /* Hover effects - helt nya */
+    /* Light mode hover */
     .category-card a:hover {
         transform: translateY(-10px);
         background: var(--main-green);
     }
 
-    .category-card a:hover h3 {
-        color: var(--text);
+    .category-card a:hover h3,
+    .category-card a:hover p {
+        color: var(--white);
     }
 
     .category-card a:hover .article-count {
         background: var(--background);
-        color: var(--text);
+        color: var(--white);
     }
 
+    /* Dark mode basstil */
+    :global(html:not(.light)) .category-card a {
+        background: #2a2a3c;
+        color: var(--white);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2),
+        0 1px 3px rgba(0, 0, 0, 0.15);
+    }
+
+    :global(html:not(.light)) h3,
+    :global(html:not(.light)) p {
+        color: var(--white);
+    }
+
+    /* Dark mode hover */
+    :global(html:not(.light)) .category-card a:hover {
+        background: #3d3d52;
+    }
+
+    :global(html:not(.light)) .category-card a:hover .article-count {
+        background: var(--background);
+        color: var(--white);
+    }
+
+    /* Behåll responsiv design */
+    @media (max-width: 600px) {
+        .category-card a {
+            padding: 1.2rem;
+        }
+    }
 </style>

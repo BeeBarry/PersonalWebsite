@@ -48,15 +48,17 @@ const { title, description, url, tags = [] } = Astro.props;
         display: flex;
         flex-direction: column;
         gap: 1rem;
-        transition: background-color 0.3s ease; /* transition for background colour*/
+        transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        /* Lägg till papperseffekt */
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1),
+        0 1px 3px rgba(0, 0, 0, 0.08);
     }
 
     .article-text h3 {
         font-family: var(--header);
         font-size: 1.2rem;
         margin: 0 0 0.5rem 0;
-        color: var(--black);
-
+        color: var(--text-light);
     }
 
     .article-text p {
@@ -64,8 +66,7 @@ const { title, description, url, tags = [] } = Astro.props;
         font-size: 0.9rem;
         margin: 0;
         text-indent: 0;
-        color: var(--black);
-
+        color: var(--text-light);
     }
 
     .article-tags {
@@ -84,9 +85,9 @@ const { title, description, url, tags = [] } = Astro.props;
         transition: all 0.3s ease;
     }
 
-    /* Hover effects*/
+    /* Light mode hover */
     .article-card a:hover {
-        transform: translateY(-6px);  /* Lyfter kortet lätt */
+        transform: translateY(-6px);
     }
 
     .article-card a:hover .article-content {
@@ -95,12 +96,44 @@ const { title, description, url, tags = [] } = Astro.props;
 
     .article-card a:hover .article-text h3,
     .article-card a:hover .article-text p {
-        color: var(--text);  /* Vit text vid hover */
+        color: var(--white);
     }
 
     .article-card a:hover .tag {
-        background: var(--background);  /* Svart bakgrund för tags vid hover */
-        color: var(--text);  /* Vit text i tags behålls vid hover */
+        background: var(--background);
+        color: var(--white);
     }
 
+    /* Dark mode basstil */
+    :global(html:not(.light)) .article-content {
+        background: #2a2a3c;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2),
+        0 1px 3px rgba(0, 0, 0, 0.15);
+    }
+
+    :global(html:not(.light)) .article-text h3,
+    :global(html:not(.light)) .article-text p {
+        color: var(--white);
+    }
+
+    /* Dark mode hover */
+    :global(html:not(.light)) .article-card a:hover .article-content {
+        background: #3d3d52;
+    }
+
+    :global(html:not(.light)) .article-card a:hover .tag {
+        background: var(--background);
+        color: var(--white);
+    }
+
+    /* Responsiv design */
+    @media (max-width: 600px) {
+        .article-content {
+            padding: 1.2rem;
+        }
+
+        .article-text h3 {
+            font-size: 1.1rem;
+        }
+    }
 </style>
