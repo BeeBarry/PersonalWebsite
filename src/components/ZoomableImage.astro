@@ -24,7 +24,6 @@ const { src, alt, caption } = Astro.props;
         max-width: 100%;
         border-radius: 8px;
         cursor: zoom-in;
-        transition: transform 0.3s ease;
     }
 
     .image-caption {
@@ -34,19 +33,19 @@ const { src, alt, caption } = Astro.props;
         font-style: italic;
     }
 
-    /* Stil för förstoringsläge */
+    /* Enkel centrerad positionering utan transitions */
     .zoomable-image.zoomed {
         position: fixed;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        max-width: 90vw;
-        max-height: 90vh;
+        max-width: 80%;      /* Tillbaka till luftig storlek */
+        max-height: 80vh;    /* Behåller god marginal i höjdled */
         z-index: 1000;
         cursor: zoom-out;
+        object-fit: contain;
     }
 
-    /* Overlay bakgrund */
     .overlay {
         position: fixed;
         top: 0;
@@ -61,28 +60,43 @@ const { src, alt, caption } = Astro.props;
     .overlay.active {
         display: block;
     }
+
+    @media (max-width: 600px) {
+        .zoomable-image.zoomed {
+            max-width: 90%;
+            max-height: 85vh;
+        }
+    }
 </style>
 
 <script>
-    // Lägg till en overlay div i body
     const overlay = document.createElement('div');
     overlay.className = 'overlay';
     document.body.appendChild(overlay);
 
-    // Hantera klick på bilder
-    document.querySelectorAll('.zoomable-image').forEach(img => {
-        img.addEventListener('click', () => {
+    // Enkel scroll-hantering
+    const toggleScroll = (disable: boolean) => {
+        document.body.style.overflow = disable ? 'hidden' : '';
+    };
+
+    document.querySelectorAll('.zoomable-image').forEach((img) => {
+        img.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isZooming = !img.classList.contains('zoomed');
             img.classList.toggle('zoomed');
             overlay.classList.toggle('active');
-
-            // Uppdatera cursor baserat på zoom-status
-            img.style.cursor = img.classList.contains('zoomed') ? 'zoom-out' : 'zoom-in';
+            toggleScroll(isZooming);
+            (img as HTMLElement).style.cursor = isZooming ? 'zoom-out' : 'zoom-in';
         });
     });
 
-    // Stäng förstoring när man klickar på overlay
-    overlay.addEventListener('click', () => {
-        document.querySelector('.zoomable-image.zoomed')?.classList.remove('zoomed');
-        overlay.classList.remove('active');
+    document.addEventListener('click', (e) => {
+        const zoomedImage = document.querySelector('.zoomable-image.zoomed');
+        if (zoomedImage && !(e.target as Element).closest('.zoomable-image')) {
+            zoomedImage.classList.remove('zoomed');
+            overlay.classList.remove('active');
+            toggleScroll(false);
+            (zoomedImage as HTMLElement).style.cursor = 'zoom-in';
+        }
     });
 </script>
