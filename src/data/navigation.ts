@@ -9,7 +9,7 @@ export const navigationItems: NavItem[] = [
     {
         title: "Blogg",
         path: "/posts/",
-        isEnabled: true
+        isEnabled: false
     },
     {
         title: "Learn Hub",
