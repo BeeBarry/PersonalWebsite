@@ -29,7 +29,7 @@ body {
 }
 
 .default-container {
-    max-width: 540px;
+    max-width: 740px;
     margin: 0 auto;
     padding: 0 1rem;
 }
@@ -64,7 +64,7 @@ h2 {
 p {
     font-family: var(--body);
     font-size: 1.14em;
-    hyphens: auto;
+    hyphens: none;
     line-height: 1.5;
     text-indent: 0rem;
 
@@ -72,6 +72,7 @@ p {
     word-spacing: 0.2px;
     margin-bottom: 1rem;
     font-weight: 500;
+    text-align: left;
 }
 
 small, li {
@@ -451,6 +452,17 @@ html.light {
         width: 100%; /* Använd full bredd */
         max-width: 100%; /* Låt artiklar använda full bredd på mobil */
         padding: 0 1rem; /* Konsistent padding */
+    }
+
+    .paper-section {
+        margin: 1rem -0.5rem; /* Negativ margin för att gå utanför container lite */
+        padding: 1.7rem; /* Mindre padding på mobil */
+        border-radius: 12px; /* Lite mindre rundade hörn på mobil */
+    }
+
+    .learn-article {
+        padding: 1rem;      /* Minska padding för att ge mer utrymme åt innehållet */
+        margin: 0.5rem 0;   /* Mindre margins på mobil */
     }
 
     h2 {
