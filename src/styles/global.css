@@ -3,6 +3,7 @@
     --background: #1e1e2e;
     --background-light: #FAF5F0;
     --main-green: #39a35f;
+    --main-brown: #8e6e59;
     --white: #ffffff;
     --black: #000000;
     --button: #39a35f;
@@ -52,7 +53,7 @@ h1 {
 }
 
 h2 {
-    text-decoration: none;
+
     text-decoration-thickness: 4px;
     text-underline-offset: 6px;
     font-size: 2.1rem;
