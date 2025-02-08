@@ -109,7 +109,7 @@ const { src, alt, caption } = Astro.props;
         if (isMobile()) return;
 
         const zoomedClone = document.querySelector('.zoomed-clone');
-        if (zoomedClone && !(e.target as Element).closest('.zoomed-clone')) {
+        if (zoomedClone && ((e.target as Element).classList.contains('zoomed-clone') || !(e.target as Element).closest('.zoomed-clone'))) {
             // Visa originalbilden igen
             document.querySelector('.zoomable-image.hidden')?.classList.remove('hidden');
 
