@@ -8,15 +8,28 @@ const { pageTitle, containerType = "default" } = Astro.props;
 <!DOCTYPE html>
 <html transition:animate="none" lang="en">
 <head>
+    <!-- Placera redirect-scriptet först i head för snabbast möjliga exekvering -->
+    <script is:inline>
+        /*
+         * Använder replace() istället för assign() för att förhindra att
+         * HTTP-versionen hamnar i browserhistoriken
+         *
+         * Genom att köra detta script först i head-taggen säkerställer vi
+         * att redirecten sker innan något annat innehåll laddas
+         */
+        if (
+            window.location.protocol === 'http:' &&
+            !window.location.hostname.includes('localhost')
+        ) {
+            window.location.replace(
+                'https://' + window.location.hostname + window.location.pathname + window.location.search
+            );
+        }
+    </script>
     <meta charset="utf-8" />
     <meta name="description" content="Astro description">
     <meta name="viewport" content="width=device-width" />
-    <!-- Osynlig HTTPS redirect -->
-    <script is:inline>
-        if (window.location.protocol === 'http:' && !window.location.hostname.includes('localhost')) {
-            window.location.replace(window.location.href.replace('http:', 'https:'));
-        }
-    </script>
+    <!-- Resten av dina befintliga head-element... -->
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
@@ -34,7 +47,6 @@ const { pageTitle, containerType = "default" } = Astro.props;
 </head>
 <body>
 <Header isWide={containerType === "wide"} />
-<!-- Uppdatera main-elementet med dynamisk container-klass -->
 <main class={`${containerType}-container`}>
     <slot />
     <Footer />
