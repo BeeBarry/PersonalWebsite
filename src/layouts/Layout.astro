@@ -9,17 +9,21 @@ const { pageTitle, containerType = "default" } = Astro.props;
 <html transition:animate="none" lang="en">
 <head>
     <!-- Placera redirect-scriptet först i head för snabbast möjliga exekvering -->
-    <script is:inline>
+    <script is:inline define:vars={{ isDev: import.meta.env.DEV }}>
         /*
          * Använder replace() istället för assign() för att förhindra att
          * HTTP-versionen hamnar i browserhistoriken
          *
          * Genom att köra detta script först i head-taggen säkerställer vi
          * att redirecten sker innan något annat innehåll laddas
+         *
+         * isDev kontrollerar om vi är i utvecklingsmiljö via Astros inbyggda miljövariabel
+         * Detta säkerställer att redirecten endast sker i produktion och inte under utveckling
          */
         if (
             window.location.protocol === 'http:' &&
-            !window.location.hostname.includes('localhost')
+            !window.location.hostname.includes('localhost') &&
+            !isDev
         ) {
             window.location.replace(
                 'https://' + window.location.hostname + window.location.pathname + window.location.search
