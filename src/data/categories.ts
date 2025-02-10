@@ -20,7 +20,7 @@ export const categories = [
         slug: "terraform"
     },
     {
-        title: "Azure",
+        title: "Azure ( Coming this week)",
         description: "Molntjänster och cloud-native utveckling",
         iconUrl: "https://api.iconify.design/skill-icons/azure-light.svg",
         slug: "cloud",
