@@ -14,7 +14,7 @@ tags: ['Beginner', 'Overview']
 
 En **container** är som en liten låda som innehåller allt din applikation behöver för att fungera: programkod, bibliotek och konfigurationer. Grundtanken med containers är att säkerställa att **applikationen fungerar på exakt samma sätt oavsett var den körs**—på din laptop, en kollegas dator eller i molnet.
 
-När Lisa, en ny utvecklare, börjar i teamet förväntar hon sig att det kommer ta **flera timmar, kanske en hel dag**, att installera alla verktyg och konfigurera sin utvecklingsmiljö. Men hennes team har en bättre lösning.
+När Lisa, en ny utvecklare, börjar i teamet förväntar hon sig att det kommer ta **flera timmar, kanske en hel dag**, att installera alla verktyg och konfigurera sin utvecklingsmiljö. Men det kanske finns en bättre lösning?
 
 *"Det finns ett smidigare sätt,"* säger en kollega och visar hur teamet använder containers.
 
@@ -22,12 +22,11 @@ När Lisa, en ny utvecklare, börjar i teamet förväntar hon sig att det kommer
 
 🔹 **Vad löser containers?**
 
-- **Alla utvecklare i teamet arbetar i en identisk miljö,** vilket minskar "det fungerar på min dator"-problem.
+- **Alla utvecklare i teamet arbetar i en identisk miljö,** vilket minskar " det funkar ju inte på min dator"-problem.
 - Nya utvecklare kan starta upp sin miljö **på några minuter istället för timmar.**
-- Alla använder **exakt samma versioner** av Python, Node, databaser och andra beroenden.
+- Alla använder **exakt samma versioner** av  tex. C#, Node, databaser och andra beroenden.
 - **Lisas utvecklingsmiljö påverkar inte andra projekt på hennes dator** – hon kan arbeta med flera projekt utan att behöva installera om eller ändra inställningar varje gång.
 
-Med containers slipper vi den klassiska frustrationen: *"**Men det funkar ju inte på min dator!**"*.
 
 <ZoomableImage
     src="/intro-to-docker-pic1.svg"
@@ -70,7 +69,7 @@ Nu när personerna i teamet sitter och utvecklar olika delar av applikationen ä
 - **Johan har optimerat databasen** för att snabba upp laddningstider.
 - **Rufus och Kurt behöver testa båda ändringarna tillsammans(API:t och databasen)** innan ändringarna går vidare till produktion-versionen.
 
-**Utan ett registry:** Alla skulle behöva bygga och hantera sina egna versioner av applikationen manuellt, vilket kan leda till förvirring och kompatibilitetsproblem.
+**Utan ett registry:** Skulle behöva bygga och hantera sina egna versioner av applikationen manuellt, vilket kan leda till förvirring och kompatibilitetsproblem.
 
 **Med ett registry:** Teamet kan enkelt ladda upp, versionera och dela sina containers.
 
@@ -103,24 +102,24 @@ När Lisa skall starta applikationen teamet jobbar med (e-handelssystem) så mä
 
 Lisa försöker starta systemet manuellt, men stöter på flera problem:
 
-❌ **Hon måste starta varje del separat och i rätt ordning.**
+❌ Hon måste starta varje del **separat och i rätt ordning.**
 
-❌ **Backend försöker starta innan databasen är redo, vilket leder till fel.**
+❌ Backend försöker starta **innan databasen är redo,** vilket leder till fel.
 
-❌ **Varje tjänst behöver rätt konfiguration för att hitta varandra.**
+❌ Varje tjänst behöver rätt konfiguration **för att hitta varandra.**
 
-❌ **Hon behöver hålla reda på flera terminalfönster för att köra allt samtidigt.**
+❌ Hon behöver hålla reda på flera terminalfönster för att **köra allt samtidigt.**
 
 Teamet visar Lisa en **Docker Compose-fil**, som beskriver hela applikationen och hur de olika tjänsterna ska samverka. Med ett enda kommando ( *docker-compose up* ) kan hon starta allt:
 
 
-✅ **Alla containers startar automatiskt i rätt ordning.**
+✅ Alla containers startar **automatiskt i rätt ordning.**
 
-✅ **Backend väntar tills databasen är redo innan den startar.**
+✅ Backend väntar tills **databasen är redo** innan den startar.
 
-✅ **Tjänsterna är redan konfigurerade att prata med varandra.**
+✅ Tjänsterna är redan **konfigurerade att prata med varandra.**
 
-✅ **Lisa kan fokusera på kod istället för att hantera miljöproblem.**
+✅ Lisa kan **fokusera på att skriva kod** istället för att hantera miljöproblem.
 
 <ZoomableImage
     src="/6.png"
@@ -131,7 +130,7 @@ Teamet visar Lisa en **Docker Compose-fil**, som beskriver hela applikationen oc
 
 🔹 **Docker Compose binder ihop allt:**
 
-Vi definierar hela vår miljö och hur Docker Compose skall initiera alla delarna i en YAML-fil, den kan se ut såhär:
+Vi definierar hela vår miljö och hur Docker Compose skall initiera alla delarna i en **YAML-fil**, den kan se ut såhär:
 ```yaml
 version: '3.8'
 services:
@@ -168,7 +167,7 @@ Nu kan hela teamet:
 
 - Starta hela miljön med ett kommando: `docker-compose up`
 - Vara säkra på att alla delar är korrekt konfigurerade
-- Fokusera på att utveckla nya funktioner istället för att fixa miljöproblem
+
 
 ## Sammanfattning:
 
