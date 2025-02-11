@@ -30,7 +30,7 @@ const learnCollection = defineCollection({
   schema: z.object({
     title: z.string(),
     description: z.string(),
-    category: z.enum(['docker', 'kubernetes','terraform','cloud','cybersecurity']),
+    category: z.enum(['docker', 'kubernetes','terraform','azure','cybersecurity']),
     image: z.object({
       url: z.string(),
       alt: z.string()
