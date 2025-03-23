@@ -3,6 +3,7 @@ interface NavItem {
     path: string;
     isEnabled: boolean;
     isExternal?: boolean;
+    icon?: string;
 }
 
 export const navigationItems: NavItem[] = [
@@ -14,17 +15,20 @@ export const navigationItems: NavItem[] = [
     {
         title: "Learn Hub",
         path: "/learn-hub/",
-        isEnabled: true
+        isEnabled: true,
+        icon: "https://api.iconify.design/mdi/book-open-page-variant.svg"
     },
     {
         title: "GitHub",
         path: "https://github.com/BeeBarry",
         isEnabled: true,
-        isExternal: true
+        isExternal: true,
+        icon: "https://api.iconify.design/mdi/github.svg"
     },
     {
-        title: "Works",
+        title: "Projekt",
         path: "/works/",
-        isEnabled: false // Inaktiverad tills den behövs
+        isEnabled: true,
+        icon: "https://api.iconify.design/mdi/briefcase.svg"
     }
 ];
