@@ -20,7 +20,7 @@ När Lisa, en ny utvecklare, börjar i teamet förväntar hon sig att det kommer
 
 **Eftersom allt är paketerat i en container**, behöver Lisa bara köra ett enda kommando för att få exakt samma utvecklingsmiljö som sina teammedlemmar.
 
-🔹 **Vad löser containers?**
+📍 **Vad löser containers?**
 
 - **Alla utvecklare i teamet arbetar i en identisk miljö,** vilket minskar " det funkar ju inte på min dator"-problem.
 - Nya utvecklare kan starta upp sin miljö **på några minuter istället för timmar.**
@@ -46,7 +46,7 @@ Med container images kan teamet hantera olika versioner av sin applikation:
 
 **En utvecklingsversion med de senaste funktionerna** – utvecklare kan experimentera utan att riskera att påverka den stabila versionen.
 
-🔹 **Varför är container images viktiga?**
+📍 **Varför är container images viktiga?**
 
 - **Enklare versionshantering** – Lisa kan snabbt växla mellan olika versioner av appen utan att installera om något.
 - **Reproducerbara miljöer** – Vid testning testar teamet exakt samma version som kommer att rullas ut i produktion.
@@ -73,7 +73,7 @@ Nu när personerna i teamet sitter och utvecklar olika delar av applikationen ä
 
 **Med ett registry:** Teamet kan enkelt ladda upp, versionera och dela sina containers.
 
-🔹 **Ett typiskt arbetsflöde med registry:**
+📍 **Ett typiskt arbetsflöde med registry:**
 
 1. Lisa utvecklar en ny sökfunktion lokalt och testar funktionen i sin utvecklingscontainer.
 2. När allt fungerar bygger hon **en ny image**: `docker build -t searchapi:v2` och laddar upp den till teamets registry.
@@ -128,7 +128,7 @@ Teamet visar Lisa en **Docker Compose-fil**, som beskriver hela applikationen oc
 />
 
 
-🔹 **Docker Compose binder ihop allt:**
+📍 **Docker Compose binder ihop allt:**
 
 Vi definierar hela vår miljö och hur Docker Compose skall initiera alla delarna i en **YAML-fil**, den kan se ut såhär:
 ```yaml
