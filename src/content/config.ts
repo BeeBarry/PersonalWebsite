@@ -17,11 +17,18 @@ const projectsCollection = defineCollection({
       url: z.string(),
       alt: z.string()
     }),
+    worksImage3: z.object({
+      url: z.string(),
+      alt: z.string()
+    }).optional(), // optional gör att äldre projekt utan dessa fortfarande fungerar
+    worksImage4: z.object({
+      url: z.string(),
+      alt: z.string()
+    }).optional(),
     platform: z.string(),
     stack: z.string(),
     website: z.string(),
     github: z.string(),
-
   })
 });
 
