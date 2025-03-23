@@ -76,7 +76,10 @@ p {
 }
 
 small, li {
-    font-family: var(--body); 
+    font-family: var(--body);
+    font-size: 1.14em;
+    line-height: 1.5;
+    font-weight: 500;
 }
 
 /* Navigation Bar */
@@ -111,6 +114,7 @@ small, li {
 .navbar__title > a, .navbar__menu > a {
     color: var(--text);
     text-decoration: none;
+
 }
 
 .navbar__menu a {
@@ -187,6 +191,7 @@ small, li {
 .badge__link:hover {
     text-decoration: underline;
 }
+
 
 /* Paper section styling */
 .paper-section {
