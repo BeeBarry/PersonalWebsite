@@ -2,16 +2,16 @@
 title: 'Barrynamdari.se'
 description: 'Personlig webbsida som visar mina projekt, artiklar och min resa hit.'
 image:
-    url: '/public/bn_logo.svg'
+    url: '/bn_logo.svg'
     alt: 'GitHub wallpaper'
 worksImage1:
-    url: '/public/bn_3.png'
+    url: '/bn_3.png'
     alt: 'Första bilden av mitt projekt'
 worksImage2:
-    url: '/public/bn_4.png'
+    url: '/bn_4.png'
     alt: 'Andra bilden av mitt projekt'
 worksImage4:
-  url: '/public/bn_2.png'
+  url: '/bn_2.png'
   alt: 'Andra bilden av mitt projekt'
 platform: Web
 stack: Astro, JavaScript, Docker,  Gitlab CI, Typescript
