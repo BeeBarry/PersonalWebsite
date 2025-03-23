@@ -1,20 +1,269 @@
 ---
 import BaseLayout from './Layout.astro';
+import ZoomableImage from '../components/ZoomableImage.astro';
 const { frontmatter } = Astro.props;
+
+// Fördefinierade ikoner med korrekt typning
+const techIcons: Record<string, string> = {
+    "astro": "https://api.iconify.design/skill-icons/astro.svg",
+    "javascript": "https://api.iconify.design/skill-icons/javascript.svg",
+    "typescript": "https://api.iconify.design/skill-icons/typescript.svg",
+    "react": "https://api.iconify.design/skill-icons/react-dark.svg",
+    "docker": "https://api.iconify.design/skill-icons/docker.svg",
+    "gitlab": "https://api.iconify.design/skill-icons/gitlab-light.svg",
+    "nodejs": "https://api.iconify.design/skill-icons/nodejs-light.svg",
+    "tailwind": "https://api.iconify.design/skill-icons/tailwindcss-light.svg",
+    "dotnet": "https://api.iconify.design/skill-icons/dotnet.svg",
+    "blazor": "https://api.iconify.design/skill-icons/cs.svg",
+    "bootstrap": "https://api.iconify.design/skill-icons/bootstrap.svg",
+    "azure": "https://api.iconify.design/skill-icons/azure-light.svg",
+    "vite": "https://api.iconify.design/skill-icons/vite-light.svg",
+    "github": "https://api.iconify.design/skill-icons/github-light.svg"
+};
 ---
+
 <BaseLayout pageTitle={frontmatter.title}>
+    <!-- Papperssektion som omsluter allt innehåll inklusive meta-sektionen -->
+    <div class="paper-section">
+        <!-- Meta-sektion inom pappersdesignen -->
+        <div class="project-meta-section">
+            <div class="meta-content">
+                <div class="project-image-container">
+                    <img
+                            class="project-cover-image"
+                            src={frontmatter.image.url}
+                            alt={frontmatter.image.alt || frontmatter.title}
+                    />
+                </div>
 
-    <h2>{frontmatter.title}</h2>
-    <slot />
-    <ul class="badge__list">
-        <li><span class="badge badge--item">PLATFORM</span>{frontmatter.platform}</li>
-        <li><span class="badge badge--item">STACK</span>{frontmatter.stack}</li>
-        <li><span class="badge badge--item">WEBSITE</span><a class="badge__link" href={frontmatter.website} target="_blank">{frontmatter.website}</a></li>
-        <li><span class="badge badge--item">GITHUB</span><a class="badge__link" href={frontmatter.github} target="_blank">{frontmatter.github}</a></li>
-    </ul>
-    <div class="center">
-        <img class="pro-img" width="500px" height="281" src={frontmatter.worksImage1.url} alt={frontmatter.worksImage1.alt} />
-        <img class="pro-img" width="500px" height="281" src={frontmatter.worksImage2.url} alt={frontmatter.worksImage2.alt} />
+                <div class="meta-row">
+                    <div class="meta-label">
+                        <span class="badge badge--item">STACK</span>
+                    </div>
+                    <div class="meta-stack">
+                        <span class="stack-text">{frontmatter.stack}</span>
+                    </div>
+                    <!-- Ikoner placerade till höger -->
+                    <div class="stack-icons">
+                        {Object.keys(techIcons).map((tech) => {
+                            return frontmatter.stack.toLowerCase().includes(tech.toLowerCase()) ? (
+                                    <img
+                                            class="tech-icon"
+                                            src={techIcons[tech]}
+                                            alt={tech}
+                                            width="24"
+                                            height="24"
+                                    />
+                            ) : null;
+                        })}
+                    </div>
+                </div>
+
+                <div class="meta-row">
+                    <div class="meta-label">
+                        <span class="badge badge--item">GITHUB</span>
+                    </div>
+                    <div class="meta-github">
+                        <!-- GitHub-ikon återställd till sin ursprungliga position -->
+                        <img
+                                class="github-icon"
+                                src="https://api.iconify.design/mdi/github.svg"
+                                alt="GitHub"
+                                width="20"
+                                height="20"
+                        />
+                        <a class="meta-link" href={frontmatter.github} target="_blank">{frontmatter.github}</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Projektinnehåll -->
+        <slot />
+        <h2 class="images-heading"> Bilder</h2>
+        <div class="project-images">
+            {frontmatter.worksImage1 && (
+                    <ZoomableImage
+                            src={frontmatter.worksImage1.url}
+                            alt={frontmatter.worksImage1.alt}
+                            caption={frontmatter.worksImage1.caption}
+                    />
+            )}
+            {frontmatter.worksImage2 && (
+                    <ZoomableImage
+                            src={frontmatter.worksImage2.url}
+                            alt={frontmatter.worksImage2.alt}
+                            caption={frontmatter.worksImage2.caption}
+                    />
+            )}
+            {frontmatter.worksImage3 && (
+                    <ZoomableImage
+                            src={frontmatter.worksImage3.url}
+                            alt={frontmatter.worksImage3.alt}
+                            caption={frontmatter.worksImage3.caption}
+                    />
+            )}
+            {frontmatter.worksImage4 && (
+                    <ZoomableImage
+                            src={frontmatter.worksImage4.url}
+                            alt={frontmatter.worksImage4.alt}
+                            caption={frontmatter.worksImage4.caption}
+                    />
+            )}
+        </div>
     </div>
-</BaseLayout>
 
+    <style>
+        /* Stilar för projektets meta-sektion */
+        .project-meta-section {
+            background-color: rgba(240, 240, 240, 0.5);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            color: var(--text-light);
+        }
+
+        .project-image-container {
+            margin-bottom: 1.5rem;
+            width: 100%; /* Behåll full bredd */
+        }
+
+        .project-cover-image {
+            width: 100%; /* Fyller containern */
+            max-height: 250px; /* Öka maxhöjden något */
+            object-fit: cover;
+            border-radius: 6px; /* Behåll rundade hörn */
+        }
+
+        /* Projekttitel i meta-sektionen */
+        .project-title {
+            font-family: var(--header);
+            font-size: 2rem;
+            margin: 0;
+            margin-bottom: 1.5rem; /* Ökat avstånd mellan titel och första meta-raden */
+            color: var(--text-light);
+            font-weight: 500;
+        }
+
+        .meta-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.8rem;
+            /* Justerat för att skapa en layout med innehåll på vänster och höger sida */
+            justify-content: space-between;
+        }
+
+        .meta-label {
+            min-width: 5rem;
+            flex-shrink: 0;
+        }
+
+        .meta-stack, .meta-github {
+            display: flex;
+            align-items: center;
+            flex-grow: 1;
+        }
+
+        .stack-text {
+            color: var(--text-light);
+        }
+
+        /* Teknologi-ikoner placerade längst till höger */
+        .stack-icons {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            justify-content: flex-end;
+            flex-shrink: 0;
+            min-width: 120px; /* Ger utrymme för flera ikoner */
+        }
+
+        .tech-icon, .github-icon {
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        /* GitHub-ikon positionerad intill GitHub-texten */
+        .github-icon {
+            margin-right: 0.5rem;
+        }
+
+        .meta-link {
+            color: var(--text-link);
+            text-decoration: none;
+        }
+
+        .meta-link:hover {
+            text-decoration: underline;
+        }
+
+        .images-heading {
+            font-family: var(--header);
+            font-size: 2.5rem;
+            margin: 2.5rem 0 1.5rem 0;
+            color: var(--text-light);
+            text-align: center;
+        }
+
+
+        /* Mörkt läge support */
+        :global(html:not(.light)) .project-meta-section {
+            background-color: #282837;
+            color: var(--text);
+        }
+
+        :global(html:not(.light)) .project-title,
+        :global(html:not(.light)) .stack-text {
+            color: var(--text);
+        }
+
+        /* Responsiv design för mobila enheter */
+        @media only screen and (max-width: 600px) {
+            .project-meta-section {
+                padding: 1rem;
+            }
+
+            .project-title {
+                font-size: 1.8rem;
+                margin-bottom: 1.2rem;
+            }
+
+            .meta-row {
+                flex-direction: column;
+                align-items: flex-start;
+                margin-bottom: 1.2rem;
+            }
+
+            .meta-label {
+                margin-bottom: 0.5rem;
+            }
+
+            .stack-icons {
+                min-width: auto;
+                width: 100%;
+                justify-content: flex-start;
+                margin-top: 0.5rem;
+            }
+
+            .tech-icon, .github-icon {
+                width: 20px;
+                height: 20px;
+            }
+
+            /* Stilar för projektbilder */
+            .project-images {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 1.5rem;
+                margin: 2rem 0;
+            }
+
+            /* Säkerställ korrekt responsivitet för bilder */
+            @media (max-width: 768px) {
+                .project-images {
+                    grid-template-columns: 1fr;
+                }
+            }
+        }
+    </style>
+</BaseLayout>
