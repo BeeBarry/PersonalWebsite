@@ -2,7 +2,7 @@
 title: 'Duck Quotes'
 description: 'Smygläs om detta projekt som snart lanseras..'
 image:
-    url: '/public/duck_logo.svg'
+    url: '/duck_logo.svg'
     alt: 'GitHub wallpaper'
 worksImage1:
     url: '/image-1.webp'

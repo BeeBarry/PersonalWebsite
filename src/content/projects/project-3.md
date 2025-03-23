@@ -2,19 +2,19 @@
 title: 'DevOps Tools'
 description: 'En fullstack webbsida som lär ut om olika verktyg som används inom DevOps rollen'
 image:
-    url: '/public/devops_logo.svg'
-    alt: 'GitHub wallpaper'
+    url: '/devops_logo.svg'
+    alt: 'Devops logo'
 worksImage1:
-    url: '/public/dev_1.png'
+    url: '/dev_1.png'
     alt: 'first image of your project.'
 worksImage2:
-    url: '/public/dev_2.png'
+    url: '/dev_2.png'
     alt: 'second image of your project.'
 worksImage3:
-  url: '/public/dev_3.png'
+  url: '/dev_3.png'
   alt: 'second image of your project.'
 worksImage4:
-  url: '/public/dev_4.png'
+  url: '/dev_4.png'
   alt: 'second image of your project.'
 platform: Web
 stack: Blazor, Bootstrap, Azure, Docker 
