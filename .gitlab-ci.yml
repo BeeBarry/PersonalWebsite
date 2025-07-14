@@ -19,7 +19,7 @@ test_develop:
     - if: $CI_COMMIT_BRANCH == "develop"
 
 # Detta är steget som initieras först när "testet" i dev gått igenom utan errors.
-deploy_to_production:
+pages:
   stage: deploy
   image: node:lts
   before_script:
