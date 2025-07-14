@@ -1,3 +1,7 @@
+variables:
+  GIT_DEPTH: 0
+  GIT_STRATEGY: clone
+
 stages:
   - test
   - auto-deploy
@@ -11,8 +15,8 @@ test_develop:
   script:
     - npm run build
     - echo "Build succeeded, getting ready to deploy to main "
-  only:
-    - develop
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop"
 
 # Detta är steget som initieras först när "testet" i dev gått igenom utan errors.
 auto_deploy_production:
@@ -22,14 +26,14 @@ auto_deploy_production:
     # För att pusha så behöver Gitlab veta vem som är "författaren", här skriver jag att Gitlab får vara det.
     - git config --global user.email "ci@gitlab.com"
     - git config --global user.name "GitLab CI"
+    - git fetch origin --all
   script:
     # Detta är git kommandona som byter branch, mergar och pushar till "prod" branchen.
-    - git checkout main
-    - git merge origin/develop --no-ff -m "Auto-deploy från develop"
+    - git checkout -B main origin/main
+    - git merge origin/develop --no-ff -m "Auto-deploy från develop [skip ci]"
     - git push origin main
-  only:
-    - develop
-  when: on_success
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop"
 
 # Här deployar vi faktiskt den byggda artifakten till Gitlab Pages, så hela världen kan se våra ändringar på vår webbsida!
 pages:
@@ -42,8 +46,5 @@ pages:
   artifacts:
     paths:
       - public
-  environment:
-    name: production
-    url: https://barrynamdari.se
-  only:
-    - main
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
