@@ -1,0 +1,129 @@
+---
+title: '1.0 Grunderna i Azure'
+description: 'Få en bred bild över vad "Cloud" innebär'
+category: 'azure'
+order: 1
+date: '2025-02-10'
+tags: ['Beginner', 'Overview']
+---
+
+# 1.0 Azure: Molnet i praktiken
+
+—! För en mer teknisk artikel om Azure, läs 1.1 Azure: Teknisk introduktion —!
+
+Idag står många växande företag inför en viktig övergång - från traditionell serverhantering till moderna molnlösningar.
+
+## Framgång skapar nya utmaningar
+
+E-handelsbutiken RunningFrog hade till början en enkel monolitisk arkitektur där en fysisk server i källaren hanterade webblösningen. Denna lösning täckte verksamhetens behov men under de 6 senaste månaderna har deras dagliga besökare gått från 500 till 5,000 och blev för mycket för deras infrastruktur.
+
+Teamet stod inför flera utmaningar:
+
+- **Servern kunde inte hantera ökande trafik -** under kampanjer och peak hours blev sidan långsam eller kraschade.
+- **Manuella backuper tog för lång tid** - då datan växte.
+- **Nya funktioner skapade driftstörningar -** teamet behövde ett sätt att släppa uppdateringar utan att webbapplikationen krävde nedtid.
+- **Utvecklarresurser gick till underhåll -** istället för att innovera och skapa nya funktioner vilket påverkade företagets tekniska utveckling och konkurrenskraft.
+
+Därför bestämde sig teamet att undersöka möjligheten om ett flytt över till cloud och Microsoft Azure.
+
+## Vad är molnet?
+
+Molnet kan liknas vid ett globalt nätverk av datacenter som erbjuder IT-resurser på begäran. På samma sätt som vi idag kopplar in oss mot elnätet istället för att köpa, underhålla och driva egna el-generatorer, så börjar det bli mer naturligt att köpa in sina IT-resurser som en tjänst.
+
+📍 **Grundläggande molnkoncept:**
+
+- **Flexibel kapacitet** - Resurser kan skalas upp eller ner efter behov, sekundsnabbt
+- **Behovbaserad kostnad** - Betalning sker endast för faktiskt användning
+- **Global tillgänglighet** - Tjänster kan levereras nära användarna, var de än befinner sig
+- **Inbyggd redundans** - System är designade för hög tillgänglighet och feltolerans
+
+## Tre sätt att använda molnet
+
+Azure erbjuder tre olika servicenivåer, var och en anpassad för olika behov och mognadsnivåer
+
+### 1. Infrastructure as a Service (IaaS)
+
+Företag har länge haft fysisk hårdvara i sina lokaler, alltså ett infrastruktur av datorer, routers och hårddiskar som driver servers, nätverk och lagring.
+
+IaaS betyder att Azure tillhandahåller den fysiska infrastrukturen (servrar, nätverk, lagring) i sina datacenters medan du behåller kontrollen över operativsystem, applikationer och data. Detta ger maximal flexibilitet men kräver också mycket manuell hantering från din sida.
+
+Man kan säga att använda IaaS är som att köra en bil med manuell växellåda,
+eftersom du kan och förstår bilkörning på en djup nivå så vill du ha precis kontroll över bilen.
+
+
+BILD
+
+📍Team scenario:
+
+När RunningFrog började sin molnresa valde de att börja med IaaS för att sedan stegvis utvärdera mer avancerade tjänster.
+
+Effekterna för teamet blev direkt att:
+
+- **Prestandan ökade** då teamet fick större kapacitet för server och hårdvaran via Azures datacenter.
+- **Tillgängligheten blev högre** då sidan fortfarande kunde vara i drift medans uppdateringar och backups kördes.
+
+📍 Vilka passar IaaS för?
+
+- Företag med gamla legacy system som kräver specifika konfigs att köra.
+- Myndigheter eller företag som kräver hög säkerhet och privacy för sin data eller verksamhet.
+
+### 2. Platform as a Service (PaaS)
+
+PaaS betyder att Azure hanterar hela infrastrukturen och dessutom plattformen,
+så att utvecklingsteamet kan lägga mer tid på att skapa värde genom kod.
+Flera av sakerna man manuellt fick göra i IaaS eller on-premise sker nu automatiserat i PaaS som t.ex:
+
+- **Manuell konfigurering** och **underhåll av utvecklingsmiljö** automatiseras nu av Azure
+- **Manuell övervakning** och **skalning** blir nu dynamiskt och automatiserat av Azure
+- **Manuell övervakning** och **säkerhetsuppdateringar**  sker nu automatiserat av Azure
+
+
+Här kan man säga att Paas är som att köra en bil med automat växellåda, du vet hur man kör bil men vill ge ansvaret över växlingen till bilen.
+
+BILD
+
+
+📍 Team scenario:
+
+Efter några månader upptäckte teamet att de kunde förenkla
+sin processer ytterligare genom att använda Azure App Service.
+Så de “flyttade” processerna för backups, SSL-certifikat och prestanda/användardata till Azure App Services.
+
+Resultatet blev att de fick mycket mer tid över till att faktiskt utveckla nya funktioner och förbättra sin produkt (webbapplikationen).
+
+Du kan se det som att Azure blir en anställd i IT-teamet som sköter uppdateringar, säkerhet och skalning dygnet runt.
+
+### 3. Software as a Service (SaaS)
+
+SaaS betyder färdiga applikationer som är helt hanterade av Azure. Du prenumererar på tjänsten och använder den direkt via webbläsaren, utan att behöva tänka på installation, underhåll eller uppdateringar. SaaS är tjänster du förmodligen använder dig av varje dag - tänk Gmail, Netflix, Instagram etc.
+
+📍 **Kännetecken för SaaS:**
+
+- **Omedelbar tillgänglighet** utan avancerad installation och konfiguration
+- **Automatiska uppdateringar** och ny funktionalitet av Azure
+- **Tillgång överallt** via webbläsaren
+- **Förutsägbara kostnader** genom prenumerationsmodell
+
+Här kan man säga att SaaS är som att åka taxi, du behöver bara säga vart du vill åka så sköts körningen av föraren.
+
+📍 Team scenario:
+
+Teamet identifierade flera områden där färdiga molntjänster gav bättre resultat än egenutvecklade lösningar:
+
+**Email-hantering:**
+
+- **Tidigare:** Egen mailserver med få funktioner de ständigt fick underhålla.
+- **Nu:** Azure Communication Services som ständigt underhålls och förbättras av Azure.
+- **Effekt:** Fler mail funktioner och frigjord tid för utvecklarna.
+
+**Kundhantering:**
+
+- **Tidigare:** Egenutvecklat CRM med begränsad funktionalitet
+- **Nu:** Dynamics 365 med omfattande funktioner
+- **Effekt:** Effektivare hantering av kundärenden och frigjord tid för utvecklare
+
+**Dokumenthantering:**
+
+- **Tidigare:** Lokal filserver med begränsad åtkomst
+- **Nu:** Molnbaserad Microsoft 365 med samarbetsfunktioner
+- **Effekt:** Smidigare distansarbete och förbättrat teamsamarbete
