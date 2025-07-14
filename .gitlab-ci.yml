@@ -26,7 +26,7 @@ auto_deploy_production:
     # För att pusha så behöver Gitlab veta vem som är "författaren", här skriver jag att Gitlab får vara det.
     - git config --global user.email "ci@gitlab.com"
     - git config --global user.name "GitLab CI"
-    - git fetch origin --all
+    - git fetch origin
   script:
     # Detta är git kommandona som byter branch, mergar och pushar till "prod" branchen.
     - git checkout -B main origin/main
