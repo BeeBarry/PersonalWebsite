@@ -4,7 +4,7 @@ variables:
 
 stages:
   - test
-  - auto-deploy
+  - deploy
 
 # Detta är "testet" för koden som kommer in i dev branchen.
 test_develop:
@@ -19,32 +19,26 @@ test_develop:
     - if: $CI_COMMIT_BRANCH == "develop"
 
 # Detta är steget som initieras först när "testet" i dev gått igenom utan errors.
-auto_deploy_production:
-  stage: auto-deploy
+deploy_to_production:
+  stage: deploy
   image: node:lts
   before_script:
     # För att pusha så behöver Gitlab veta vem som är "författaren", här skriver jag att Gitlab får vara det.
     - git config --global user.email "ci@gitlab.com"
     - git config --global user.name "GitLab CI"
     - git fetch origin
+    - npm ci
   script:
     # Detta är git kommandona som byter branch, mergar och pushar till "prod" branchen.
     - git checkout -B main origin/main
-    - git merge origin/develop --no-ff -m "Auto-deploy från develop [skip ci]"
+    - git merge origin/develop --no-ff -m "Deploy från develop"
     - git push https://oauth2:${CI_PUSH_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git main
-  rules:
-    - if: $CI_COMMIT_BRANCH == "develop"
-
-# Här deployar vi faktiskt den byggda artifakten till Gitlab Pages, så hela världen kan se våra ändringar på vår webbsida!
-pages:
-  stage: auto-deploy
-  image: node:lts
-  before_script:
-    - npm ci
-  script:
+    
+    # Här deployar vi faktiskt den byggda artifakten till Gitlab Pages, så hela världen kan se våra ändringar på vår webbsida!
     - npm run build
   artifacts:
     paths:
       - public
   rules:
-    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH == "develop"
+      
