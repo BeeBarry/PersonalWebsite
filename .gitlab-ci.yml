@@ -31,7 +31,7 @@ auto_deploy_production:
     - develop
   when: on_success
 
-# Här deployar vi faktiskt den byggda artifakten till Gitlab Pages så hela världen kan se våra ändringar på websidan!
+# Här deployar vi faktiskt den byggda artifakten till Gitlab Pages, så hela världen kan se våra ändringar på websidan!
 pages:
   stage: auto-deploy
   image: node:lts
