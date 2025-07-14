@@ -31,7 +31,7 @@ auto_deploy_production:
     # Detta är git kommandona som byter branch, mergar och pushar till "prod" branchen.
     - git checkout -B main origin/main
     - git merge origin/develop --no-ff -m "Auto-deploy från develop [skip ci]"
-    - git phttps://oauth2:${CI_PUSH_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git main
+    - git push https://oauth2:${CI_PUSH_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git main
   rules:
     - if: $CI_COMMIT_BRANCH == "develop"
 
