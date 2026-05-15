@@ -1,0 +1,5 @@
+# pnpm blockerar build-scripts för alla beroenden by default (säkerhet).
+# esbuild + sharp behövs för Astro-bygget och tillåts explicit här.
+allowBuilds:
+  esbuild: true
+  sharp: true
