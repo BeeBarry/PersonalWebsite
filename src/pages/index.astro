@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import TestReact from '../components/TestReact.tsx';
 const pageTitle = "Barry Namdari";
 ---
 <Layout pageTitle={pageTitle} containerType="default">
@@ -94,5 +95,8 @@ const pageTitle = "Barry Namdari";
     <p>
       
     </p>
+
+    <TestReact client:load />
 </Layout>
+
 
