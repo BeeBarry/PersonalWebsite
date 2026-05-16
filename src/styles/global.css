@@ -1,192 +1,286 @@
 @import "tailwindcss";
 
-/* Global styles */
+/* ============================================================
+   DESIGNSYSTEM — barrynamdari.se
+   Källa till sanning för tokens. Itereras i Slice 0.
+   Tema togglas via .light-klass på <html> (ingen klass = mörkt
+   varmt läge). Båda paletterna är varma (papper / varm mörk).
+   ============================================================ */
+
+/* Tailwind 4 theme-tokens (refererar CSS-variabler → temaskifte funkar) */
+@theme inline {
+    --font-sans: "Manrope Variable", system-ui, -apple-system, sans-serif;
+    --color-bg: var(--c-bg);
+    --color-surface: var(--c-surface);
+    --color-text: var(--c-text);
+    --color-text-muted: var(--c-text-muted);
+    --color-accent: var(--c-accent);
+    --color-border: var(--c-border);
+}
+
+/* ---- Färgtokens: MÖRKT varmt (default, ingen klass) ---- */
 :root {
-    --background: #1e1e2e;
-    --background-light: #FAF5F0;
-    --main-green: #39a35f;
-    --main-brown: #8e6e59;
+    --c-bg: #1B1A18;
+    --c-surface: #232220;
+    --c-text: #EDE8E0;
+    --c-text-muted: #A39C8F;
+    --c-accent: #8FB89A;
+    --c-accent-contrast: #1B1A18;
+    --c-border: #34322E;
+    --dot-color: rgba(237, 232, 224, 0.045);
+
+    /* Typografi */
+    --font-body: "Manrope Variable", system-ui, -apple-system, sans-serif;
+
+    /* Layout-rytm */
+    --content: 720px;
+    --wide: 960px;
+    --space-section: clamp(2.5rem, 2rem + 3vw, 4.5rem);
+    --radius-card: 14px;
+    --radius-control: 8px;
+    --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.06), 0 6px 18px rgba(0, 0, 0, 0.08);
+
+    /* Bakåtkompatibla alias (gamla variabelnamn används i komponenter) */
+    --background: var(--c-bg);
+    --background-light: #F7F2EC;
     --white: #ffffff;
     --black: #000000;
-    --button: #39a35f;
-    --text: #ffffff;
-    --text-light: #1e1e2e; 
-    --text-link: #39a35f;
-    --profile-border: #000000;
-    --underline: #39a35f;
-    --highlight: #39a35f;
-    --header: 'Poetsen One', cursive;
-    --body: 'assistant', sans-serif;
+    --button: var(--c-accent);
+    --text: var(--c-text);
+    --text-light: #2B2A28;
+    --text-link: var(--c-accent);
+    --profile-border: var(--c-border);
+    --underline: var(--c-accent);
+    --highlight: var(--c-accent);
+    --main-green: var(--c-accent);
+    --main-brown: var(--c-text-muted);
+    --header: var(--font-body);
+    --body: var(--font-body);
+}
+
+/* ---- Färgtokens: LJUST varmt papper (.light) ---- */
+html.light {
+    --c-bg: #F7F2EC;
+    --c-surface: #FFFFFF;
+    --c-text: #2B2A28;
+    --c-text-muted: #6B655C;
+    --c-accent: #5C7F66;
+    --c-accent-contrast: #FFFFFF;
+    --c-border: #E7DFD4;
+    --dot-color: rgba(43, 42, 40, 0.05);
+
+    --text-light: #2B2A28;
+    --text: #2B2A28;
+}
+
+/* ============================================================
+   BAS
+   ============================================================ */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
 }
 
 html {
-    background-color: var(--background);
-    color: var(--text);
+    background-color: var(--c-bg);
+    color: var(--c-text);
+    -webkit-text-size-adjust: 100%;
 }
 
 body {
-    margin: 0 auto;
-    text-align: justify;
+    margin: 0;
     width: 100%;
+    font-family: var(--font-body);
+    color: var(--c-text);
+    background-color: var(--c-bg);
+    background-image: radial-gradient(var(--dot-color) 1px, transparent 1px);
+    background-size: 22px 22px;
+    background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
 }
 
 .default-container {
-    max-width: 740px;
-    margin: 0 auto;
-    padding: 0 1rem;
+    max-width: var(--content);
+    margin-inline: auto;
+    padding: 0 1.25rem;
 }
 
 .wide-container {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 0 1rem;
+    max-width: var(--wide);
+    margin-inline: auto;
+    padding: 0 1.25rem;
 }
 
-h1, h2, h3 {
-    font-family: var(--header);
-    font-weight: normal;
-    word-spacing: normal;
+/* ============================================================
+   TYPOGRAFI — mjuk modern (Manrope), fluid skala
+   ============================================================ */
+h1, h2, h3, h4 {
+    font-family: var(--font-body);
+    color: var(--c-text);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin: 0 0 0.5rem;
 }
 
 h1 {
-    font-size: 2.6rem;
-    margin: 0;
-    margin-bottom: 5px;
+    font-size: clamp(2.2rem, 1.6rem + 2.4vw, 3rem);
+    font-weight: 800;
 }
 
 h2 {
+    font-size: clamp(1.6rem, 1.3rem + 1.2vw, 2.1rem);
+    font-weight: 700;
+    margin-top: var(--space-section);
+}
 
-    text-decoration-thickness: 4px;
-    text-underline-offset: 6px;
-    font-size: 2.1rem;
-    margin-bottom: 0;
-    padding-bottom: 0.5rem;
+h3 {
+    font-size: 1.3rem;
+    font-weight: 700;
 }
 
 p {
-    font-family: var(--body);
-    font-size: 1.14em;
-    hyphens: none;
-    line-height: 1.5;
-    text-indent: 0rem;
-
-    letter-spacing: 0px;
-    word-spacing: 0.2px;
-    margin-bottom: 1rem;
-    font-weight: 500;
+    font-family: var(--font-body);
+    font-size: 1.0625rem;
+    line-height: 1.65;
+    font-weight: 450;
+    color: var(--c-text);
+    margin: 0 0 1rem;
     text-align: left;
+    hyphens: none;
 }
 
-small, li {
-    font-family: var(--body);
-    font-size: 1.14em;
-    line-height: 1.5;
-    font-weight: 500;
+small {
+    font-size: 0.875rem;
+    color: var(--c-text-muted);
 }
 
-/* Navigation Bar */
+li {
+    font-family: var(--font-body);
+    font-size: 1.0625rem;
+    line-height: 1.65;
+}
+
+a {
+    color: var(--c-accent);
+}
+
+::selection {
+    background: var(--c-accent);
+    color: var(--c-accent-contrast);
+}
+
+:focus-visible {
+    outline: 2px solid var(--c-accent);
+    outline-offset: 3px;
+    border-radius: 4px;
+}
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
 .navbar {
     display: grid;
     grid-template-columns: 1fr auto;
-    margin-top: 0.8rem;
+    margin-top: 1.25rem;
     align-items: center;
     gap: 1rem;
 }
 
-
 .navbar__title {
-    font-family: var(--header);
-    font-size: 1.3rem;
+    font-family: var(--font-body);
+    font-size: 1.25rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
 }
 
 .navbar__menu {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 1.25rem;
     flex-wrap: nowrap;
 }
 
-/* För att korrekt aligna theme button*/
 .navbar__menu :global(button) {
     display: flex;
     align-items: center;
     margin-left: 0.5rem;
 }
 
-.navbar__title > a, .navbar__menu > a {
-    color: var(--text);
-    text-decoration: none;
-
-}
-
-.navbar__menu a {
-    color: var(--text);
+.navbar__title > a,
+.navbar__menu > a {
+    color: var(--c-text);
     text-decoration: none;
     white-space: nowrap;
 }
 
-.navbar__title > a:hover, .navbar__menu > a:hover, .navbar__menu > a:focus {
-    text-decoration: underline var(--underline);
-    text-decoration-thickness: 2px;
-    text-underline-offset: 6px;
+.navbar__title > a:hover,
+.navbar__menu > a:hover,
+.navbar__menu > a:focus {
+    color: var(--c-accent);
 }
 
-
-/*Profile Pictures*/
+/* ============================================================
+   PROFILBILD — ren cirkel (markdotto), ingen ram/skugga
+   ============================================================ */
 .profile-container {
-    width: 300px;
-    height: 300px;
-    margin: 20px auto;
+    width: 220px;
+    height: 220px;
+    margin: 1.5rem auto;
     border-radius: 50%;
     overflow: hidden;
-    border: 4px solid var(--profile-border);
-    
-
 }
 
 .profile-image {
     width: 100%;
     height: 100%;
     object-fit: cover;
-
+    display: block;
 }
 
-/*Highlight*/
+/* ============================================================
+   HIGHLIGHT / BADGES / TAGGAR
+   ============================================================ */
 .highlight {
-    color: var(--highlight);
+    color: var(--c-accent);
 }
 
-
-/* Badge */
 .badge {
-    background-color: #8e6e59;
-    color: var(--text);
-    border-radius: 6px;
-    font-family: var(--body);
+    display: inline-block;
+    background-color: var(--c-accent);
+    color: var(--c-accent-contrast);
+    border-radius: 999px;
+    font-family: var(--font-body);
     font-weight: 600;
-    font-size: .85rem;
-    padding: 0.3em 0.6em 0.2em;
+    font-size: 0.8rem;
+    padding: 0.35em 0.8em;
 }
 
 .badge__list {
-    text-indent: 1rem;
     list-style: none;
     padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
 }
 
 .badge__list > li {
-    margin-top: 10px;
+    margin-top: 0;
 }
 
 .badge--item {
-    border-radius: 4px;
-    font-size: 0.7rem;
-    margin-right: 5px;
-    padding: 0.5em 0.3em 0.3em 0.3em;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    margin: 0;
+    padding: 0.3em 0.7em;
+    background: transparent;
+    border: 1px solid var(--c-border);
+    color: var(--c-text-muted);
 }
 
 .badge__link {
-    color: var(--text-link);
+    color: var(--c-accent);
     text-decoration: none;
 }
 
@@ -194,142 +288,181 @@ small, li {
     text-decoration: underline;
 }
 
-
-/* Paper section styling */
-.paper-section {
-    background-color: #ffffff;
-    border-radius: 12px;
-    padding: 2rem;
-    margin: 2rem 0;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1),
-    0 1px 3px rgba(0, 0, 0, 0.08);
-    position: relative;
-    color: var(--text-light);
+/* Filterchip (förbereder Slice 4) */
+.tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.4em 0.85em;
+    border-radius: 999px;
+    border: 1px solid var(--c-border);
+    background: transparent;
+    color: var(--c-text-muted);
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
 }
 
-/* Anpassa innehåll inom paper-section */
+.tag:hover {
+    border-color: var(--c-accent);
+    color: var(--c-text);
+}
+
+.tag[aria-pressed="true"],
+.tag.is-active {
+    background: var(--c-accent);
+    border-color: var(--c-accent);
+    color: var(--c-accent-contrast);
+}
+
+/* ============================================================
+   PAPER SECTION
+   ============================================================ */
+.paper-section {
+    background-color: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-card);
+    padding: 2rem;
+    margin: 2rem 0;
+    box-shadow: var(--shadow-soft);
+    color: var(--c-text);
+}
+
 .paper-section h2 {
-    color: var(--text-light);
+    color: var(--c-text);
     margin-top: 0;
 }
 
 .paper-section p {
-    color: var(--text-light);
+    color: var(--c-text);
 }
 
-/* Dark mode support */
-html.light .paper-section {
-    background-color: #ffffff;
-    color: var(--text-light);
-}
-
-html:not(.light) .paper-section {
-    background-color: #2a2a3c;
-    color: var(--text);
-}
-
-html:not(.light) .paper-section h2,
-html:not(.light) .paper-section p {
-    color: var(--text);
-}
-
-/* Cards */
+/* ============================================================
+   KORT
+   ============================================================ */
 .card {
     list-style: none;
     display: flex;
-    background-size: 400%;
-    padding: 20px;
+    padding: 0;
 }
 
 .card__link {
     width: 100%;
     text-decoration: none;
     line-height: 1.4;
-    border-radius: 8px;
-    color: var(--text);
+    border-radius: var(--radius-card);
+    color: var(--c-text);
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    padding: 1.25rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .card__img {
-    border-radius: 16px;
+    border-radius: 10px;
+    width: 100%;
+    height: auto;
+    display: block;
 }
 
 .card__title {
-    margin: 0;
-    font-family: var(--body);
-    font-size: 1.5rem;
-    font-weight: normal;
-    text-align: center;
+    margin: 0.75rem 0 0;
+    font-family: var(--font-body);
+    font-size: 1.25rem;
+    font-weight: 700;
+    text-align: left;
 }
 
 .card__txt {
-    font-size: 1rem;
-    line-height: 1.5;
-    text-indent: 0;
-    text-align: center;
-    margin: 0.5rem 0 0;
+    font-size: 0.95rem;
+    line-height: 1.55;
+    text-align: left;
+    color: var(--c-text-muted);
+    margin: 0.4rem 0 0;
 }
 
 .card__link:hover {
-    transform: scale(1.05);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-soft);
+    border-color: var(--c-accent);
 }
 
 .link-card-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(24ch, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22ch), 1fr));
+    gap: 1.25rem;
     padding: 0;
+    list-style: none;
 }
 
-
-
-
-
-
-
-/* Button */
+/* ============================================================
+   KNAPP
+   ============================================================ */
 .btn {
+    display: inline-block;
     text-align: center;
-    background: rgba(0,0,0,0);
-    border: 2px solid var(--button);
-    border-radius: 8px;
-    color: var(--text);
-    font: 600 16px var(--body);
-    padding: 8px 16px;
-    transition: background-color 0.4s, color 0.4s;
+    background: var(--c-accent);
+    border: 1px solid var(--c-accent);
+    border-radius: var(--radius-control);
+    color: var(--c-accent-contrast);
+    font: 600 1rem var(--font-body);
+    padding: 0.6rem 1.25rem;
+    cursor: pointer;
+    transition: transform 0.15s ease, filter 0.2s ease;
 }
 
 .btn:hover {
-    background-color: var(--button);
-    color: var(--text-light);
-    cursor: pointer;
+    transform: translateY(-1px);
+    filter: brightness(0.95);
 }
 
-/* Skills */
+.btn--ghost {
+    background: transparent;
+    color: var(--c-text);
+    border-color: var(--c-border);
+}
+
+.btn--ghost:hover {
+    border-color: var(--c-accent);
+    filter: none;
+}
+
+/* ============================================================
+   SKILLS / DIVERSE
+   ============================================================ */
 .skills {
-    margin-top: 8px;
+    margin-top: 0.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
 }
 
 .skills__img {
-    margin: 8px 4px;
+    margin: 0;
 }
 
-/* Items */
 .center {
     text-align: center;
 }
 
 .pro-img {
-    border-radius: 16px;
-    margin-top: 10px;
+    border-radius: 12px;
+    margin-top: 0.75rem;
+    max-width: 100%;
+    height: auto;
 }
 
-/* Footer */
+/* ============================================================
+   FOOTER
+   ============================================================ */
 footer {
-    margin: 4rem 0;
+    margin: var(--space-section) 0 3rem;
 }
 
 .footer__link {
-    color: var(--text-link);
+    color: var(--c-accent);
     text-decoration: none;
 }
 
@@ -350,14 +483,14 @@ footer {
     height: 20px;
     width: 20px;
     border-radius: 50%;
-    border: 2px solid #fdebf3;
+    border: 1px solid var(--c-border);
 }
 
 .icon__link:hover {
-    border-color: var(--text-link);
+    border-color: var(--c-accent);
 }
 
-
+/* Ikon-byten styrs av tema (mörkt = ljusa ikoner, ljust = mörka) */
 .git-icon {
     content: url("/github-mark-white.svg");
 }
@@ -370,9 +503,11 @@ footer {
     content: url("/li-in-white.png");
 }
 
-/* 404 */
+/* ============================================================
+   404
+   ============================================================ */
 .lost {
-    margin-top: 30%;
+    margin-top: 18vh;
     text-align: center;
 }
 
@@ -380,104 +515,99 @@ footer {
     margin: 0 auto;
     text-align: center;
     border: 0;
-    font-size: 7.5rem;
-    letter-spacing: 10px;
+    font-size: clamp(4rem, 2rem + 12vw, 7.5rem);
+    letter-spacing: 6px;
 }
 
 .lost__body {
-    color: #5C5B77;
+    color: var(--c-text-muted);
 }
 
 .lost__link {
-    color: var(--text-link);
+    color: var(--c-accent);
     text-decoration: none;
 }
 
-/* Theme Icon */
-html.light {
-    background-color: var(--background-light);
-    color: var(--text-light);
-}
-
-.light .navbar__title > a {
-    color: var(--text-light);
-}
-
-.light .navbar__menu > a {
-    color: var(--text-light);
-}
-
-.light .card__title {
-    color: var(--text-light); 
-}
-
-.light .card__txt {
-    color: var(--text-light); 
-}
-
-.light .btn {
-    color: var(--text-light);
-}
-
-.light .btn:hover {
-    color: var(--text);
-}
-
-.light .icon__link {
-    border: 2px solid var(--profile-border);
-}
-
-.light .icon__link:hover {
-    border-color: var(--text-link);
-}
-
-.light .git-icon {
+/* ============================================================
+   LJUST TEMA — överskrivningar (ikoner + komponentnyanser)
+   ============================================================ */
+html.light .git-icon {
     content: url("/github-mark.svg");
 }
 
-.light .mail-icon {
+html.light .mail-icon {
     content: url("/mail.svg");
 }
 
-.light .linked-in {
+html.light .linked-in {
     content: url("/li-in.png");
 }
 
-.light .badge__link {
-    color: var(--text-link);
+/* ============================================================
+   DESIGNSYSTEM-REFERENSSIDA (hjälpklasser, /design-system)
+   ============================================================ */
+.ds-section {
+    margin: var(--space-section) 0;
 }
 
-/* Media Query */
-@media only screen and (max-width: 600px) {
-    .default-container {
-        width: 100%;         /* Använd full bredd */
-        max-width: 350px;    /* Max bredd för mindre skärmar */
-        padding: 0 1rem;     /* Padding för att innehåll inte ska klämmas mot kanter */
-    }
+.ds-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1rem;
+}
 
+.ds-swatch {
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-control);
+    overflow: hidden;
+    font-size: 0.8rem;
+}
+
+.ds-swatch__chip {
+    height: 72px;
+}
+
+.ds-swatch__meta {
+    padding: 0.5rem 0.65rem;
+    background: var(--c-surface);
+    color: var(--c-text-muted);
+}
+
+.ds-swatch__meta strong {
+    color: var(--c-text);
+    display: block;
+}
+
+.ds-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* ============================================================
+   MEDIA QUERIES
+   ============================================================ */
+@media only screen and (max-width: 600px) {
+    .default-container,
     .wide-container {
-        width: 100%; /* Använd full bredd */
-        max-width: 100%; /* Låt artiklar använda full bredd på mobil */
-        padding: 0 1rem; /* Konsistent padding */
+        width: 100%;
+        max-width: 100%;
+        padding: 0 1rem;
     }
 
     .paper-section {
-        margin: 1rem -0.5rem; /* Negativ margin för att gå utanför container lite */
-        padding: 1.7rem; /* Mindre padding på mobil */
-        border-radius: 12px; /* Lite mindre rundade hörn på mobil */
+        margin: 1rem 0;
+        padding: 1.5rem;
     }
 
     .learn-article {
-        padding: 1rem;      /* Minska padding för att ge mer utrymme åt innehållet */
-        margin: 0.5rem 0;   /* Mindre margins på mobil */
+        padding: 1rem;
+        margin: 0.5rem 0;
     }
 
     h2 {
-        text-decoration: underline var(--underline);
-        text-decoration-thickness: 3px;  /* Lite tunnare för mobil */
-        text-underline-offset: 4px;      /* Lite mindre offset för mobil */
-        font-size: 1.8rem;               /* Mindre textstorlek för mobil */
-        word-spacing: normal;
+        margin-top: calc(var(--space-section) * 0.7);
     }
 
     .navbar {
@@ -491,23 +621,18 @@ html.light {
 
     .navbar__menu {
         justify-content: center;
-        gap: 0.8rem;
+        gap: 1rem;
     }
 
-    .skills__img {
-        height: 30px;
-        width: 30px;
-        margin: 8px 1px;
-    }
-
-    .badge__list {
-        font-size: 0.9rem;
-        text-indent: 0;
-    }
-
-    .pro-img {
-        height: auto;
-        width: 350px;
+    .profile-container {
+        width: 170px;
+        height: 170px;
     }
 }
 
+@media (prefers-reduced-motion: reduce) {
+    * {
+        transition: none !important;
+        animation: none !important;
+    }
+}

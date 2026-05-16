@@ -1,124 +1,117 @@
 {
-  "$ref": "#/definitions/projects",
-  "definitions": {
-    "projects": {
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "image": {
       "type": "object",
       "properties": {
-        "title": {
+        "url": {
           "type": "string"
         },
-        "description": {
-          "type": "string"
-        },
-        "image": {
-          "type": "object",
-          "properties": {
-            "url": {
-              "type": "string"
-            },
-            "alt": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "url",
-            "alt"
-          ],
-          "additionalProperties": false
-        },
-        "worksImage1": {
-          "type": "object",
-          "properties": {
-            "url": {
-              "type": "string"
-            },
-            "alt": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "url",
-            "alt"
-          ],
-          "additionalProperties": false
-        },
-        "worksImage2": {
-          "type": "object",
-          "properties": {
-            "url": {
-              "type": "string"
-            },
-            "alt": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "url",
-            "alt"
-          ],
-          "additionalProperties": false
-        },
-        "worksImage3": {
-          "type": "object",
-          "properties": {
-            "url": {
-              "type": "string"
-            },
-            "alt": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "url",
-            "alt"
-          ],
-          "additionalProperties": false
-        },
-        "worksImage4": {
-          "type": "object",
-          "properties": {
-            "url": {
-              "type": "string"
-            },
-            "alt": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "url",
-            "alt"
-          ],
-          "additionalProperties": false
-        },
-        "platform": {
-          "type": "string"
-        },
-        "stack": {
-          "type": "string"
-        },
-        "website": {
-          "type": "string"
-        },
-        "github": {
-          "type": "string"
-        },
-        "$schema": {
+        "alt": {
           "type": "string"
         }
       },
       "required": [
-        "title",
-        "description",
-        "image",
-        "worksImage1",
-        "worksImage2",
-        "platform",
-        "stack",
-        "website",
-        "github"
-      ],
-      "additionalProperties": false
+        "url",
+        "alt"
+      ]
+    },
+    "worksImage1": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "alt": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "url",
+        "alt"
+      ]
+    },
+    "worksImage2": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "alt": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "url",
+        "alt"
+      ]
+    },
+    "worksImage3": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "alt": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "url",
+        "alt"
+      ]
+    },
+    "worksImage4": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "alt": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "url",
+        "alt"
+      ]
+    },
+    "platform": {
+      "type": "string"
+    },
+    "stack": {
+      "type": "string"
+    },
+    "website": {
+      "type": "string"
+    },
+    "github": {
+      "type": "string"
+    },
+    "draft": {
+      "default": false,
+      "type": "boolean"
+    },
+    "$schema": {
+      "type": "string"
     }
   },
-  "$schema": "http://json-schema.org/draft-07/schema#"
+  "required": [
+    "title",
+    "description",
+    "image",
+    "worksImage1",
+    "worksImage2",
+    "platform",
+    "stack",
+    "website",
+    "github"
+  ]
 }

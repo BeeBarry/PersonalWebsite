@@ -3,6 +3,7 @@ import { getCollection } from "astro:content";
 import Layout from '../../../layouts/Layout.astro';
 import ArticleCard from '../../../components/ArticleCard.astro';
 import { categories } from '../../../data/categories';
+import { showEntry } from '../../../utils/content';
 
 export async function getStaticPaths() {
     return categories.map(({ slug, title }) => {
@@ -16,8 +17,8 @@ export async function getStaticPaths() {
 const { category } = Astro.params;
 const { categoryTitle } = Astro.props;
 
-const allLearningContent = await getCollection('learn', ({ data }) => {
-    return data.category === category;
+const allLearningContent = await getCollection('learn', (entry) => {
+    return entry.data.category === category && showEntry(entry);
 });
 
 const sortedContent = allLearningContent.sort((a, b) => a.data.order - b.data.order);

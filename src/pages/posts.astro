@@ -2,7 +2,8 @@
 import { getCollection } from "astro:content";
 import Layout from "../layouts/Layout.astro";
 import Card from "../components/CardPost.astro";
-const allPosts = await getCollection("posts");
+import { showEntry } from "../utils/content";
+const allPosts = await getCollection("posts", showEntry);
 const pageTitle = "Posts";
 ---
 
@@ -13,7 +14,7 @@ const pageTitle = "Posts";
         {
             allPosts.map((cardPost) => (
                 <Card
-                    url={`/posts/${cardPost.slug}/`}
+                    url={`/posts/${cardPost.id}/`}
                     image={cardPost.data.image.url}
                     title={cardPost.data.title}
                     date={cardPost.data.date}

@@ -8,7 +8,7 @@ import { navigationItems } from '../data/navigation';
     </div>
     <div class="navbar__menu">
         {navigationItems
-            .filter(item => item.isEnabled)
+            .filter(item => item.isEnabled && (!item.devOnly || import.meta.env.DEV))
             .map(item => (
                     <a
                             href={item.path}

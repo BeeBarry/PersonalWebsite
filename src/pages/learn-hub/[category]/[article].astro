@@ -1,11 +1,12 @@
 ---
-import { getCollection } from 'astro:content';
+import { getCollection, render } from 'astro:content';
 import Layout from '../../../layouts/Layout.astro';
 import { categories } from '../../../data/categories';
 import ZoomableImage from '../../../components/ZoomableImage.astro';
+import { showEntry } from '../../../utils/content';
 
 export async function getStaticPaths() {
-    const allArticles = await getCollection('learn');
+    const allArticles = await getCollection('learn', showEntry);
 
     return allArticles.map(entry => ({
         params: {
@@ -17,7 +18,7 @@ export async function getStaticPaths() {
 }
 
 const { entry } = Astro.props;
-const { Content } = await entry.render();
+const { Content } = await render(entry);
 
 // Hämta category från entry.data
 const currentCategory = entry.data.category;

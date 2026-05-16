@@ -1,6 +1,4 @@
 variables:
-  GIT_DEPTH: 0
-  GIT_STRATEGY: clone
   # Corepack ska ladda ner pinnad pnpm-version utan interaktiv [Y/n]-prompt
   # (annars kan jobbet hänga/faila i CI vid första nedladdningen).
   COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
@@ -22,24 +20,17 @@ test_develop:
   rules:
     - if: $CI_COMMIT_BRANCH == "develop"
 
-# Detta är steget som initieras först när "testet" i dev gått igenom utan errors.
+# Initieras först när "testet" i dev gått igenom utan errors.
+# GitLab Pages publicerar 'public'-artefakten nedan direkt – ingen push till
+# main eller någon token behövs (det gamla merge/push-main-steget är borttaget).
 pages:
   stage: deploy
   image: node:lts
   before_script:
-    # För att pusha så behöver Gitlab veta vem som är "författaren", här skriver jag att Gitlab får vara det.
-    - git config --global user.email "ci@gitlab.com"
-    - git config --global user.name "GitLab CI"
-    - git fetch origin
     - corepack enable
     - pnpm install --frozen-lockfile
   script:
-    # Detta är git kommandona som byter branch, mergar och pushar till "prod" branchen.
-    - git checkout -B main origin/main
-    - git merge origin/develop --no-ff -m "Deploy från develop"
-    - git push https://oauth2:${CI_PUSH_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git main
-
-    # Här deployar vi faktiskt den byggda artifakten till Gitlab Pages, så hela världen kan se våra ändringar på vår webbsida!
+    # Bygger sajten; artefakten 'public/' deployas av GitLab Pages.
     - pnpm build
   artifacts:
     paths:

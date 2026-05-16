@@ -1,66 +1,63 @@
 {
-  "$ref": "#/definitions/learn",
-  "definitions": {
-    "learn": {
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "docker",
+        "kubernetes",
+        "terraform",
+        "azure",
+        "cybersecurity"
+      ]
+    },
+    "image": {
       "type": "object",
       "properties": {
-        "title": {
+        "url": {
           "type": "string"
         },
-        "description": {
-          "type": "string"
-        },
-        "category": {
-          "type": "string",
-          "enum": [
-            "docker",
-            "kubernetes",
-            "terraform",
-            "azure",
-            "cybersecurity"
-          ]
-        },
-        "image": {
-          "type": "object",
-          "properties": {
-            "url": {
-              "type": "string"
-            },
-            "alt": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "url",
-            "alt"
-          ],
-          "additionalProperties": false
-        },
-        "order": {
-          "type": "number"
-        },
-        "date": {
-          "type": "string"
-        },
-        "tags": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "$schema": {
+        "alt": {
           "type": "string"
         }
       },
       "required": [
-        "title",
-        "description",
-        "category",
-        "order",
-        "date"
-      ],
-      "additionalProperties": false
+        "url",
+        "alt"
+      ]
+    },
+    "order": {
+      "type": "number"
+    },
+    "date": {
+      "type": "string"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "draft": {
+      "default": false,
+      "type": "boolean"
+    },
+    "$schema": {
+      "type": "string"
     }
   },
-  "$schema": "http://json-schema.org/draft-07/schema#"
+  "required": [
+    "title",
+    "description",
+    "category",
+    "order",
+    "date"
+  ]
 }

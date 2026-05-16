@@ -3,10 +3,11 @@ import Layout from '../../layouts/Layout.astro';
 import CardCategory from '../../components/CardCategory.astro';
 import { categories } from '../../data/categories';
 import { getCollection } from "astro:content";
+import { showEntry } from '../../utils/content';
 
 const pageTitle = "Learn Hub";
 
-const allArticles = await getCollection('learn');
+const allArticles = await getCollection('learn', showEntry);
 const articleCounts = categories.map(category => ({
     ...category,
     articleCount: allArticles.filter(article =>

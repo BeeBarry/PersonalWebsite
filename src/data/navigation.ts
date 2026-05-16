@@ -4,18 +4,20 @@ interface NavItem {
     isEnabled: boolean;
     isExternal?: boolean;
     icon?: string;
+    devOnly?: boolean; // visas bara i `astro dev`, döljs i prod-bygget
 }
 
 export const navigationItems: NavItem[] = [
     {
         title: "Blogg",
         path: "/posts/",
-        isEnabled: false
+        isEnabled: true
     },
     {
         title: "Learn Hub",
         path: "/learn-hub/",
         isEnabled: true,
+        devOnly: true,
         icon: "https://api.iconify.design/mdi/book-open-page-variant.svg"
     },
     {
