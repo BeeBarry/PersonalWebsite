@@ -1,5 +1,8 @@
 # pnpm blockerar build-scripts för alla beroenden by default (säkerhet).
 # esbuild + sharp behövs för Astro-bygget och tillåts explicit här.
 allowBuilds:
+  # canvas: false – tailwindcss-noise (som drog in canvas) används inte;
+  # noise genereras som statisk asset i stället (ingen native-dep).
+  canvas: false
   esbuild: true
   sharp: true

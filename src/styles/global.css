@@ -1,5 +1,19 @@
 @import "tailwindcss";
 
+/* Grunge-temats oklch-baskala (© 2025 Jess Gaspar, MIT).
+   100 = mörkast, 900 = ljusast. Källa till mörka temats färger. */
+@theme {
+    --color-base-100: oklch(14% 0.004 49.25);
+    --color-base-200: oklch(21% 0.006 56.043);
+    --color-base-300: oklch(26% 0.007 34.298);
+    --color-base-400: oklch(37% 0.01 67.558);
+    --color-base-500: oklch(44% 0.011 73.639);
+    --color-base-600: oklch(55% 0.013 58.071);
+    --color-base-700: oklch(70% 0.01 56.259);
+    --color-base-800: oklch(86% 0.005 56.366);
+    --color-base-900: oklch(98% 0.001 106.423);
+}
+
 /* ============================================================
    DESIGNSYSTEM — barrynamdari.se
    Källa till sanning för tokens. Itereras i Slice 0.
@@ -9,7 +23,7 @@
 
 /* Tailwind 4 theme-tokens (refererar CSS-variabler → temaskifte funkar) */
 @theme inline {
-    --font-sans: "Manrope Variable", system-ui, -apple-system, sans-serif;
+    --font-sans: var(--font-mono);
     --color-bg: var(--c-bg);
     --color-surface: var(--c-surface);
     --color-text: var(--c-text);
@@ -18,19 +32,19 @@
     --color-border: var(--c-border);
 }
 
-/* ---- Färgtokens: MÖRKT varmt (default, ingen klass) ---- */
+/* ---- Färgtokens: MÖRKT (default) — grunge-palett ---- */
 :root {
-    --c-bg: #1B1A18;
-    --c-surface: #232220;
-    --c-text: #EDE8E0;
-    --c-text-muted: #A39C8F;
-    --c-accent: #8FB89A;
-    --c-accent-contrast: #1B1A18;
-    --c-border: #34322E;
-    --dot-color: rgba(237, 232, 224, 0.045);
+    --c-bg: var(--color-base-100);
+    --c-surface: var(--color-base-200);
+    --c-text: var(--color-base-900);
+    --c-text-muted: var(--color-base-700);
+    --c-accent: var(--color-base-900);
+    --c-accent-contrast: var(--color-base-100);
+    --c-border: var(--color-base-300);
+    --dot-color: transparent;
 
-    /* Typografi */
-    --font-body: "Manrope Variable", system-ui, -apple-system, sans-serif;
+    /* Typografi — grunge: rubrik Road Rage, brödtext JetBrains Mono */
+    --font-body: var(--font-mono);
 
     /* Layout-rytm */
     --content: 720px;
@@ -54,8 +68,8 @@
     --highlight: var(--c-accent);
     --main-green: var(--c-accent);
     --main-brown: var(--c-text-muted);
-    --header: var(--font-body);
-    --body: var(--font-body);
+    --header: var(--font-grunge);
+    --body: var(--font-mono);
 }
 
 /* ---- Färgtokens: LJUST varmt papper (.light) ---- */
@@ -91,14 +105,29 @@ html {
 body {
     margin: 0;
     width: 100%;
+    min-height: 100vh;
     font-family: var(--font-body);
     color: var(--c-text);
     background-color: var(--c-bg);
-    background-image: radial-gradient(var(--dot-color) 1px, transparent 1px);
-    background-size: 22px 22px;
-    background-attachment: fixed;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+}
+
+/* Grain-overlay (identisk med grunge-temat: brus 67/22/25, fixed,
+   ovanpå bakgrunden men under innehållet). Genererad statiskt av
+   scripts/generate-noise.mjs → /noise.png. */
+.noise-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image: url("/noise.png");
+    background-repeat: repeat;
+}
+
+.site-content {
+    position: relative;
+    z-index: 1;
 }
 
 .default-container {
@@ -117,7 +146,7 @@ body {
    TYPOGRAFI — mjuk modern (Manrope), fluid skala
    ============================================================ */
 h1, h2, h3, h4 {
-    font-family: var(--font-body);
+    font-family: var(--header);
     color: var(--c-text);
     line-height: 1.15;
     letter-spacing: -0.02em;
@@ -237,6 +266,81 @@ a {
     height: 100%;
     object-fit: cover;
     display: block;
+}
+
+/* ============================================================
+   HERO (landningssida) — cirkulär bild vänster, text höger
+   ============================================================ */
+.hero {
+    display: flex;
+    align-items: center;
+    gap: 2.5rem;
+    margin: 1.5rem 0 var(--space-section);
+}
+
+.hero__img {
+    flex: 0 0 auto;
+    margin: 0;
+}
+
+.hero__body {
+    flex: 1;
+    min-width: 0;
+}
+
+.hero__body p {
+    margin: 0 0 1.25rem;
+}
+
+.hero-social {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.75rem;
+}
+
+.hero-social__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--c-text);
+    text-decoration: none;
+}
+
+.hero-social__link span {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.hero-social__link:hover {
+    color: var(--c-accent);
+}
+
+.hero-social__icon {
+    display: block;
+}
+
+@media (max-width: 600px) {
+    .hero {
+        flex-direction: column;
+        text-align: center;
+        gap: 1.5rem;
+    }
+
+    .hero-social {
+        justify-content: center;
+    }
+}
+
+/* Ljust tema: byt till mörka social-ikoner (speglar Footer-mönstret) */
+html.light .hero-social__icon[src*="github-mark-white"] {
+    content: url("/github-mark.svg");
+}
+
+html.light .hero-social__icon[src*="li-in-white"] {
+    content: url("/li-in.png");
 }
 
 /* ============================================================

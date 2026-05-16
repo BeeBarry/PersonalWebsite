@@ -1,8 +1,10 @@
 ---
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
-import '@fontsource-variable/manrope';
 import '../styles/global.css';
+import { Font, getImage } from 'astro:assets';
+import bg from '../assets/images/bg.jpg';
+const backgroundImage = await getImage({ src: bg, format: 'jpg' });
 /*Uppdatera props för att inkludera containerType*/
 const { pageTitle, containerType = "default" } = Astro.props;
 ---
@@ -42,13 +44,21 @@ const { pageTitle, containerType = "default" } = Astro.props;
     <link rel="icon" type="image/png" sizes="512x512" href="/android-chrome-512x512.png">
 
     <meta name="generator" content={Astro.generator} />
+    <Font cssVariable="--font-grunge" />
+    <Font cssVariable="--font-mono" />
     <title>{pageTitle}</title>
 </head>
-<body>
+<body
+    style={`background-image:url(${backgroundImage.src})`}
+    class="bg-cover bg-center bg-no-repeat bg-fixed box-border"
+>
+<div class="noise-overlay" aria-hidden="true"></div>
+<div class="site-content">
 <Header isWide={containerType === "wide"} />
 <main class={`${containerType}-container`}>
     <slot />
     <Footer />
 </main>
+</div>
 </body>
 </html>

@@ -1,43 +1,38 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import { Image } from 'astro:assets';
+import profilePic from '../assets/images/profilepic.png';
 const pageTitle = "Barry Namdari";
 ---
 <Layout pageTitle={pageTitle} containerType="default">
-    <div class="profile-container">
-        <img class="profile-image" width="300" height="300" alt="Profile picture" src="/profilepic.png"/>
-    </div>
-    <h1>Hej jag är <span class="highlight">Barry</span></h1>
-    <span class="badge">Devops Engineer (Studerande)</span>
-    <div class="paper-section">
-    <h2>Om mig</h2>
-    <p>
-        Min resa började som fotbollstränare, att bygga teamkultur
-        och arbetsmetodik som tar oss mot gemensamma mål. Att se spelarna
-        växa, både på planen och som människor, var en drivkraft för mig.
-</p>
-
-<p>
-    Sedan blev jag språklärare och stöttade elever att öppna dörrar till
-    världen genom språk. Så coolt att bevittna hur de gick från att repetera
-    fraser till att uttrycka sig med flyt och självsäkerhet.
-</p>
-
-<p>
-    Mitt intresse för teknik ledde mig till att byta bransch och bli
-    IT-projektledare och senare Scrum Master. Jag drev förbättringsarbete
-    med fokus på team och effektiva arbetsmetoder.
-</p>
-
-<p>
-    Snart upptäckte jag Cloud-arkitektur, systemutveckling och CI/CD. 
-    "Detta är ju samma tänk, fast för mjukvara!" <br> Då beslöt jag mig för att
-    utbilda mig till mjukvaruutvecklare med inriktning Cloud & DevOps.
-</p>
-
-<p>
-    Så nu är jag inte bara en ledare på sidlinjen, utan också en spelare på plan ❤️
-</p>
-    </div>
+    <section class="hero">
+        <div class="profile-container hero__img">
+            <Image class="profile-image" src={profilePic} alt="Barry Namdari" width={440} />
+        </div>
+        <div class="hero__body">
+            <p>
+                Barry är lärare och fotbollstränare som blev <strong>cloud- och
+                infrastructure-engineer</strong>. Numera bygger han skalbar
+                infrastruktur med inriktning mot <strong>IoT</strong> och tar med
+                sig ledarskapet och pedagogiken från planen och klassrummet in i
+                tekniken. Och ja — han är en rejäl nörd.
+            </p>
+            <ul class="hero-social">
+                <li>
+                    <a class="hero-social__link" href="https://github.com/BeeBarry" target="_blank" rel="noopener">
+                        <img class="hero-social__icon" src="/github-mark-white.svg" alt="" width="20" height="20" />
+                        <span>GitHub</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="hero-social__link" href="https://www.linkedin.com/in/barryolofnamdari/" target="_blank" rel="noopener">
+                        <img class="hero-social__icon" src="/li-in-white.png" alt="" width="20" height="20" />
+                        <span>LinkedIn</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </section>
 
     <div class="center">
         <a href="/works/">
