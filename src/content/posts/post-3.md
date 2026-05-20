@@ -1,5 +1,6 @@
 ---
 title: 'Sport ledarskap inom IT'
+draft: true
 author: Barry
 date: '09-09-2025'
 image:

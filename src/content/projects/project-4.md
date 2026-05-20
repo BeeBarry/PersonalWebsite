@@ -1,5 +1,6 @@
 ---
 title: 'Duck Quotes'
+draft: true
 description: 'Smygläs om detta projekt som snart lanseras..'
 image:
     url: '/duck_logo.svg'

@@ -1,8 +1,23 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import { Image } from 'astro:assets';
+import { getCollection } from 'astro:content';
 import profilePic from '../assets/images/profilepic.png';
+import { showEntry } from '../utils/content';
+
 const pageTitle = "Barry Namdari";
+
+// Urval till landningssidan. showEntry döljer drafts i prod, visar i dev.
+const projects = (await getCollection('projects', showEntry)).slice(0, 6);
+
+// Posterna använder datumformatet "DD-MM-YYYY" → parsa för korrekt sortering.
+const parseDate = (d: string): number => {
+    const [day, month, year] = d.split('-').map(Number);
+    return new Date(year ?? 0, (month ?? 1) - 1, day ?? 1).getTime();
+};
+const posts = (await getCollection('posts', showEntry))
+    .sort((a, b) => parseDate(b.data.date) - parseDate(a.data.date))
+    .slice(0, 6);
 ---
 <Layout pageTitle={pageTitle} containerType="default">
     <section class="hero">
@@ -34,61 +49,77 @@ const pageTitle = "Barry Namdari";
         </div>
     </section>
 
+    <section class="showcase">
+        <div class="showcase__col">
+            <h2 class="showcase__title">Projekt</h2>
+            <p class="showcase__lead">Ett urval av vad jag byggt — klicka för att läsa mer.</p>
+            <ul class="showcase__list">
+                {projects.map((project) => (
+                    <li class="showcase__item">
+                        <a class="showcase__row" href={`/projects/${project.id}/`}>
+                            <span class="showcase__name">{project.data.title}</span>
+                            <p class="showcase__desc">{project.data.description}</p>
+                        </a>
+                    </li>
+                ))}
+            </ul>
+            <a class="showcase__more" href="/works/">Se alla projekt →</a>
+        </div>
+
+        <div class="showcase__col">
+            <h2 class="showcase__title">Blogg</h2>
+            <p class="showcase__lead">Lärdomar och teknik-djupdykningar från min resa.</p>
+            {posts.length > 0 ? (
+                <ul class="showcase__list">
+                    {posts.map((post) => (
+                        <li class="showcase__item">
+                            <a class="showcase__row" href={`/posts/${post.id}/`}>
+                                <span class="showcase__name">{post.data.title}</span>
+                                {post.data.description && (
+                                    <p class="showcase__desc">{post.data.description}</p>
+                                )}
+                            </a>
+                        </li>
+                    ))}
+                </ul>
+            ) : (
+                <p class="showcase__empty">Inlägg är på väg — kika tillbaka snart.</p>
+            )}
+            <a class="showcase__more" href="/posts/">Till bloggen →</a>
+        </div>
+    </section>
+
+    {/* TODO: tillfälligt borttaget – ta bort permanent senare. "Se portfolio"-knapp:
     <div class="center">
         <a href="/works/">
             <button class="btn">Se portfolio</button>
         </a>
     </div>
+    */}
+
+    {/* TODO: tillfälligt borttaget – ta bort permanent senare. Teknikstack/skills + tomma trailing-element:
     <h2>Vad jag hittills lärt mig:</h2>
     <div class="skills center">
         <img class="skills__img" width="55" height="55" alt="C#" src="https://api.iconify.design/skill-icons/cs.svg"/>
-
-<img class="skills__img" width="55" height="55" alt="DotNet" src="https://api.iconify.design/skill-icons/dotnet.svg"/>
-
-<img class="skills__img" width="55" height="55" alt="JavaScript" src="https://api.iconify.design/skill-icons/javascript.svg"/>
-
-<img class="skills__img" width="55" height="55" alt="CSS" src="https://api.iconify.design/skill-icons/css.svg"/>
-
-
-<img class="skills__img" width="55" height="55" alt="HTML" src="https://api.iconify.design/skill-icons/html.svg"/>
-
-<img class="skills__img" width="55" height="55" alt="Azure" src="https://api.iconify.design/skill-icons/azure-light.svg"/>
-
-<img class="skills__img" width="55" height="55" alt="Terraform" src="https://api.iconify.design/skill-icons/terraform-light.svg"/>
-
-<img class="skills__img" width="55" height="55" alt="Docker" src="https://api.iconify.design/skill-icons/docker.svg"/>
-
-<img class="skills__img" width="55" height="55" alt="GitLab" src="https://api.iconify.design/skill-icons/gitlab-light.svg"/>
-
-<img class="skills__img" width="55" height="55" alt="Git" src="https://api.iconify.design/skill-icons/git.svg"/>
-
-<img class="skills__img" width="55" height="55" alt="GitHub" src="https://api.iconify.design/skill-icons/github-light.svg"/>
-
-<img class="skills__img" width="55" height="55" alt="GitHub Actions" src="https://skillicons.dev/icons?i=githubactions"/>
-
-
-
-<img class="skills__img" width="55" height="55" alt="Postman" src="https://api.iconify.design/skill-icons/postman.svg"/>
-
-<img class="skills__img" width="55" height="55" alt="MongoDB" src="https://api.iconify.design/skill-icons/mongodb.svg"/>
-
-<img class="skills__img" width="55" height="55" alt="NodeJS" src="https://api.iconify.design/skill-icons/nodejs-light.svg"/>
-
-
-<img class="skills__img" width="55" height="55" alt="Bootstrap" src="https://api.iconify.design/skill-icons/bootstrap.svg"/>
-
-
-<img class="skills__img" width="55" height="55" alt="SQL Server" src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/microsoftsqlserver/microsoftsqlserver-plain-wordmark.svg"/>
-
-<img class="skills__img" width="55" height="55" alt="SQL Server" src="https://symbols.getvecta.com/stencil_28/61_sql-database-generic.90b41636a8.svg"/>
-
-
-
+        <img class="skills__img" width="55" height="55" alt="DotNet" src="https://api.iconify.design/skill-icons/dotnet.svg"/>
+        <img class="skills__img" width="55" height="55" alt="JavaScript" src="https://api.iconify.design/skill-icons/javascript.svg"/>
+        <img class="skills__img" width="55" height="55" alt="CSS" src="https://api.iconify.design/skill-icons/css.svg"/>
+        <img class="skills__img" width="55" height="55" alt="HTML" src="https://api.iconify.design/skill-icons/html.svg"/>
+        <img class="skills__img" width="55" height="55" alt="Azure" src="https://api.iconify.design/skill-icons/azure-light.svg"/>
+        <img class="skills__img" width="55" height="55" alt="Terraform" src="https://api.iconify.design/skill-icons/terraform-light.svg"/>
+        <img class="skills__img" width="55" height="55" alt="Docker" src="https://api.iconify.design/skill-icons/docker.svg"/>
+        <img class="skills__img" width="55" height="55" alt="GitLab" src="https://api.iconify.design/skill-icons/gitlab-light.svg"/>
+        <img class="skills__img" width="55" height="55" alt="Git" src="https://api.iconify.design/skill-icons/git.svg"/>
+        <img class="skills__img" width="55" height="55" alt="GitHub" src="https://api.iconify.design/skill-icons/github-light.svg"/>
+        <img class="skills__img" width="55" height="55" alt="GitHub Actions" src="https://skillicons.dev/icons?i=githubactions"/>
+        <img class="skills__img" width="55" height="55" alt="Postman" src="https://api.iconify.design/skill-icons/postman.svg"/>
+        <img class="skills__img" width="55" height="55" alt="MongoDB" src="https://api.iconify.design/skill-icons/mongodb.svg"/>
+        <img class="skills__img" width="55" height="55" alt="NodeJS" src="https://api.iconify.design/skill-icons/nodejs-light.svg"/>
+        <img class="skills__img" width="55" height="55" alt="Bootstrap" src="https://api.iconify.design/skill-icons/bootstrap.svg"/>
+        <img class="skills__img" width="55" height="55" alt="SQL Server" src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/microsoftsqlserver/microsoftsqlserver-plain-wordmark.svg"/>
+        <img class="skills__img" width="55" height="55" alt="SQL Server" src="https://symbols.getvecta.com/stencil_28/61_sql-database-generic.90b41636a8.svg"/>
     </div>
     <h2></h2>
-    <p>
-
-    </p>
+    <p></p>
+    */}
 </Layout>
-
-

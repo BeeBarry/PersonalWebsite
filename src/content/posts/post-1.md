@@ -1,5 +1,6 @@
 ---
 title: 'Kubernetes & Naturen'
+draft: true
 author: Barry
 date: '01-01-2025'
 image:
