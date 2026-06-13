@@ -1,0 +1,34 @@
+---
+import { getCollection } from 'astro:content';
+import { showEntry } from '../../utils/content';
+import { parsePostDate } from '../../utils/content';
+import PostItem from './PostItem.astro';
+import Icon from './Icon.astro';
+import Reveal from './Reveal.astro';
+
+const allPosts = await getCollection('posts', showEntry);
+const posts = allPosts
+    .sort((a, b) => parsePostDate(b.data.date) - parsePostDate(a.data.date))
+    .slice(0, 4);
+---
+<Reveal delay={90}>
+    <div>
+        <h2 class="pf-h2">Skrivet</h2>
+        <p class="colsub">Fältnoteringar, tekniska djupdyk och en del felsökningskrig.</p>
+        <div class="pf-list" style="margin-top: clamp(26px, 4vw, 38px);">
+            {posts.length > 0 ? (
+                posts.map((post) => (
+                    <PostItem
+                        href={`/posts/${post.id}/`}
+                        title={post.data.title}
+                        description={post.data.description}
+                        date={post.data.date}
+                    />
+                ))
+            ) : (
+                <p class="colsub">Inlägg är på väg — kika tillbaka snart.</p>
+            )}
+        </div>
+        <a class="more" href="/posts/">Mer i arkivet <Icon name="ArrowRight" size={16} /></a>
+    </div>
+</Reveal>

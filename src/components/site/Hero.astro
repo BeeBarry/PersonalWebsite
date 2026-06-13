@@ -1,0 +1,44 @@
+---
+import { Image } from 'astro:assets';
+import profilePic from '../../assets/images/profilepic.png';
+import Icon from './Icon.astro';
+import Reveal from './Reveal.astro';
+---
+<Reveal>
+    <section class="pf-hero">
+        <div class="avatar">
+            <div class="disc">
+                <Image src={profilePic} alt="Barry Namdari" width={336} />
+            </div>
+            <div class="orbit"><span class="sat"></span></div>
+        </div>
+        <div>
+            <p class="bio">
+                Barry är IT-projektledaren som blev <strong>Cloud-utvecklaren</strong>
+                med <strong>IoT</strong>-intresse. Numera bygger han skalbar
+                infrastruktur med inriktning mot IoT och tar med sig det
+                holistiska perspektivet in i tekniken.
+            </p>
+            <ul class="socials">
+                <li>
+                    <a class="soc" href="https://github.com/BeeBarry" target="_blank" rel="noopener">
+                        <Icon name="Github" size={17} />
+                        <span>GitHub</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="soc" href="https://www.linkedin.com/in/barryolofnamdari/" target="_blank" rel="noopener">
+                        <Icon name="Linkedin" size={17} />
+                        <span>LinkedIn</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="soc" href="mailto:bonamdari@gmail.com">
+                        <Icon name="Mail" size={17} />
+                        <span>Mail</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </section>
+</Reveal>

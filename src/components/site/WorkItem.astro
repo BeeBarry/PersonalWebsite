@@ -1,0 +1,31 @@
+---
+interface Props {
+    id: string;
+    title: string;
+    description: string;
+    meta?: string;
+    showMeta?: boolean;
+    logo?: string;
+    href?: string;
+    live?: boolean;
+}
+const { id, title, description, meta, showMeta = false, logo, href, live = false } = Astro.props;
+const Element = href ? 'a' : 'button';
+const elementProps = href
+    ? { href, class: 'pf-item' }
+    : { type: 'button', class: 'pf-item', 'data-open-sheet': id, 'aria-haspopup': 'dialog' };
+---
+<Element {...elementProps}>
+    <div class="t-row">
+        {logo && <img class="logo" src={logo} alt="" />}
+        <div class="pf-t">{title}{live && <span class="pf-live">live</span>}</div>
+    </div>
+    <div class="pf-d">{description}</div>
+    {showMeta && meta && <div class="pf-meta">{meta}</div>}
+</Element>
+
+<style>
+    .pf-item {
+        font: inherit;
+    }
+</style>

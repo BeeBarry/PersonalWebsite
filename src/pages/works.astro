@@ -1,22 +1,197 @@
 ---
-import { getCollection } from "astro:content";
+import { getCollection, render } from 'astro:content';
 import Layout from '../layouts/Layout.astro';
-import Card from '../components/Card.astro';
 import { showEntry } from '../utils/content';
-const allProjects = await getCollection("projects", showEntry);
-const pageTitle = "Projekt";
+import WorkItem from '../components/site/WorkItem.astro';
+import WorkSheet from '../components/site/WorkSheet.astro';
+import Reveal from '../components/site/Reveal.astro';
+
+const pageTitle = 'Arbete · Barry Namdari';
+
+const allProjects = await getCollection('projects', showEntry);
+const totalCount = allProjects.length;
+
+// Pre-rendera varje projekts markdown-Content så vi kan slot:a in det i sheet-drawern.
+const rendered = await Promise.all(
+    allProjects.map(async (entry) => {
+        const { Content } = await render(entry);
+        const images = [
+            entry.data.worksImage1,
+            entry.data.worksImage2,
+            entry.data.worksImage3,
+            entry.data.worksImage4,
+        ].filter(Boolean) as Array<{ url: string; alt: string }>;
+        return { entry, Content, images };
+    })
+);
 ---
-<Layout pageTitle={pageTitle} containerType="default">
+<Layout pageTitle={pageTitle} containerType="wide">
+    <div class="page">
+        <Reveal class="intro">
+            <div>
+                <h1 class="pagetitle">Arbete</h1>
+                <p class="pagesub">
+                    Mina portfolio-projekt — saker jag byggt på fritiden eller som sidoprojekt,
+                    från idé till deploy. Klicka för djupare läsning.
+                </p>
+                <span class="pagestat">
+                    <span class="sq"></span>
+                    {totalCount} projekt
+                </span>
+            </div>
+        </Reveal>
 
-    <h2>Titta vad man skapat!</h2>
+        <Reveal delay={80}>
+            <div>
+                <div class="group">
+                    <div class="kicker">Portfolio-projekt</div>
+                    <div class="pf-list">
+                        {allProjects.map((p) => (
+                            <WorkItem
+                                id={p.id}
+                                title={p.data.title}
+                                description={p.data.description}
+                                meta={p.data.stack}
+                                showMeta
+                                live={!!p.data.website && p.data.website !== 'TBA'}
+                            />
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </Reveal>
+    </div>
 
-    <ul role="list" class="link-card-grid">
-        {allProjects.map((card) => <Card
-            url={`/projects/${card.id}/`}
-            image={card.data.image.url}
-            title={card.data.title}
-            body={card.data.description}
-        />)}
-    </ul>
+    {/* Sheet-drawer + backdrop + flytande "Stäng"-pill (synlig <640px).
+        Slot:ar in renderad markdown-Content + worksImage1-4 som zoombara bilder. */}
+    <div class="backdrop" data-backdrop></div>
+    <button class="sheet-return" data-close-sheet aria-label="Stäng">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m6 9 6 6 6-6" />
+        </svg>
+        Stäng
+    </button>
+    {rendered.map(({ entry, Content, images }) => (
+        <WorkSheet
+            id={entry.id}
+            title={entry.data.title}
+            kind={entry.data.kind ?? 'Portfolio-projekt'}
+            year={entry.data.year ?? ''}
+            description={entry.data.description}
+            meta={entry.data.stack}
+            body={entry.data.body}
+            media={entry.data.media}
+            images={images}
+            logo={entry.data.logo}
+            website={entry.data.website}
+            github={entry.data.github}
+        >
+            <Content />
+        </WorkSheet>
+    ))}
+
+    <script>
+        // Sheet open/close + mobile bottom-sheet swipe-down.
+        // Re-attachas på astro:page-load så View Transitions inte dödar listeners.
+        function bindSheets() {
+            const triggers = document.querySelectorAll<HTMLElement>('[data-open-sheet]:not([data-sheet-bound])');
+            const closers = document.querySelectorAll<HTMLElement>('[data-close-sheet]:not([data-sheet-bound])');
+            const backdrop = document.querySelector<HTMLElement>('[data-backdrop]');
+            const sheetReturn = document.querySelector<HTMLElement>('.sheet-return');
+
+            const closeAll = () => {
+                document.querySelectorAll<HTMLElement>('.sheet.open').forEach((s) => {
+                    s.classList.remove('open');
+                    s.setAttribute('aria-hidden', 'true');
+                    // Återställ swipe-translate om någon dras kvar
+                    s.style.transform = '';
+                    s.style.transition = '';
+                });
+                backdrop?.classList.remove('open');
+                sheetReturn?.classList.remove('open');
+                document.body.style.overflow = '';
+            };
+
+            const openSheetById = (id: string) => {
+                closeAll();
+                const sheet = document.querySelector<HTMLElement>(`.sheet[data-sheet-id="${id}"]`);
+                if (!sheet) return;
+                sheet.classList.add('open');
+                sheet.setAttribute('aria-hidden', 'false');
+                backdrop?.classList.add('open');
+                sheetReturn?.classList.add('open');
+                document.body.style.overflow = 'hidden';
+                bindSwipeToClose(sheet);
+            };
+
+            // Swipe-down på grab-handlen (eller header-zonen) stänger sheet.
+            // Använder Pointer Events API — funkar med touch + pen + mouse.
+            const SWIPE_DISMISS_PX = 90;
+            function bindSwipeToClose(sheet: HTMLElement) {
+                // Aktivera bara på small viewport där sheet är bottom-sheet.
+                if (window.innerWidth > 640) return;
+                const grab = sheet.querySelector<HTMLElement>('.grab');
+                if (!grab || grab.dataset.swipeBound === '1') return;
+                grab.dataset.swipeBound = '1';
+
+                let startY = 0;
+                let dragging = false;
+
+                grab.addEventListener('pointerdown', (e) => {
+                    dragging = true;
+                    startY = e.clientY;
+                    sheet.style.transition = 'none';
+                    grab.setPointerCapture(e.pointerId);
+                });
+
+                grab.addEventListener('pointermove', (e) => {
+                    if (!dragging) return;
+                    const dy = Math.max(0, e.clientY - startY);
+                    sheet.style.transform = `translateY(${dy}px)`;
+                });
+
+                const endDrag = (e: PointerEvent) => {
+                    if (!dragging) return;
+                    dragging = false;
+                    const dy = Math.max(0, e.clientY - startY);
+                    sheet.style.transition = '';
+                    if (dy > SWIPE_DISMISS_PX) {
+                        closeAll();
+                    } else {
+                        sheet.style.transform = '';
+                    }
+                    try { grab.releasePointerCapture(e.pointerId); } catch {}
+                };
+                grab.addEventListener('pointerup', endDrag);
+                grab.addEventListener('pointercancel', endDrag);
+            }
+
+            triggers.forEach((btn) => {
+                btn.setAttribute('data-sheet-bound', '1');
+                btn.addEventListener('click', () => {
+                    const id = btn.getAttribute('data-open-sheet');
+                    if (id) openSheetById(id);
+                });
+            });
+
+            closers.forEach((btn) => {
+                btn.setAttribute('data-sheet-bound', '1');
+                btn.addEventListener('click', closeAll);
+            });
+
+            if (backdrop && !backdrop.dataset.sheetBound) {
+                backdrop.dataset.sheetBound = '1';
+                backdrop.addEventListener('click', closeAll);
+            }
+
+            if (!document.body.dataset.sheetEsc) {
+                document.body.dataset.sheetEsc = '1';
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') closeAll();
+                });
+            }
+        }
+        bindSheets();
+        document.addEventListener('astro:page-load', bindSheets);
+    </script>
 </Layout>
-

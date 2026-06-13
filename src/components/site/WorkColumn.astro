@@ -1,0 +1,31 @@
+---
+import { getCollection } from 'astro:content';
+import { showEntry } from '../../utils/content';
+import WorkItem from './WorkItem.astro';
+import Icon from './Icon.astro';
+import Reveal from './Reveal.astro';
+
+const projects = await getCollection('projects', showEntry);
+---
+<Reveal>
+    <div>
+        <h2 class="pf-h2">Arbete</h2>
+        <p class="colsub">Mina portfolio-projekt — saker jag byggt på fritiden, från idé till deploy.</p>
+
+        <div class="kicker" style="margin-top: clamp(26px, 4vw, 38px);">Portfolio-projekt</div>
+        <div class="pf-list">
+            {projects.map((p) => (
+                <WorkItem
+                    id={p.id}
+                    href={`/projects/${p.id}/`}
+                    title={p.data.title}
+                    description={p.data.description}
+                    meta={p.data.stack}
+                    live={!!p.data.website && p.data.website !== 'TBA'}
+                />
+            ))}
+        </div>
+
+        <a class="more" href="/works/">Visa allt arbete <Icon name="ArrowRight" size={16} /></a>
+    </div>
+</Reveal>

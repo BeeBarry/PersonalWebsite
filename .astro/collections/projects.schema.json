@@ -8,6 +8,44 @@
     "description": {
       "type": "string"
     },
+    "kind": {
+      "default": "Eget · open source",
+      "type": "string"
+    },
+    "year": {
+      "default": "",
+      "type": "string"
+    },
+    "cover": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "alt": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "url",
+        "alt"
+      ]
+    },
+    "body": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "media": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "logo": {
+      "type": "string"
+    },
     "image": {
       "type": "object",
       "properties": {
@@ -87,6 +125,7 @@
       "type": "string"
     },
     "stack": {
+      "default": "",
       "type": "string"
     },
     "website": {
@@ -105,13 +144,6 @@
   },
   "required": [
     "title",
-    "description",
-    "image",
-    "worksImage1",
-    "worksImage2",
-    "platform",
-    "stack",
-    "website",
-    "github"
+    "description"
   ]
 }

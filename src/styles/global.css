@@ -1,18 +1,8 @@
 @import "tailwindcss";
 
-/* Grunge-temats oklch-baskala (© 2025 Jess Gaspar, MIT).
-   100 = mörkast, 900 = ljusast. Källa till mörka temats färger. */
-@theme {
-    --color-base-100: oklch(14% 0.004 49.25);
-    --color-base-200: oklch(21% 0.006 56.043);
-    --color-base-300: oklch(26% 0.007 34.298);
-    --color-base-400: oklch(37% 0.01 67.558);
-    --color-base-500: oklch(44% 0.011 73.639);
-    --color-base-600: oklch(55% 0.013 58.071);
-    --color-base-700: oklch(70% 0.01 56.259);
-    --color-base-800: oklch(86% 0.005 56.366);
-    --color-base-900: oklch(98% 0.001 106.423);
-}
+/* Portfolio-temats palett (källa: portfolio-design.tsx).
+   Värdena sätts direkt på --c-*-tokens i :root längre ner, så
+   inget separat @theme-block behövs för en oklch-baskala. */
 
 /* ============================================================
    DESIGNSYSTEM — barrynamdari.se
@@ -27,65 +17,70 @@
     --color-bg: var(--c-bg);
     --color-surface: var(--c-surface);
     --color-text: var(--c-text);
+    --color-text-secondary: var(--c-text-secondary);
     --color-text-muted: var(--c-text-muted);
     --color-accent: var(--c-accent);
     --color-border: var(--c-border);
 }
 
-/* ---- Färgtokens: MÖRKT (default) — grunge-palett ---- */
+/* ---- Färgtokens: MÖRKT (default) — portfolio-palett ---- */
 :root {
-    --c-bg: var(--color-base-100);
-    --c-surface: var(--color-base-200);
-    --c-text: var(--color-base-900);
-    /* Sekundärtext: base-800 (oklch 86%) – läsbar utan att tävla med primär */
-    --c-text-muted: var(--color-base-800);
-    --c-accent: var(--color-base-900);
-    --c-accent-contrast: var(--color-base-100);
-    --c-border: var(--color-base-300);
+    --c-bg: #0b0b0d;
+    --c-surface: rgba(255, 255, 255, 0.045);
+    --c-text: #ededee;
+    /* Mellannivå: beskrivningar/ingresser — tydligt läsbar men under titel. */
+    --c-text-secondary: #b3b3ba;
+    --c-text-muted: #8b8b92;
+    --c-accent: #b9f24d;
+    --c-accent-contrast: #0b0b0d;
+    --c-border: rgba(255, 255, 255, 0.09);
     --dot-color: transparent;
 
-    /* Typografi — grunge: rubrik Road Rage, brödtext JetBrains Mono */
-    --font-body: var(--font-mono);
+    /* Typografi — portfolio: display Schibsted Grotesk, mono Spline Sans Mono */
+    --font-body: var(--font-display);
+    /* Alias för bakåtkompabilitet med tidigare grunge-tema-CSS */
+    --font-grunge: var(--font-display);
 
     /* Layout-rytm */
     --content: 800px;
-    --wide: 960px;
+    --wide: 1120px;
     --space-section: clamp(2.5rem, 2rem + 3vw, 4.5rem);
     --radius-card: 14px;
     --radius-control: 8px;
-    --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.06), 0 6px 18px rgba(0, 0, 0, 0.08);
+    --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.06), 0 6px 18px rgba(0, 0, 0, 0.5);
 
-    /* Bakåtkompatibla alias (gamla variabelnamn används i komponenter) */
+    /* Bakåtkompatibla alias (gamla variabelnamn används i Learn Hub-komponenter) */
     --background: var(--c-bg);
-    --background-light: #F7F2EC;
+    --background-light: #f7f6f2;
     --white: #ffffff;
     --black: #000000;
     --button: var(--c-accent);
     --text: var(--c-text);
-    --text-light: #2B2A28;
+    --text-light: #16150f;
     --text-link: var(--c-accent);
     --profile-border: var(--c-border);
     --underline: var(--c-accent);
     --highlight: var(--c-accent);
     --main-green: var(--c-accent);
     --main-brown: var(--c-text-muted);
-    --header: var(--font-grunge);
-    --body: var(--font-mono);
+    --header: var(--font-display);
+    --body: var(--font-display);
 }
 
-/* ---- Färgtokens: LJUST varmt papper (.light) ---- */
+/* ---- Färgtokens: LJUST (.light) — portfolio-palett ---- */
 html.light {
-    --c-bg: #F7F2EC;
-    --c-surface: #FFFFFF;
-    --c-text: #2B2A28;
-    --c-text-muted: #6B655C;
-    --c-accent: #5C7F66;
-    --c-accent-contrast: #FFFFFF;
-    --c-border: #E7DFD4;
-    --dot-color: rgba(43, 42, 40, 0.05);
+    --c-bg: #f7f6f2;
+    --c-surface: rgba(0, 0, 0, 0.035);
+    --c-text: #16150f;
+    --c-text-secondary: #4a473f;
+    --c-text-muted: #6e6a60;
+    --c-accent: #5f9c0a;
+    --c-accent-contrast: #f7f6f2;
+    --c-border: rgba(0, 0, 0, 0.10);
+    --dot-color: rgba(22, 21, 15, 0.05);
 
-    --text-light: #2B2A28;
-    --text: #2B2A28;
+    --text-light: #16150f;
+    --text: #16150f;
 }
 
 /* ============================================================
@@ -114,19 +109,26 @@ body {
     text-rendering: optimizeLegibility;
 }
 
-/* Grain-overlay (identisk med grunge-temat: brus 67/22/25, fixed,
-   ovanpå bakgrunden men under innehållet). Genererad statiskt av
-   scripts/generate-noise.mjs → /noise.png.
-   Subtil mörk lasering (rgba 0.3) lugnar bruset utan att ta bort
-   texturen → bättre läsbarhet, oförändrad känsla. */
+/* Grain-overlay enligt portfolio-design.tsx: SVG turbulence inline,
+   soft-light blend, fixed, ovanpå bakgrund men under innehåll. */
+.grain {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 220 220' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 200px;
+    mix-blend-mode: soft-light;
+    opacity: 0.42;
+}
+
+/* Bakåtkompatibel alias för befintliga Layout-mallar */
 .noise-overlay {
     position: fixed;
     inset: 0;
     pointer-events: none;
     z-index: 0;
-    background-color: rgba(0, 0, 0, 0.3);
-    background-image: url("/noise.png");
-    background-repeat: repeat;
+    display: none;
 }
 
 .site-content {
@@ -921,7 +923,8 @@ html.light .linked-in {
     .wide-container {
         width: 100%;
         max-width: 100%;
-        padding: 0 1rem;
+        /* Synkad med .pf-wrap padding (22px) så header/content/footer linjerar */
+        padding: 0 22px;
     }
 
     .paper-section {
@@ -964,3 +967,941 @@ html.light .linked-in {
         animation: none !important;
     }
 }
+
+/* ============================================================
+   PORTFOLIO-TEMAT — namespacat under .site för att inte krocka
+   med Learn Hub-arvet (befintliga .hero / .post / .list).
+   Källa: portfolio-design.tsx. Tokens speglas via --c-*.
+   ============================================================ */
+
+.site {
+    background: var(--c-bg);
+    color: var(--c-text);
+    font-family: var(--font-display);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.6s ease, color 0.6s ease;
+    position: relative;
+    z-index: 2;
+}
+
+.site ::selection {
+    background: var(--c-accent);
+    color: var(--c-accent-contrast);
+}
+
+.site * {
+    box-sizing: border-box;
+}
+
+/* Wrap-container */
+.site .pf-wrap {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 0 clamp(22px, 5vw, 60px);
+}
+
+/* HEAD (sticky topbar) */
+.site .head {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: var(--c-bg);
+    transition: background 0.6s ease, border-color 0.3s ease;
+    border-bottom: 1px solid transparent;
+}
+.site .head.scrolled {
+    border-bottom-color: var(--c-border);
+}
+.site .head .pf-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+}
+
+.site .brand {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 2px;
+    font-weight: 800;
+    font-size: 1.45rem;
+    letter-spacing: -0.035em;
+    color: var(--c-text);
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+}
+/* Statisk del av lettermarken — ingen animation, fast accent-dot */
+.site .brand .dot {
+    width: 0.4em;
+    height: 0.4em;
+    border-radius: 50%;
+    background: var(--c-accent);
+    align-self: center;
+    margin-left: 2px;
+    display: inline-block;
+}
+
+.site .nav {
+    display: flex;
+    align-items: center;
+    gap: clamp(12px, 2.4vw, 28px);
+}
+.site .nav .lk {
+    font-family: var(--font-display);
+    font-size: 0.92rem;
+    color: var(--c-text-muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    padding: 0;
+    text-decoration: none;
+}
+.site .nav .lk:hover,
+.site .nav .lk.on {
+    color: var(--c-text);
+}
+.site .iconbtn {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background: none;
+    border: none;
+    color: var(--c-text-muted);
+    cursor: pointer;
+    transition: color 0.2s ease, background 0.2s ease;
+}
+.site .iconbtn:hover {
+    color: var(--c-text);
+    background: var(--c-surface);
+}
+.site .iconbtn svg {
+    width: 18px;
+    height: 18px;
+}
+/* Mobil: behåll Arbete + Skrivet synliga (vi har bara 2 länkar — får plats).
+   Tightare font/gap så de inte konkurrerar med brand. */
+@media (max-width: 560px) {
+    .site .nav {
+        gap: 12px;
+    }
+    .site .nav .lk {
+        font-size: 0.86rem;
+    }
+}
+
+/* HERO */
+.site .pf-hero {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(36px, 5vw, 64px);
+    align-items: center;
+    padding-top: clamp(48px, 8vh, 88px);
+    padding-bottom: clamp(36px, 6vw, 72px);
+    scroll-margin-top: 80px;
+}
+@media (min-width: 720px) {
+    .site .pf-hero {
+        grid-template-columns: auto 1fr;
+    }
+}
+.site .avatar {
+    position: relative;
+    width: clamp(150px, 24vw, 200px);
+    height: clamp(150px, 24vw, 200px);
+    justify-self: start;
+}
+.site .avatar .disc {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: var(--c-surface);
+    display: grid;
+    place-items: center;
+    box-shadow: 0 30px 60px -28px rgba(0, 0, 0, 0.65), inset 0 0 0 1px var(--c-border);
+    overflow: hidden;
+}
+.site .avatar .disc img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.site .avatar .orbit {
+    position: absolute;
+    inset: -7px;
+    border-radius: 50%;
+    border: 1px solid var(--c-border);
+    animation: pf-spin 9s linear infinite;
+}
+.site .avatar .orbit .sat {
+    position: absolute;
+    top: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--c-accent);
+    box-shadow: 0 0 12px var(--c-accent);
+}
+@keyframes pf-spin {
+    to { transform: rotate(360deg); }
+}
+
+.site .bio {
+    font-size: clamp(0.98rem, 1.3vw, 1.18rem);
+    line-height: 1.55;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+    max-width: 46ch;
+    color: var(--c-text);
+}
+.site .bio strong {
+    color: var(--c-text);
+    /* Subtil, tunn accent-understrykning (dämpad ~55%) — markerar utan att skrika. */
+    background-image: linear-gradient(
+        color-mix(in srgb, var(--c-accent) 55%, transparent),
+        color-mix(in srgb, var(--c-accent) 55%, transparent)
+    );
+    background-repeat: no-repeat;
+    background-position: 0 100%;
+    background-size: 100% 1px;
+    font-weight: 600;
+    padding-bottom: 1px;
+}
+.site .bio em {
+    color: var(--c-text);
+    font-style: italic;
+}
+
+.site .socials {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 20px;
+    /* Mer luft mellan bio-texten och länkarna → tydligare hierarki. */
+    margin-top: clamp(30px, 5vw, 40px);
+    list-style: none;
+    padding: 0;
+}
+.site .socials .soc {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--c-text);
+    text-decoration: none;
+    /* Mindre än bio-texten → ökar storlekskontrasten. */
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+.site .socials .soc svg {
+    width: 16px;
+    height: 16px;
+    color: var(--c-text-muted);
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+.site .socials .soc:hover { color: var(--c-accent); }
+.site .socials .soc:hover svg {
+    color: var(--c-accent);
+    transform: translateY(-2px);
+}
+
+/* Mobil (< 720px, enkolumns-hero): centrera profilbilden. */
+@media (max-width: 719px) {
+    .site .avatar { justify-self: center; }
+}
+
+/* TVÅKOLUMNSEKTION (Arbete + Skrivet på hemsidan) */
+.site .cols {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(48px, 6vw, 84px);
+    padding-block: clamp(36px, 8vw, 140px);
+}
+@media (min-width: 880px) {
+    .site .cols {
+        grid-template-columns: 1.25fr 1fr;
+    }
+}
+/* Section header på hemsidan — matchar .pagetitle:s skala så att Arbete/Skrivet
+   på landing känns lika tunga som rubrikerna på /works/ och /posts/.
+   Tight line-height = magazine-style impact. */
+.site .pf-h2 {
+    font-size: clamp(2.3rem, 6vw, 3.4rem);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 0.98;
+    margin: 0;
+    color: var(--c-text);
+    font-family: var(--font-display);
+}
+.site .colsub {
+    color: var(--c-text-secondary);
+    margin-top: 12px;
+    line-height: 1.5;
+    max-width: 42ch;
+    font-size: clamp(0.95rem, 1.4vw, 1.02rem);
+}
+.site .worksubs {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 36px clamp(24px, 3vw, 44px);
+    margin-top: clamp(26px, 4vw, 38px);
+}
+@media (min-width: 560px) {
+    .site .worksubs {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+.site .kicker {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--c-text-muted);
+    margin-bottom: 8px;
+}
+
+/* LISTS (work + writing) */
+.site .pf-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.site .pf-item,
+.site .pf-post {
+    position: relative;
+    text-decoration: none;
+    color: inherit;
+    padding: 12px 14px;
+    margin: 0 -14px;
+    border-radius: 13px;
+    cursor: pointer;
+    transition: background 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+    display: block;
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+    font-family: var(--font-display);
+}
+.site .pf-item:hover,
+.site .pf-post:hover {
+    background: var(--c-surface);
+    box-shadow: 0 20px 44px -30px rgba(0, 0, 0, 0.7);
+}
+.site .pf-item:hover {
+    transform: translateX(3px);
+}
+.site .t-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+.site .logo {
+    height: 17px;
+    width: auto;
+    max-width: 130px;
+    object-fit: contain;
+    flex: none;
+    display: block;
+}
+.site .logo.lg {
+    height: 28px;
+    max-width: 190px;
+}
+.site .pf-t {
+    font-weight: 600;
+    font-size: 1.04rem;
+    letter-spacing: -0.012em;
+    color: var(--c-text);
+    transition: color 0.2s ease;
+}
+.site .pf-item:hover .pf-t,
+.site .pf-post:hover .pf-t {
+    color: var(--c-accent);
+}
+/* "live"-markör efter projekttitel — liten, upphöjd, accent, ingen bakgrund. */
+.site .pf-live {
+    font-family: var(--font-display);
+    font-size: 0.62em;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--c-accent);
+    vertical-align: super;
+    margin-left: 0.5em;
+}
+.site .pf-d {
+    color: var(--c-text-secondary);
+    font-size: 0.92rem;
+    line-height: 1.46;
+    margin-top: 4px;
+}
+.site .pf-meta {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    color: var(--c-text-muted);
+    margin-top: 8px;
+    line-height: 1.6;
+}
+/* Postdatum/lästid: dämpat grått — meta-info, inte fokus vid skanning. */
+.site .pf-date {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    letter-spacing: 0.03em;
+    color: var(--c-text-muted);
+    margin-top: 9px;
+}
+
+.site .more {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: clamp(22px, 3vw, 30px);
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--c-text);
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    background: none;
+    border: none;
+    font-family: var(--font-display);
+    padding: 0;
+}
+.site .more svg {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.25s ease;
+}
+.site .more:hover { color: var(--c-accent); }
+.site .more:hover svg { transform: translateX(5px); }
+
+/* HELSIDA (Arbete / Skrivet) */
+.site .page {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(30px, 5vw, 60px);
+    padding-top: clamp(44px, 8vh, 80px);
+    padding-bottom: clamp(72px, 12vh, 130px);
+}
+@media (min-width: 880px) {
+    .site .page {
+        grid-template-columns: 0.62fr 1.38fr;
+    }
+    .site .page .intro {
+        position: sticky;
+        top: 92px;
+        align-self: start;
+    }
+}
+.site .pagetitle {
+    font-size: clamp(2.3rem, 6vw, 3.4rem);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 0.98;
+    color: var(--c-text);
+    margin: 0;
+}
+.site .pagesub {
+    color: var(--c-text-secondary);
+    margin-top: 14px;
+    max-width: 40ch;
+    line-height: 1.5;
+    font-size: clamp(1rem, 2vw, 1.12rem);
+}
+.site .pagestat {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--c-text-muted);
+    margin-top: 22px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+.site .pagestat .sq {
+    width: 7px;
+    height: 7px;
+    background: var(--c-accent);
+    border-radius: 1px;
+}
+.site .group + .group {
+    margin-top: clamp(38px, 5vw, 56px);
+}
+/* Ämnesfilter (Skrivet) — chip-rad ovanför listan. Återanvänder .tag-stilar. */
+.site .filterbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: clamp(24px, 3.5vw, 34px);
+}
+.site .tag__count {
+    font-family: var(--font-mono);
+    font-size: 0.78em;
+    color: var(--c-text-muted);
+}
+.site .tag[aria-pressed="true"] .tag__count,
+.site .tag.is-active .tag__count {
+    color: var(--c-accent-contrast);
+    opacity: 0.75;
+}
+.site .filter-empty {
+    color: var(--c-text-muted);
+    font-size: 0.95rem;
+    margin-top: 4px;
+}
+
+/* SHEET (drawer) */
+.site .backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+}
+.site .backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+}
+.site .sheet {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 51;
+    width: min(520px, 100%);
+    background: var(--c-bg);
+    border-left: 1px solid var(--c-border);
+    box-shadow: -30px 0 90px -45px rgba(0, 0, 0, 0.85);
+    transform: translateX(100%);
+    transition: transform 0.42s cubic-bezier(0.4, 0, 0.1, 1);
+    overflow-y: auto;
+}
+.site .sheet.open {
+    transform: none;
+}
+.site .sheet-pad {
+    padding: clamp(22px, 4vw, 38px);
+}
+.site .sheet-x {
+    position: sticky;
+    top: 0;
+    display: flex;
+    justify-content: flex-end;
+    margin: 0 0 -10px;
+}
+.site .sheet-head {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    margin-top: 6px;
+}
+.site .sheet h3 {
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    margin: 0;
+    color: var(--c-text);
+    font-family: var(--font-display);
+}
+.site .skind {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    color: var(--c-text-muted);
+    margin-top: 6px;
+}
+.site .pf-body {
+    margin-top: 24px;
+}
+.site .pf-body p {
+    font-size: 1rem;
+    line-height: 1.62;
+    color: var(--c-text);
+    font-family: var(--font-display);
+    margin: 0;
+}
+.site .pf-body p + p {
+    margin-top: 0.9em;
+}
+.site .note {
+    color: var(--c-text-muted);
+    font-size: 0.95rem;
+    line-height: 1.55;
+    margin-top: 6px;
+}
+.site .tagrow {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.05em;
+    color: var(--c-text-muted);
+    margin-top: 22px;
+    line-height: 1.7;
+}
+.site .media {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 22px;
+}
+.site .frame {
+    aspect-ratio: 16 / 10;
+    border-radius: 12px;
+    background: var(--c-surface);
+    box-shadow: inset 0 0 0 1px var(--c-border);
+    display: grid;
+    place-items: center;
+    color: var(--c-text-muted);
+    position: relative;
+    overflow: hidden;
+}
+.site .frame .cap {
+    position: absolute;
+    bottom: 8px;
+    left: 11px;
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    letter-spacing: 0.06em;
+    color: var(--c-text-muted);
+}
+.site .slinks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 22px;
+    margin-top: 26px;
+    padding-top: 22px;
+    border-top: 1px solid var(--c-border);
+}
+.site .slink {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--c-text);
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.site .slink svg {
+    width: 15px;
+    height: 15px;
+    transition: transform 0.2s;
+}
+.site .slink:hover { color: var(--c-accent); }
+.site .slink:hover svg { transform: translate(2px, -2px); }
+
+.site .grab { display: none; }
+.site .sheet-return { display: none; }
+
+@media (max-width: 640px) {
+    .site .sheet {
+        top: 14vh;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        border-left: none;
+        border-top: 1px solid var(--c-border);
+        border-radius: 22px 22px 0 0;
+        transform: translateY(100%);
+        box-shadow: 0 -30px 90px -45px rgba(0, 0, 0, 0.85);
+    }
+    .site .sheet.open { transform: none; }
+    .site .grab {
+        display: block;
+        width: 42px;
+        height: 4px;
+        border-radius: 999px;
+        background: var(--c-border);
+        margin: 0 auto 12px;
+        /* Förstora touch-targeten utan att flytta visuella stapeln. */
+        position: relative;
+        cursor: grab;
+        touch-action: none;
+    }
+    .site .grab::before {
+        content: '';
+        position: absolute;
+        inset: -16px -50%;
+    }
+    .site .grab:active {
+        cursor: grabbing;
+    }
+    .site .sheet-x { margin-top: -6px; }
+    .site .sheet-return {
+        position: fixed;
+        z-index: 52;
+        left: 50%;
+        top: calc(14vh - 48px);
+        transform: translateX(-50%) translateY(10px);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 9px 15px;
+        border-radius: 999px;
+        background: var(--c-bg);
+        color: var(--c-text);
+        border: 1px solid var(--c-border);
+        box-shadow: 0 12px 34px -18px rgba(0, 0, 0, 0.7);
+        font-family: var(--font-display);
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.35s ease, transform 0.42s cubic-bezier(0.4, 0, 0.1, 1);
+    }
+    .site .sheet-return.open {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateX(-50%) translateY(0);
+    }
+    .site .sheet-return svg { width: 15px; height: 15px; }
+}
+
+/* ARTIKEL (post-detalj) */
+.site .article {
+    /* ch-baserat mått → ~66–70 tecken/rad oavsett root-storlek (bekväm läsning). */
+    max-width: 68ch;
+    margin: 0 auto;
+    padding-top: clamp(26px, 5vh, 48px);
+    padding-bottom: clamp(72px, 12vh, 120px);
+}
+/* Ren textlänk (ingen pill/ram) — diskret tillbaka-navigering. */
+.site .backlink {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.84rem;
+    letter-spacing: 0.04em;
+    color: var(--c-text-muted);
+    cursor: pointer;
+    transition: color 0.2s, transform 0.2s;
+    margin-bottom: clamp(22px, 4vw, 34px);
+    text-decoration: none;
+}
+.site .backlink:hover {
+    color: var(--c-accent);
+    transform: translateX(-2px);
+}
+.site .backlink svg {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.2s;
+}
+.site .backlink:hover svg { transform: translateX(-3px); }
+/* Huvudbild överst i artikel/projekt — riktig bild (16:9), renderas bara när
+   ett cover-fält finns. Saknas bild → ingen ruta (titeln leder). */
+.site .cover {
+    aspect-ratio: 16 / 9;
+    border-radius: 16px;
+    background: var(--c-surface);
+    box-shadow: inset 0 0 0 1px var(--c-border);
+    margin-bottom: clamp(22px, 4vw, 34px);
+    overflow: hidden;
+}
+.site .cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.site .amh1 {
+    font-size: clamp(2rem, 5.5vw, 3rem);
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    line-height: 1.03;
+    color: var(--c-text);
+    margin: 0;
+    font-family: var(--font-display);
+}
+.site .ammeta {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    color: var(--c-text-muted);
+    margin-top: 14px;
+    /* Andas vid radbrytning (t.ex. lång stack-lista) utan att bli en lång rad. */
+    line-height: 1.7;
+    max-width: 52ch;
+}
+.site .prose {
+    margin-top: clamp(26px, 4vw, 36px);
+    color: var(--c-text);
+}
+.site .prose p {
+    font-size: 1.13rem;
+    line-height: 1.72;
+    color: var(--c-text);
+    font-family: var(--font-display);
+    margin: 0;
+}
+.site .prose p + p { margin-top: 1.15em; }
+
+/* Listor — Tailwind v4 Preflight nollställer ul/ol; återställ markörer/indrag
+   och matcha brödtextens rytm. .site .prose li slår både Preflight och global li. */
+.site .prose ul,
+.site .prose ol {
+    margin: 1.15em 0 0;
+    padding-left: 1.4em;
+}
+.site .prose ul { list-style: disc; }
+.site .prose ol { list-style: decimal; }
+.site .prose li {
+    font-family: var(--font-display);
+    font-size: 1.13rem;
+    line-height: 1.72;
+    color: var(--c-text);
+    padding-left: 0.35em;
+}
+.site .prose li + li { margin-top: 0.5em; }
+.site .prose li::marker { color: var(--c-text-secondary); }
+.site .prose ul ul { list-style: circle; }
+.site .prose ol ol { list-style: lower-alpha; }
+.site .prose li > ul,
+.site .prose li > ol { margin-top: 0.5em; }
+.site .prose ul + p,
+.site .prose ol + p { margin-top: 1.15em; }
+
+/* Defensiv prose-styling (låg nuvarande användning, men robust för framtida innehåll). */
+.site .prose strong { font-weight: 700; color: var(--c-text); }
+.site .prose blockquote {
+    margin: 1.4em 0 0;
+    padding: 0.2em 0 0.2em 1.1em;
+    border-left: 3px solid var(--c-accent);
+    color: var(--c-text-secondary);
+}
+.site .prose blockquote p { color: inherit; }
+.site .prose pre {
+    margin: 1.5em 0 0;
+    padding: 1em 1.15em;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: 12px;
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+.site .prose pre code {
+    background: none;
+    padding: 0;
+    font-size: inherit;
+    border-radius: 0;
+}
+.site .prose hr {
+    border: 0;
+    border-top: 1px solid var(--c-border);
+    margin: 2em 0;
+}
+.site .prose figure { margin: 1.5em 0; }
+.site .prose figcaption {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    color: var(--c-text-muted);
+    margin-top: 0.6em;
+    text-align: center;
+}
+.site .prose h2 {
+    font-family: var(--font-display);
+    font-size: clamp(1.4rem, 3vw, 1.8rem);
+    margin: 1.6em 0 0.6em;
+    letter-spacing: -0.02em;
+}
+.site .prose h3 {
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    margin: 1.4em 0 0.5em;
+}
+.site .prose a {
+    color: var(--c-text);
+    text-decoration: underline;
+    text-decoration-color: var(--c-accent);
+    text-underline-offset: 3px;
+}
+.site .prose a:hover { color: var(--c-accent); }
+.site .prose img {
+    max-width: 100%;
+    border-radius: 12px;
+    margin: 1.5em 0;
+}
+.site .prose code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    padding: 0.1em 0.35em;
+    background: var(--c-surface);
+    border-radius: 4px;
+}
+
+/* FOOT */
+.site .pf-foot {
+    border-top: 1px solid var(--c-border);
+}
+.site .pf-foot .pf-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    justify-content: space-between;
+    padding-block: 28px 40px;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.03em;
+    color: var(--c-text-muted);
+}
+@media (max-width: 560px) {
+    .site .pf-foot .pf-wrap {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 10px;
+        padding-block: 24px 28px;
+    }
+}
+.site .pf-foot a {
+    color: var(--c-text-muted);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+.site .pf-foot a:hover { color: var(--c-text); }
+
+/* REVEAL */
+.site .reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.7s cubic-bezier(0.2, 0.7, 0.2, 1),
+                transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.site .reveal.in {
+    opacity: 1;
+    transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .site *,
+    .site .reveal {
+        animation: none !important;
+        transition: none !important;
+        transform: none !important;
+        opacity: 1 !important;
+    }
+}
+

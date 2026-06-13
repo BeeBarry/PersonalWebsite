@@ -58,65 +58,138 @@ const { src, alt, caption } = Astro.props;
         box-shadow: 0 0 20px 5px rgba(0, 0, 0, 0.5);
     }
 
-    .overlay {
+    :global(.zoom-overlay) {
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.8);
+        background: rgba(0, 0, 0, 0.82);
+        backdrop-filter: blur(4px);
         z-index: 999;
         display: none;
     }
 
-    .overlay.active {
+    :global(.zoom-overlay.active) {
         display: block;
+    }
+
+    :global(.zoomed-clone) {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        max-width: 90%;
+        max-height: 90vh;
+        z-index: 1000;
+        cursor: zoom-out;
+        object-fit: contain;
+        border-radius: 10px;
+        box-shadow: 0 20px 60px -10px rgba(0, 0, 0, 0.8);
     }
 </style>
 
 <script>
-    const overlay = document.createElement('div');
-    overlay.className = 'overlay';
-    document.body.appendChild(overlay);
+    // ZoomableImage via event-delegation.
+    //
+    // BUGFIX (zoom overlay kvar efter close): ClientRouter byter ut <body>-innehåll
+    // vid View Transitions, vilket även tar bort den overlay-div vi appendat. Den
+    // gamla varianten cachade en referens till overlay i closure och gjorde
+    // `overlay.classList.remove('active')` mot ett detached element → ingen visuell
+    // effekt, overlay stannar synlig från en tidigare öppning. Fixen:
+    //   1. Bind document-handlers EN gång (document persisterar genom VT).
+    //   2. Säkerställ att overlay-elementet finns i DOM vid varje astro:page-load.
+    //   3. Stäng-logiken slår upp overlay LIVE varje gång via querySelector,
+    //      inte från closure.
 
-    const toggleScroll = (disable: boolean) => {
-        document.body.style.overflow = disable ? 'hidden' : '';
-    };
+    let listenersAttached = false;
+    let isClosing = false;
 
-    const isMobile = () => window.innerWidth <= 600;
+    function ensureOverlay(): HTMLDivElement {
+        let el = document.querySelector<HTMLDivElement>('.zoom-overlay');
+        if (!el) {
+            el = document.createElement('div');
+            el.className = 'zoom-overlay';
+            document.body.appendChild(el);
+        }
+        return el;
+    }
 
-    document.querySelectorAll('.zoomable-image').forEach((img) => {
-        img.addEventListener('click', (e) => {
+    function closeZoom() {
+        if (isClosing) return;
+        isClosing = true;
+        const clone = document.querySelector('.zoomed-clone');
+        const hidden = document.querySelector('.zoomable-image.hidden');
+        const overlay = document.querySelector('.zoom-overlay');
+        if (hidden) hidden.classList.remove('hidden');
+        if (clone) clone.remove();
+        if (overlay) overlay.classList.remove('active');
+        // Återställ scroll-lås ENBART om ingen sheet är öppen (sheet-drawer
+        // sätter sin egen overflow:hidden — vi får inte skriva över den).
+        if (!document.querySelector('.sheet.open')) {
+            document.body.style.overflow = '';
+        }
+        // Mikro-frist innan vi släpper guarden, så en ev. event-duplicate inte
+        // re-triggar close direkt.
+        requestAnimationFrame(() => { isClosing = false; });
+    }
+
+    function openZoom(img: HTMLImageElement) {
+        if (document.querySelector('.zoomed-clone')) return;
+        const overlay = ensureOverlay();
+        img.classList.add('hidden');
+        const clone = img.cloneNode(true) as HTMLImageElement;
+        clone.classList.add('zoomed-clone');
+        clone.classList.remove('zoomable-image', 'hidden');
+        document.body.appendChild(clone);
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function bindZoom() {
+        // Garantera att overlay finns i nuvarande DOM (återskapas efter VT-swap).
+        ensureOverlay();
+
+        if (listenersAttached) return;
+        listenersAttached = true;
+
+        const isMobile = () => window.innerWidth <= 600;
+
+        document.addEventListener('click', (e) => {
             if (isMobile()) return;
+            const target = e.target as Element;
 
-            e.stopPropagation();
+            // Klick på en zoombar bild → öppna
+            const img = target.closest('.zoomable-image') as HTMLImageElement | null;
+            if (img && !document.querySelector('.zoomed-clone')) {
+                e.stopPropagation();
+                openZoom(img);
+                return;
+            }
 
-            if (!document.querySelector('.zoomed-clone')) {
-                // Dölj originalbilden
-                img.classList.add('hidden');
-
-                const clone = img.cloneNode(true) as HTMLImageElement;
-                clone.classList.add('zoomed-clone');
-                clone.classList.remove('zoomable-image');
-                clone.classList.remove('hidden'); // Ta bort hidden från klonen
-                document.body.appendChild(clone);
-                overlay.classList.add('active');
-                toggleScroll(true);
+            // Klick någon annanstans när en clone är öppen → stäng
+            if (document.querySelector('.zoomed-clone')) {
+                if (
+                    target.classList.contains('zoomed-clone') ||
+                    target.classList.contains('zoom-overlay') ||
+                    !target.closest('.zoomed-clone')
+                ) {
+                    closeZoom();
+                }
             }
         });
-    });
 
-    document.addEventListener('click', (e) => {
-        if (isMobile()) return;
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && document.querySelector('.zoomed-clone')) {
+                closeZoom();
+            }
+        });
+    }
 
-        const zoomedClone = document.querySelector('.zoomed-clone');
-        if (zoomedClone && ((e.target as Element).classList.contains('zoomed-clone') || !(e.target as Element).closest('.zoomed-clone'))) {
-            // Visa originalbilden igen
-            document.querySelector('.zoomable-image.hidden')?.classList.remove('hidden');
-
-            zoomedClone.remove();
-            overlay.classList.remove('active');
-            toggleScroll(false);
-        }
+    bindZoom();
+    document.addEventListener('astro:page-load', bindZoom);
+    // Innan VT-swappen tar bort overlay: stäng aktiv zoom rent.
+    document.addEventListener('astro:before-swap', () => {
+        if (document.querySelector('.zoomed-clone')) closeZoom();
     });
 </script>

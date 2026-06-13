@@ -1,17 +1,27 @@
 ---
-const description = "404";
-import '../styles/global.css';
----
-<layout>
-    <div class="lost">
-        <div class="gif">
-            <img width="300" height="259" alt="Raccoon404Gif" src="/404.webp"/>
-        </div>
-        <h1 class="lost__header">{ description }</h1>
-        <p class="lost__body">It seems like you've wandered into the wrong forest!</p>
-        <p>
-            <a class="lost__link" href="/">Return Home</a>
-        </p>
-    </div>
-</layout>
+import Layout from '../layouts/Layout.astro';
+import Icon from '../components/site/Icon.astro';
+import Reveal from '../components/site/Reveal.astro';
 
+const pageTitle = '404 · Barry Namdari';
+---
+<Layout pageTitle={pageTitle} containerType="wide">
+    <main class="article">
+        <Reveal>
+            <div class="cover">
+                <div class="glow"></div>
+                <Icon name="BookOpen" size={42} />
+            </div>
+            <h1 class="amh1">404</h1>
+            <div class="ammeta">sidan finns inte — eller den har flyttat</div>
+        </Reveal>
+        <Reveal delay={80}>
+            <div class="prose">
+                <p>Det här innehållet ligger inte längre här. Det är troligen vägen som har förändrats, inte du.</p>
+                <a class="slink" href="/" style="margin-top: 1.5rem;">
+                    Tillbaka hem <Icon name="ArrowRight" size={15} />
+                </a>
+            </div>
+        </Reveal>
+    </main>
+</Layout>

@@ -1,23 +1,26 @@
 ---
 import ThemeIcon from './ThemeIcon.astro';
 import { navigationItems } from '../data/navigation';
+
+const currentPath = Astro.url.pathname;
+const isCurrent = (path: string) => {
+    if (path === '/') return currentPath === '/';
+    return currentPath.startsWith(path);
+};
 ---
-<div class="navbar">
-    <div class="navbar__title">
-        <a href="/">Barry.Namdari</a>
-    </div>
-    <div class="navbar__menu">
-        {navigationItems
-            .filter(item => item.isEnabled && (!item.devOnly || import.meta.env.DEV))
-            .map(item => (
-                    <a
-                            href={item.path}
-                            target={item.isExternal ? "_blank" : undefined}
-                    >
-                        {item.title}
-                    </a>
-            ))
-        }
-        <ThemeIcon />
-    </div>
-</div>
+<nav class="nav" transition:persist>
+    {navigationItems
+        .filter(item => item.isEnabled && (!item.devOnly || import.meta.env.DEV))
+        .map(item => (
+            <a
+                class={`lk${isCurrent(item.path) ? " on" : ""}`}
+                href={item.path}
+                target={item.isExternal ? "_blank" : undefined}
+                rel={item.isExternal ? "noopener" : undefined}
+            >
+                {item.title}
+            </a>
+        ))
+    }
+    <ThemeIcon />
+</nav>

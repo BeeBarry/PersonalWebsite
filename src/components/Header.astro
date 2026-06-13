@@ -1,12 +1,31 @@
 ---
 import Navigation from './Navigation.astro';
 ---
-<header>
-    <div class={Astro.props.isWide ? "wide-container" : "default-container"}>
-    <nav transition:persist >
+<header class="head">
+    <div class="pf-wrap">
+        <a class="brand" href="/">
+            <b>barry</b><span class="dot"></span>
+        </a>
         <Navigation />
-    </nav>
     </div>
 </header>
 
-
+<script>
+    // Sticky header får .scrolled-klass när scrollY > 8px. Re-attachar på
+    // varje View Transition så listenern överlever sidnavigering.
+    function bindScrollDetect() {
+        const head = document.querySelector('header.head');
+        if (!head) return;
+        const onScroll = () => {
+            if (window.scrollY > 8) {
+                head.classList.add('scrolled');
+            } else {
+                head.classList.remove('scrolled');
+            }
+        };
+        onScroll();
+        window.addEventListener('scroll', onScroll, { passive: true });
+    }
+    bindScrollDetect();
+    document.addEventListener('astro:page-load', bindScrollDetect);
+</script>

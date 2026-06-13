@@ -1,25 +1,119 @@
 ---
-import { getCollection } from "astro:content";
-import Layout from "../layouts/Layout.astro";
-import Card from "../components/CardPost.astro";
-import { showEntry } from "../utils/content";
-const allPosts = await getCollection("posts", showEntry);
-const pageTitle = "Posts";
+import { getCollection } from 'astro:content';
+import Layout from '../layouts/Layout.astro';
+import { showEntry, parsePostDate } from '../utils/content';
+import PostItem from '../components/site/PostItem.astro';
+import Reveal from '../components/site/Reveal.astro';
+
+const pageTitle = 'Skrivet · Barry Namdari';
+
+const allPosts = (await getCollection('posts', showEntry))
+    .sort((a, b) => parsePostDate(b.data.date) - parsePostDate(a.data.date));
+const totalCount = allPosts.length;
+
+// Ämnesfilter: fast ordning, "Alla" först (default-aktiv). Endast ämnen som
+// faktiskt har inlägg visas som chips. Antal i parentes för snabb skanning.
+const CATEGORIES = ['IoT', 'Cloud & DevOps', 'Övrigt'] as const;
+const counts = new Map<string, number>();
+for (const p of allPosts) {
+    const c = p.data.category ?? 'Övrigt';
+    counts.set(c, (counts.get(c) ?? 0) + 1);
+}
+const filters = [
+    { label: 'Alla', value: 'all', count: totalCount },
+    ...CATEGORIES
+        .filter((c) => (counts.get(c) ?? 0) > 0)
+        .map((c) => ({ label: c, value: c, count: counts.get(c) ?? 0 })),
+];
 ---
+<Layout pageTitle={pageTitle} containerType="wide">
+    <div class="page">
+        <Reveal class="intro">
+            <div>
+                <h1 class="pagetitle">Skrivet</h1>
+                <p class="pagesub">
+                    Fältnoteringar och tekniska djupdyk — oftast om sånt som gick sönder,
+                    varför, och vad jag lärde mig på vägen.
+                </p>
+                <span class="pagestat">
+                    <span class="sq"></span>
+                    {totalCount} inlägg
+                </span>
+            </div>
+        </Reveal>
 
-<Layout pageTitle={pageTitle} containerType="default">
+        <Reveal delay={80}>
+            <div>
+                {totalCount > 0 ? (
+                    <>
+                        <div class="filterbar" role="group" aria-label="Filtrera inlägg efter ämne" data-filterbar>
+                            {filters.map((f, i) => (
+                                <button
+                                    type="button"
+                                    class={`tag${i === 0 ? ' is-active' : ''}`}
+                                    data-filter={f.value}
+                                    aria-pressed={i === 0 ? 'true' : 'false'}
+                                >
+                                    {f.label}
+                                    <span class="tag__count">{f.count}</span>
+                                </button>
+                            ))}
+                        </div>
+                        <div class="pf-list" data-postlist>
+                            {allPosts.map((p) => (
+                                <PostItem
+                                    href={`/posts/${p.id}/`}
+                                    title={p.data.title}
+                                    description={p.data.description}
+                                    date={p.data.date}
+                                    read={p.data.read}
+                                    showRead={true}
+                                    category={p.data.category ?? 'Övrigt'}
+                                />
+                            ))}
+                        </div>
+                        <p class="filter-empty" data-filter-empty hidden>Inga inlägg i det ämnet ännu.</p>
+                    </>
+                ) : (
+                    <p class="pagesub">Inlägg är på väg — kika tillbaka snart.</p>
+                )}
+            </div>
+        </Reveal>
+    </div>
 
-    <h2>Blog</h2>
-    <ul role="list" class="link-card-grid">
-        {
-            allPosts.map((cardPost) => (
-                <Card
-                    url={`/posts/${cardPost.id}/`}
-                    image={cardPost.data.image.url}
-                    title={cardPost.data.title}
-                    date={cardPost.data.date}
-                />
-            ))
+    <script>
+        // Klient-filter för ämneschips. Re-bindas på astro:page-load så
+        // View Transitions inte dödar listeners (samma mönster som WorkSheet).
+        function bindPostFilter() {
+            const bar = document.querySelector<HTMLElement>('[data-filterbar]');
+            const list = document.querySelector<HTMLElement>('[data-postlist]');
+            if (!bar || !list || bar.dataset.filterBound === '1') return;
+            bar.dataset.filterBound = '1';
+
+            const empty = document.querySelector<HTMLElement>('[data-filter-empty]');
+            const chips = Array.from(bar.querySelectorAll<HTMLButtonElement>('button[data-filter]'));
+            const items = Array.from(list.querySelectorAll<HTMLElement>('[data-category]'));
+
+            const apply = (value: string) => {
+                let shown = 0;
+                items.forEach((el) => {
+                    const match = value === 'all' || el.dataset.category === value;
+                    el.hidden = !match;
+                    if (match) shown++;
+                });
+                chips.forEach((c) => {
+                    const on = c.dataset.filter === value;
+                    c.classList.toggle('is-active', on);
+                    c.setAttribute('aria-pressed', String(on));
+                });
+                if (empty) empty.hidden = shown !== 0;
+            };
+
+            chips.forEach((c) => {
+                c.addEventListener('click', () => apply(c.dataset.filter ?? 'all'));
+            });
         }
-    </ul>
+        bindPostFilter();
+        document.addEventListener('astro:page-load', bindPostFilter);
+    </script>
 </Layout>

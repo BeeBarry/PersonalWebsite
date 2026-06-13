@@ -2,6 +2,8 @@
 title: 'Duck Quotes'
 draft: true
 description: 'Smygläs om detta projekt som snart lanseras..'
+kind: 'Portfolio-projekt'
+year: '2026'
 image:
     url: '/duck_logo.svg'
     alt: 'GitHub wallpaper'

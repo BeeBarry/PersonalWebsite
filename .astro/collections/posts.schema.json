@@ -9,10 +9,59 @@
       "type": "string"
     },
     "author": {
+      "default": "Barry",
       "type": "string"
     },
     "date": {
       "type": "string"
+    },
+    "category": {
+      "default": "Övrigt",
+      "type": "string",
+      "enum": [
+        "IoT",
+        "Cloud & DevOps",
+        "Övrigt"
+      ]
+    },
+    "read": {
+      "type": "string"
+    },
+    "tags": {
+      "type": "string"
+    },
+    "icon": {
+      "default": "BookOpen",
+      "type": "string",
+      "enum": [
+        "Activity",
+        "Bug",
+        "Server",
+        "BookOpen",
+        "Palette",
+        "Terminal"
+      ]
+    },
+    "cover": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "alt": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "url",
+        "alt"
+      ]
+    },
+    "body": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
     },
     "image": {
       "type": "object",
@@ -39,8 +88,6 @@
   },
   "required": [
     "title",
-    "author",
-    "date",
-    "image"
+    "date"
   ]
 }

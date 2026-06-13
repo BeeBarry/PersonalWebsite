@@ -1,34 +1,36 @@
 ---
 title: 'Barrynamdari.se'
-description: 'Personlig webbsida som visar mina projekt, artiklar och min resa hit.'
+description: 'Den här portfoliosajten — statisk Astro 6 med View Transitions, mörkt/ljust tema och bloggsystem.'
+kind: 'Portfolio-projekt'
+year: '2026'
 image:
     url: '/bn_logo.svg'
-    alt: 'GitHub wallpaper'
+    alt: 'Barrynamdari.se logo'
 worksImage1:
     url: '/bn_3.png'
-    alt: 'Första bilden av mitt projekt'
+    alt: 'Startsida'
 worksImage2:
     url: '/bn_4.png'
-    alt: 'Andra bilden av mitt projekt'
+    alt: 'Arbete-vy'
 worksImage4:
   url: '/bn_2.png'
-  alt: 'Andra bilden av mitt projekt'
+  alt: 'Artikelvy'
 platform: Web
-stack: Astro, JavaScript, Docker,  Gitlab CI, Typescript
+stack: Astro 6, TypeScript, Tailwind v4, MDX
 website: https://barrynamdari.se/
 github: https://github.com/BeeBarry/PersonalWebsite
 ---
 
-Här fick jag iden att samla mina projekt och innehållet
-jag skapar om lärandet av DevOps och utveckling.
+Den här sajten är min hub för portfolio och fältnoteringar — alltihop byggt
+statiskt med **Astro 6** för snabb laddningstid och bra SEO.
 
-✅ Statisk webbplats byggd med **Astro.js** för snabb laddningstid<br>
-✅ Automatiserad **CI/CD-pipeline** via **GitLab** för kontinuerlig leverans<br>
-✅ Learn Hub med **pedagogiskt material** om molnteknologier<br>
-✅ **Responsiv design** för alla enheter<br>
-✅ **Ljust/mörkt tema** med sparade användarpreferenser<br>
-✅ Optimerade bilder och **tillgänglighets-anpassad** struktur
+✅ **Astro 6 + Content Layer** med markdown/MDX-baserade collections för projekt och posts<br>
+✅ **View Transitions** för SPA-känsla utan client-side routing<br>
+✅ **Astro 6 Fonts API** med Schibsted Grotesk + Spline Sans Mono (auto-preload, subsetting)<br>
+✅ **Tailwind v4** med CSS-först-tokens och `@theme inline` för tema-växling<br>
+✅ **Mörkt/ljust tema** med persistens via localStorage och `astro:after-swap`<br>
+✅ Sheet-drawer för projektdetaljer + IntersectionObserver-reveals<br>
+✅ Responsivt: <560px döljer nav, <640px ger bottom-sheet, <720px stackar hero
 
-Min största lärdom var att man med enkla tekniker kan få fram en innehållsrik webbsida
-utan att behöva bygga en fullstack.
-Att tänka "essentiellt" och inte "over-engineera" med andra ord.
+Lärdomen: en personlig sajt är värd att finslipa. Den får vara den första
+stora portföljbiten i sig själv.

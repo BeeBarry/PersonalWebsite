@@ -1,6 +1,8 @@
 ---
 title: 'DevOps Tools'
-description: 'En fullstack webbsida som lär ut om olika verktyg som används inom DevOps rollen'
+description: 'En fullstack webbsida som lär ut om olika verktyg som används inom DevOps rollen.'
+kind: 'Portfolio-projekt'
+year: '2024'
 image:
     url: '/devops_logo.svg'
     alt: 'Devops logo'

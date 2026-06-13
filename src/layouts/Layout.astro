@@ -2,27 +2,16 @@
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import '../styles/global.css';
-import { Font, getImage } from 'astro:assets';
-import bg from '../assets/images/bg.jpg';
-const backgroundImage = await getImage({ src: bg, format: 'jpg' });
-/*Uppdatera props för att inkludera containerType*/
+import { Font } from 'astro:assets';
+import { ClientRouter } from 'astro:transitions';
+
 const { pageTitle, containerType = "default" } = Astro.props;
 ---
 <!DOCTYPE html>
-<html transition:animate="none" lang="en">
+<html transition:animate="none" lang="sv">
 <head>
-    <!-- Placera redirect-scriptet först i head för snabbast möjliga exekvering -->
     <script is:inline define:vars={{ isDev: import.meta.env.DEV }}>
-        /*
-         * Använder replace() istället för assign() för att förhindra att
-         * HTTP-versionen hamnar i browserhistoriken
-         *
-         * Genom att köra detta script först i head-taggen säkerställer vi
-         * att redirecten sker innan något annat innehåll laddas
-         *
-         * isDev kontrollerar om vi är i utvecklingsmiljö via Astros inbyggda miljövariabel
-         * Detta säkerställer att redirecten endast sker i produktion och inte under utveckling
-         */
+        // HTTP → HTTPS-redirect i prod, körs allra först i head.
         if (
             window.location.protocol === 'http:' &&
             !window.location.hostname.includes('localhost') &&
@@ -33,10 +22,27 @@ const { pageTitle, containerType = "default" } = Astro.props;
             );
         }
     </script>
+
+    <script is:inline>
+        // Tema-init utan FOUC (synkron innan paint). Default = mörkt (portfolio).
+        // Lyssnar även på astro:after-swap så View Transitions inte blinkar.
+        (function () {
+            function applyTheme() {
+                var t = localStorage.getItem('theme');
+                if (t === 'light') {
+                    document.documentElement.classList.add('light');
+                } else {
+                    document.documentElement.classList.remove('light');
+                }
+            }
+            applyTheme();
+            document.addEventListener('astro:after-swap', applyTheme);
+        })();
+    </script>
+
     <meta charset="utf-8" />
-    <meta name="description" content="Astro description">
-    <meta name="viewport" content="width=device-width" />
-    <!-- Resten av dina befintliga head-element... -->
+    <meta name="description" content="Barry Namdari — utvecklare med fokus på IoT, moln och pedagogik.">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
@@ -44,21 +50,19 @@ const { pageTitle, containerType = "default" } = Astro.props;
     <link rel="icon" type="image/png" sizes="512x512" href="/android-chrome-512x512.png">
 
     <meta name="generator" content={Astro.generator} />
-    <Font cssVariable="--font-grunge" />
+    <Font cssVariable="--font-display" />
     <Font cssVariable="--font-mono" />
+    <ClientRouter />
     <title>{pageTitle}</title>
 </head>
-<body
-    style={`background-image:url(${backgroundImage.src})`}
-    class="bg-cover bg-center bg-no-repeat bg-fixed box-border"
->
-<div class="noise-overlay" aria-hidden="true"></div>
-<div class="site-content">
-<Header isWide={containerType === "wide"} />
-<main class={`${containerType}-container`}>
-    <slot />
-    <Footer />
-</main>
+<body class="box-border">
+<div class="grain" aria-hidden="true"></div>
+<div class="site">
+    <Header isWide={containerType === "wide"} />
+    <main class={`${containerType}-container`}>
+        <slot />
+        <Footer />
+    </main>
 </div>
 </body>
 </html>

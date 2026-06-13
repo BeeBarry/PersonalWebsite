@@ -1,0 +1,17 @@
+---
+interface Props {
+    href: string;
+    title: string;
+    description?: string;
+    date: string;
+    read?: string;
+    showRead?: boolean;
+    category?: string;
+}
+const { href, title, description, date, read, showRead = false, category } = Astro.props;
+---
+<a class="pf-post" href={href} data-category={category}>
+    <div class="pf-t">{title}</div>
+    {description && <div class="pf-d">{description}</div>}
+    <span class="pf-date">{showRead && read ? `${date} · ${read}` : date}</span>
+</a>

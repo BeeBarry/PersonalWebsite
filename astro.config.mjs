@@ -12,20 +12,26 @@ export default defineConfig({
   publicDir: './static',
   integrations: [mdx(), react()],
 
-  // Typografi (grunge-temats fonter) via Astro 6 inbyggda Fonts-API.
+  // Portfolio-temats fonter via Astro 6 inbyggda Fonts-API.
+  // Schibsted Grotesk = display + brödtext, Spline Sans Mono = mono/labels.
   fonts: [
     {
-      provider: fontProviders.fontsource(),
-      name: 'Road Rage',
-      cssVariable: '--font-grunge',
-      fallbacks: ['system-ui'],
+      provider: fontProviders.google(),
+      name: 'Schibsted Grotesk',
+      cssVariable: '--font-display',
+      fallbacks: ['system-ui', 'sans-serif'],
+      weights: [400, 500, 600, 700, 800],
+      styles: ['normal'],
+      subsets: ['latin', 'latin-ext'],
     },
     {
-      provider: fontProviders.fontsource(),
-      name: 'JetBrains Mono',
+      provider: fontProviders.google(),
+      name: 'Spline Sans Mono',
       cssVariable: '--font-mono',
-      fallbacks: ['monospace'],
-      weights: [400, 500, 600, 700, 800],
+      fallbacks: ['ui-monospace', 'Menlo', 'monospace'],
+      weights: [400, 500],
+      styles: ['normal'],
+      subsets: ['latin', 'latin-ext'],
     },
   ],
 
