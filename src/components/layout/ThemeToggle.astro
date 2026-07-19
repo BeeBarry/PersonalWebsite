@@ -1,0 +1,52 @@
+---
+// Temaväxlare. Projektets modell: MÖRKT = default (ingen klass), LJUST = html.light.
+// FOUC-fri init sker i BaseLayout (is:inline, före paint). Knappen visar ikonen
+// för det läge man byter TILL: sol i mörkt läge, måne i ljust läge.
+import Icon from "../site/Icon.astro";
+---
+
+<button
+  id="theme-toggle"
+  class="flex h-10 w-10 items-center justify-center text-muted-foreground transition-colors hover:text-primary md:h-8 md:w-8"
+  title="Växla tema"
+  aria-label="Växla mellan ljust och mörkt tema"
+>
+  <span class="theme-icon theme-icon--sun"><Icon name="Sun" size={17} /></span>
+  <span class="theme-icon theme-icon--moon"><Icon name="Moon" size={17} /></span>
+</button>
+
+<style>
+  .theme-icon {
+    display: inline-flex;
+  }
+  /* Mörkt (default): visa sol (→ byt till ljust). Ljust: visa måne (→ mörkt). */
+  .theme-icon--moon {
+    display: none;
+  }
+  :global(html.light) .theme-icon--sun {
+    display: none;
+  }
+  :global(html.light) .theme-icon--moon {
+    display: inline-flex;
+  }
+</style>
+
+<script>
+  function bindThemeToggle() {
+    const btn = document.getElementById("theme-toggle");
+    // Guard: bind exakt en gång per knapp-element (undviker dubbla lyssnare när
+    // både inline-anropet och astro:page-load körs vid första sidladdningen).
+    if (!btn || btn.dataset.bound === "1") return;
+    btn.dataset.bound = "1";
+    btn.addEventListener("click", () => {
+      const el = document.documentElement;
+      el.classList.toggle("light");
+      localStorage.setItem(
+        "theme",
+        el.classList.contains("light") ? "light" : "dark",
+      );
+    });
+  }
+  bindThemeToggle();
+  document.addEventListener("astro:page-load", bindThemeToggle);
+</script>

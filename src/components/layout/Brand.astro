@@ -1,0 +1,21 @@
+---
+// Varumärke i sidebar: textmärke "barry" + accent-dot (portfolio-lettermark),
+// samt kort roll-beskrivning (döljs på mobil där sidebar är komprimerad).
+import site from "../../config/site";
+---
+
+<div class="mb-5 md:mb-12">
+  <a
+    href="/"
+    class="inline-flex items-baseline gap-1"
+    aria-label={`Hem — ${site.meta.title}`}
+  >
+    <span class="text-2xl font-extrabold tracking-tight text-foreground"
+      >{site.brand.name}</span
+    >
+    <span class="h-1.5 w-1.5 rounded-full bg-primary"></span>
+  </a>
+  <p class="mt-3 hidden max-w-[30ch] text-xs leading-relaxed text-muted-foreground/70 md:block">
+    {site.meta.description}
+  </p>
+</div>

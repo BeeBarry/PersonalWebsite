@@ -1,0 +1,27 @@
+---
+// App-layout (Breeze-arkitektur): ett inramat kort med persistent Sidebar till
+// vänster och en scrollande <main> till höger. Klick i nav byter innehållet i
+// main (via View Transitions) — sidebaren står kvar. På mobil staplas de.
+import BaseLayout from "./BaseLayout.astro";
+import Sidebar from "../components/layout/Sidebar.astro";
+
+interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+}
+
+const props = Astro.props;
+---
+
+<BaseLayout {...props}>
+  <div
+    class="relative z-[2] flex w-full max-w-5xl flex-col overflow-hidden rounded-none border border-border bg-card shadow-main md:h-[min(88vh,52rem)] md:flex-row md:rounded-[2.5rem]"
+  >
+    <Sidebar />
+
+    <main class="custom-scrollbar flex-1 overflow-x-hidden overflow-y-auto">
+      <slot />
+    </main>
+  </div>
+</BaseLayout>

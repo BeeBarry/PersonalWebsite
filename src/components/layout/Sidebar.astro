@@ -1,0 +1,38 @@
+---
+// Persistent vänster-sidebar (Breeze-arkitektur): varumärke, navigation,
+// sociala länkar + temaväxlare. På mobil blir den en topprad (border-b),
+// på desktop en kolumn till vänster (border-r) medan main scrollar höger.
+import site from "../../config/site";
+import Nav from "./Nav.astro";
+import ThemeToggle from "./ThemeToggle.astro";
+import Brand from "./Brand.astro";
+import { Icon } from "astro-icon/components";
+---
+
+<aside
+  class="flex w-full flex-col border-b border-border bg-muted/20 p-5 md:w-[34%] md:border-r md:border-b-0 md:p-10"
+>
+  <Brand />
+
+  <Nav />
+
+  <div class="mt-5 flex items-center justify-between md:mt-12">
+    <div class="flex gap-1 md:gap-3.5">
+      {
+        site.social.map((item) => (
+          <a
+            href={item.href}
+            class="p-2 text-muted-foreground transition-colors hover:text-primary md:p-0"
+            aria-label={item.name}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Icon name={item.icon} size={19} />
+          </a>
+        ))
+      }
+    </div>
+
+    <ThemeToggle />
+  </div>
+</aside>
