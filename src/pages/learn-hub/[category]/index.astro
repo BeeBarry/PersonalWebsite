@@ -1,42 +1,69 @@
 ---
 import { getCollection } from "astro:content";
-import Layout from '../../../layouts/Layout.astro';
-import ArticleCard from '../../../components/ArticleCard.astro';
-import { categories } from '../../../data/categories';
-import { showEntry } from '../../../utils/content';
+import AppLayout from "../../../layouts/AppLayout.astro";
+import { categories } from "../../../data/categories";
+import { showEntry } from "../../../utils/content";
+import ContentRow from "../../../components/site/ContentRow.astro";
+import { Icon } from "astro-icon/components";
 
 export async function getStaticPaths() {
-    return categories.map(({ slug, title }) => {
-        return {
-            params: { category: slug },
-            props: { categoryTitle: title }
-        };
-    });
+  return categories.map(({ slug, title }) => ({
+    params: { category: slug },
+    props: { categoryTitle: title },
+  }));
 }
 
 const { category } = Astro.params;
 const { categoryTitle } = Astro.props;
 
-const allLearningContent = await getCollection('learn', (entry) => {
-    return entry.data.category === category && showEntry(entry);
-});
-
-const sortedContent = allLearningContent.sort((a, b) => a.data.order - b.data.order);
+const articles = (
+  await getCollection(
+    "learn",
+    (e) => e.data.category === category && showEntry(e),
+  )
+).sort((a, b) => a.data.order - b.data.order);
 ---
 
-<Layout pageTitle={categoryTitle} containerType="default">
+<AppLayout
+  title={`${categoryTitle} · Learn Hub`}
+  description={`Artiklar om ${categoryTitle}.`}
+>
+  <div class="animate-in mx-auto max-w-2xl p-6 md:p-10">
+    <a
+      href="/learn-hub/"
+      class="group inline-flex items-center gap-1.5 font-mono text-[12px] tracking-wide text-muted-foreground transition-colors hover:text-primary"
+    >
+      <Icon
+        name="mdi:arrow-left"
+        class="transition-transform group-hover:-translate-x-0.5"
+      /> Learn Hub
+    </a>
 
-    <h2>{categoryTitle}</h2>
+    <header class="mt-5 mb-6">
+      <h2
+        class="mb-2 font-mono text-[10px] tracking-[0.22em] text-muted-foreground/50 uppercase"
+      >
+        Learn Hub
+      </h2>
+      <h1 class="text-xl font-bold tracking-tight text-foreground">
+        {categoryTitle}
+      </h1>
+    </header>
 
-    <ul role="list" class="link-card-grid">
-        {sortedContent.map((article) => (
-                <ArticleCard
-                        title={article.data.title}
-                        description={article.data.description}
-                        image={article.data.image}
-                        tags={article.data.tags || []}
-                        url={`/learn-hub/${category}/${article.id}/`}
+    {
+      articles.length > 0 ? (
+        <div>
+          {articles.map((a) => (
+            <ContentRow
+              href={`/learn-hub/${category}/${a.id}/`}
+              title={a.data.title}
+              description={a.data.description}
             />
-            ))}
-            </ul>
-            </Layout>
+          ))}
+        </div>
+      ) : (
+        <p class="text-muted-foreground">Inga artiklar här ännu.</p>
+      )
+    }
+  </div>
+</AppLayout>

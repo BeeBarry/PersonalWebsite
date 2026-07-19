@@ -1,0 +1,128 @@
+---
+import AppLayout from "../../layouts/AppLayout.astro";
+
+// Intern designreferens — dev-only. getStaticPaths returnerar inga sidor i
+// prod, så /design-system utesluts helt ur prod-bygget men finns i `astro dev`.
+export function getStaticPaths() {
+  return import.meta.env.PROD ? [] : [{ params: { path: undefined } }];
+}
+
+// Aktuella färgtokens. `token` = Tailwind-utilitynamnet (Breeze-brygga),
+// `cssVar` = underliggande CSS-variabel som togglas vid temaskifte.
+const colors = [
+  { role: "Bakgrund", token: "bg-background", cssVar: "--c-bg" },
+  { role: "Kort", token: "bg-card", cssVar: "--c-card" },
+  { role: "Muted-yta", token: "bg-muted", cssVar: "--c-muted" },
+  { role: "Text", token: "text-foreground", cssVar: "--c-text" },
+  { role: "Sekundär text", token: "—", cssVar: "--c-text-secondary" },
+  { role: "Dämpad text", token: "text-muted-foreground", cssVar: "--c-text-muted" },
+  { role: "Accent", token: "text-primary / bg-primary", cssVar: "--c-accent" },
+  { role: "Accent-kontrast", token: "text-primary-foreground", cssVar: "--c-accent-contrast" },
+  { role: "Kantlinje", token: "border-border", cssVar: "--c-border" },
+];
+---
+
+<AppLayout title="Designsystem (internt)" description="Intern designreferens.">
+  <div class="mx-auto max-w-2xl p-6 md:p-10">
+    <header class="mb-8">
+      <p
+        class="mb-2 font-mono text-[11px] tracking-[0.3em] text-muted-foreground uppercase opacity-60"
+      >
+        Internt · dev-only
+      </p>
+      <h1 class="text-2xl font-extrabold tracking-tight text-foreground">
+        Designsystem
+      </h1>
+      <p class="mt-2 text-[14px] leading-relaxed text-muted-foreground">
+        Levande referens för Breeze-brygga + palett. Växla via temaknappen —
+        alla värden speglar <code
+          class="rounded bg-muted px-1 py-0.5 font-mono text-[12px]"
+          >--c-*</code
+        > i <code class="rounded bg-muted px-1 py-0.5 font-mono text-[12px]"
+          >global.css</code
+        >. Byggs inte i prod.
+      </p>
+    </header>
+
+    <!-- Färg -->
+    <section class="mb-10">
+      <h2
+        class="mb-4 text-[11px] font-bold tracking-[0.3em] text-muted-foreground uppercase opacity-60"
+      >
+        Färg
+      </h2>
+      <div class="grid gap-3 sm:grid-cols-2">
+        {
+          colors.map((c) => (
+            <div class="flex items-center gap-3 rounded-xl border border-border bg-muted/10 p-3">
+              <span
+                class="h-10 w-10 shrink-0 rounded-lg border border-border"
+                style={`background: var(${c.cssVar})`}
+              />
+              <div class="min-w-0">
+                <div class="text-[13px] font-bold text-foreground">{c.role}</div>
+                <code class="font-mono text-[11px] text-muted-foreground">
+                  {c.cssVar} · {c.token}
+                </code>
+              </div>
+            </div>
+          ))
+        }
+      </div>
+    </section>
+
+    <!-- Typografi -->
+    <section class="mb-10">
+      <h2
+        class="mb-4 text-[11px] font-bold tracking-[0.3em] text-muted-foreground uppercase opacity-60"
+      >
+        Typografi
+      </h2>
+      <div class="space-y-3">
+        <p class="text-3xl font-extrabold tracking-tight text-foreground">
+          Schibsted Grotesk — display
+        </p>
+        <p class="text-base text-muted-foreground">
+          Brödtext i Schibsted Grotesk via Astro Fonts API.
+        </p>
+        <p class="font-mono text-[13px] tracking-wide text-muted-foreground">
+          Spline Sans Mono — meta, kicker, datum, taggar
+        </p>
+      </div>
+    </section>
+
+    <!-- Komponenter -->
+    <section>
+      <h2
+        class="mb-4 text-[11px] font-bold tracking-[0.3em] text-muted-foreground uppercase opacity-60"
+      >
+        Komponentmönster
+      </h2>
+      <div class="flex flex-wrap items-center gap-2">
+        <span
+          class="rounded-full border border-primary bg-primary px-3 py-1.5 text-[13px] font-semibold text-primary-foreground"
+        >
+          Aktiv chip
+        </span>
+        <span
+          class="rounded-full border border-border px-3 py-1.5 text-[13px] font-semibold text-muted-foreground"
+        >
+          Inaktiv chip
+        </span>
+        <span
+          class="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted/20 px-2.5 py-1.5 text-[13px] text-foreground/80"
+        >
+          Tech-tagg
+        </span>
+      </div>
+      <div
+        class="mt-3 rounded-xl border border-border bg-muted/10 p-4 shadow-main"
+      >
+        <div class="text-[15px] font-bold text-foreground">Kort-yta</div>
+        <p class="mt-1 text-[13px] text-muted-foreground">
+          bg-card / border-border / shadow-main
+        </p>
+      </div>
+    </section>
+  </div>
+</AppLayout>

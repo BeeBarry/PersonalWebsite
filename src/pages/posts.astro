@@ -1,70 +1,87 @@
 ---
-import { getCollection } from 'astro:content';
-import Layout from '../layouts/Layout.astro';
-import { showEntry, parsePostDate } from '../utils/content';
-import PostItem from '../components/site/PostItem.astro';
-import DomainFilter from '../components/site/DomainFilter.astro';
-import Reveal from '../components/site/Reveal.astro';
-import { domains } from '../data/domains';
+import AppLayout from "../layouts/AppLayout.astro";
+import { getCollection } from "astro:content";
+import { showEntry, parsePostDate } from "../utils/content";
+import PostCard from "../components/site/PostCard.astro";
+import DomainChips from "../components/site/DomainChips.astro";
+import StickyBar from "../components/site/StickyBar.astro";
+import { domains } from "../data/domains";
 
-const pageTitle = 'Skrivet · Barry Namdari';
-
-const allPosts = (await getCollection('posts', showEntry))
-    .sort((a, b) => parsePostDate(b.data.date) - parsePostDate(a.data.date));
+const allPosts = (await getCollection("posts", showEntry)).sort(
+  (a, b) => parsePostDate(b.data.date) - parsePostDate(a.data.date),
+);
 const totalCount = allPosts.length;
 
-// Filterchips: "Alla" först (default), sedan domäner som faktiskt har inlägg, med antal.
-const has = (slug: string) => allPosts.filter((p) => (p.data.domains ?? []).includes(slug as any)).length;
+const has = (slug: string) =>
+  allPosts.filter((p) => (p.data.domains ?? []).includes(slug as any)).length;
 const filters = [
-    { label: 'Alla', value: 'all', count: totalCount },
-    ...domains.filter((d) => has(d.slug) > 0).map((d) => ({ label: d.title, value: d.slug, count: has(d.slug) })),
+  { label: "Alla", value: "all", count: totalCount },
+  ...domains
+    .filter((d) => has(d.slug) > 0)
+    .map((d) => ({ label: d.short, value: d.slug, count: has(d.slug) })),
 ];
 ---
-<Layout pageTitle={pageTitle} containerType="wide">
-    <div class="page">
-        <Reveal class="intro">
-            <div>
-                <h1 class="pagetitle">Skrivet</h1>
-                <p class="pagesub">
-                    Fältnoteringar och tekniska djupdyk — oftast om sånt som gick sönder,
-                    varför, och vad jag lärde mig på vägen.
-                </p>
-                <span class="pagestat">
-                    <span class="sq"></span>
-                    {totalCount} inlägg
-                </span>
-            </div>
-        </Reveal>
 
-        <Reveal delay={80}>
-            <div>
-                {totalCount > 0 ? (
-                    <>
-                        <DomainFilter filters={filters} />
-                        <div class="pf-list" data-filter-target>
-                            {allPosts.map((p) => (
-                                <PostItem
-                                    href={`/posts/${p.id}/`}
-                                    title={p.data.title}
-                                    description={p.data.description}
-                                    date={p.data.date}
-                                    read={p.data.read}
-                                    showRead={true}
-                                    domains={(p.data.domains ?? []).join(' ')}
-                                />
-                            ))}
-                        </div>
-                        <p class="filter-empty" data-filter-empty hidden>Inga inlägg inom denna domän ännu.</p>
-                    </>
-                ) : (
-                    <p class="pagesub">Inlägg är på väg — kika tillbaka snart.</p>
-                )}
-            </div>
-        </Reveal>
-    </div>
+<AppLayout
+  title="Fältnoteringar · Barry Namdari"
+  description="Fältnoteringar och tekniska djupdyk."
+>
+  {
+    totalCount > 0 && filters.length > 1 && (
+      <StickyBar title="Fältnoteringar">
+        <DomainChips filters={filters} compact />
+      </StickyBar>
+    )
+  }
 
-    <script>
-        import { initDomainFilter } from '../scripts/domainFilter';
-        initDomainFilter();
-    </script>
-</Layout>
+  <div class="animate-in p-6 md:p-8">
+    <header class="mb-6">
+      <h2
+        class="mb-2 font-mono text-[10px] tracking-[0.22em] text-muted-foreground/50 uppercase"
+      >
+        Fältnoteringar
+      </h2>
+      <h1 class="text-xl font-bold tracking-tight text-foreground">
+        Noteringar &amp; djupdyk
+      </h1>
+      <p class="mt-2 max-w-prose text-[13.5px] leading-relaxed text-muted-foreground">
+        Oftast om sånt som gick sönder, varför, och vad jag lärde mig på vägen.
+      </p>
+    </header>
+
+    {
+      totalCount > 0 ? (
+        <>
+          {filters.length > 1 && <DomainChips filters={filters} />}
+          <div data-sticky-anchor aria-hidden="true"></div>
+          <div class="grid gap-4 sm:grid-cols-2" data-filter-target>
+            {allPosts.map((p) => (
+              <PostCard
+                href={`/posts/${p.id}/`}
+                title={p.data.title}
+                description={p.data.description}
+                date={p.data.date}
+                image={p.data.image}
+                tags={(p.data.domains ?? []).join(" ")}
+              />
+            ))}
+          </div>
+          <p class="mt-6 text-sm text-muted-foreground" data-filter-empty hidden>
+            Inga noteringar inom denna domän ännu.
+          </p>
+        </>
+      ) : (
+        <p class="text-muted-foreground">
+          Noteringar är på väg — kika tillbaka snart.
+        </p>
+      )
+    }
+  </div>
+
+  <script>
+    import { initDomainFilter } from "../scripts/domainFilter";
+    import { initStickyBar } from "../scripts/stickyBar";
+    initDomainFilter();
+    initStickyBar();
+  </script>
+</AppLayout>

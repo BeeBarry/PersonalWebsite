@@ -1,19 +1,161 @@
 ---
-import { getCollection } from 'astro:content';
-import Layout from '../layouts/Layout.astro';
-import Hero from '../components/site/Hero.astro';
-import DomainExplorer from '../components/site/DomainExplorer.astro';
-import ContentSheet from '../components/site/ContentSheet.astro';
-import { showEntry, parsePostDate } from '../utils/content';
-
-const pageTitle = 'Barry Namdari';
-
-const projects = await getCollection('projects', showEntry);
-const posts = (await getCollection('posts', showEntry))
-    .sort((a, b) => parsePostDate(b.data.date) - parsePostDate(a.data.date));
+import AppLayout from "../layouts/AppLayout.astro";
+import { Image } from "astro:assets";
+import { Icon } from "astro-icon/components";
+import profilePic from "../assets/images/profilepic.png";
+import site from "../config/site";
+import { domains } from "../data/domains";
 ---
-<Layout pageTitle={pageTitle} containerType="wide">
-    <Hero />
-    <DomainExplorer projects={projects} posts={posts} />
-    <ContentSheet projects={projects} posts={posts} />
-</Layout>
+
+<AppLayout title={site.meta.title} description={site.meta.description}>
+  <div class="animate-in mx-auto max-w-xl p-6 md:px-10 md:py-12">
+    <!-- Hero: leder med roll + positionering, inte namnet -->
+    <section class="mb-11">
+      <div class="flex items-center gap-3.5">
+        <div
+          class="h-14 w-14 shrink-0 overflow-hidden rounded-full ring-1 ring-border"
+        >
+          <Image
+            src={profilePic}
+            alt="Barry Namdari"
+            width={112}
+            height={112}
+            class="h-full w-full object-cover"
+            loading="eager"
+          />
+        </div>
+        <p
+          class="font-mono text-[11px] tracking-[0.2em] text-primary uppercase"
+        >
+          {site.hero.role}
+        </p>
+      </div>
+      <p
+        class="mt-5 text-xl leading-snug font-bold tracking-tight text-balance text-foreground"
+      >
+        {site.hero.tagline}
+      </p>
+
+      <!-- Certifikat: badge + namn. Byt <Icon> mot <img src={c.badge}> när
+           badge-bilderna ligger i static/certs/. -->
+      <ul class="mt-6 flex flex-wrap gap-2">
+        {
+          site.certs.map((c) => (
+            <li class="inline-flex items-center gap-2 rounded-lg border border-border bg-muted/15 px-2.5 py-1.5">
+              <Icon name={c.icon} class="h-[18px] w-[18px]" />
+              <span class="text-[12px] font-medium text-foreground/85">
+                {c.name}
+              </span>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <!-- Inriktningar: det unika, lyft högt -->
+    <section class="mb-11">
+      <h2
+        class="mb-4 font-mono text-[10px] tracking-[0.22em] text-muted-foreground/50 uppercase"
+      >
+        Inriktningar
+      </h2>
+      <div class="grid gap-2.5 sm:grid-cols-3">
+        {
+          domains.map((d) => (
+            <div class="rounded-xl border border-border bg-muted/10 p-4">
+              <div class="flex items-center gap-2">
+                <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                <h3 class="text-[13px] font-bold text-foreground">{d.short}</h3>
+              </div>
+              <p class="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">
+                {d.description}
+              </p>
+            </div>
+          ))
+        }
+      </div>
+    </section>
+
+    <!-- Om -->
+    <section class="mb-11">
+      <h2
+        class="mb-3 font-mono text-[10px] tracking-[0.22em] text-muted-foreground/50 uppercase"
+      >
+        Om
+      </h2>
+      {
+        site.about.map((p) => (
+          <p class="mb-3 text-[14px] leading-relaxed text-muted-foreground last:mb-0">
+            {p}
+          </p>
+        ))
+      }
+    </section>
+
+    <!-- Verktyg & tekniker: grupperade. Rena färgade loggor, ingen container/hover -->
+    <section class="mb-11">
+      <h2
+        class="mb-5 font-mono text-[10px] tracking-[0.22em] text-muted-foreground/50 uppercase"
+      >
+        Verktyg &amp; tekniker
+      </h2>
+      <div class="space-y-5">
+        {
+          site.stackGroups.map((group) => (
+            <div>
+              <h3 class="mb-2.5 text-[11.5px] font-semibold tracking-wide text-foreground/75">
+                {group.title}
+              </h3>
+              <ul class="flex flex-wrap gap-x-5 gap-y-3">
+                {group.items.map((t) => (
+                  <li class="inline-flex items-center gap-1.5 text-[12.5px] text-muted-foreground">
+                    <Icon name={t.icon} class="h-[18px] w-[18px]" />
+                    {t.name}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))
+        }
+      </div>
+    </section>
+
+    <!-- Utforska -->
+    <nav class="border-t border-border pt-6">
+      <div class="flex flex-wrap gap-x-6 gap-y-2 text-[13px]">
+        <a
+          href="/works/"
+          class="group inline-flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-primary"
+          >Arbete <Icon
+            name="mdi:arrow-right"
+            class="transition-transform group-hover:translate-x-0.5"
+          /></a
+        >
+        <a
+          href="/posts/"
+          class="group inline-flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-primary"
+          >Fältnoteringar <Icon
+            name="mdi:arrow-right"
+            class="transition-transform group-hover:translate-x-0.5"
+          /></a
+        >
+        <a
+          href="/learn-hub/"
+          class="group inline-flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-primary"
+          >Learn Hub <Icon
+            name="mdi:arrow-right"
+            class="transition-transform group-hover:translate-x-0.5"
+          /></a
+        >
+      </div>
+    </nav>
+
+    <!-- Footer -->
+    <footer
+      class="mt-8 flex items-center justify-between border-t border-border pt-6 font-mono text-[10px] tracking-widest text-muted-foreground/40 uppercase"
+    >
+      <span>{site.footer.copyright}</span>
+      <span>{site.footer.builtWith}</span>
+    </footer>
+  </div>
+</AppLayout>

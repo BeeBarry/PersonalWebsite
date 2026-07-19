@@ -1,27 +1,26 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import Icon from '../components/site/Icon.astro';
-import Reveal from '../components/site/Reveal.astro';
-
-const pageTitle = '404 · Barry Namdari';
+import AppLayout from "../layouts/AppLayout.astro";
+import Icon from "../components/site/Icon.astro";
 ---
-<Layout pageTitle={pageTitle} containerType="wide">
-    <main class="article">
-        <Reveal>
-            <div class="cover">
-                <div class="glow"></div>
-                <Icon name="BookOpen" size={42} />
-            </div>
-            <h1 class="amh1">404</h1>
-            <div class="ammeta">sidan finns inte — eller den har flyttat</div>
-        </Reveal>
-        <Reveal delay={80}>
-            <div class="prose">
-                <p>Det här innehållet ligger inte längre här. Det är troligen vägen som har förändrats, inte du.</p>
-                <a class="slink" href="/" style="margin-top: 1.5rem;">
-                    Tillbaka hem <Icon name="ArrowRight" size={15} />
-                </a>
-            </div>
-        </Reveal>
+
+<AppLayout title="404 · Barry Namdari" description="Sidan finns inte.">
+  <div class="site reader">
+    <main class="article animate-in">
+      <div class="cover" style="display:grid;place-items:center;">
+        <Icon name="BookOpen" size={42} />
+      </div>
+      <h1 class="amh1">404</h1>
+      <div class="ammeta">sidan finns inte — eller den har flyttat</div>
+
+      <div class="prose">
+        <p>
+          Det här innehållet ligger inte längre här. Det är troligen vägen som
+          har förändrats, inte du.
+        </p>
+        <a class="slink" href="/" style="margin-top: 1.5rem;">
+          Tillbaka hem <Icon name="ArrowRight" size={15} />
+        </a>
+      </div>
     </main>
-</Layout>
+  </div>
+</AppLayout>

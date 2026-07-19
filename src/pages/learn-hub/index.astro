@@ -1,35 +1,100 @@
 ---
-import Layout from '../../layouts/Layout.astro';
-import CardCategory from '../../components/CardCategory.astro';
-import { categories } from '../../data/categories';
+import AppLayout from "../../layouts/AppLayout.astro";
 import { getCollection } from "astro:content";
-import { showEntry } from '../../utils/content';
+import { categories } from "../../data/categories";
+import { domains } from "../../data/domains";
+import { showEntry } from "../../utils/content";
+import DomainChips from "../../components/site/DomainChips.astro";
+import StickyBar from "../../components/site/StickyBar.astro";
 
-const pageTitle = "Learn Hub";
+const allArticles = await getCollection("learn", showEntry);
+const withCounts = categories
+  .filter((c) => c.isVisible)
+  .map((c) => ({
+    ...c,
+    count: allArticles.filter((a) => a.data.category === c.slug).length,
+  }));
 
-const allArticles = await getCollection('learn', showEntry);
-const articleCounts = categories.map(category => ({
-    ...category,
-    articleCount: allArticles.filter(article =>
-        article.data.category === category.slug
-    ).length
-}));
-
-const visibleCategories = articleCounts.filter(category => category.isVisible);
+const has = (slug: string) => withCounts.filter((c) => c.domain === slug).length;
+const filters = [
+  { label: "Alla", value: "all", count: withCounts.length },
+  ...domains
+    .filter((d) => has(d.slug) > 0)
+    .map((d) => ({ label: d.short, value: d.slug, count: has(d.slug) })),
+];
 ---
 
-<Layout pageTitle={pageTitle} containerType="default">
-    <h2>Learn Hub</h2>
-    <p>Områden jag lär mig om och försöker förklara på ett lättbegripligt sätt.</p>
+<AppLayout
+  title="Learn Hub · Barry Namdari"
+  description="Områden jag lär mig om och förklarar enkelt."
+>
+  {
+    filters.length > 1 && (
+      <StickyBar title="Learn Hub">
+        <DomainChips filters={filters} compact />
+      </StickyBar>
+    )
+  }
 
-    <ul role="list" class="link-card-grid">
-        {visibleCategories.map((category) => (
-                <CardCategory
-                        title={category.title}
-                        iconUrl={category.iconUrl}
-                        url={`/learn-hub/${category.slug}/`}
-                        articleCount={category.articleCount}
-                />
-        ))}
-    </ul>
-</Layout>
+  <div class="animate-in p-6 md:p-8">
+    <header class="mb-6">
+      <h2
+        class="mb-2 font-mono text-[10px] tracking-[0.22em] text-muted-foreground/50 uppercase"
+      >
+        Learn Hub
+      </h2>
+      <h1 class="text-xl font-bold tracking-tight text-foreground">
+        Områden jag lär mig
+      </h1>
+      <p class="mt-2 max-w-prose text-[13.5px] leading-relaxed text-muted-foreground">
+        Ämnen jag lär mig om och försöker förklara på ett lättbegripligt sätt.
+      </p>
+    </header>
+
+    {filters.length > 1 && <DomainChips filters={filters} />}
+
+    <div data-sticky-anchor aria-hidden="true"></div>
+    <div class="grid gap-3 sm:grid-cols-2" data-filter-target>
+      {
+        withCounts.map((c) => (
+          <a
+            href={`/learn-hub/${c.slug}/`}
+            data-tags={c.domain}
+            class="group flex items-center gap-4 rounded-xl border border-border bg-muted/10 p-4 transition-all hover:border-primary/40 hover:bg-muted/20"
+          >
+            <img
+              src={c.iconUrl}
+              alt=""
+              width="40"
+              height="40"
+              loading="lazy"
+              class="h-10 w-10 shrink-0"
+            />
+            <div class="min-w-0">
+              <h3 class="text-[15px] font-bold text-foreground/90 transition-colors group-hover:text-primary">
+                {c.title}
+              </h3>
+              <p class="mt-0.5 truncate text-[13px] text-muted-foreground">
+                {c.description}
+              </p>
+              <p class="mt-1 font-mono text-[10px] tracking-wide text-muted-foreground/60">
+                {c.count} {c.count === 1 ? "artikel" : "artiklar"}
+              </p>
+            </div>
+          </a>
+        ))
+      }
+    </div>
+
+    <p class="mt-6 text-sm text-muted-foreground" data-filter-empty hidden>
+      Inga områden i denna domän ännu.
+    </p>
+  </div>
+
+  <script>
+    import { initDomainFilter } from "../../scripts/domainFilter";
+    import { initStickyBar } from "../../scripts/stickyBar";
+    initDomainFilter();
+    initStickyBar();
+  </script>
+</AppLayout>

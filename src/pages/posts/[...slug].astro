@@ -1,17 +1,17 @@
 ---
-import { getCollection, render } from 'astro:content';
-import Layout from '../../layouts/Layout.astro';
-import Icon from '../../components/site/Icon.astro';
-import Reveal from '../../components/site/Reveal.astro';
-import { showEntry } from '../../utils/content';
+import { getCollection, render } from "astro:content";
+import AppLayout from "../../layouts/AppLayout.astro";
+import Icon from "../../components/site/Icon.astro";
+import StickyBar from "../../components/site/StickyBar.astro";
+import { showEntry } from "../../utils/content";
 
 export const prerender = true;
 export async function getStaticPaths() {
-    const postEntries = await getCollection('posts', showEntry);
-    return postEntries.map((entry) => ({
-        params: { slug: entry.id },
-        props: { entry },
-    }));
+  const postEntries = await getCollection("posts", showEntry);
+  return postEntries.map((entry) => ({
+    params: { slug: entry.id },
+    props: { entry },
+  }));
 }
 
 const { entry } = Astro.props;
@@ -19,28 +19,39 @@ const { Content } = await render(entry);
 
 const pageTitle = `${entry.data.title} · Skrivet`;
 const metaLine = [entry.data.date, entry.data.read, entry.data.tags]
-    .filter(Boolean)
-    .join(' · ');
+  .filter(Boolean)
+  .join(" · ");
 ---
-<Layout pageTitle={pageTitle} containerType="wide">
-    <main class="article">
-        <a class="backlink" href="/posts/">
-            <Icon name="ArrowLeft" size={14} />
-            tillbaka
-        </a>
-        <Reveal>
-            {entry.data.cover && (
-                <div class="cover">
-                    <img src={entry.data.cover.url} alt={entry.data.cover.alt} />
-                </div>
-            )}
-            <h1 class="amh1">{entry.data.title}</h1>
-            <div class="ammeta">{metaLine}</div>
-        </Reveal>
-        <Reveal delay={80}>
-            <div class="prose">
-                <Content />
-            </div>
-        </Reveal>
+
+<AppLayout title={pageTitle} description={entry.data.description}>
+  <StickyBar backHref="/posts/" backLabel="Alla noteringar" title={entry.data.title} />
+
+  <div class="site reader">
+    <main class="article animate-in">
+      <a class="backlink" href="/posts/">
+        <Icon name="ArrowLeft" size={14} />
+        tillbaka
+      </a>
+
+      {
+        entry.data.cover && (
+          <div class="cover">
+            <img src={entry.data.cover.url} alt={entry.data.cover.alt} />
+          </div>
+        )
+      }
+      <h1 class="amh1">{entry.data.title}</h1>
+      <div class="ammeta">{metaLine}</div>
+      <div data-sticky-anchor aria-hidden="true"></div>
+
+      <div class="prose">
+        <Content />
+      </div>
     </main>
-</Layout>
+  </div>
+
+  <script>
+    import { initStickyBar } from "../../scripts/stickyBar";
+    initStickyBar();
+  </script>
+</AppLayout>

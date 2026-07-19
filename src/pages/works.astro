@@ -1,213 +1,82 @@
 ---
-import { getCollection, render } from 'astro:content';
-import Layout from '../layouts/Layout.astro';
-import { showEntry } from '../utils/content';
-import WorkItem from '../components/site/WorkItem.astro';
-import WorkSheet from '../components/site/WorkSheet.astro';
-import DomainFilter from '../components/site/DomainFilter.astro';
-import Reveal from '../components/site/Reveal.astro';
-import { domains } from '../data/domains';
+import AppLayout from "../layouts/AppLayout.astro";
+import { getCollection } from "astro:content";
+import { showEntry } from "../utils/content";
+import ProjectCard from "../components/site/ProjectCard.astro";
+import DomainChips from "../components/site/DomainChips.astro";
+import StickyBar from "../components/site/StickyBar.astro";
 
-const pageTitle = 'Arbete · Barry Namdari';
-
-const allProjects = await getCollection('projects', showEntry);
+const allProjects = await getCollection("projects", showEntry);
 const totalCount = allProjects.length;
 
-// Filterchips: "Alla" först (default), sedan domäner som faktiskt har projekt, med antal.
-const has = (slug: string) => allProjects.filter((p) => (p.data.domains ?? []).includes(slug as any)).length;
+// Filter på type: portfolio = Live · produktion (deployad), lab = Hobby.
+const countType = (t: string) =>
+  allProjects.filter((p) => p.data.type === t).length;
 const filters = [
-    { label: 'Alla', value: 'all', count: totalCount },
-    ...domains.filter((d) => has(d.slug) > 0).map((d) => ({ label: d.title, value: d.slug, count: has(d.slug) })),
-];
+  { label: "Alla", value: "all", count: totalCount },
+  { label: "Live · produktion", value: "portfolio", count: countType("portfolio") },
+  { label: "Hobby", value: "lab", count: countType("lab") },
+].filter((f) => f.value === "all" || f.count > 0);
 
-// Pre-rendera varje projekts markdown-Content så vi kan slot:a in det i sheet-drawern.
-const rendered = await Promise.all(
-    allProjects.map(async (entry) => {
-        const { Content } = await render(entry);
-        const images = [
-            entry.data.worksImage1,
-            entry.data.worksImage2,
-            entry.data.worksImage3,
-            entry.data.worksImage4,
-        ].filter(Boolean) as Array<{ url: string; alt: string }>;
-        return { entry, Content, images };
-    })
-);
+const isLive = (p: (typeof allProjects)[number]) =>
+  !!p.data.website && p.data.website !== "TBA";
 ---
-<Layout pageTitle={pageTitle} containerType="wide">
-    <div class="page">
-        <Reveal class="intro">
-            <div>
-                <h1 class="pagetitle">Arbete</h1>
-                <p class="pagesub">
-                    Mina portfolio-projekt — saker jag byggt på fritiden eller som sidoprojekt,
-                    från idé till deploy. Klicka för djupare läsning.
-                </p>
-                <span class="pagestat">
-                    <span class="sq"></span>
-                    {totalCount} projekt
-                </span>
-            </div>
-        </Reveal>
 
-        <Reveal delay={80}>
-            <div>
-                <div class="group">
-                    <DomainFilter filters={filters} />
-                    <div class="pf-list" data-filter-target>
-                        {allProjects.map((p) => (
-                            <WorkItem
-                                id={p.id}
-                                title={p.data.title}
-                                description={p.data.description}
-                                meta={p.data.stack}
-                                showMeta
-                                live={!!p.data.website && p.data.website !== 'TBA'}
-                                domains={(p.data.domains ?? []).join(' ')}
-                            />
-                        ))}
-                    </div>
-                    <p class="filter-empty" data-filter-empty hidden>Inga projekt inom denna domän ännu.</p>
-                </div>
-            </div>
-        </Reveal>
+<AppLayout
+  title="Arbete · Barry Namdari"
+  description="Projekt jag byggt — från idé till deploy."
+>
+  {
+    filters.length > 1 && (
+      <StickyBar title="Arbete">
+        <DomainChips filters={filters} compact />
+      </StickyBar>
+    )
+  }
+
+  <div class="animate-in p-6 md:px-10 md:py-12">
+    <header class="mb-6">
+      <h2
+        class="mb-2 font-mono text-[10px] tracking-[0.22em] text-muted-foreground/50 uppercase"
+      >
+        Arbete
+      </h2>
+      <h1 class="text-xl font-bold tracking-tight text-foreground">
+        Projekt &amp; byggen
+      </h1>
+      <p class="mt-2 max-w-prose text-[13.5px] leading-relaxed text-muted-foreground">
+        Saker jag byggt — från idé till deploy. Klicka för djupare läsning.
+      </p>
+    </header>
+
+    {filters.length > 1 && <DomainChips filters={filters} />}
+
+    <div data-sticky-anchor aria-hidden="true"></div>
+    <div class="grid gap-4 sm:grid-cols-2" data-filter-target>
+      {
+        allProjects.map((p) => (
+          <ProjectCard
+            href={`/projects/${p.id}/`}
+            title={p.data.title}
+            description={p.data.description}
+            stack={p.data.stack}
+            image={p.data.worksImage1 ?? p.data.image}
+            live={isLive(p)}
+            tags={[p.data.type, ...(p.data.domains ?? [])].join(" ")}
+          />
+        ))
+      }
     </div>
 
-    {/* Sheet-drawer + backdrop + flytande "Stäng"-pill (synlig <640px).
-        Slot:ar in renderad markdown-Content + worksImage1-4 som zoombara bilder. */}
-    <div class="backdrop" data-backdrop></div>
-    <button class="sheet-return" data-close-sheet aria-label="Stäng">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="m6 9 6 6 6-6" />
-        </svg>
-        Stäng
-    </button>
-    {rendered.map(({ entry, Content, images }) => (
-        <WorkSheet
-            id={entry.id}
-            title={entry.data.title}
-            kind={entry.data.kind ?? 'Portfolio-projekt'}
-            year={entry.data.year ?? ''}
-            description={entry.data.description}
-            meta={entry.data.stack}
-            body={entry.data.body}
-            media={entry.data.media}
-            images={images}
-            logo={entry.data.logo}
-            website={entry.data.website}
-            github={entry.data.github}
-        >
-            <Content />
-        </WorkSheet>
-    ))}
+    <p class="mt-6 text-sm text-muted-foreground" data-filter-empty hidden>
+      Inga projekt av den typen ännu.
+    </p>
+  </div>
 
-    <script>
-        // Sheet open/close + mobile bottom-sheet swipe-down.
-        // Re-attachas på astro:page-load så View Transitions inte dödar listeners.
-        function bindSheets() {
-            const triggers = document.querySelectorAll<HTMLElement>('[data-open-sheet]:not([data-sheet-bound])');
-            const closers = document.querySelectorAll<HTMLElement>('[data-close-sheet]:not([data-sheet-bound])');
-            const backdrop = document.querySelector<HTMLElement>('[data-backdrop]');
-            const sheetReturn = document.querySelector<HTMLElement>('.sheet-return');
-
-            const closeAll = () => {
-                document.querySelectorAll<HTMLElement>('.sheet.open').forEach((s) => {
-                    s.classList.remove('open');
-                    s.setAttribute('aria-hidden', 'true');
-                    // Återställ swipe-translate om någon dras kvar
-                    s.style.transform = '';
-                    s.style.transition = '';
-                });
-                backdrop?.classList.remove('open');
-                sheetReturn?.classList.remove('open');
-                document.body.style.overflow = '';
-            };
-
-            const openSheetById = (id: string) => {
-                closeAll();
-                const sheet = document.querySelector<HTMLElement>(`.sheet[data-sheet-id="${id}"]`);
-                if (!sheet) return;
-                sheet.classList.add('open');
-                sheet.setAttribute('aria-hidden', 'false');
-                backdrop?.classList.add('open');
-                sheetReturn?.classList.add('open');
-                document.body.style.overflow = 'hidden';
-                bindSwipeToClose(sheet);
-            };
-
-            // Swipe-down på grab-handlen (eller header-zonen) stänger sheet.
-            // Använder Pointer Events API — funkar med touch + pen + mouse.
-            const SWIPE_DISMISS_PX = 90;
-            function bindSwipeToClose(sheet: HTMLElement) {
-                // Aktivera bara på small viewport där sheet är bottom-sheet.
-                if (window.innerWidth > 640) return;
-                const grab = sheet.querySelector<HTMLElement>('.grab');
-                if (!grab || grab.dataset.swipeBound === '1') return;
-                grab.dataset.swipeBound = '1';
-
-                let startY = 0;
-                let dragging = false;
-
-                grab.addEventListener('pointerdown', (e) => {
-                    dragging = true;
-                    startY = e.clientY;
-                    sheet.style.transition = 'none';
-                    grab.setPointerCapture(e.pointerId);
-                });
-
-                grab.addEventListener('pointermove', (e) => {
-                    if (!dragging) return;
-                    const dy = Math.max(0, e.clientY - startY);
-                    sheet.style.transform = `translateY(${dy}px)`;
-                });
-
-                const endDrag = (e: PointerEvent) => {
-                    if (!dragging) return;
-                    dragging = false;
-                    const dy = Math.max(0, e.clientY - startY);
-                    sheet.style.transition = '';
-                    if (dy > SWIPE_DISMISS_PX) {
-                        closeAll();
-                    } else {
-                        sheet.style.transform = '';
-                    }
-                    try { grab.releasePointerCapture(e.pointerId); } catch {}
-                };
-                grab.addEventListener('pointerup', endDrag);
-                grab.addEventListener('pointercancel', endDrag);
-            }
-
-            triggers.forEach((btn) => {
-                btn.setAttribute('data-sheet-bound', '1');
-                btn.addEventListener('click', () => {
-                    const id = btn.getAttribute('data-open-sheet');
-                    if (id) openSheetById(id);
-                });
-            });
-
-            closers.forEach((btn) => {
-                btn.setAttribute('data-sheet-bound', '1');
-                btn.addEventListener('click', closeAll);
-            });
-
-            if (backdrop && !backdrop.dataset.sheetBound) {
-                backdrop.dataset.sheetBound = '1';
-                backdrop.addEventListener('click', closeAll);
-            }
-
-            if (!document.body.dataset.sheetEsc) {
-                document.body.dataset.sheetEsc = '1';
-                document.addEventListener('keydown', (e) => {
-                    if (e.key === 'Escape') closeAll();
-                });
-            }
-        }
-        bindSheets();
-        document.addEventListener('astro:page-load', bindSheets);
-    </script>
-
-    <script>
-        import { initDomainFilter } from '../scripts/domainFilter';
-        initDomainFilter();
-    </script>
-</Layout>
+  <script>
+    import { initDomainFilter } from "../scripts/domainFilter";
+    import { initStickyBar } from "../scripts/stickyBar";
+    initDomainFilter();
+    initStickyBar();
+  </script>
+</AppLayout>
