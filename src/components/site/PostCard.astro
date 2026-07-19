@@ -1,0 +1,55 @@
+---
+// Kort för Fältnoteringar (2-kolumns grid). Titel + ev. bild + beskrivning +
+// datum. data-tags gör kortet filtrerbart via scripts/domainFilter.ts.
+interface Props {
+  href: string;
+  title: string;
+  description?: string;
+  date?: string;
+  image?: { url: string; alt: string };
+  /** Space-separerade taggar (domän) för filtrering. */
+  tags?: string;
+}
+
+const { href, title, description, date, image, tags } = Astro.props;
+---
+
+<a
+  href={href}
+  data-tags={tags}
+  class="group flex flex-col overflow-hidden rounded-xl border border-border bg-muted/10 transition-all hover:border-primary/40 hover:bg-muted/20"
+>
+  {
+    image && (
+      <div class="aspect-[16/9] overflow-hidden bg-muted/30">
+        <img
+          src={image.url}
+          alt={image.alt}
+          loading="lazy"
+          class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+        />
+      </div>
+    )
+  }
+  <div class="flex flex-1 flex-col p-4">
+    <h3
+      class="text-[15px] leading-snug font-bold text-foreground/90 transition-colors group-hover:text-primary"
+    >
+      {title}
+    </h3>
+    {
+      description && (
+        <p class="mt-1.5 line-clamp-2 text-[13px] leading-relaxed text-muted-foreground">
+          {description}
+        </p>
+      )
+    }
+    {
+      date && (
+        <p class="mt-auto pt-3 font-mono text-[10px] tracking-wide text-muted-foreground/60">
+          {date}
+        </p>
+      )
+    }
+  </div>
+</a>

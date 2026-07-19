@@ -1,0 +1,81 @@
+---
+// Sticky-header för main-panelen. Glider in mjukt när man scrollar ner
+// (styrs av scripts/stickyBar.ts). Innehåller ev. tillbaka-knapp + titel,
+// och en slot för filterchips (list-vyer). Fast höjd + negativ margin gör
+// att den inte påverkar sidflödet när den är dold ovanför kanten.
+import Icon from "../site/Icon.astro";
+
+interface Props {
+  backHref?: string;
+  backLabel?: string;
+  title: string;
+}
+
+const { backHref, backLabel = "Tillbaka", title } = Astro.props;
+---
+
+<div class="sticky-bar" data-sticky-bar>
+  <div class="flex h-full items-center gap-3 px-6 md:px-10">
+    {
+      backHref && (
+        <a
+          href={backHref}
+          class="inline-flex shrink-0 items-center text-muted-foreground transition-colors hover:text-primary"
+          aria-label={backLabel}
+        >
+          <Icon name="ArrowLeft" size={16} />
+        </a>
+      )
+    }
+    <span class="truncate text-[13px] font-semibold text-foreground">
+      {title}
+    </span>
+    <div
+      class="no-scrollbar ml-auto flex shrink items-center overflow-x-auto"
+    >
+      <slot />
+    </div>
+  </div>
+</div>
+
+<style>
+  .sticky-bar {
+    /* Mobil: hela sidan scrollar → baren fixeras vid skärmens topp. */
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 30;
+    height: 52px;
+    background: var(--c-card);
+    border-bottom: 1px solid var(--c-border);
+    box-shadow: 0 6px 16px -10px rgba(0, 0, 0, 0.45);
+    transform: translateY(-100%);
+    opacity: 0;
+    pointer-events: none;
+    /* Långsam, mjuk decel så den känns deliberate — inte flashig. */
+    transition:
+      transform 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 0.45s ease-out;
+  }
+  /* Desktop: main scrollar internt → baren är sticky i panelen. */
+  @media (min-width: 768px) {
+    .sticky-bar {
+      position: sticky;
+      left: auto;
+      right: auto;
+      z-index: 20;
+      margin-bottom: -52px;
+    }
+  }
+  .sticky-bar.is-visible {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sticky-bar {
+      transition: none;
+    }
+  }
+</style>

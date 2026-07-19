@@ -1,0 +1,80 @@
+---
+// Domän-/type-filterchips. Driver scripts/domainFilter.ts via
+// data-domain-filterbar + data-filter. JS togglar .is-active på aktiv chip
+// (synkat över alla filterbars) och [hidden] på rader (data-tags).
+// compact = kompakt variant på en rad (för sticky-headern).
+interface Filter {
+  label: string;
+  value: string;
+  count: number;
+}
+
+const { filters, compact = false } = Astro.props as {
+  filters: Filter[];
+  compact?: boolean;
+};
+---
+
+<div
+  class:list={[
+    "no-scrollbar flex gap-1.5",
+    compact ? "overflow-x-auto" : "mb-7 flex-wrap",
+  ]}
+  data-domain-filterbar
+>
+  {
+    filters.map((f, i) => (
+      <button
+        type="button"
+        data-filter={f.value}
+        aria-pressed={i === 0 ? "true" : "false"}
+        class:list={["chip shrink-0", compact && "chip--sm", i === 0 && "is-active"]}
+      >
+        {f.label}
+        <span class="chip__count">{f.count}</span>
+      </button>
+    ))
+  }
+</div>
+
+<style>
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.4rem 0.85rem;
+    border-radius: 999px;
+    border: 1px solid var(--c-border);
+    background: transparent;
+    color: var(--c-text-muted);
+    cursor: pointer;
+    transition:
+      border-color 0.2s ease,
+      color 0.2s ease,
+      background 0.2s ease;
+  }
+  .chip--sm {
+    font-size: 0.72rem;
+    padding: 0.28rem 0.7rem;
+    gap: 0.3rem;
+  }
+  .chip:hover {
+    border-color: var(--c-accent);
+    color: var(--c-text);
+  }
+  .chip.is-active {
+    background: var(--c-accent);
+    border-color: var(--c-accent);
+    color: var(--c-accent-contrast);
+  }
+  .chip__count {
+    font-family: var(--font-mono);
+    font-size: 0.78em;
+    opacity: 0.65;
+  }
+  .chip.is-active .chip__count {
+    opacity: 0.8;
+  }
+</style>

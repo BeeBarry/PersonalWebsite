@@ -1,0 +1,57 @@
+---
+// Återanvändbar innehållsrad (Breeze-stil) för listor på arbete/skrivet.
+// data-tags gör raden filtrerbar via scripts/domainFilter.ts.
+import { Icon } from "astro-icon/components";
+
+interface Props {
+  href: string;
+  title: string;
+  description?: string;
+  /** Liten mono-metarad (t.ex. stack eller datum · lästid). */
+  meta?: string;
+  /** Space-separerade taggar (type + domän) för filtrering. */
+  tags?: string;
+  /** Visar en liten "live"-markör efter titeln. */
+  live?: boolean;
+}
+
+const { href, title, description, meta, tags, live } = Astro.props;
+---
+
+<a
+  href={href}
+  data-tags={tags}
+  class="group flex items-center justify-between gap-4 border-b border-border/40 py-4 last:border-0"
+>
+  <div class="min-w-0">
+    <span
+      class="inline-flex items-baseline gap-2 text-[15px] font-semibold text-foreground/85 transition-colors group-hover:text-primary"
+    >
+      {title}
+      {
+        live && (
+          <span class="align-super text-[0.58em] font-bold tracking-wide text-primary uppercase">
+            live
+          </span>
+        )
+      }
+    </span>
+    {
+      description && (
+        <p class="mt-1 truncate text-sm text-muted-foreground">{description}</p>
+      )
+    }
+    {
+      meta && (
+        <p class="mt-1.5 font-mono text-[11px] tracking-wide text-muted-foreground/70">
+          {meta}
+        </p>
+      )
+    }
+  </div>
+  <span
+    class="shrink-0 text-border transition-all group-hover:translate-x-1 group-hover:text-primary"
+  >
+    <Icon name="mdi:arrow-right" />
+  </span>
+</a>
