@@ -8,6 +8,14 @@
     "description": {
       "type": "string"
     },
+    "type": {
+      "default": "lab",
+      "type": "string",
+      "enum": [
+        "portfolio",
+        "lab"
+      ]
+    },
     "kind": {
       "default": "Eget · open source",
       "type": "string"
@@ -133,6 +141,18 @@
     },
     "github": {
       "type": "string"
+    },
+    "domains": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "web",
+          "cloud",
+          "embedded"
+        ]
+      }
     },
     "draft": {
       "default": false,

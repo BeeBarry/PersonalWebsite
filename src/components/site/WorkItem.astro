@@ -8,12 +8,14 @@ interface Props {
     logo?: string;
     href?: string;
     live?: boolean;
+    domains?: string;
+    sheetKey?: string;
 }
-const { id, title, description, meta, showMeta = false, logo, href, live = false } = Astro.props;
+const { id, title, description, meta, showMeta = false, logo, href, live = false, domains, sheetKey } = Astro.props;
 const Element = href ? 'a' : 'button';
 const elementProps = href
-    ? { href, class: 'pf-item' }
-    : { type: 'button', class: 'pf-item', 'data-open-sheet': id, 'aria-haspopup': 'dialog' };
+    ? { href, class: 'pf-item', 'data-domains': domains, 'data-sheet-open': sheetKey }
+    : { type: 'button', class: 'pf-item', 'data-open-sheet': id, 'aria-haspopup': 'dialog', 'data-domains': domains };
 ---
 <Element {...elementProps}>
     <div class="t-row">

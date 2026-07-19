@@ -1,16 +1,19 @@
 ---
+import { getCollection } from 'astro:content';
 import Layout from '../layouts/Layout.astro';
 import Hero from '../components/site/Hero.astro';
-import WorkColumn from '../components/site/WorkColumn.astro';
-import WritingColumn from '../components/site/WritingColumn.astro';
+import DomainExplorer from '../components/site/DomainExplorer.astro';
+import ContentSheet from '../components/site/ContentSheet.astro';
+import { showEntry, parsePostDate } from '../utils/content';
 
 const pageTitle = 'Barry Namdari';
+
+const projects = await getCollection('projects', showEntry);
+const posts = (await getCollection('posts', showEntry))
+    .sort((a, b) => parsePostDate(b.data.date) - parsePostDate(a.data.date));
 ---
 <Layout pageTitle={pageTitle} containerType="wide">
     <Hero />
-
-    <section class="cols">
-        <WorkColumn />
-        <WritingColumn />
-    </section>
+    <DomainExplorer projects={projects} posts={posts} />
+    <ContentSheet projects={projects} posts={posts} />
 </Layout>

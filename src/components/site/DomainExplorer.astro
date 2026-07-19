@@ -1,0 +1,128 @@
+---
+/*
+ * Startsidans innehåll (Koncept 1 — "Flaggskepp + bläddra").
+ * Tier 1: Portfolio (i produktion) som rikare kort = starkaste beviset.
+ * Tier 2: Experiment (open source) + Skrivet i två lugnare kolumner.
+ * Domän-chipsen (default "Alla") filtrerar ALLA tiers på plats — bredden syns,
+ * inget gömt. Korten länkar till detaljsidor (side-sheet kopplas på i steg 3).
+ */
+import { domains, domainBySlug } from '../../data/domains';
+import WorkItem from './WorkItem.astro';
+import PostItem from './PostItem.astro';
+import Icon from './Icon.astro';
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+    projects: CollectionEntry<'projects'>[];
+    posts: CollectionEntry<'posts'>[];
+}
+const { projects, posts } = Astro.props;
+
+const portfolio = projects.filter((p) => p.data.type === 'portfolio');
+const labs = projects.filter((p) => p.data.type !== 'portfolio');
+
+const isLive = (p: CollectionEntry<'projects'>) => !!p.data.website && p.data.website !== 'TBA';
+const tagsFor = (slugs: readonly string[] | undefined) =>
+    (slugs ?? []).map((s) => domainBySlug.get(s)?.short).filter(Boolean) as string[];
+
+const inDomain = (arr: readonly string[] | undefined, slug: string) => (arr ?? []).includes(slug);
+const countAcross = (slug: string) =>
+    projects.filter((p) => inDomain(p.data.domains, slug)).length +
+    posts.filter((p) => inDomain(p.data.domains, slug)).length;
+
+const filters = [
+    { label: 'Alla', value: 'all' },
+    ...domains.filter((d) => countAcross(d.slug) > 0).map((d) => ({ label: d.title, value: d.slug })),
+];
+---
+<section class="home">
+    <div class="filterbar" role="group" aria-label="Filtrera på domän" data-domain-filterbar>
+        {filters.map((f, i) => (
+            <button
+                type="button"
+                class={`tag${i === 0 ? ' is-active' : ''}`}
+                data-filter={f.value}
+                aria-pressed={i === 0 ? 'true' : 'false'}
+            >{f.label}</button>
+        ))}
+    </div>
+
+    {/* Tier 1 — Portfolio (flaggskepp) */}
+    <div class="tier">
+        <div class="tier__head">
+            <h2 class="tier__h">Portfolio</h2>
+            <span class="tier__note">i produktion</span>
+        </div>
+        <div class="portfolio-grid" data-filter-target>
+            {portfolio.map((p) => (
+                <a class="pcard" href={`/projects/${p.id}/`} data-domains={(p.data.domains ?? []).join(' ')} data-sheet-open={`work:${p.id}`}>
+                    <div class="pcard__top">
+                        <span class="pcard__title">{p.data.title}</span>
+                        {isLive(p) && <span class="pf-live">live</span>}
+                    </div>
+                    <p class="pcard__desc">{p.data.description}</p>
+                    {tagsFor(p.data.domains).length > 0 && (
+                        <div class="pcard__tags">
+                            {tagsFor(p.data.domains).map((t) => <span class="dtag">{t}</span>)}
+                        </div>
+                    )}
+                </a>
+            ))}
+        </div>
+        <p class="home__empty colsub" data-filter-empty hidden>Inga projekt inom detta område ännu.</p>
+    </div>
+
+    {/* Tier 2 — Experiment + Skrivet */}
+    <div class="home__cols">
+        <div class="home__col">
+            <div class="tier__head">
+                <h2 class="tier__h">Experiment</h2>
+                <span class="tier__note">open source</span>
+            </div>
+            <div class="pf-list" data-filter-target>
+                {labs.map((p) => (
+                    <WorkItem
+                        id={p.id}
+                        href={`/projects/${p.id}/`}
+                        title={p.data.title}
+                        description={p.data.description}
+                        meta={p.data.stack}
+                        live={isLive(p)}
+                        domains={(p.data.domains ?? []).join(' ')}
+                        sheetKey={`work:${p.id}`}
+                    />
+                ))}
+            </div>
+            <p class="home__empty colsub" data-filter-empty hidden>Inga experiment inom detta område ännu.</p>
+            <a class="more" href="/works/">Visa allt arbete <Icon name="ArrowRight" size={16} /></a>
+        </div>
+
+        <div class="home__col">
+            <div class="tier__head">
+                <h2 class="tier__h">Skrivet</h2>
+                <span class="tier__note">fältnoteringar</span>
+            </div>
+            <div class="pf-list" data-filter-target>
+                {posts.map((p) => (
+                    <PostItem
+                        href={`/posts/${p.id}/`}
+                        title={p.data.title}
+                        description={p.data.description}
+                        date={p.data.date}
+                        domains={(p.data.domains ?? []).join(' ')}
+                        sheetKey={`blog:${p.id}`}
+                    />
+                ))}
+            </div>
+            <p class="home__empty colsub" data-filter-empty hidden>Inga inlägg inom detta område ännu.</p>
+            <a class="more" href="/posts/">Mer i arkivet <Icon name="ArrowRight" size={16} /></a>
+        </div>
+    </div>
+</section>
+
+<noscript><style>[data-domain-filterbar] { display: none; }</style></noscript>
+
+<script>
+    import { initDomainFilter } from '../../scripts/domainFilter';
+    initDomainFilter();
+</script>

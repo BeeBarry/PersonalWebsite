@@ -4,12 +4,21 @@ import Layout from '../layouts/Layout.astro';
 import { showEntry } from '../utils/content';
 import WorkItem from '../components/site/WorkItem.astro';
 import WorkSheet from '../components/site/WorkSheet.astro';
+import DomainFilter from '../components/site/DomainFilter.astro';
 import Reveal from '../components/site/Reveal.astro';
+import { domains } from '../data/domains';
 
 const pageTitle = 'Arbete · Barry Namdari';
 
 const allProjects = await getCollection('projects', showEntry);
 const totalCount = allProjects.length;
+
+// Filterchips: "Alla" först (default), sedan domäner som faktiskt har projekt, med antal.
+const has = (slug: string) => allProjects.filter((p) => (p.data.domains ?? []).includes(slug as any)).length;
+const filters = [
+    { label: 'Alla', value: 'all', count: totalCount },
+    ...domains.filter((d) => has(d.slug) > 0).map((d) => ({ label: d.title, value: d.slug, count: has(d.slug) })),
+];
 
 // Pre-rendera varje projekts markdown-Content så vi kan slot:a in det i sheet-drawern.
 const rendered = await Promise.all(
@@ -44,8 +53,8 @@ const rendered = await Promise.all(
         <Reveal delay={80}>
             <div>
                 <div class="group">
-                    <div class="kicker">Portfolio-projekt</div>
-                    <div class="pf-list">
+                    <DomainFilter filters={filters} />
+                    <div class="pf-list" data-filter-target>
                         {allProjects.map((p) => (
                             <WorkItem
                                 id={p.id}
@@ -54,9 +63,11 @@ const rendered = await Promise.all(
                                 meta={p.data.stack}
                                 showMeta
                                 live={!!p.data.website && p.data.website !== 'TBA'}
+                                domains={(p.data.domains ?? []).join(' ')}
                             />
                         ))}
                     </div>
+                    <p class="filter-empty" data-filter-empty hidden>Inga projekt inom denna domän ännu.</p>
                 </div>
             </div>
         </Reveal>
@@ -193,5 +204,10 @@ const rendered = await Promise.all(
         }
         bindSheets();
         document.addEventListener('astro:page-load', bindSheets);
+    </script>
+
+    <script>
+        import { initDomainFilter } from '../scripts/domainFilter';
+        initDomainFilter();
     </script>
 </Layout>

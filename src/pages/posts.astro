@@ -3,7 +3,9 @@ import { getCollection } from 'astro:content';
 import Layout from '../layouts/Layout.astro';
 import { showEntry, parsePostDate } from '../utils/content';
 import PostItem from '../components/site/PostItem.astro';
+import DomainFilter from '../components/site/DomainFilter.astro';
 import Reveal from '../components/site/Reveal.astro';
+import { domains } from '../data/domains';
 
 const pageTitle = 'Skrivet · Barry Namdari';
 
@@ -11,19 +13,11 @@ const allPosts = (await getCollection('posts', showEntry))
     .sort((a, b) => parsePostDate(b.data.date) - parsePostDate(a.data.date));
 const totalCount = allPosts.length;
 
-// Ämnesfilter: fast ordning, "Alla" först (default-aktiv). Endast ämnen som
-// faktiskt har inlägg visas som chips. Antal i parentes för snabb skanning.
-const CATEGORIES = ['IoT', 'Cloud & DevOps', 'Övrigt'] as const;
-const counts = new Map<string, number>();
-for (const p of allPosts) {
-    const c = p.data.category ?? 'Övrigt';
-    counts.set(c, (counts.get(c) ?? 0) + 1);
-}
+// Filterchips: "Alla" först (default), sedan domäner som faktiskt har inlägg, med antal.
+const has = (slug: string) => allPosts.filter((p) => (p.data.domains ?? []).includes(slug as any)).length;
 const filters = [
     { label: 'Alla', value: 'all', count: totalCount },
-    ...CATEGORIES
-        .filter((c) => (counts.get(c) ?? 0) > 0)
-        .map((c) => ({ label: c, value: c, count: counts.get(c) ?? 0 })),
+    ...domains.filter((d) => has(d.slug) > 0).map((d) => ({ label: d.title, value: d.slug, count: has(d.slug) })),
 ];
 ---
 <Layout pageTitle={pageTitle} containerType="wide">
@@ -46,20 +40,8 @@ const filters = [
             <div>
                 {totalCount > 0 ? (
                     <>
-                        <div class="filterbar" role="group" aria-label="Filtrera inlägg efter ämne" data-filterbar>
-                            {filters.map((f, i) => (
-                                <button
-                                    type="button"
-                                    class={`tag${i === 0 ? ' is-active' : ''}`}
-                                    data-filter={f.value}
-                                    aria-pressed={i === 0 ? 'true' : 'false'}
-                                >
-                                    {f.label}
-                                    <span class="tag__count">{f.count}</span>
-                                </button>
-                            ))}
-                        </div>
-                        <div class="pf-list" data-postlist>
+                        <DomainFilter filters={filters} />
+                        <div class="pf-list" data-filter-target>
                             {allPosts.map((p) => (
                                 <PostItem
                                     href={`/posts/${p.id}/`}
@@ -68,11 +50,11 @@ const filters = [
                                     date={p.data.date}
                                     read={p.data.read}
                                     showRead={true}
-                                    category={p.data.category ?? 'Övrigt'}
+                                    domains={(p.data.domains ?? []).join(' ')}
                                 />
                             ))}
                         </div>
-                        <p class="filter-empty" data-filter-empty hidden>Inga inlägg i det ämnet ännu.</p>
+                        <p class="filter-empty" data-filter-empty hidden>Inga inlägg inom denna domän ännu.</p>
                     </>
                 ) : (
                     <p class="pagesub">Inlägg är på väg — kika tillbaka snart.</p>
@@ -82,38 +64,7 @@ const filters = [
     </div>
 
     <script>
-        // Klient-filter för ämneschips. Re-bindas på astro:page-load så
-        // View Transitions inte dödar listeners (samma mönster som WorkSheet).
-        function bindPostFilter() {
-            const bar = document.querySelector<HTMLElement>('[data-filterbar]');
-            const list = document.querySelector<HTMLElement>('[data-postlist]');
-            if (!bar || !list || bar.dataset.filterBound === '1') return;
-            bar.dataset.filterBound = '1';
-
-            const empty = document.querySelector<HTMLElement>('[data-filter-empty]');
-            const chips = Array.from(bar.querySelectorAll<HTMLButtonElement>('button[data-filter]'));
-            const items = Array.from(list.querySelectorAll<HTMLElement>('[data-category]'));
-
-            const apply = (value: string) => {
-                let shown = 0;
-                items.forEach((el) => {
-                    const match = value === 'all' || el.dataset.category === value;
-                    el.hidden = !match;
-                    if (match) shown++;
-                });
-                chips.forEach((c) => {
-                    const on = c.dataset.filter === value;
-                    c.classList.toggle('is-active', on);
-                    c.setAttribute('aria-pressed', String(on));
-                });
-                if (empty) empty.hidden = shown !== 0;
-            };
-
-            chips.forEach((c) => {
-                c.addEventListener('click', () => apply(c.dataset.filter ?? 'all'));
-            });
-        }
-        bindPostFilter();
-        document.addEventListener('astro:page-load', bindPostFilter);
+        import { initDomainFilter } from '../scripts/domainFilter';
+        initDomainFilter();
     </script>
 </Layout>

@@ -1268,11 +1268,242 @@ html.light .linked-in {
     margin-bottom: 8px;
 }
 
+/* STARTSIDAN (Koncept 1) — Portfolio-flaggskepp + Experiment/Skrivet-kolumner. */
+.site .home {
+    padding-block: clamp(32px, 6vw, 96px);
+}
+.site .home .filterbar {
+    margin-bottom: clamp(30px, 4vw, 44px);
+}
+
+/* Sektionsrubrik (tier) — fet rubrik + liten mono-not = tydlig typ-signal. */
+.site .tier {
+    margin-bottom: clamp(40px, 6vw, 64px);
+}
+.site .tier__head {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: clamp(16px, 2.2vw, 22px);
+}
+.site .tier__h {
+    font-size: clamp(1.5rem, 2.6vw, 1.9rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    color: var(--c-text);
+    margin: 0;
+}
+.site .tier__note {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--c-text-muted);
+}
+
+/* Portfolio-kort (flaggskepp) — yta + kant + lyft = mer visuell vikt än list-rader. */
+.site .portfolio-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+}
+@media (min-width: 640px) {
+    .site .portfolio-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+.site .pcard {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: 16px;
+    padding: 20px;
+    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+.site .pcard:hover {
+    border-color: var(--c-accent);
+    transform: translateY(-3px);
+    box-shadow: 0 20px 44px -30px rgba(0, 0, 0, 0.7);
+}
+.site .pcard__top {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5em;
+}
+.site .pcard__title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--c-text);
+    transition: color 0.2s ease;
+}
+.site .pcard:hover .pcard__title {
+    color: var(--c-accent);
+}
+.site .pcard__desc {
+    color: var(--c-text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin: 8px 0 0;
+}
+.site .pcard__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 14px;
+}
+.site .dtag {
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.03em;
+    color: var(--c-text-muted);
+    border: 1px solid var(--c-border);
+    border-radius: 999px;
+    padding: 2px 9px;
+}
+
+/* Browse-tier: två kolumner (Experiment | Skrivet). */
+.site .home__cols {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(44px, 6vw, 80px);
+}
+@media (min-width: 880px) {
+    .site .home__cols {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+.site .home__empty {
+    margin-top: 6px;
+}
+
+/* ============================================================
+   LÄS-SHEET (drawer) — native <dialog> stylad som höger-panel.
+   ============================================================ */
+.site .drawer {
+    inset: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    max-width: none;
+    max-height: none;
+    width: auto;
+    height: auto;
+    background: transparent;
+    overflow: hidden;
+}
+.site .drawer::backdrop {
+    background: rgba(0, 0, 0, 0.5);
+}
+.site .drawer__panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(560px, 100%);
+    display: flex;
+    flex-direction: column;
+    background: var(--c-bg);
+    border-left: 1px solid var(--c-border);
+    box-shadow: -30px 0 90px -45px rgba(0, 0, 0, 0.85);
+    overflow-y: auto;
+    transform: translateX(100%);
+    transition: transform 0.42s cubic-bezier(0.4, 0, 0.1, 1);
+}
+.site .drawer.is-open .drawer__panel {
+    transform: none;
+}
+.site .drawer__bar {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    justify-content: flex-end;
+    padding: 14px 14px 0;
+    background: var(--c-bg);
+}
+.site .drawer__close {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    color: var(--c-text-muted);
+    cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+.site .drawer__close:hover {
+    color: var(--c-text);
+    border-color: var(--c-accent);
+}
+.site .drawer__body {
+    padding: 6px clamp(24px, 4vw, 40px) clamp(44px, 6vw, 56px);
+}
+.site .drawer__eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--c-text-muted);
+    margin: 0 0 10px;
+}
+.site .drawer__title {
+    font-family: var(--font-display);
+    font-size: clamp(1.6rem, 4vw, 2.1rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.08;
+    color: var(--c-text);
+    margin: 0;
+}
+.site .drawer__meta {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    color: var(--c-text-muted);
+    line-height: 1.6;
+    margin: 10px 0 0;
+}
+.site .drawer__prose {
+    margin-top: clamp(18px, 3vw, 26px);
+}
+.site .drawer__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-top: clamp(24px, 4vw, 32px);
+    padding-top: clamp(18px, 3vw, 24px);
+    border-top: 1px solid var(--c-border);
+}
+.site .drawer__full {
+    margin-left: auto;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--c-text);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+.site .drawer__full:hover {
+    color: var(--c-accent);
+}
+@media (prefers-reduced-motion: reduce) {
+    .site .drawer__panel {
+        transition: none;
+    }
+}
+
 /* LISTS (work + writing) */
 .site .pf-list {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 6px;
     list-style: none;
     padding: 0;
     margin: 0;
@@ -1282,7 +1513,7 @@ html.light .linked-in {
     position: relative;
     text-decoration: none;
     color: inherit;
-    padding: 12px 14px;
+    padding: 14px 14px;
     margin: 0 -14px;
     border-radius: 13px;
     cursor: pointer;

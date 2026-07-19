@@ -1,0 +1,127 @@
+---
+/*
+ * Universell läs-sheet (steg 3). En native <dialog> stylad som höger-drawer;
+ * varje projekts/inläggs innehåll för-renderas i en dold <template> och klonas in
+ * vid klick. Progressive enhancement: korten är riktiga länkar (cmd-klick / ingen JS
+ * → riktig sida = SEO/delbart), JS fångar vanligt klick och öppnar sheeten i stället.
+ */
+import { render } from 'astro:content';
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+    projects: CollectionEntry<'projects'>[];
+    posts: CollectionEntry<'posts'>[];
+}
+const { projects, posts } = Astro.props;
+
+const projItems = await Promise.all(projects.map(async (p) => ({ p, rendered: await render(p) })));
+const postItems = await Promise.all(posts.map(async (p) => ({ p, rendered: await render(p) })));
+
+const isLive = (p: CollectionEntry<'projects'>) => !!p.data.website && p.data.website !== 'TBA';
+const hasLink = (s?: string) => !!s && s.trim().toUpperCase() !== 'TBA';
+const eyebrowFor = (p: CollectionEntry<'projects'>) =>
+    p.data.type === 'portfolio' ? 'Portfolio · i produktion' : 'Experiment · open source';
+---
+<dialog class="drawer" data-drawer aria-label="Innehåll">
+    <div class="drawer__panel">
+        <div class="drawer__bar">
+            <button class="drawer__close" type="button" data-drawer-close aria-label="Stäng">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <div class="drawer__body"></div>
+    </div>
+</dialog>
+
+{projItems.map(({ p, rendered: { Content } }) => (
+    <template data-sheet={`work:${p.id}`}>
+        <p class="drawer__eyebrow">{eyebrowFor(p)}</p>
+        <h1 class="drawer__title">{p.data.title}{isLive(p) && <span class="pf-live">live</span>}</h1>
+        {p.data.stack && <p class="drawer__meta">{p.data.stack}</p>}
+        <div class="prose drawer__prose">
+            {p.data.body && p.data.body.length > 0 ? p.data.body.map((para) => <p>{para}</p>) : <Content />}
+        </div>
+        <div class="drawer__actions">
+            {hasLink(p.data.website) && <a class="btn" href={p.data.website} target="_blank" rel="noopener">Besök sajt</a>}
+            {hasLink(p.data.github) && <a class="btn btn--ghost" href={p.data.github} target="_blank" rel="noopener">GitHub</a>}
+            <a class="drawer__full" href={`/projects/${p.id}/`}>Öppna full sida →</a>
+        </div>
+    </template>
+))}
+
+{postItems.map(({ p, rendered: { Content } }) => (
+    <template data-sheet={`blog:${p.id}`}>
+        <p class="drawer__eyebrow">Skrivet</p>
+        <h1 class="drawer__title">{p.data.title}</h1>
+        <p class="drawer__meta">{[p.data.date, p.data.read].filter(Boolean).join(' · ')}</p>
+        <div class="prose drawer__prose"><Content /></div>
+        <div class="drawer__actions">
+            <a class="drawer__full" href={`/posts/${p.id}/`}>Öppna full sida →</a>
+        </div>
+    </template>
+))}
+
+<script>
+    function bindDrawer() {
+        const dialog = document.querySelector<HTMLDialogElement>('dialog[data-drawer]');
+        const panel = dialog?.querySelector<HTMLElement>('.drawer__panel');
+        const body = dialog?.querySelector<HTMLElement>('.drawer__body');
+        if (!dialog || !panel || !body || dialog.dataset.bound === '1') return;
+        dialog.dataset.bound = '1';
+
+        const templates = new Map<string, HTMLTemplateElement>();
+        document.querySelectorAll<HTMLTemplateElement>('template[data-sheet]').forEach((t) =>
+            templates.set(t.dataset.sheet!, t),
+        );
+        let lastFocus: HTMLElement | null = null;
+
+        const open = (key: string, trigger: HTMLElement) => {
+            const tpl = templates.get(key);
+            if (!tpl) return false;
+            body.replaceChildren(tpl.content.cloneNode(true));
+            lastFocus = trigger;
+            dialog.showModal();
+            document.documentElement.style.overflow = 'hidden';
+            // scrollTop måste nollställas EFTER showModal (dold dialog ignorerar det).
+            requestAnimationFrame(() => {
+                dialog.classList.add('is-open');
+                panel.scrollTop = 0;
+            });
+            return true;
+        };
+
+        const close = () => {
+            if (!dialog.open) return;
+            dialog.classList.remove('is-open');
+            let done = false;
+            const finish = () => {
+                if (done) return;
+                done = true;
+                panel.removeEventListener('transitionend', finish);
+                dialog.close();
+            };
+            panel.addEventListener('transitionend', finish);
+            setTimeout(finish, 480); // fallback om transitionend inte fyrar
+        };
+
+        dialog.addEventListener('close', () => {
+            document.documentElement.style.overflow = '';
+            body.replaceChildren();
+            lastFocus?.focus();
+        });
+        dialog.addEventListener('cancel', (e) => { e.preventDefault(); close(); }); // ESC → animerad stängning
+        dialog.addEventListener('click', (e) => { if (e.target === dialog) close(); }); // klick på backdrop
+        dialog.querySelector('[data-drawer-close]')?.addEventListener('click', close);
+
+        document.querySelectorAll<HTMLAnchorElement>('[data-sheet-open]').forEach((a) => {
+            if (a.dataset.sheetBound === '1') return;
+            a.dataset.sheetBound = '1';
+            a.addEventListener('click', (e) => {
+                if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; // låt öppna-i-ny-flik funka
+                if (open(a.dataset.sheetOpen ?? '', a)) e.preventDefault();
+            });
+        });
+    }
+    bindDrawer();
+    document.addEventListener('astro:page-load', bindDrawer);
+</script>

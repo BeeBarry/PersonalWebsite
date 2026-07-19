@@ -6,11 +6,12 @@ interface Props {
     date: string;
     read?: string;
     showRead?: boolean;
-    category?: string;
+    domains?: string;
+    sheetKey?: string;
 }
-const { href, title, description, date, read, showRead = false, category } = Astro.props;
+const { href, title, description, date, read, showRead = false, domains, sheetKey } = Astro.props;
 ---
-<a class="pf-post" href={href} data-category={category}>
+<a class="pf-post" href={href} data-domains={domains} data-sheet-open={sheetKey}>
     <div class="pf-t">{title}</div>
     {description && <div class="pf-d">{description}</div>}
     <span class="pf-date">{showRead && read ? `${date} · ${read}` : date}</span>

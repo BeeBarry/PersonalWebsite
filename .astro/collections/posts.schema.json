@@ -15,14 +15,17 @@
     "date": {
       "type": "string"
     },
-    "category": {
-      "default": "Övrigt",
-      "type": "string",
-      "enum": [
-        "IoT",
-        "Cloud & DevOps",
-        "Övrigt"
-      ]
+    "domains": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "web",
+          "cloud",
+          "embedded"
+        ]
+      }
     },
     "read": {
       "type": "string"

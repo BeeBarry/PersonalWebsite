@@ -1,9 +1,14 @@
 import { defineCollection, z } from "astro:content";
 import { glob } from "astro/loaders";
+import { DOMAIN_SLUGS } from "./data/domains";
 
 // draft: true döljs i prod-bygget (filtreras via showEntry i src/utils/content.ts),
 // men syns alltid i `astro dev`. Default false = publik.
 const draftField = z.boolean().default(false);
+
+// Domäner ett innehåll tillhör (kan vara flera). z.enum mot DOMAIN_SLUGS gör att
+// stavfel failar bygget. .default([]) → äldre innehåll utan fältet validerar.
+const domainsField = z.array(z.enum(DOMAIN_SLUGS)).default([]);
 
 // Lucide-ikoner som tillåts för post-cover-glow.
 const postIcon = z.enum([
@@ -20,6 +25,8 @@ const projects = defineCollection({
   schema: z.object({
     title: z.string(),
     description: z.string(),
+    // Portfolio (byggt & deployat, i produktion) vs lab (experiment/open source).
+    type: z.enum(["portfolio", "lab"]).default("lab"),
     // Portfolio-grupperingen: "Smrtec · IoT-drift" eller "Eget · open source"
     kind: z.string().default("Eget · open source"),
     year: z.string().default(""),
@@ -40,6 +47,7 @@ const projects = defineCollection({
     stack: z.string().default(""),
     website: z.string().optional(),
     github: z.string().optional(),
+    domains: domainsField,
     draft: draftField,
   }),
 });
@@ -65,8 +73,8 @@ const posts = defineCollection({
     description: z.string().optional(),
     author: z.string().default("Barry"),
     date: z.string(),
-    // Ämne för filtrering på /posts/ (chip-rad). Saknas → "Övrigt".
-    category: z.enum(["IoT", "Cloud & DevOps", "Övrigt"]).default("Övrigt"),
+    // Domäner inlägget tillhör (för filter på /posts + startsidans explorer).
+    domains: domainsField,
     // Portfolio-fält för artikelvyn
     read: z.string().optional(),
     tags: z.string().optional(),
