@@ -1,5 +1,7 @@
 ---
 title: 'Barrynamdari.se'
+type: portfolio
+domains: ['web']
 description: 'Den här portfoliosajten — statisk Astro 6 med View Transitions, mörkt/ljust tema och bloggsystem.'
 kind: 'Portfolio-projekt'
 year: '2026'

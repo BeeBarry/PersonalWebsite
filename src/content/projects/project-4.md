@@ -1,5 +1,7 @@
 ---
 title: 'Duck Quotes'
+type: lab
+domains: ['web']
 draft: true
 description: 'Smygläs om detta projekt som snart lanseras..'
 kind: 'Portfolio-projekt'

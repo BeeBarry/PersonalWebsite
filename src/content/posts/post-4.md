@@ -1,5 +1,6 @@
 ---
 title: 'IT team och sport team'
+domains: ['web']
 draft: true
 author: Barry
 date: '09-09-2025'

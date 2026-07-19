@@ -1,5 +1,7 @@
 ---
 title: 'DevOps Tools'
+type: lab
+domains: ['cloud']
 description: 'En fullstack webbsida som lär ut om olika verktyg som används inom DevOps rollen.'
 kind: 'Portfolio-projekt'
 year: '2024'

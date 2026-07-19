@@ -1,5 +1,6 @@
 ---
 title: 'Kubernetes & Naturen'
+domains: ['cloud']
 draft: true
 author: Barry
 date: '01-01-2025'
