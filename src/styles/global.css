@@ -14,26 +14,49 @@
 /* Tailwind 4 theme-tokens (refererar CSS-variabler → temaskifte funkar) */
 @theme inline {
     --font-sans: var(--font-mono);
+    --font-display: var(--font-display);
+    --font-mono: var(--font-mono);
+
+    /* Portfolio-alias (befintliga) */
     --color-bg: var(--c-bg);
     --color-surface: var(--c-surface);
     --color-text: var(--c-text);
     --color-text-secondary: var(--c-text-secondary);
     --color-text-muted: var(--c-text-muted);
     --color-accent: var(--c-accent);
+
+    /* Breeze-designsystemets tokennamn → mappade till VÅR palett. Gör att de
+       porterade layout-komponenternas utilityklasser (bg-background,
+       text-foreground, text-primary, border-border, bg-muted, shadow-main ...)
+       renderar i våra färger — i både mörkt (default) och ljust (html.light). */
+    --color-background: var(--c-bg);
+    --color-foreground: var(--c-text);
+    --color-card: var(--c-card);
+    --color-card-foreground: var(--c-text);
+    --color-primary: var(--c-accent);
+    --color-primary-foreground: var(--c-accent-contrast);
+    --color-muted: var(--c-muted);
+    --color-muted-foreground: var(--c-text-muted);
     --color-border: var(--c-border);
+    --shadow-main: var(--c-shadow-main);
 }
 
 /* ---- Färgtokens: MÖRKT (default) — portfolio-palett ---- */
 :root {
     --c-bg: #0b0b0d;
     --c-surface: rgba(255, 255, 255, 0.045);
-    --c-text: #ededee;
+    --c-text: #f2f2f4;
     /* Mellannivå: beskrivningar/ingresser — tydligt läsbar men under titel. */
-    --c-text-secondary: #b3b3ba;
-    --c-text-muted: #8b8b92;
+    --c-text-secondary: #d2d2d8;
+    /* Höjd kontrast för läsbarhet (brödtext/meta) mot mörk bg. */
+    --c-text-muted: #b4b4bd;
     --c-accent: #b9f24d;
     --c-accent-contrast: #0b0b0d;
     --c-border: rgba(255, 255, 255, 0.09);
+    /* Breeze-brygga: kort-yta (lyfter mot bg), solid muted-yta, kort-skugga */
+    --c-card: #111114;
+    --c-muted: #1b1b1f;
+    --c-shadow-main: 0 30px 60px -15px rgba(0, 0, 0, 0.5);
     --dot-color: transparent;
 
     /* Typografi — portfolio: display Schibsted Grotesk, mono Spline Sans Mono */
@@ -71,12 +94,17 @@
 html.light {
     --c-bg: #f7f6f2;
     --c-surface: rgba(0, 0, 0, 0.035);
-    --c-text: #16150f;
-    --c-text-secondary: #4a473f;
-    --c-text-muted: #6e6a60;
+    --c-text: #14130d;
+    --c-text-secondary: #38362e;
+    /* Höjd kontrast för läsbarhet (brödtext/meta) mot ljus bg. */
+    --c-text-muted: #4d4a42;
     --c-accent: #5f9c0a;
     --c-accent-contrast: #f7f6f2;
     --c-border: rgba(0, 0, 0, 0.10);
+    /* Breeze-brygga (ljust) */
+    --c-card: #fffefb;
+    --c-muted: #ecebe4;
+    --c-shadow-main: 0 10px 40px -10px rgba(60, 50, 20, 0.10);
     --dot-color: rgba(22, 21, 15, 0.05);
 
     --text-light: #16150f;
@@ -149,8 +177,13 @@ body {
 }
 
 /* ============================================================
-   TYPOGRAFI — mjuk modern (Manrope), fluid skala
+   TYPOGRAFI — bas-defaults i @layer base så Tailwind-utilities kan
+   överskrida dem på Breeze-komponenterna (annars vinner element-
+   selektorerna över utility-klasser i Tailwind v4). .prose/.site är
+   oskiktade och behåller sin kontroll i läsvyn.
    ============================================================ */
+@layer base {
+
 h1, h2, h3, h4 {
     font-family: var(--header);
     color: var(--c-text);
@@ -201,6 +234,8 @@ a {
     color: var(--c-accent);
 }
 
+} /* end @layer base */
+
 ::selection {
     background: var(--c-accent);
     color: var(--c-accent-contrast);
@@ -237,7 +272,7 @@ a {
     flex-wrap: nowrap;
 }
 
-.navbar__menu :global(button) {
+.navbar__menu button {
     display: flex;
     align-items: center;
     margin-left: 0.5rem;
@@ -1956,7 +1991,7 @@ html.light .linked-in {
     display: block;
 }
 .site .amh1 {
-    font-size: clamp(2rem, 5.5vw, 3rem);
+    font-size: clamp(1.5rem, 4vw, 2.1rem);
     font-weight: 800;
     letter-spacing: -0.035em;
     line-height: 1.03;
@@ -1979,7 +2014,7 @@ html.light .linked-in {
     color: var(--c-text);
 }
 .site .prose p {
-    font-size: 1.13rem;
+    font-size: 1rem;
     line-height: 1.72;
     color: var(--c-text);
     font-family: var(--font-display);
@@ -1998,7 +2033,7 @@ html.light .linked-in {
 .site .prose ol { list-style: decimal; }
 .site .prose li {
     font-family: var(--font-display);
-    font-size: 1.13rem;
+    font-size: 1rem;
     line-height: 1.72;
     color: var(--c-text);
     padding-left: 0.35em;
@@ -2134,5 +2169,47 @@ html.light .linked-in {
         transform: none !important;
         opacity: 1 !important;
     }
+}
+
+/* ============================================================
+   BREEZE-HJÄLPKLASSER — används av de porterade layout-komponenterna
+   (sidebar/nav/kort). Namespacas inte: de hör till nya layouten.
+   ============================================================ */
+@keyframes breeze-in {
+    from { opacity: 0; transform: translateY(0.75rem); }
+    to { opacity: 1; transform: none; }
+}
+.animate-in {
+    animation: breeze-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--c-border);
+    border-radius: 10px;
+}
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* View Transitions: undvik övergångsflimmer vid temaskifte */
+html[data-astro-transition] *,
+html[data-astro-transition-fallback] * {
+    transition: none !important;
+}
+
+/* ------------------------------------------------------------
+   LÄSVY inuti Breeze-kortet: återanvänder .site .article/.prose-
+   typografin men neutraliserar .site:s helsides-egenskaper (den
+   bor nu i ett scrollande <main>, inte direkt i <body>).
+   ------------------------------------------------------------ */
+.site.reader {
+    min-height: 0;
+    background: transparent;
+    z-index: auto;
+}
+.site.reader .article {
+    /* Kortet har ingen egen inner-padding → ge artikeln luft i sidled. */
+    padding-inline: clamp(1.75rem, 5vw, 3.25rem);
+    padding-top: clamp(1.5rem, 4vw, 2.5rem);
 }
 
