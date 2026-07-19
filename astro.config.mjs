@@ -2,7 +2,7 @@ import { defineConfig, fontProviders } from 'astro/config';
 
 import mdx from '@astrojs/mdx';
 
-import react from '@astrojs/react';
+import icon from 'astro-icon';
 
 import tailwindcss from '@tailwindcss/vite';
 
@@ -10,7 +10,7 @@ export default defineConfig({
   site: 'https://barrynamdari.se',
   outDir: './public',
   publicDir: './static',
-  integrations: [mdx(), react()],
+  integrations: [icon(), mdx()],
 
   // Portfolio-temats fonter via Astro 6 inbyggda Fonts-API.
   // Schibsted Grotesk = display + brödtext, Spline Sans Mono = mono/labels.
