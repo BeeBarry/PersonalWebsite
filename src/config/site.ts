@@ -40,6 +40,7 @@ const site = {
         { name: "Arbete", subtitle: "Projekt", href: "/works/" },
         { name: "Fältnoteringar", subtitle: "Notes", href: "/posts/" },
         { name: "Learn Hub", subtitle: "Docs", href: "/learn-hub/", devOnly: true },
+        { name: "För HR", subtitle: "Rekrytering", href: "/for-hr/" },
     ] as NavItem[],
 
     social: [

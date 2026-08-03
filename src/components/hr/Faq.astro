@@ -1,0 +1,71 @@
+---
+// FAQ — vanliga frågor, filtrerade på var i processen HR står (kategori-chips).
+// Dragspel, en öppen i taget (f1 öppen från start). Varje svar länkar till de
+// kort frågan taggats med (samma tags-array som driver kortens "Vanliga frågor
+// om X"). hrGuide.ts sköter kategori-filter + toggling.
+import Icon from "../site/Icon.astro";
+import { hrFaq, hrFaqCategories, cardById, typo } from "../../data/hr";
+
+const firstCat = hrFaqCategories[0];
+---
+
+<div data-hr-faq>
+  <div class="hr-chips" role="group" aria-label="Filtrera frågor" data-hr-faqcats>
+    {
+      hrFaqCategories.map((c, i) => (
+        <button
+          type="button"
+          class:list={["hr-chip", i === 0 && "is-active"]}
+          data-hr-faqcat={c}
+          aria-pressed={i === 0 ? "true" : "false"}
+        >
+          {c}
+        </button>
+      ))
+    }
+  </div>
+
+  <div class="hr-acc" style="margin-top:16px" data-hr-accordion>
+    {
+      hrFaq.map((item) => {
+        const tagCards = item.tags
+          .map((t) => cardById(t))
+          .filter((c): c is NonNullable<typeof c> => Boolean(c));
+        const open = item.id === "f1";
+        return (
+          <div class="hr-acc__item" data-hr-faqitem data-hr-cat={item.cat} hidden={item.cat !== firstCat}>
+            <button
+              type="button"
+              class="hr-acc__head"
+              data-hr-acc-head
+              aria-expanded={open ? "true" : "false"}
+            >
+              <span class="hr-faq__q">{typo(item.q)}</span>
+              <span class="hr-acc__sign" aria-hidden="true">{open ? "−" : "+"}</span>
+            </button>
+            <div class="hr-acc__body" data-hr-acc-body hidden={!open}>
+              <p class="hr-faq__a">{typo(item.a)}</p>
+              {tagCards.length > 0 && (
+                <>
+                  <p class="hr-faq__cardlabel">Läs kortet</p>
+                  <div class="hr-faq__links">
+                    {tagCards.map((c) => (
+                      <a class="hr-faq__link" href={`/for-hr/${c.id}/`}>
+                        {c.title}
+                        <Icon name="ArrowRight" size={12} />
+                      </a>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        );
+      })
+    }
+  </div>
+
+  <p class="hr-faq__note">
+    Har du en fråga som inte står här? Den blir troligen nästa post — skicka den.
+  </p>
+</div>

@@ -1,0 +1,229 @@
+---
+// Kort-detaljvy — en egen prerenderad sida per kort (djuplänkbar från LinkedIn:
+// /for-hr/kubernetes). Den persistenta topbaren (HrTabBar) ligger kvar överst
+// med tillbaka-knapp + kort-switcher. Fulla kort får en dokument-layout: artikel
+// + sticky innehållsförteckning (scroll-spy) som fyller ytan och ger överblick.
+// Utkast (utan `what`) visar ett "på gång"-block.
+import AppLayout from "../../layouts/AppLayout.astro";
+import HrTabBar from "../../components/hr/HrTabBar.astro";
+import Icon from "../../components/site/Icon.astro";
+import site from "../../config/site";
+import { hrCards, isDraft, faqForCard, typo } from "../../data/hr";
+import "../../styles/hr.css";
+
+export const prerender = true;
+export function getStaticPaths() {
+  return hrCards.map((card) => ({ params: { card: card.id }, props: { card } }));
+}
+
+const { card } = Astro.props;
+const draft = isDraft(card);
+const faqs = faqForCard(card.id);
+
+const linkedin = site.social.find((s) => s.name === "LinkedIn")?.href ?? "#";
+const github = site.social.find((s) => s.name === "GitHub")?.href ?? "#";
+
+const pageTitle = `${card.title} · Teknik-guiden`;
+
+// Innehållsförteckning — bara de sektioner kortet faktiskt har.
+const toc = [
+  { id: "oversikt", label: "Översikt", show: true },
+  { id: "analogi", label: "Tänk så här", show: !!card.analogy },
+  { id: "arbetsdag", label: "En vanlig arbetsdag", show: !!card.tasks?.length },
+  { id: "passar", label: "Passar en person som", show: !!card.fits?.length },
+  { id: "blandas", label: "Blandas ihop med", show: !!card.confuse?.length },
+  { id: "cv", label: "Ord i CV:t", show: !!card.cv?.length },
+  { id: "fragor", label: "Frågor att ställa", show: !!card.ask?.length },
+  { id: "niva", label: "Junior eller senior?", show: !!(card.junior || card.senior) },
+  { id: "faq", label: "Vanliga frågor", show: faqs.length > 0 },
+].filter((t) => t.show);
+const showToc = !draft && toc.length >= 3;
+---
+
+<AppLayout title={pageTitle} description={card.one}>
+  <div class="hr">
+    <HrTabBar variant="detail" current={card.id} />
+
+    <div class="site reader">
+      {
+        draft ? (
+          <main class="article hrd animate-in">
+            <p class="hrd__meta">{card.typ} · {card.dom}</p>
+            <h1 class="hrd__title">{card.title}</h1>
+            <div class="hrd-draft">
+              <p class="hrd-draft__title">Kortet är på gång</p>
+              <p class="hrd-draft__text">
+                {typo(card.one)} Det fullständiga kortet skriver jag som bäst —
+                vill du att jag prioriterar det, hör av dig så taggar jag dig när
+                det ligger uppe.
+              </p>
+            </div>
+            <div class="hrd-actions">
+              <a class="hr-btn" href={linkedin} target="_blank" rel="noopener noreferrer">
+                <Icon name="Users" size={15} />
+                Fråga mig om kortet
+              </a>
+              <a class="hrd-actions__icon" href={github} target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+                <Icon name="Github" size={18} />
+              </a>
+            </div>
+          </main>
+        ) : (
+          <div class:list={["hrd-doc animate-in", showToc && "hrd-doc--toc"]}>
+            <main class="hrd-main">
+              <p class="hrd__meta">{card.typ} · {card.dom}</p>
+              <h1 class="hrd__title">{card.title}</h1>
+
+              {showToc && (
+                <nav class="hrd-jump" data-hr-toc aria-label="Hoppa till avsnitt">
+                  {toc.map((t) => (
+                    <a class="hrd-jump__link" href={`#${t.id}`} data-hr-toc-link={t.id}>
+                      {t.label}
+                    </a>
+                  ))}
+                </nav>
+              )}
+
+              <p class="hrd__lead" id="oversikt">{typo(card.what)}</p>
+
+              {card.analogy && (
+                <div class="hrd-sec" id="analogi">
+                  <p class="hrd-sec__label">Tänk så här</p>
+                  <p class="hrd-analogy">{typo(card.analogy)}</p>
+                </div>
+              )}
+
+              {card.tasks && card.tasks.length > 0 && (
+                <section class="hrd-sec" id="arbetsdag">
+                  <p class="hrd-sec__label">En vanlig arbetsdag</p>
+                  <ul class="hrd-list hrd-list--tasks">
+                    {card.tasks.map((t) => (
+                      <li>{typo(t)}</li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {card.fits && card.fits.length > 0 && (
+                <section class="hrd-sec" id="passar">
+                  <p class="hrd-sec__label">Passar en person som</p>
+                  <ul class="hrd-list hrd-list--fits">
+                    {card.fits.map((f) => (
+                      <li>{typo(f)}</li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {card.confuse && card.confuse.length > 0 && (
+                <section class="hrd-sec" id="blandas">
+                  <p class="hrd-sec__label">Blandas ofta ihop med</p>
+                  <div class="hrd-confuse">
+                    {card.confuse.map((c) => (
+                      <div class="hrd-confuse__item">
+                        <p class="hrd-confuse__a">{typo(c.a)}</p>
+                        <p class="hrd-confuse__b">{typo(c.b)}</p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {card.cv && card.cv.length > 0 && (
+                <section class="hrd-sec" id="cv">
+                  <p class="hrd-sec__label">Ord du ser i CV:t</p>
+                  <div class="hrd-cv">
+                    {card.cv.map((word) => (
+                      <span>{word}</span>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {card.ask && card.ask.length > 0 && (
+                <section class="hrd-sec" id="fragor">
+                  <p class="hrd-sec__label">Frågor du kan ställa</p>
+                  {card.ask.map((a) => (
+                    <div class="hrd-ask">
+                      <p class="hrd-ask__q">“{typo(a.q)}”</p>
+                      <p class="hrd-ask__label">Bra svar</p>
+                      <p class="hrd-ask__good">{typo(a.good)}</p>
+                    </div>
+                  ))}
+                </section>
+              )}
+
+              {(card.junior || card.senior) && (
+                <section class="hrd-sec" id="niva">
+                  <p class="hrd-sec__label">Junior eller senior?</p>
+                  <div class="hrd-levels">
+                    {card.junior && (
+                      <div class="hrd-level">
+                        <p class="hrd-level__k">Junior</p>
+                        <p class="hrd-level__v">{typo(card.junior)}</p>
+                      </div>
+                    )}
+                    {card.senior && (
+                      <div class="hrd-level">
+                        <p class="hrd-level__k">Senior</p>
+                        <p class="hrd-level__v">{typo(card.senior)}</p>
+                      </div>
+                    )}
+                  </div>
+                </section>
+              )}
+
+              {faqs.length > 0 && (
+                <section class="hrd-sec" id="faq">
+                  <p class="hrd-sec__label">Vanliga frågor om {card.title}</p>
+                  <div>
+                    {faqs.map((f) => (
+                      <div class="hrd-faq__item">
+                        <p class="hrd-faq__q">{typo(f.q)}</p>
+                        <p class="hrd-faq__a">{typo(f.a)}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <a class="hrd-faq__all" href="/for-hr/?flik=faq">
+                    Alla frågor i FAQ
+                    <Icon name="ArrowRight" size={14} />
+                  </a>
+                </section>
+              )}
+
+              <div class="hrd-actions">
+                <a class="hr-btn" href={linkedin} target="_blank" rel="noopener noreferrer">
+                  <Icon name="Users" size={15} />
+                  Fråga mig om kortet
+                </a>
+                <a class="hrd-actions__icon" href={github} target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+                  <Icon name="Github" size={18} />
+                </a>
+              </div>
+            </main>
+
+            {showToc && (
+              <aside class="hrd-toc" aria-label="Innehåll">
+                <div class="hrd-toc__inner">
+                  <p class="hrd-toc__title">I det här kortet</p>
+                  <nav data-hr-toc>
+                    {toc.map((t) => (
+                      <a class="hrd-toc__link" href={`#${t.id}`} data-hr-toc-link={t.id}>
+                        {t.label}
+                      </a>
+                    ))}
+                  </nav>
+                </div>
+              </aside>
+            )}
+          </div>
+        )
+      }
+    </div>
+  </div>
+
+  <script>
+    import { initHrGuide } from "../../scripts/hrGuide";
+    initHrGuide();
+  </script>
+</AppLayout>

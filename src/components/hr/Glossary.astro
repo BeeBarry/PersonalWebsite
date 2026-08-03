@@ -1,0 +1,77 @@
+---
+// Ordlista — 16 begrepp, en mening styck. Sök + kategori-filter + sorterings-
+// växel (A–Ö med bokstavsavdelare / Vanligast först = datafil-ordning) sköts av
+// hrGuide.ts. Medvetet ingen A–Ö-rail (för få termer). Renderas A–Ö server-side
+// (graceful utan JS); data-hr-order bär datafil-ordningen för "Vanligast först".
+import Icon from "../site/Icon.astro";
+import { hrGlossary, hrGlossaryCategories, typo } from "../../data/hr";
+
+// Behåll datafil-index (kurerad "vanligast"-ordning) men rendera A–Ö som default.
+const withOrder = hrGlossary.map((g, order) => ({ ...g, order }));
+const az = [...withOrder].sort((a, b) => a.t.localeCompare(b.t, "sv"));
+const firstLetter = (t: string) => t.charAt(0).toLocaleUpperCase("sv");
+---
+
+<div data-hr-glossary>
+  <div class="hr-search" data-hr-search-wrap>
+    <span class="hr-search__icon"><Icon name="Search" size={15} /></span>
+    <input
+      class="hr-search__input"
+      type="search"
+      placeholder="Sök ett ord du hörde"
+      autocomplete="off"
+      aria-label="Sök i ordlistan"
+      data-hr-gloss-input
+    />
+    <button class="hr-search__clear" type="button" aria-label="Rensa sökningen" data-hr-gloss-clear>
+      <Icon name="X" size={14} />
+    </button>
+  </div>
+
+  <div class="hr-gloss__controls" style="margin-top:14px">
+    <div class="hr-chips" role="group" aria-label="Filtrera ordlistan" data-hr-glosscats>
+      <button class="hr-chip is-active" type="button" data-hr-glosscat="Alla" aria-pressed="true">
+        Alla
+      </button>
+      {
+        hrGlossaryCategories.map((c) => (
+          <button class="hr-chip" type="button" data-hr-glosscat={c} aria-pressed="false">
+            {c}
+          </button>
+        ))
+      }
+    </div>
+
+    <button class="hr-gloss__sort" type="button" data-hr-gloss-sort aria-label="Byt sortering">
+      <Icon name="ArrowUpDown" size={14} />
+      <span data-hr-sort-label>A–Ö</span>
+    </button>
+  </div>
+
+  <div class="hr-gloss__list" data-hr-gloss-list>
+    {
+      az.map((g) => (
+        <div
+          class="hr-gloss__row"
+          data-hr-gloss-row
+          data-hr-term={g.t}
+          data-hr-cat={g.cat}
+          data-hr-order={g.order}
+          data-hr-letter={firstLetter(g.t)}
+          data-hr-search={`${g.t} ${g.d}`.toLowerCase()}
+        >
+          <div class="hr-gloss__meta">
+            <span class="hr-gloss__term">{g.t}</span>
+            <div class="hr-gloss__cat">{g.cat}</div>
+          </div>
+          <p class="hr-gloss__def">{typo(g.d)}</p>
+        </div>
+      ))
+    }
+  </div>
+
+  <div class="hr-empty" data-hr-gloss-empty hidden>
+    <p class="hr-empty__title">Ordet finns inte här än</p>
+    <p class="hr-empty__text">Skicka det till mig — ordlistan växer med era frågor.</p>
+  </div>
+</div>

@@ -1,0 +1,69 @@
+---
+// Teknik-guiden — HR-fliken. En jämbördig route med fyra inre flikar som styrs
+// av den persistenta topbaren (HrTabBar): Bibliotek, Översätt, FAQ, Ordlista.
+// Topbaren ligger kvar på kort-sidorna också, så navigeringen känns dynamisk
+// utan bakåtknapp. hrGuide.ts sköter flikväxling (+ ?flik=-djuplänk), sök,
+// filter, dragspel och sortering. Korten djuplänkas via /for-hr/[card].
+import AppLayout from "../../layouts/AppLayout.astro";
+import HrTabBar from "../../components/hr/HrTabBar.astro";
+import Library from "../../components/hr/Library.astro";
+import Translate from "../../components/hr/Translate.astro";
+import Faq from "../../components/hr/Faq.astro";
+import Glossary from "../../components/hr/Glossary.astro";
+import { hrMetaLine } from "../../data/hr";
+import "../../styles/hr.css";
+---
+
+<AppLayout
+  title="För HR · Teknik-guiden · Barry Namdari"
+  description="Teknik-guiden — tech-roller, språk och verktyg förklarade för HR och rekryterare. Ingen förkunskap krävs."
+>
+  <div class="hr">
+    <HrTabBar active="bib" />
+
+    <div class="hr-inner animate-in">
+      <h1 class="hr-sr-title">Teknik-guiden — för HR och rekryterare</h1>
+
+      <header>
+        <p class="hr-eyebrow">För HR &amp; rekryterare</p>
+        <p class="hr-lead">
+          Vad orden i annonsen faktiskt betyder, vem som trivs med vad — och
+          vilka frågor du kan ställa utan att kunna koda. Ingen förkunskap
+          krävs.<span class="hr-lead__more"> Skriven för dig som är ny i
+            tech-rekrytering.</span>
+        </p>
+        <p class="hr-metaline">{hrMetaLine()}</p>
+      </header>
+
+      <section class="hr-panel" data-hr-panel="bib" role="tabpanel">
+        <Library />
+      </section>
+      <section class="hr-panel" data-hr-panel="ovs" role="tabpanel" hidden>
+        <Translate />
+      </section>
+      <section class="hr-panel" data-hr-panel="faq" role="tabpanel" hidden>
+        <Faq />
+      </section>
+      <section class="hr-panel" data-hr-panel="ord" role="tabpanel" hidden>
+        <Glossary />
+      </section>
+    </div>
+  </div>
+
+  <script>
+    import { initHrGuide } from "../../scripts/hrGuide";
+    initHrGuide();
+  </script>
+</AppLayout>
+
+<style>
+  /* Extra ledtext-mening bara på desktop (README: mobil kortare). */
+  .hr-lead__more {
+    display: none;
+  }
+  @media (min-width: 768px) {
+    .hr-lead__more {
+      display: inline;
+    }
+  }
+</style>

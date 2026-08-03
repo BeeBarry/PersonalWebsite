@@ -1,0 +1,166 @@
+{
+  "_meta": {
+    "purpose": "All redaktionell text för HR-fliken (Teknik-guiden) på barrynamdari.se, separerad från presentation. Innehållet ska ligga i CMS/markdown/JSON i den riktiga sajten så att det kan uppdateras utan kodändring.",
+    "language": "sv-SE",
+    "lastUpdated": "2026-07",
+    "taxonomy": {
+      "typ": ["Roll", "Språk", "Ramverk", "Verktyg", "Arbetssätt"],
+      "domän": ["Frontend", "Backend", "Cloud & DevOps", "Data & AI", "Tvärs över teamet"],
+      "note": "typ = VAD något är (jobb vs färdighet). domän = VAR i produkten. Kort med typ='Roll' grupperas alltid först, i egen grupp 'Roller i ett utvecklingsteam'. Övriga kort grupperas per domän i den ordning domänerna listas."
+    },
+    "cardTemplate": ["one", "what", "analogy", "tasks", "fits", "confuse", "cv", "ask", "junior", "senior"],
+    "draftRule": "Kort utan 'what' (draft: true) visas i listan med badge UTKAST och ett 'Kortet är på gång'-block i detaljvyn. Det är avsiktligt — guiden ska synas växa."
+  },
+
+  "cards": [
+    {
+      "id": "hr-backend",
+      "title": "Backendutvecklare",
+      "typ": "Roll",
+      "dom": "Backend",
+      "one": "Bygger motorn bakom appen: data, regler och säkerhet — det användaren aldrig ser.",
+      "what": "En backendutvecklare bygger den del av systemet som körs på servern: databasen där informationen sparas, reglerna för vad som får hända (\"en kund får bara se sina egna ordrar\") och de API:er som appen hämtar data ifrån. Rollen finns i nästan alla produktteam och är sällan bunden till ett enda språk — samma person kan byta mellan Java, C# och Python under en karriär.",
+      "analogy": "Tänk på en restaurang. Frontend är matsalen som gästen ser. Backend är köket: beställningen tas emot i matsalen, men maten lagas, räknas och kvalitetssäkras där bak.",
+      "tasks": [
+        "Bygger och underhåller API:er — kopplingarna som appen hämtar och sparar data genom.",
+        "Modellerar databasen: vad ska sparas, hur hänger det ihop, hur hittas det snabbt.",
+        "Felsöker när något gått fel i skarp drift, och skriver tester så det inte upprepas.",
+        "Sitter i planering med frontend, produkt och test — backend är sällan ett soloarbete."
+      ],
+      "fits": [
+        "Gillar att lösa pussel och tänka i regler och flöden, snarare än i färg och form.",
+        "Är noggrann — ett litet misstag i backend kan påverka alla användare samtidigt.",
+        "Tycker om att optimera: göra något som tar tre sekunder till något som tar tre tiondelar."
+      ],
+      "confuse": [
+        { "a": "Backend ≠ databasadministratör", "b": "Backendutvecklaren använder databasen. En DBA sköter driften av själva databasen — många team har ingen alls." },
+        { "a": "Backend ≠ fullstack", "b": "Fullstack betyder både frontend och backend. Nästan alla lutar åt ett håll — fråga vilket." },
+        { "a": "API är inget programspråk", "b": "Det är ett sätt för två system att prata. \"Erfarenhet av API:er\" säger inget om vilket språk personen kan." }
+      ],
+      "cv": ["Java", "C#/.NET", "Node.js", "Python", "SQL", "REST", "API", "Docker", "PostgreSQL", "Microservices"],
+      "ask": [
+        { "q": "Vad händer i systemet från att jag trycker på \"köp\" tills ordern finns i databasen?", "good": "Ett lugnt, stegvis svar i egna ord — inte fler buzzwords. Personen ska kunna förenkla utan att tappa tråden." },
+        { "q": "Berätta om en gång något gick fel i skarp drift. Vad gjorde du?", "good": "Beskriver hur felet hittades, vad som lagades och vad som ändrades så det inte händer igen — inte vems fel det var." }
+      ],
+      "junior": "Löser avgränsade uppgifter i en befintlig kodbas, med kodgranskning av en senior. Ofta 0–2 år.",
+      "senior": "Designar hur systemet hänger ihop, väger risk mot tid och leder andra i kod. 5+ år eller djup specialisering."
+    },
+    {
+      "id": "hr-react",
+      "title": "React",
+      "typ": "Ramverk",
+      "dom": "Frontend",
+      "one": "Det vanligaste verktyget för att bygga det användaren ser och klickar på i webbläsaren.",
+      "what": "React är ett bibliotek i programspråket JavaScript (i vardagstal säger de flesta ramverk). Utvecklaren bygger gränssnittet av små återanvändbara byggblock — en knapp, ett kort, en tabell — och sätter ihop dem till hela sidor. React är alltså inget eget språk: den som kan React kan JavaScript.",
+      "analogy": "Om webbsidan vore ett hus är React ett modulsystem. Istället för att såga varje bräda på plats sätter utvecklaren ihop färdiga, testade moduler — och byter ut en modul när något ska ändras.",
+      "tasks": [
+        "Bygger sidor och komponenter utifrån en design, oftast från Figma.",
+        "Kopplar gränssnittet mot backendens API:er och hanterar laddning, tomma vyer och fel.",
+        "Ser till att det fungerar på mobil, går att använda med tangentbord och laddar snabbt."
+      ],
+      "fits": [
+        "Ser detaljer i layout och tycker att fyra pixlar fel är fyra pixlar för mycket.",
+        "Gillar snabb återkoppling — resultatet syns direkt på skärmen.",
+        "Trivs nära design och användare, inte bara nära kod."
+      ],
+      "confuse": [
+        { "a": "React ≠ React Native", "b": "React är för webb, React Native för mobilappar. Kunskapen överlappar mycket, men det är inte samma sak." },
+        { "a": "React ≠ Angular eller Vue", "b": "De löser samma problem och är konkurrenter. En van React-utvecklare är produktiv i Vue på några veckor — kräv inte exakt matchning." },
+        { "a": "React ≠ JavaScript", "b": "React bygger på JavaScript. Söker ni React får ni JavaScript på köpet — men inte tvärtom." }
+      ],
+      "cv": ["JavaScript", "TypeScript", "Next.js", "Redux", "hooks", "komponenter", "CSS", "Figma", "Jest", "Vite"],
+      "ask": [
+        { "q": "Vilken komponent är du mest nöjd med, och varför blev den bra?", "good": "Pratar om återanvändning och att andra i teamet kunde använda den — inte bara att den såg snygg ut." },
+        { "q": "Hur vet du att din sida fungerar för någon som använder skärmläsare?", "good": "Nämner tillgänglighet konkret: semantisk HTML, tangentbord, kontrast. Tar kandidaten upp det självmant är det ett starkt tecken." }
+      ],
+      "junior": "Bygger komponenter efter färdig design och tydlig uppgift. 0–2 år, ofta självlärd med egna projekt.",
+      "senior": "Sätter strukturen för hela gränssnittet, prestanda och designsystem — och handleder andra."
+    },
+    {
+      "id": "hr-k8s",
+      "title": "Kubernetes",
+      "typ": "Verktyg",
+      "dom": "Cloud & DevOps",
+      "one": "Håller igång hundratals små program samtidigt — och startar om dem när något kraschar.",
+      "what": "Kubernetes (förkortas K8s) är en plattform som kör och övervakar program som paketerats i containers. Den ser till att rätt antal kopior är igång, flyttar dem mellan servrar och startar om det som gått sönder — automatiskt. Viktigt för dig som rekryterar: det är sällan någons enda jobb, utan en färdighet hos DevOps-ingenjörer, plattformsutvecklare och erfarna backendutvecklare.",
+      "analogy": "Tänk på en hamn. Containrarna är programmen — färdigpackade och lika i formatet. Kubernetes är kranarna och tidtabellen som avgör var varje container ska stå, hur många som behövs, och vad som händer när en ramlar i vattnet.",
+      "tasks": [
+        "Beskriver i konfigurationsfiler hur en tjänst ska köras, skalas och tåla fel.",
+        "Bygger pipelines så att ny kod hamnar i drift utan handpåläggning.",
+        "Är den som blir uppringd när något ligger nere — felsöker loggar och mätvärden."
+      ],
+      "fits": [
+        "Vill ha ordning och automatik: görs samma sak tre gånger ska den skriptas.",
+        "Är lugn under press — rollen har ofta jour och driftansvar.",
+        "Tycker om helheten och hur delarna hänger ihop, mer än hur en knapp ser ut."
+      ],
+      "confuse": [
+        { "a": "Kubernetes ≠ Docker", "b": "Docker packar ett program i en container. Kubernetes kör många containers åt gången. De används oftast tillsammans." },
+        { "a": "\"Kubernetes-utvecklare\" är sällan en riktig roll", "b": "Skriv hellre DevOps-ingenjör, plattformsingenjör eller backend med drifterfarenhet — och lista Kubernetes som en färdighet." },
+        { "a": "K8s = Kubernetes", "b": "Samma sak: K, åtta bokstäver, s. Ser du K8s i ett CV är det inget annat verktyg." }
+      ],
+      "cv": ["K8s", "Docker", "Helm", "Terraform", "AWS", "Azure", "CI/CD", "ArgoCD", "YAML", "Linux", "Prometheus"],
+      "ask": [
+        { "q": "Förklara vad Kubernetes gör, för mig som inte är teknisk.", "good": "Ett kort svar med en egen bild eller liknelse. Den som bara rabblar \"orkestrering av containers\" har oftast läst, inte kört." },
+        { "q": "Har du haft något du byggt i skarp drift? Vad hände när det inte fungerade?", "good": "Konkreta exempel på driftsättning, övervakning och en incident — skillnaden mellan kursintyg och verklig erfarenhet." }
+      ],
+      "junior": "Har kört Kubernetes i egna projekt eller labbmiljö och förstår begreppen. Ovanligt men finns — ofta hos självlärda.",
+      "senior": "Ansvarar för produktionsmiljöer med riktiga användare: kostnad, säkerhet, återställning och jour."
+    },
+    { "id": "hr-fe", "title": "Frontendutvecklare", "typ": "Roll", "dom": "Frontend", "draft": true, "one": "Bygger det användaren ser och klickar på — nära design, långt från servern." },
+    { "id": "hr-devops", "title": "DevOps-ingenjör", "typ": "Roll", "dom": "Cloud & DevOps", "draft": true, "one": "Bygger vägen från skriven kod till körande system — och håller den vägen öppen." },
+    { "id": "hr-data", "title": "Data engineer", "typ": "Roll", "dom": "Data & AI", "draft": true, "one": "Bygger rören som flyttar data dit den behövs. Grunden som all AI vilar på." },
+    { "id": "hr-ts", "title": "TypeScript", "typ": "Språk", "dom": "Frontend", "draft": true, "one": "JavaScript med säkerhetsbälte — fångar fel innan koden ens körs." },
+    { "id": "hr-py", "title": "Python", "typ": "Språk", "dom": "Data & AI", "draft": true, "one": "Lättläst språk som dominerar data, AI och automatisering." },
+    { "id": "hr-cs", "title": "C# / .NET", "typ": "Språk", "dom": "Backend", "draft": true, "one": "Microsofts arbetshäst — vanligast i svensk offentlig sektor och hos storbolag." },
+    { "id": "hr-docker", "title": "Docker", "typ": "Verktyg", "dom": "Cloud & DevOps", "draft": true, "one": "Packar ett program med allt det behöver, så det kör likadant överallt." },
+    { "id": "hr-next", "title": "Next.js", "typ": "Ramverk", "dom": "Frontend", "draft": true, "one": "React med extra allt — det vanligaste sättet att bygga React-sajter idag." },
+    { "id": "hr-cicd", "title": "CI/CD", "typ": "Arbetssätt", "dom": "Tvärs över teamet", "draft": true, "one": "Automatiken som testar och släpper ny kod flera gånger om dagen." },
+    { "id": "hr-scrum", "title": "Scrum & agilt", "typ": "Arbetssätt", "dom": "Tvärs över teamet", "draft": true, "one": "Arbetssättet bakom orden sprint, standup och backlog." }
+  ],
+
+  "faqCategories": ["Vanligast", "Annonsen", "Screening", "CV & nivåer"],
+  "faq": [
+    { "id": "f1", "cat": "Vanligast", "tags": ["hr-react", "hr-ts"], "q": "Vad är skillnaden mellan Java och JavaScript?", "a": "Ungefär den mellan bil och biljard. Två helt olika språk med olika användning — namnlikheten är ett marknadsföringsbeslut från 90-talet. En Java-utvecklare är inte en JavaScript-utvecklare, och att blanda ihop dem i en annons märks direkt." },
+    { "id": "f2", "cat": "Vanligast", "tags": ["hr-backend", "hr-fe"], "q": "Vad betyder fullstack egentligen?", "a": "Att personen jobbar i både frontend och backend. Nästan alla lutar åt ett håll — fråga \"vilken halva är du starkast på?\". Svaret säger mer än ordet fullstack gör." },
+    { "id": "f3", "cat": "Vanligast", "tags": ["hr-react", "hr-fe", "hr-next"], "q": "Kandidaten kan React men vi söker Angular — är det kört?", "a": "Nej. De löser samma problem på olika sätt. En van React-utvecklare är produktiv i Angular inom några veckor. Kräv exakt matchning bara när teamet saknar tid att lära upp — annars sållar ni bort bra folk i onödan." },
+    { "id": "f4", "cat": "Annonsen", "tags": ["hr-k8s", "hr-devops"], "q": "Vi skrev \"Kubernetes-utvecklare\" och fick inga sökande. Varför?", "a": "Det är ingen etablerad roll, så ingen söker på den. Skriv rollen först — DevOps-ingenjör, plattformsingenjör eller backendutvecklare — och lista Kubernetes som en av färdigheterna. Då hittar både kandidater och sökmotorer annonsen." },
+    { "id": "f5", "cat": "Annonsen", "tags": [], "q": "Hur många krav ska vi ha i annonsen?", "a": "Färre än ni tror. Långa kravlistor filtrerar bort bra kandidater, särskilt de som bara söker när de uppfyller allt. Dela upp i \"måste\" (max 3–5) och \"plus\", och var ärlig med vilket som är vilket." },
+    { "id": "f6", "cat": "Annonsen", "tags": [], "q": "Ska vi kräva examen?", "a": "Bara om ni verkligen menar det. Många av de starkaste utvecklarna är självlärda eller kommer från yrkeshögskola. Formulera kravet som kunskap och bevis på kunskap, inte som papper." },
+    { "id": "f7", "cat": "Screening", "tags": ["hr-backend", "hr-fe"], "q": "Jag kan inte koda — hur bedömer jag en GitHub-profil?", "a": "Titta på tre saker: finns en README som förklarar projektet för en människa? Finns aktivitet spridd över tid och inte bara en helg? Har projektet ett syfte utöver en kursuppgift? Det säger mer om personen än koden gör." },
+    { "id": "f8", "cat": "Screening", "tags": ["hr-k8s", "hr-backend"], "q": "Vilken enda fråga ger mest?", "a": "\"Förklara något du byggt, för mig som inte är teknisk.\" Den som verkligen förstår kan förenkla. Den som memorerat begrepp fastnar i dem — och det hör du utan att kunna ett dugg kod." },
+    { "id": "f9", "cat": "CV & nivåer", "tags": ["hr-backend", "hr-react", "hr-k8s", "hr-fe"], "q": "Hur mycket erfarenhet är junior, medior och senior?", "a": "Tumregel: junior 0–2 år, medior 2–5, senior 5+. Men år är en trubbig mätare — ansvar är bättre. Har personen ägt något i skarp drift? Lett andra? Fattat beslut som kostat pengar?" },
+    { "id": "f10", "cat": "CV & nivåer", "tags": ["hr-k8s", "hr-fe"], "q": "Certifikat eller egna projekt — vad väger tyngst?", "a": "Projekt visar att personen kan bygga, certifikat att personen kan läsa in sig. För juniora roller väger ett genomtänkt projekt som faktiskt körs oftast tyngre än ett certifikat." },
+    { "id": "f11", "cat": "CV & nivåer", "tags": ["hr-backend", "hr-react"], "q": "Kandidaten listar 25 tekniker. Bra eller varningsflagga?", "a": "Oftast ett tecken på osäkerhet snarare än bredd. Fråga vilka tre personen skulle välja att jobba med imorgon och varför — djupet syns direkt." }
+  ],
+
+  "translate": [
+    { "say": "Fullstackutvecklare", "card": "hr-backend", "means": "Jobbar i både gränssnittet och servern.", "look": "Vilken halva som dominerar i CV:t. React och CSS = frontendlutning. SQL och API:er = backendlutning.", "watch": "Ingen är lika stark på båda. Frågar ni inte vilket håll personen lutar åt får ni slumpen." },
+    { "say": "Erfarenhet av Kubernetes", "card": "hr-k8s", "means": "Har kört program i containers i skarp drift — inte bara läst om det.", "look": "Docker, Helm, Terraform, CI/CD och ett moln (AWS eller Azure). De kommer alltid i par.", "watch": "\"Kubernetes-utvecklare\" är ingen roll. Skriv DevOps- eller plattformsingenjör i rubriken istället." },
+    { "say": "Junior utvecklare, 3 års erfarenhet", "means": "En motsägelse. Tre år är i praktiken medior.", "look": "Ansvar snarare än år: har personen ägt något i drift, granskat andras kod, lett en leverans?", "watch": "Juniorlön på mediorkrav är den vanligaste orsaken till att en annons dör utan sökande." },
+    { "say": "Meriterande: React, Angular eller Vue", "card": "hr-react", "means": "Antingen är ni öppna — eller ni har inte bestämt er.", "look": "Ett av dem på djupet räcker. Att byta mellan dem tar veckor, inte år.", "watch": "Listar ni tre konkurrenter i samma rad tror kandidaten att ingen på plats vet vad teamet använder." },
+    { "say": "Bygger och underhåller API:er", "card": "hr-backend", "means": "Backendarbete: kopplingarna som andra system hämtar data genom.", "look": "REST, ett serverspråk (Java, C#, Node eller Python), SQL och gärna dokumentation.", "watch": "API är inget programspråk. Kravet säger ingenting om vilken stack personen kan." },
+    { "say": "Vi har en DevOps-kultur", "card": "hr-devops", "means": "I bästa fall: utvecklarna äger sin egen drift. I sämsta fall: en person gör allt.", "look": "CI/CD, övervakning, Terraform — och erfarenhet av att ha haft jour.", "watch": "Fråga vem som blir uppringd klockan tre på natten. Svaret avslöjar kulturen på tio sekunder." },
+    { "say": "En stjärna som brinner för kod", "means": "Ingenting mätbart. Kandidaten kan inte avgöra om den passar.", "look": "Skriv om kravet till en uppgift: \"du bygger vår kundportal i React tillsammans med två andra\".", "watch": "Vaga superlativ lockar de som söker allt och skräms bort de som söker rätt." }
+  ],
+
+  "glossaryCategories": ["Kod & bygge", "Process & team", "Drift & moln", "Rekrytering"],
+  "glossary": [
+    { "t": "API", "cat": "Kod & bygge", "d": "Kopplingen som låter två system prata med varandra. \"Vi bygger ett API\" = vi gör vår data hämtbar för andra program." },
+    { "t": "Stack", "cat": "Rekrytering", "d": "Samlingen tekniker ett team använder ihop. \"Vår stack är React, .NET och Azure.\"" },
+    { "t": "Repo", "cat": "Kod & bygge", "d": "Mappen där koden bor, med hela historiken över vem som ändrat vad. GitHub är den vanligaste platsen." },
+    { "t": "Deploy", "cat": "Drift & moln", "d": "Att släppa ny kod så att riktiga användare får den." },
+    { "t": "Ramverk", "cat": "Kod & bygge", "d": "En färdig grundstomme att bygga vidare på, så man slipper börja från noll. React och .NET är exempel." },
+    { "t": "Bibliotek", "cat": "Kod & bygge", "d": "Färdig kod man plockar in för en avgränsad uppgift. Mindre åtagande än ett ramverk." },
+    { "t": "Container", "cat": "Drift & moln", "d": "Ett program paketerat med allt det behöver för att köra likadant på alla datorer." },
+    { "t": "Molnet", "cat": "Drift & moln", "d": "Någon annans datorer som man hyr — AWS, Azure eller Google Cloud." },
+    { "t": "Bugg", "cat": "Kod & bygge", "d": "Ett fel i koden. Alla system har dem — skillnaden ligger i hur snabbt de hittas." },
+    { "t": "Code review", "cat": "Process & team", "d": "När en kollega läser och kommenterar kod innan den släpps. Standard i alla seriösa team." },
+    { "t": "Sprint", "cat": "Process & team", "d": "En arbetsperiod, ofta två veckor, som teamet planerar och avslutar tillsammans." },
+    { "t": "Standup", "cat": "Process & team", "d": "Kort daglig avstämning, ofta 15 minuter stående." },
+    { "t": "Teknisk skuld", "cat": "Process & team", "d": "Genvägar i koden som sparar tid nu och kostar tid senare." },
+    { "t": "Open source", "cat": "Rekrytering", "d": "Kod som är fri att läsa och använda. Bidrag i ett CV är ett gott tecken — arbetet är offentligt granskat." },
+    { "t": "Legacy", "cat": "Rekrytering", "d": "Äldre system som fortfarande används och måste underhållas. Inte ett skällsord, men ofta ett skäl att stanna eller sluta." },
+    { "t": "Jour / on call", "cat": "Drift & moln", "d": "Att vara den som blir uppringd om systemet går ner utanför kontorstid. Skriv ut det i annonsen." }
+  ]
+}

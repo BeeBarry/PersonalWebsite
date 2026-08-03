@@ -1,0 +1,131 @@
+---
+// Bibliotek — alla kort, grupperade (roller först, sedan per domän). Sök +
+// typ-filter körs client-side (hrGuide.ts) mot data-attributen nedan; korten
+// själva är länkar till /for-hr/[card] så de fungerar utan JS och kan
+// djuplänkas. Tomma grupper och tomt läge togglas av scriptet.
+import Icon from "../site/Icon.astro";
+import site from "../../config/site";
+import {
+  hrCards,
+  groupLibrary,
+  isDraft,
+  HR_TYPES,
+  typo,
+  type HrCard,
+} from "../../data/hr";
+
+const groups = groupLibrary(hrCards);
+const linkedin =
+  site.social.find((s) => s.name === "LinkedIn")?.href ?? "#";
+
+// Sökindex: allt scriptet matchar fritext mot (README: titel, one-liner, typ,
+// domän och alla cv-ord). Byggs vid bygget, gömt i data-attribut.
+const searchIndex = (c: HrCard) =>
+  [c.title, c.one, c.typ, c.dom, ...(c.cv ?? [])].join(" ").toLowerCase();
+
+// Chip-etiketter (plural i UI, men filtrerar på typ-värdet).
+const typeLabels: Record<string, string> = {
+  Roll: "Roller",
+  Språk: "Språk",
+  Ramverk: "Ramverk",
+  Verktyg: "Verktyg",
+  Arbetssätt: "Arbetssätt",
+};
+---
+
+<div data-hr-library>
+  <div class="hr-search" data-hr-search-wrap>
+    <span class="hr-search__icon"><Icon name="Search" size={15} /></span>
+    <input
+      class="hr-search__input"
+      type="search"
+      placeholder="Sök på ett ord ur annonsen"
+      autocomplete="off"
+      aria-label="Sök i biblioteket"
+      data-hr-search-input
+    />
+    <button
+      class="hr-search__clear"
+      type="button"
+      aria-label="Rensa sökningen"
+      data-hr-search-clear
+    >
+      <Icon name="X" size={14} />
+    </button>
+  </div>
+
+  <div class="hr-chips" role="group" aria-label="Filtrera på typ" data-hr-typechips>
+    <button class="hr-chip is-active" type="button" data-hr-type="Alla" aria-pressed="true">
+      Alla
+    </button>
+    {
+      HR_TYPES.map((t) => (
+        <button class="hr-chip" type="button" data-hr-type={t} aria-pressed="false">
+          {typeLabels[t]}
+        </button>
+      ))
+    }
+  </div>
+
+  <p class="hr-count" data-hr-count>{hrCards.length} träffar</p>
+
+  <div data-hr-groups>
+    {
+      groups.map((g) => (
+        <section class="hr-group" data-hr-group>
+          <h2 class="hr-group__title">{g.title}</h2>
+          <p class="hr-group__sub">{g.sub}</p>
+          <div class="hr-cardgrid">
+            {g.cards.map((card) => (
+              <a
+                href={`/for-hr/${card.id}/`}
+                class="hrcard"
+                data-hr-card
+                data-hr-typ={card.typ}
+                data-hr-search={searchIndex(card)}
+              >
+                <div class="hrcard__top">
+                  <span class="hrcard__meta">
+                    {card.typ} · {card.dom}
+                  </span>
+                  {isDraft(card) ? (
+                    <span class="hrcard__badge">Utkast</span>
+                  ) : (
+                    <span class="hrcard__chevron">
+                      <Icon name="ChevronRight" size={14} />
+                    </span>
+                  )}
+                </div>
+                <h3 class="hrcard__title">{card.title}</h3>
+                <p class="hrcard__one">{typo(card.one)}</p>
+              </a>
+            ))}
+          </div>
+        </section>
+      ))
+    }
+  </div>
+
+  <div class="hr-empty" data-hr-empty hidden>
+    <p class="hr-empty__title">Inget kort matchar än</p>
+    <p class="hr-empty__text">
+      Guiden växer varje vecka — testa ett annat ord, eller föreslå det du
+      fastnade på.
+    </p>
+    <button class="hr-btn hr-btn--ghost" type="button" data-hr-search-clear style="margin-top:14px">
+      Rensa sökningen
+    </button>
+  </div>
+
+  <div class="hr-cta">
+    <p class="hr-cta__title">Saknas ett kort?</p>
+    <p class="hr-cta__text">
+      Skicka ordet du fastnade på i en annons — jag skriver kortet och taggar dig
+      när det ligger uppe.
+    </p>
+    <a class="hr-btn hr-btn--block" href={linkedin} target="_blank" rel="noopener noreferrer">
+      <Icon name="Linkedin" size={15} />
+      Föreslå ett kort på LinkedIn
+    </a>
+  </div>
+</div>

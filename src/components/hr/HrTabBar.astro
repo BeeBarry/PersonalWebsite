@@ -1,0 +1,139 @@
+---
+// Persistent topbar för Teknik-guiden — sticky, alltid synlig.
+//
+// variant="list" (startsidan): wordmark + flikar. Flikarna växlar client-side.
+// variant="detail" (kort-sidan): tillbaka-knapp + wordmark + flikar, PLUS en
+//   kort-switcher (sök + typ-chips) som filtrerar en meny av alla kort så
+//   användaren kan byta kort direkt i fullskärm — utan att gå till listan.
+import Icon from "../site/Icon.astro";
+import { hrCards, groupLibrary, isDraft, HR_TYPES, typo } from "../../data/hr";
+
+interface Props {
+  active?: "bib" | "ovs" | "faq" | "ord";
+  variant?: "list" | "detail";
+  /** Kort-id för aktuellt kort (markeras i switchern). */
+  current?: string;
+}
+const { active, variant = "list", current } = Astro.props;
+
+const tabs = [
+  { id: "bib", label: "Bibliotek" },
+  { id: "ovs", label: "Översätt" },
+  { id: "faq", label: "FAQ" },
+  { id: "ord", label: "Ordlista" },
+] as const;
+const hrefFor = (id: string) => (id === "bib" ? "/for-hr/" : `/for-hr/?flik=${id}`);
+
+const typeLabels: Record<string, string> = {
+  Roll: "Roller",
+  Språk: "Språk",
+  Ramverk: "Ramverk",
+  Verktyg: "Verktyg",
+  Arbetssätt: "Arbetssätt",
+};
+
+// Kort i biblioteksordning (roller först) för switchern.
+const switcherCards = groupLibrary(hrCards).flatMap((g) => g.cards);
+const searchIndex = (c: (typeof hrCards)[number]) =>
+  [c.title, c.one, c.typ, c.dom, ...(c.cv ?? [])].join(" ").toLowerCase();
+---
+
+<div class="hr-topbar" data-hr-topbar data-variant={variant}>
+  <div class="hr-topbar__bar">
+    {
+      variant === "detail" && (
+        <a class="hr-topbar__back" href="/for-hr/">
+          <Icon name="ArrowLeft" size={15} />
+          <span>Alla kort</span>
+        </a>
+      )
+    }
+
+    <a class="hr-topbar__brand" href="/for-hr/">
+      <span class="hr-topbar__dot" aria-hidden="true"></span>
+      Teknik-guiden
+    </a>
+
+    <nav class="hr-topbar__tabs" data-hr-tablist aria-label="Guidens delar">
+      {
+        tabs.map((t) => (
+          <a
+            href={hrefFor(t.id)}
+            class:list={["hr-topbar__tab", active === t.id && "is-active"]}
+            data-hr-tab={t.id}
+            aria-current={active === t.id ? "page" : undefined}
+          >
+            {t.label}
+          </a>
+        ))
+      }
+    </nav>
+  </div>
+
+  {
+    variant === "detail" && (
+      <div class="hr-switch" data-hr-switcher>
+        <div class="hr-search hr-search--sm" data-hr-switch-wrap>
+          <span class="hr-search__icon">
+            <Icon name="Search" size={14} />
+          </span>
+          <input
+            class="hr-search__input"
+            type="search"
+            placeholder="Sök eller byt kort"
+            autocomplete="off"
+            aria-label="Sök och byt kort"
+            data-hr-switch-input
+          />
+          <button
+            class="hr-search__clear"
+            type="button"
+            aria-label="Rensa sökningen"
+            data-hr-switch-clear
+          >
+            <Icon name="X" size={13} />
+          </button>
+        </div>
+
+        <div class="hr-chips" role="group" aria-label="Filtrera på typ" data-hr-switch-types>
+          <button class="hr-chip is-active" type="button" data-hr-type="Alla" aria-pressed="true">
+            Alla
+          </button>
+          {HR_TYPES.map((t) => (
+            <button class="hr-chip" type="button" data-hr-type={t} aria-pressed="false">
+              {typeLabels[t]}
+            </button>
+          ))}
+        </div>
+
+        <div class="hr-switch__panel" data-hr-switch-panel hidden>
+          <p class="hr-switch__count" data-hr-switch-count />
+          <div class="hr-switch__list">
+            {switcherCards.map((c) => (
+              <a
+                href={`/for-hr/${c.id}/`}
+                class:list={["hr-switch__item", current === c.id && "is-current"]}
+                data-hr-switch-item
+                data-hr-typ={c.typ}
+                data-hr-search={searchIndex(c)}
+                aria-current={current === c.id ? "page" : undefined}
+              >
+                <span class="hr-switch__item-meta">
+                  {c.typ} · {c.dom}
+                </span>
+                <span class="hr-switch__item-title">
+                  {c.title}
+                  {isDraft(c) && <span class="hr-switch__item-badge">Utkast</span>}
+                </span>
+                <span class="hr-switch__item-one">{typo(c.one)}</span>
+              </a>
+            ))}
+          </div>
+          <p class="hr-switch__empty" data-hr-switch-empty hidden>
+            Inget kort matchar — testa ett annat ord.
+          </p>
+        </div>
+      </div>
+    )
+  }
+</div>

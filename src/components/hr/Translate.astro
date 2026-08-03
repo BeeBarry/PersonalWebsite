@@ -1,0 +1,62 @@
+---
+// Översätt — annons-översättaren. Dragspel, en rad öppen i taget (rad 0 öppen
+// från start); hrGuide.ts sköter toggling. Desktop får en kolumnrubrikrad
+// (Annonsen säger / Betyder); på mobil bär varje rad sin egen eyebrow.
+import Icon from "../site/Icon.astro";
+import { hrTranslate, cardById, typo } from "../../data/hr";
+---
+
+<div data-hr-translate>
+  <div class="hr-tr__colhead" aria-hidden="true">
+    <span>Annonsen säger</span>
+    <span>Betyder</span>
+  </div>
+
+  <div class="hr-acc" data-hr-accordion>
+    {
+      hrTranslate.map((row, i) => {
+        const card = row.card ? cardById(row.card) : undefined;
+        return (
+          <div class="hr-acc__item">
+            <button
+              type="button"
+              class="hr-acc__head"
+              data-hr-acc-head
+              aria-expanded={i === 0 ? "true" : "false"}
+            >
+              <span class="hr-tr__grid">
+                <span>
+                  <span class="hr-tr__eyebrow">Annonsen säger</span>
+                  <span class="hr-tr__say">“{typo(row.say)}”</span>
+                </span>
+                <span class="hr-tr__means">{typo(row.means)}</span>
+              </span>
+              <span class="hr-acc__sign" aria-hidden="true">{i === 0 ? "−" : "+"}</span>
+            </button>
+
+            <div class="hr-acc__body hr-acc__body--tr" data-hr-acc-body hidden={i !== 0}>
+              <div class="hr-tr__row">
+                <span class="hr-tr__label">Leta efter</span>
+                <p class="hr-tr__text">{typo(row.look)}</p>
+              </div>
+
+              <div class="hr-tr__watch">
+                <Icon name="Info" size={13} />
+                <p>{typo(row.watch)}</p>
+              </div>
+
+              {card && (
+                <div class="hr-tr__open">
+                  <a class="hr-btn hr-btn--ghost" href={`/for-hr/${card.id}/`}>
+                    Öppna kortet {card.title}
+                    <Icon name="ArrowRight" size={14} />
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })
+    }
+  </div>
+</div>
