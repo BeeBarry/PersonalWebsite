@@ -198,10 +198,13 @@ h1 {
     font-weight: 800;
 }
 
+/* Ingen margin-top här: regeln träffade även små versala eyebrow-etiketter
+   (<h2 class="font-mono text-[10px] …">) på list- och startsidorna och gav dem
+   70 px död yta i toppen, eftersom Tailwind-klasserna aldrig sätter margin-top.
+   Långform-rubriker får sina avstånd av .site .prose h2 / .post__body h2. */
 h2 {
     font-size: clamp(1.6rem, 1.3rem + 1.2vw, 2.1rem);
     font-weight: 700;
-    margin-top: var(--space-section);
 }
 
 h3 {
@@ -1002,10 +1005,6 @@ html.light .linked-in {
     .learn-article {
         padding: 1rem;
         margin: 0.5rem 0;
-    }
-
-    h2 {
-        margin-top: calc(var(--space-section) * 0.7);
     }
 
     .navbar {

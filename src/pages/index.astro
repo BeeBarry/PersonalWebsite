@@ -12,73 +12,80 @@ const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
 ---
 
 <AppLayout title={site.meta.title} description={site.meta.description}>
-  <div class="animate-in mx-auto max-w-xl p-6 lg:px-10 lg:py-12">
-    <!-- Hero: leder med roll + positionering, inte namnet -->
+  <div class="animate-in mx-auto max-w-3xl p-6 lg:px-10 lg:py-12">
+    <!-- Hero: leder med roll + positionering, inte namnet.
+         Profilbild, roll och certifikat hör ihop visuellt — certifikaten är
+         ramlösa så de läses som meriter under rollen, inte som chips. -->
     <section class="mb-11">
-      <div class="flex items-center gap-3.5">
+      <div class="flex items-start gap-4">
         <div
-          class="h-14 w-14 shrink-0 overflow-hidden rounded-full ring-1 ring-border"
+          class="h-16 w-16 shrink-0 overflow-hidden rounded-full ring-1 ring-border"
         >
           <Image
             src={profilePic}
             alt="Barry Namdari"
-            width={112}
-            height={112}
+            width={128}
+            height={128}
             class="h-full w-full object-cover"
             loading="eager"
           />
         </div>
-        <p
-          class="font-mono text-[11px] tracking-[0.2em] text-primary uppercase"
-        >
-          {site.hero.role}
-        </p>
+        <div class="min-w-0 pt-0.5">
+          <p class="font-mono text-[11px] tracking-[0.2em] text-primary uppercase">
+            {site.hero.role}
+          </p>
+          {/* Certifikat: leverantörslogga (Iconify) + officiellt namn. */}
+          <ul class="mt-2.5 flex flex-wrap gap-x-5 gap-y-1.5">
+            {
+              site.certs.map((c) => (
+                <li class="inline-flex items-center gap-1.5">
+                  <Icon name={c.icon} class="h-[17px] w-[17px] shrink-0" />
+                  <span class="text-[12px] font-medium text-foreground/80">
+                    {c.name}
+                  </span>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
       </div>
-      <!-- Taglinen är sidans h1 — mb-0 nollar h1:ns marginal från @layer base. -->
-      <h1
-        class="mt-5 mb-0 text-xl leading-snug font-bold tracking-tight text-balance text-foreground"
-      >
-        {site.hero.tagline}
-      </h1>
 
-      {/* Certifikat: leverantörslogga (Iconify) + officiellt namn från site.certs. */}
-      <ul class="mt-6 flex flex-wrap gap-2">
-        {
-          site.certs.map((c) => (
-            <li class="inline-flex items-center gap-2 rounded-lg border border-border bg-muted/15 px-2.5 py-1.5">
-              <Icon name={c.icon} class="h-[18px] w-[18px]" />
-              <span class="text-[12px] font-medium text-foreground/85">
-                {c.name}
-              </span>
-            </li>
-          ))
-        }
-      </ul>
+      <!-- Tagline + HR-ingång sitter i samma rad på breda skärmar: rubriken bär
+           vänsterkanten, guiden blir en tydlig sidoingång till höger. Ligger de
+           under varandra med högerställd ruta uppstår ett tomrum mitt på sidan. -->
+      <div class="mt-7 grid gap-6 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+        <!-- Taglinen är sidans h1 — mb-0 nollar h1:ns marginal från @layer base. -->
+        <h1
+          class="mb-0 max-w-[26ch] text-2xl leading-snug font-bold tracking-tight text-balance text-foreground"
+        >
+          {site.hero.tagline}
+        </h1>
 
-      <!-- Ingång till Teknik-guiden (HR-fliken) — riktad till rekryterare -->
-      <a
-        href="/for-hr/"
-        class="group mt-6 flex max-w-[640px] items-center gap-3 rounded-xl border border-border bg-muted/10 p-3.5 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-muted/20 lg:p-4"
-      >
-        <span
-          class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/12 text-primary"
+        <!-- Ingång till Teknik-guiden (HR-fliken) — riktad till rekryterare. -->
+        <a
+          href="/for-hr/"
+          class="group flex items-center gap-3 rounded-xl border border-border bg-muted/10 p-3.5 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-muted/20 sm:w-[21rem] lg:p-4"
         >
-          <Icon name="mdi:account-group-outline" class="h-[18px] w-[18px]" />
-        </span>
-        <span class="min-w-0 flex-1">
-          <span class="block text-[13px] font-bold text-foreground"
-            >Rekryterar du inom tech?</span
+          <span
+            class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/12 text-primary"
           >
-          <span class="mt-0.5 block text-[12px] leading-relaxed text-muted-foreground"
-            >Teknik-guiden är skriven för HR — ingen förkunskap krävs.</span
+            <Icon name="mdi:account-group-outline" class="h-[18px] w-[18px]" />
+          </span>
+          <span class="min-w-0 flex-1">
+            <span class="block text-[13px] font-bold text-foreground"
+              >Rekryterar du inom tech?</span
+            >
+            <span class="mt-0.5 block text-[12px] leading-relaxed text-muted-foreground"
+              >Teknik-guiden är skriven för HR — ingen förkunskap krävs.</span
+            >
+          </span>
+          <span
+            class="shrink-0 text-primary transition-transform group-hover:translate-x-0.5"
           >
-        </span>
-        <span
-          class="shrink-0 text-primary transition-transform group-hover:translate-x-0.5"
-        >
-          <Icon name="mdi:arrow-right" />
-        </span>
-      </a>
+            <Icon name="mdi:arrow-right" />
+          </span>
+        </a>
+      </div>
     </section>
 
     <!-- Inriktningar: det unika, lyft högt -->
@@ -88,17 +95,29 @@ const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
       >
         Inriktningar
       </h2>
-      <div class="grid gap-2.5 sm:grid-cols-3">
+      <div class="grid gap-3 sm:grid-cols-3">
         {
           domains.map((d) => (
             <div class="rounded-xl border border-border bg-muted/10 p-4">
               <div class="flex items-center gap-2">
-                <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                {d.icon && (
+                  <Icon name={d.icon} class="h-[18px] w-[18px] shrink-0 text-primary" />
+                )}
                 <h3 class="text-[13px] font-bold text-foreground">{d.short}</h3>
               </div>
               <p class="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">
                 {d.description}
               </p>
+              <ul class="mt-3 space-y-1.5 border-t border-border/60 pt-3">
+                {d.bullets.map((b) => (
+                  <li class="flex gap-2 text-[12px] leading-relaxed text-muted-foreground">
+                    <span class="text-primary/70" aria-hidden="true">
+                      –
+                    </span>
+                    <span>{b}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           ))
         }
@@ -112,9 +131,11 @@ const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
       >
         Om
       </h2>
+      {/* Måttet hålls kring 70 tecken trots bredare spalt — löptext blir svårläst
+          långt före containerns kant. */}
       {
         site.about.map((p) => (
-          <p class="mb-3 text-[14px] leading-relaxed text-muted-foreground last:mb-0">
+          <p class="mb-3 max-w-[68ch] text-[14px] leading-relaxed text-muted-foreground last:mb-0">
             {p}
           </p>
         ))
@@ -128,18 +149,21 @@ const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
       >
         Verktyg &amp; tekniker
       </h2>
-      <div class="space-y-5">
+      {/* Grupperna ligger horisontellt bredvid varandra och posterna vertikalt
+          inom varje — utnyttjar den bredare spalten och gör grupptillhörigheten
+          läsbar i en blick, i stället för fyra wrappande rader under varandra. */}
+      <div class="grid gap-x-6 gap-y-7 sm:grid-cols-2 lg:grid-cols-4">
         {
           site.stackGroups.map((group) => (
             <div>
-              <h3 class="mb-2.5 text-[11.5px] font-semibold tracking-wide text-foreground/75">
+              <h3 class="mb-3 text-[11.5px] font-semibold tracking-wide text-foreground/75">
                 {group.title}
               </h3>
-              <ul class="flex flex-wrap gap-x-5 gap-y-3">
+              <ul class="space-y-2.5">
                 {group.items.map((t) => (
-                  <li class="inline-flex items-center gap-1.5 text-[12.5px] text-muted-foreground">
-                    <Icon name={t.icon} class="h-[18px] w-[18px]" />
-                    {t.name}
+                  <li class="flex items-center gap-2 text-[12.5px] text-muted-foreground">
+                    <Icon name={t.icon} class="h-[18px] w-[18px] shrink-0" />
+                    <span class="truncate">{t.name}</span>
                   </li>
                 ))}
               </ul>
