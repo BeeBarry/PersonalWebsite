@@ -5,10 +5,14 @@ import { Icon } from "astro-icon/components";
 import profilePic from "../assets/images/profilepic.png";
 import site from "../config/site";
 import { domains } from "../data/domains";
+
+// Kontaktsektionens adresser — samma källa som sidfoten/sidebaren.
+const linkedin = site.social.find((s) => s.name === "LinkedIn")?.href ?? "#";
+const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
 ---
 
 <AppLayout title={site.meta.title} description={site.meta.description}>
-  <div class="animate-in mx-auto max-w-xl p-6 md:px-10 md:py-12">
+  <div class="animate-in mx-auto max-w-xl p-6 lg:px-10 lg:py-12">
     <!-- Hero: leder med roll + positionering, inte namnet -->
     <section class="mb-11">
       <div class="flex items-center gap-3.5">
@@ -30,14 +34,14 @@ import { domains } from "../data/domains";
           {site.hero.role}
         </p>
       </div>
-      <p
-        class="mt-5 text-xl leading-snug font-bold tracking-tight text-balance text-foreground"
+      <!-- Taglinen är sidans h1 — mb-0 nollar h1:ns marginal från @layer base. -->
+      <h1
+        class="mt-5 mb-0 text-xl leading-snug font-bold tracking-tight text-balance text-foreground"
       >
         {site.hero.tagline}
-      </p>
+      </h1>
 
-      <!-- Certifikat: badge + namn. Byt <Icon> mot <img src={c.badge}> när
-           badge-bilderna ligger i static/certs/. -->
+      {/* Certifikat: leverantörslogga (Iconify) + officiellt namn från site.certs. */}
       <ul class="mt-6 flex flex-wrap gap-2">
         {
           site.certs.map((c) => (
@@ -54,7 +58,7 @@ import { domains } from "../data/domains";
       <!-- Ingång till Teknik-guiden (HR-fliken) — riktad till rekryterare -->
       <a
         href="/for-hr/"
-        class="group mt-6 flex max-w-[640px] items-center gap-3 rounded-xl border border-border bg-muted/10 p-3.5 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-muted/20 md:p-4"
+        class="group mt-6 flex max-w-[640px] items-center gap-3 rounded-xl border border-border bg-muted/10 p-3.5 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-muted/20 lg:p-4"
       >
         <span
           class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/12 text-primary"
@@ -174,6 +178,39 @@ import { domains } from "../data/domains";
         >
       </div>
     </nav>
+
+    <!-- Kontakt: sidans avslut. Adresserna kommer ur site.social. -->
+    <section class="mt-8 rounded-xl border border-border bg-primary/8 p-5">
+      <h2
+        class="mt-0 mb-0 font-mono text-[10px] tracking-[0.22em] text-muted-foreground/60 uppercase"
+      >
+        Kontakt
+      </h2>
+      <p class="mt-2.5 text-[16px] leading-snug font-bold text-foreground">
+        Rekryterar du just nu?
+      </p>
+      <p class="mt-2 max-w-[52ch] text-[13px] leading-relaxed text-muted-foreground">
+        Jag är nyexaminerad fullstack- och cloudutvecklare och söker mitt
+        första jobb — junior roll, trainee eller praktik. Hör av dig så
+        berättar jag mer.
+      </p>
+      <div class="mt-4 flex flex-wrap gap-2.5">
+        <a
+          href={linkedin}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex min-h-11 items-center rounded-lg border border-primary bg-primary px-4 text-[13px] font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+        >
+          Kontakta mig på LinkedIn
+        </a>
+        <a
+          href={mail}
+          class="inline-flex min-h-11 items-center rounded-lg border border-border px-4 text-[13px] font-semibold text-foreground transition-colors hover:border-primary"
+        >
+          Skicka ett mejl
+        </a>
+      </div>
+    </section>
 
     <!-- Footer -->
     <footer
