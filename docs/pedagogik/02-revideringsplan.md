@@ -1,5 +1,13 @@
 # Revideringsplan — hela Learn Hub till grundmodellen
 
+> **GENOMFÖRD 2026-08-04.** Alla 19 artiklar är reviderade och uppfyller
+> [`01-grundmodellen.md`](01-grundmodellen.md): 15–22 h2, minst tre vs-sektioner, alla sju
+> obligatoriska sektionerna, kodrader ≤55 tecken. 47 189 ord totalt.
+>
+> Dokumentet behålls som referens för hur planeringen såg ut, och som mall när nya artiklar skrivs.
+> Målstrukturerna nedan stämmer i huvudsak med resultatet, men flera artiklar fick vs-sektioner som
+> upptäcktes först under skrivandet — se respektive fil för facit.
+
 Alla 19 artiklar ska hålla samma nivå som referensartiklarna. Standarden är
 [`01-grundmodellen.md`](01-grundmodellen.md); facit är de fyra klara artiklarna.
 
