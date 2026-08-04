@@ -47,7 +47,10 @@ function initTabs(root: HTMLElement) {
       const url = new URL(location.href);
       if (id === "bib") url.searchParams.delete("flik");
       else url.searchParams.set("flik", id);
-      history.replaceState({}, "", url);
+      // Bevara history.state — Astros ClientRouter lagrar sitt `index` där och
+      // avbryter tyst i onPopState om state saknas eller nollas. Skriver vi över
+      // det slutar bakåtknappen byta sida (bara adressfältet ändras).
+      history.replaceState(history.state, "", url);
     }
   };
 
@@ -471,7 +474,9 @@ function initToc(root: HTMLElement) {
         const top = el.getBoundingClientRect().top + window.scrollY - off;
         window.scrollTo({ top: Math.max(0, top) });
       }
-      history.replaceState(null, "", `#${id}`);
+      // Samma skäl som vid flikbytet: `null` här får Astros onPopState att
+      // returnera direkt (router.js: `if (ev.state === null) return`).
+      history.replaceState(history.state, "", `#${id}`);
       setActive(id);
     }),
   );

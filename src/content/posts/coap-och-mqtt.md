@@ -53,13 +53,13 @@ råkar vakna nästa gång — vilket kan vara en kvart. Med det får den ett vä
 lite gammalt.
 
 **Last Will and Testament.** Du registrerar redan vid anslutning ett meddelande som brokern ska
-publicera åt dig om du försvinner utan att säga hej då. Det är den enda rimliga vägen till “offline”
+publicera åt dig om du försvinner utan att säga hej då. Det är den enda rimliga vägen till ”offline”
 i ett system där enheter tystnar utan förvarning. Jag byggde först ett system som antog att tystnad
-betydde “inget nytt att rapportera” — det såg utmärkt ut ända tills något faktiskt gick sönder, för
+betydde ”inget nytt att rapportera” — det såg utmärkt ut ända tills något faktiskt gick sönder, för
 en död enhet och en nöjd enhet ser exakt likadana ut.
 
 Sedan finns QoS-nivåerna: 0 (skicka och hoppas), 1 (minst en gång, kan bli dubbletter) och 2 (exakt
-en gång). Min instinkt var att 2 är “bäst”. Men 2 kostar en fyrvägs-handskakning per meddelande, och
+en gång). Min instinkt var att 2 är ”bäst”. Men 2 kostar en fyrvägs-handskakning per meddelande, och
 för ett temperaturvärde som ändå ersätts om trettio sekunder är det ström man betalar för ingenting.
 QoS 1 plus ett idempotent mottagande — alltså att en dubblett inte gör skada — räcker nästan alltid.
 QoS är en avvägning mot batteri, inte en kvalitetsinställning.
@@ -79,7 +79,7 @@ alltså TLS anpassat för UDP.
 
 ## Hur jag väljer nu
 
-Frågan jag ställer först är inte “vilket protokoll är bäst” utan **vem behöver prata med vem, och vem
+Frågan jag ställer först är inte ”vilket protokoll är bäst” utan **vem behöver prata med vem, och vem
 sover?** Många enheter som skickar till ett gemensamt system, där en central instans också ska kunna
 styra dem: MQTT, brokern är hela poängen. Enskilda enheter i ett begränsat nät som ska svara på
 förfrågningar, där man vill slippa en broker som kan gå ner: CoAP.

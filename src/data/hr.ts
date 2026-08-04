@@ -209,20 +209,14 @@ export function hrMetaLine(): string {
 }
 
 // Typografisk städning av redaktionell copy vid rendering (källan i JSON hålls
-// enkel att skriva med raka tecken). Raka dubbla citattecken blir typografiska
-// (alternerande öppna/stäng — copyn är balanserad), och apostrof mellan bokstäver
-// blir ’. Rör inte em-streck (—) som redan finns i copyn.
+// enkel att skriva med raka tecken).
+//
+// SVENSKA citattecken: ”så här” — samma tecken (U+201D) före och efter, till
+// skillnad från engelskans “så här”. Därför behövs ingen open/close-växling.
+// Apostrof mellan bokstäver blir ’. Em-streck (—) i copyn lämnas orörda.
 export function typo(input?: string): string {
   if (!input) return "";
-  let open = true;
-  let out = "";
-  for (const ch of input) {
-    if (ch === '"') {
-      out += open ? "“" : "”";
-      open = !open;
-    } else {
-      out += ch;
-    }
-  }
-  return out.replace(/(\p{L})'(\p{L})/gu, "$1’$2");
+  return input
+    .replace(/"/g, "”")
+    .replace(/(\p{L})'(\p{L})/gu, "$1’$2");
 }

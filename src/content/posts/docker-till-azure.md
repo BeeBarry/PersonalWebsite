@@ -13,7 +13,7 @@ DevOps Tools började som ett sätt att lära mig namnen på verktygen i pipelin
 fullstack-app i Blazor med databas, inloggning och en admin-panel, och den gjorde precis vad den
 skulle — på min laptop. Det verkliga lärandet började när jag skulle flytta den någon annanstans.
 
-Jag hade läst att containers löser “det funkar på min dator”. Det jag inte hade förstått var att de
+Jag hade läst att containers löser ”det funkar på min dator”. Det jag inte hade förstått var att de
 löser problemet genom att tvinga dig att formulera vad *miljön* faktiskt är. Så länge appen bara
 kördes lokalt kunde jag vara vag. En Dockerfile tillåter inte vaghet.
 
@@ -73,7 +73,7 @@ färdig artefakt. Imagen pushas till ett container registry, och App Service pek
 behöver aldrig veta att appen är skriven i .NET — den vet bara att det finns en image och en port.
 
 Det som faktiskt kostade mig tid var att containern startade och dog direkt, om och om igen, utan
-att jag såg varför. Portalens statusruta sa “stoppad”, vilket är sant men inte hjälpsamt. Först när
+att jag såg varför. Portalens statusruta sa ”stoppad”, vilket är sant men inte hjälpsamt. Först när
 jag började läsa loggströmmen fick jag ett riktigt felmeddelande:
 
 ```bash
