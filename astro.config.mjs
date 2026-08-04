@@ -6,11 +6,21 @@ import icon from 'astro-icon';
 
 import tailwindcss from '@tailwindcss/vite';
 
+import sitemap from '@astrojs/sitemap';
+
 export default defineConfig({
   site: 'https://barrynamdari.se',
   outDir: './public',
   publicDir: './static',
-  integrations: [icon(), mdx()],
+  integrations: [
+    icon(),
+    mdx(),
+    // Sitemap till /sitemap-index.xml (pekas ut från static/robots.txt).
+    // Design-systemet är ett internt referensark och ska inte indexeras.
+    sitemap({
+      filter: (page) => !page.includes('/design-system'),
+    }),
+  ],
 
   // Portfolio-temats fonter via Astro 6 inbyggda Fonts-API.
   // Schibsted Grotesk = display + brödtext, Spline Sans Mono = mono/labels.
@@ -22,7 +32,9 @@ export default defineConfig({
       fallbacks: ['system-ui', 'sans-serif'],
       weights: [400, 500, 600, 700, 800],
       styles: ['normal'],
-      subsets: ['latin', 'latin-ext'],
+      // Endast latin: en skanning av src/ och static/ hittar noll tecken i
+      // latin-ext-intervallen (svenska å/ä/ö ligger i latin).
+      subsets: ['latin'],
     },
     {
       provider: fontProviders.google(),
@@ -31,7 +43,7 @@ export default defineConfig({
       fallbacks: ['ui-monospace', 'Menlo', 'monospace'],
       weights: [400, 500],
       styles: ['normal'],
-      subsets: ['latin', 'latin-ext'],
+      subsets: ['latin'],
     },
   ],
 

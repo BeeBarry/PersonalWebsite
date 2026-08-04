@@ -27,13 +27,21 @@ const images = [
   entry.data.worksImage3,
   entry.data.worksImage4,
 ].filter(Boolean) as Array<{ url: string; alt: string }>;
+
+// Delningsbild: projektets egen bild om den finns, annars sajtens standard-OG.
+const ogImage = entry.data.image?.url ?? entry.data.cover?.url;
 ---
 
-<AppLayout title={pageTitle} description={entry.data.description}>
+<AppLayout
+  title={pageTitle}
+  description={entry.data.description}
+  image={ogImage}
+  ogType="article"
+>
   <StickyBar backHref="/works/" backLabel="Alla projekt" title={entry.data.title} />
 
   <div class="site reader">
-    <main class="article animate-in">
+    <article class="article animate-in">
       <a class="backlink" href="/works/">
         <Icon name="ArrowLeft" size={14} />
         tillbaka
@@ -88,7 +96,7 @@ const images = [
           </div>
         )
       }
-    </main>
+    </article>
   </div>
 
   <script>
@@ -112,6 +120,9 @@ const images = [
     .project-images :global(.image-container) {
       margin: 0;
     }
+    .project-images :global(.image-link) {
+      display: block;
+    }
     .project-images :global(.zoomable-image) {
       width: 100%;
       aspect-ratio: 16 / 10;
@@ -120,6 +131,16 @@ const images = [
       box-shadow: inset 0 0 0 1px var(--c-border);
       background: var(--c-surface);
       display: block;
+    }
+    /* Under md: bilderna är skärmdumpar med brödtext. Beskär inte — visa hela
+       bilden i sin egen proportion, och låt tryck öppna originalfilen
+       (lightboxen är avstängd här, se ZoomableImage). */
+    @media (max-width: 767.98px) {
+      .project-images :global(.zoomable-image) {
+        aspect-ratio: auto;
+        object-fit: contain;
+        height: auto;
+      }
     }
   </style>
 </AppLayout>

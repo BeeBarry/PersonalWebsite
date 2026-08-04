@@ -10,20 +10,38 @@ import site from "../config/site";
 interface Props {
   title?: string;
   description?: string;
+  /** Delningsbild (rot-relativ sökväg, 1200×630). Görs absolut för og:image. */
   image?: string;
+  /** "website" (default) eller "article" på inläggs- och projektsidor. */
+  ogType?: "website" | "article";
 }
 
 const {
   title = site.meta.title,
   description = site.meta.description,
+  image = "/og-default.png",
+  ogType = "website",
 } = Astro.props;
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+// Absolut URL krävs — LinkedIn och Slack följer inte relativa og:image.
+// LinkedIn och Facebook renderar inte SVG som delningsbild — falla tillbaka
+// på standard-OG:n när frontmatter pekar på en vektorlogga.
+const ogPath = /\.svg$/i.test(image) ? "/og-default.png" : image;
+const socialImage = new URL(ogPath, Astro.site!);
+// Bara /og-*.png är garanterat 1200×630. Innehållsbilder (cover/image från
+// frontmatter) har okänt format — då utelämnas måtten hellre än att ljuga.
+const hasOgDimensions = ogPath.startsWith("/og-");
+const goatcounter = site.analytics.goatcounter;
 ---
 
 <!doctype html>
 <html lang={site.meta.lang}>
   <head>
+    <!-- charset + viewport allra först: specen läser bara de första 1024 byten. -->
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
     <script is:inline define:vars={{ isDev: import.meta.env.DEV }}>
       // HTTP → HTTPS-redirect i prod, allra först i head.
       if (
@@ -56,8 +74,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       })();
     </script>
 
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
 
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
@@ -65,6 +81,8 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="/android-chrome-192x192.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="/android-chrome-512x512.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#0b0b0d" />
 
     <title>{title}</title>
     <meta name="title" content={title} />
@@ -72,21 +90,61 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     <link rel="canonical" href={canonicalURL} />
 
     <!-- Open Graph / Twitter -->
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={ogType} />
     <meta property="og:url" content={Astro.url} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
+    <meta property="og:site_name" content="Barry Namdari" />
+    <meta property="og:locale" content="sv_SE" />
+    <meta property="og:image" content={socialImage} />
+    {hasOgDimensions && <meta property="og:image:width" content="1200" />}
+    {hasOgDimensions && <meta property="og:image:height" content="630" />}
+    <meta property="og:image:alt" content={title} />
     <meta property="twitter:card" content="summary_large_image" />
     <meta property="twitter:title" content={title} />
     <meta property="twitter:description" content={description} />
+    <meta property="twitter:image" content={socialImage} />
 
     <Font cssVariable="--font-display" preload />
     <Font cssVariable="--font-mono" />
     <ClientRouter />
+
+    {
+      /* Cookielös statistik (GoatCounter). Inert tills Bo fyller i
+         `analytics.goatcounter` i src/config/site.ts med sin kod, t.ex.
+         "barrynamdari" → https://barrynamdari.goatcounter.com/count.
+         Räknar manuellt på astro:page-load: View Transitions byter aldrig
+         dokument, så autoräkningen skulle bara se första sidvisningen. */
+    }
+    {
+      goatcounter && (
+        <script
+          is:inline
+          define:vars={{ endpoint: `https://${goatcounter}.goatcounter.com/count` }}
+        >
+          // Pixel-anrop i stället för count.js — inget externt skript, inga cookies.
+          document.addEventListener("astro:page-load", function () {
+            const img = new Image();
+            img.src =
+              endpoint +
+              "?p=" +
+              encodeURIComponent(location.pathname + location.search) +
+              "&t=" +
+              encodeURIComponent(document.title) +
+              "&r=" +
+              encodeURIComponent(document.referrer);
+            img.alt = "";
+            img.style.cssText = "position:absolute;width:1px;height:1px";
+            document.body.appendChild(img);
+            img.addEventListener("load", () => img.remove());
+          });
+        </script>
+      )
+    }
   </head>
 
   <body
-    class="flex min-h-screen items-start justify-center bg-background p-0 font-display text-foreground antialiased selection:bg-primary/20 md:items-center md:p-6"
+    class="flex min-h-screen items-start justify-center bg-background p-0 font-display text-foreground antialiased selection:bg-primary/20 lg:items-center lg:p-6"
   >
     <div class="grain" aria-hidden="true"></div>
     <slot />

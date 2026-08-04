@@ -17,17 +17,25 @@ export async function getStaticPaths() {
 const { entry } = Astro.props;
 const { Content } = await render(entry);
 
-const pageTitle = `${entry.data.title} · Skrivet`;
+const pageTitle = `${entry.data.title} · Fältnoteringar`;
 const metaLine = [entry.data.date, entry.data.read, entry.data.tags]
   .filter(Boolean)
   .join(" · ");
+
+// Delningsbild: inläggets egen bild om den finns, annars sajtens standard-OG.
+const ogImage = entry.data.image?.url ?? entry.data.cover?.url;
 ---
 
-<AppLayout title={pageTitle} description={entry.data.description}>
+<AppLayout
+  title={pageTitle}
+  description={entry.data.description}
+  image={ogImage}
+  ogType="article"
+>
   <StickyBar backHref="/posts/" backLabel="Alla noteringar" title={entry.data.title} />
 
   <div class="site reader">
-    <main class="article animate-in">
+    <article class="article animate-in">
       <a class="backlink" href="/posts/">
         <Icon name="ArrowLeft" size={14} />
         tillbaka
@@ -47,7 +55,7 @@ const metaLine = [entry.data.date, entry.data.read, entry.data.tags]
       <div class="prose">
         <Content />
       </div>
-    </main>
+    </article>
   </div>
 
   <script>

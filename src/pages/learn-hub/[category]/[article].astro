@@ -23,6 +23,8 @@ const cat = categories.find((c) => c.slug === entry.data.category);
 <AppLayout
   title={`${entry.data.title} · Learn Hub`}
   description={entry.data.description}
+  image={entry.data.image?.url}
+  ogType="article"
 >
   <StickyBar
     backHref={`/learn-hub/${entry.data.category}/`}
@@ -31,7 +33,7 @@ const cat = categories.find((c) => c.slug === entry.data.category);
   />
 
   <div class="site reader">
-    <main class="article animate-in">
+    <article class="article animate-in">
       <a class="backlink" href={`/learn-hub/${entry.data.category}/`}>
         <Icon name="ArrowLeft" size={14} />
         {cat?.title ?? "Learn Hub"}
@@ -44,7 +46,7 @@ const cat = categories.find((c) => c.slug === entry.data.category);
       <div class="prose">
         <Content components={{ ZoomableImage }} />
       </div>
-    </main>
+    </article>
   </div>
 
   <script>
