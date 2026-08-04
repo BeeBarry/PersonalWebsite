@@ -9,57 +9,129 @@ date: '2026-08-04'
 tags: ['Beginner', 'Overview']
 ---
 
-## När containrarna blir för många
+## Var vi är
 
-I Docker-artikeln lämnade vi Lisa och teamet med ett e-handelssystem som startar med ett enda kommando: `docker compose up`. Frontend, API och databas ligger i varsin container, och alla i teamet får exakt samma miljö.
+I Docker-serien lämnade vi Lisa och teamet med ett e-handelssystem som startar med ett kommando:
+`docker compose up`. Frontend, API och databas ligger i varsin container, och alla i teamet får
+samma miljö.
 
-Det fungerar utmärkt – på en dator.
+Det fungerar på en dator. Sedan går applikationen live, kunderna blir fler, och systemet måste
+spridas över flera servrar. Då dyker en ny sorts frågor upp, och ingen av dem handlar om hur en
+container byggs.
 
-Sedan går applikationen live. Kunderna blir fler, en container räcker inte längre för API:et, och systemet måste spridas ut över flera servrar. Nu dyker en ny sorts frågor upp, och ingen av dem handlar längre om hur en container byggs.
+Den här delen ger överblicken över vad Kubernetes är och vilka fyra begrepp du behöver för att
+läsa vilken introduktion som helst. Detaljerna kommer i senare delar.
 
-<Callout type="varfor" title="Vad går sönder när vi skalar upp?">
-- Vem startar om containern som kraschar **klockan tre på natten**?
-- Vilken av servrarna ska nästa container köras på – den som **har mest minne ledigt**?
-- Hur vet frontend vilken av **fem API-containrar** den ska prata med?
-- Hur byter vi till en ny version **utan att sajten ligger nere** under tiden?
-</Callout>
+## Vad Kubernetes är
 
-**Kubernetes** (ofta förkortat **K8s**) är svaret på precis de frågorna. Det är en *orkestrerare*: ett system som håller ihop ett antal servrar till ett **kluster** och ser till att rätt containrar körs på rätt maskin, i rätt antal, hela tiden.
+Kubernetes är ett system som kör containrar över flera servrar åt dig. Det förkortas ofta **K8s**
+— åtta bokstäver mellan K och s.
 
-## Helheten först: du beskriver, Kubernetes rättar
+Du ger Kubernetes en beskrivning av vad som ska köras och i hur många kopior. Kubernetes väljer
+vilka servrar det ska köras på, startar om det som kraschar, och håller antalet rätt över tid.
 
-Grundidén är enkel och värd att fästa direkt: **du beskriver hur det ska se ut, Kubernetes ser till att det blir så.** Du säger alltså inte *”starta tre kopior av API:et på server två”*. Du säger *”det ska alltid finnas tre kopior av API:et”* – och sedan är det Kubernetes jobb att hålla det sant, även när en server dör mitt i natten.
+Kubernetes bygger inte containrar. Det kör dem. Bygget sker fortfarande med Docker eller ett
+motsvarande verktyg, precis som förut.
 
-<Flow
-  caption="Samma deklarativa slinga som i Terraform-serien — men här körs den oavbrutet, inte när du säger till."
-  steps={[
-    {
-      label: "Din beskrivning",
-      note: "`replicas: 3`. Ett önskat läge, i en fil du versionshanterar.",
-    },
-    {
-      label: "Kubernetes jämför",
-      via: "hela tiden",
-      note: "Önskat läge mot verkligheten, om och om igen, dygnet runt.",
-      accent: true,
-    },
-    {
-      label: "Verkligheten rättas",
-      via: "vid avvikelse",
-      note: "En pod dog → en ny startas inom sekunder. Ingen behöver väckas.",
-    },
-  ]}
-/>
+## Kubernetes vs Docker
 
-## Pods
+De två ställs ofta mot varandra som alternativ. De är olika lager.
 
-Den minsta enheten i Kubernetes är inte en container, utan en **pod**. En pod är ett litet skal runt en eller några containrar som hör så tätt ihop att de alltid måste köras på samma maskin.
+**Docker** paketerar en applikation till en image och kör den som en container — på en maskin.
 
-I praktiken innehåller de flesta poddar **exakt en container** – vårt API, till exempel. Men eftersom containrarna i en pod delar nätverk och lagring kan man lägga till en hjälpcontainer bredvid huvudcontainern, exempelvis en som samlar in loggar.
+**Kubernetes** tar färdiga images och kör dem som containrar över många maskiner, och håller reda
+på att rätt antal är igång.
+
+Kubernetes ersätter alltså inte Docker. Det som ersätts är `docker compose` — verktyget som
+startar flera containrar tillsammans, men bara på en dator.
+
+## Deklarativt vs imperativt
+
+Skillnaden är hela idén bakom Kubernetes, och den är värd att fästa direkt.
+
+**Imperativt** betyder att du säger vad som ska göras: *"starta tre kopior av API:et på server
+två."* Kommandot körs en gång. Kraschar en kopia klockan tre på natten står den kvar nere tills
+någon kör kommandot igen.
+
+**Deklarativt** betyder att du säger hur det ska se ut: *"det ska alltid finnas tre kopior av
+API:et."* Det är sedan Kubernetes jobb att hålla det sant. Kraschar en kopia startas en ny inom
+sekunder, utan att någon behöver väckas.
+
+Det är samma deklarativa idé som i Terraform-serien, med en skillnad: Terraform jämför när du kör
+`apply`, Kubernetes jämför oavbrutet.
+
+## Klustret
+
+Ett **kluster** är de servrar Kubernetes har till sitt förfogande, hanterade som en enhet.
+
+Varje server i klustret kallas en **nod**. En nod kan vara en fysisk maskin eller en virtuell —
+Kubernetes bryr sig inte om vilket.
+
+Du pratar aldrig med en enskild nod. Du pratar med klustret, och klustret bestämmer var saker
+hamnar. Det är därför "vilken server körs den här på" är en fråga du sällan ställer.
+
+> **DOODLE** — En låda märkt "Control plane" med heldragen pil ner till tre lådor märkta "Nod 1",
+> "Nod 2", "Nod 3". Inuti noderna små rutor märkta "pod". Under bilden: "Du pratar med control
+> plane. Den väljer nod."
+
+## Control plane och noder
+
+Klustret har två sorters delar.
+
+**Control plane** är hjärnan. Den tar emot dina beskrivningar, bestämmer vilken nod som ska köra
+vad, och bevakar att verkligheten stämmer. Det är hit ditt kommando går.
+
+**Noderna** är musklerna. De kör de containrar de blir tilldelade och rapporterar tillbaka hur det
+går.
+
+I ett hanterat kluster hos en molnleverantör sköts control plane åt dig, och du ser bara noderna.
+Vad control plane består av internt — API-server, schemaläggare, en databas som heter etcd —
+behöver du inte kunna nu. Det räcker att veta att den finns och att det är den du talar med.
+
+## Pod
+
+Den minsta enheten i Kubernetes är inte en container, utan en **pod**.
+
+En pod är ett skal runt en eller några containrar som alltid ska köras på samma nod. Containrarna
+i en pod delar nätverk och lagring, och kan nå varandra på `localhost`.
+
+I praktiken innehåller de flesta poddar exakt en container. Flera förekommer när en hjälpcontainer
+hör så tätt ihop med huvudcontainern att de aldrig får hamna isär — en som samlar in loggar, till
+exempel.
+
+## Pod vs container
+
+En container är den körande instansen av en image. Det är samma sak som i Docker.
+
+En pod är Kubernetes omslag runt en eller flera sådana containrar. Kubernetes schemalägger,
+flyttar, räknar och startar om **poddar** — aldrig enskilda containrar.
+
+Därför heter kommandot `kubectl get pods` och inte `kubectl get containers`.
+
+## Poddar är tillfälliga
+
+Det viktigaste att förstå med poddar är att de är utbytbara.
+
+En pod startas, kör en stund och försvinner. Kraschar den skapas inte samma pod igen — en **ny**
+pod skapas i dess ställe, med nytt namn och ny IP-adress.
+
+Det låter opraktiskt, men är själva poängen. När ingen enskild pod är viktig kan systemet flytta
+runt, byta ut och skapa fler av dem fritt. Att poddar är utbytbara är det som gör självläkning,
+skalning och utrullning utan driftstopp möjliga.
+
+En pod är inte en server. Behandla den aldrig som en plats där något ska sparas.
+
+## Deployment
+
+Om poddar är tillfälliga behöver något beskriva vad som **alltid** ska finnas. Det är en
+**Deployment**.
+
+En Deployment säger vilken image som ska köras och i hur många kopior. Kubernetes jämför den
+beskrivningen med verkligheten, oavbrutet, och rättar skillnaden.
 
 <Stack
-  caption="Tre nivåer, varje inuti den ovanför. Det är den här kedjan `kubectl get pods` visar dig utsnitt av."
-  ground="Noden — den fysiska eller virtuella server podden råkar köra på just nu"
+  caption="Tre nivåer, varje inuti den ovanför. Det är den här kedjan `kubectl get pods` visar dig ett utsnitt av."
+  ground="Noden — den server podden råkar köra på just nu"
   layers={[
     {
       label: "Deployment",
@@ -67,7 +139,7 @@ I praktiken innehåller de flesta poddar **exakt en container** – vårt API, t
     },
     {
       label: "Pod",
-      note: "Det minsta Kubernetes hanterar. Tillfällig och utbytbar — får nytt namn och ny IP varje gång.",
+      note: "Det minsta Kubernetes hanterar. Tillfällig och utbytbar.",
       accent: true,
     },
     {
@@ -77,13 +149,13 @@ I praktiken innehåller de flesta poddar **exakt en container** – vårt API, t
   ]}
 />
 
-Det viktigaste att förstå med poddar är att de är **tillfälliga**. En pod startas, körs en stund och försvinner. Kraschar den skapas inte samma pod igen – en **ny** pod skapas i dess ställe, med ett nytt namn och en ny IP-adress.
+Mellan Deployment och pod ligger egentligen ett lager till som heter **ReplicaSet**. Det är den som
+räknar kopiorna. Du skapar den aldrig själv och rör den sällan — men namnet dyker upp i utskrifter,
+så det är värt att känna igen.
 
-Det låter opraktiskt, men är själva poängen: när ingen enskild pod är viktig kan systemet flytta runt, byta ut och skapa fler av dem helt fritt. Poddarna är utbytbara, och det är det som gör resten möjligt.
+## Manifestet
 
-## Deployments
-
-Om poddar är tillfälliga behöver vi något som beskriver vad som **alltid** ska finnas. Det är en **Deployment**: en beskrivning av vilken image som ska köras och i hur många kopior.
+En Deployment beskrivs i en YAML-fil, ett **manifest**.
 
 ```yaml
 apiVersion: apps/v1
@@ -107,42 +179,83 @@ spec:
             - containerPort: 5000
 ```
 
-Lisa läser filen och känner igen sig: det är samma image från teamets registry som i Docker-artikeln, men nu med ett tillägg som Docker Compose aldrig hade – `replicas: 3`.
+Lisa känner igen sig: samma image från teamets registry som i Docker-serien, men med ett tillägg
+Docker Compose aldrig hade — `replicas: 3`.
 
-När hon kör `kubectl apply -f api.yaml` startar Kubernetes tre poddar och **fortsätter sedan att bevaka dem**. Raderar någon en pod av misstag skapas en ny inom sekunder, eftersom verkligheten då skiljer sig från beskrivningen.
+Manifestet är en textfil. Den hör hemma i Git, granskas i en merge request och körs av en pipeline,
+precis som Terraform-filerna.
 
-Samma mekanism ger utrullning utan driftstopp. Byter Lisa `searchapi:v2` mot `searchapi:v3` byter Kubernetes ut poddarna **en i taget**: en ny pod startas, den kontrolleras, först därefter tas en gammal bort. Under hela bytet finns det fungerande poddar som svarar på trafik – och skulle den nya versionen vara trasig rullar teamet tillbaka med ett kommando.
+Fältet `selector` matchar etiketten `app: api` och är det som binder ihop Deployment med rätt
+poddar. Etiketter är genomgående hur Kubernetes hittar saker, och de återkommer i nästa begrepp.
 
-## Services
+## Service
 
-Kvar finns ett problem: om poddar hela tiden byter IP-adress, hur hittar frontend fram till API:et?
+Om poddar hela tiden byter IP-adress — hur hittar frontend fram till API:et?
 
-Lösningen heter **Service** och är ungefär en fast adress med inbyggd växel. En Service får ett namn – `api` – som aldrig ändras, håller reda på vilka poddar som just nu är friska, och fördelar anropen mellan dem.
+En **Service** är en fast adress framför en grupp poddar. Den får ett namn som aldrig ändras,
+`api`, håller reda på vilka poddar som är friska just nu, och fördelar anropen mellan dem.
 
-<Callout type="varfor" title="Vad en Service ger oss">
-- Frontend anropar **`http://api:5000`** och behöver aldrig veta hur många poddar som finns bakom.
-- Trafiken **fördelas automatiskt** mellan poddarna – enkel lastbalansering utan extra konfiguration.
-- En pod som startas eller tas bort **läggs till och plockas bort** ur växeln på egen hand.
-- Databasen kan ligga bakom en Service som bara är nåbar **inifrån klustret**, medan frontend exponeras utåt.
-</Callout>
+Frontend anropar `http://api:5000` och behöver aldrig veta hur många poddar som finns bakom eller
+var de kör. En pod som startas läggs till i växeln på egen hand; en som försvinner plockas bort.
 
-Här går det att se hela mönstret: Docker Compose kopplade ihop containrar på **en** maskin, en Service kopplar ihop poddar över **hela klustret**. Det är samma idé som tjänstnamnet `db` i Compose-filen — bara utsträckt över flera servrar.
+> **DOODLE** — En vägskylt märkt `api:5000` med heldragen pil in från "Frontend". Från skylten tre
+> streckade pilar ut till tre lådor märkta "pod", varav en är överkryssad. Under: "Skylten står
+> still. Poddarna byts ut."
 
-## Självläkning och skalning
+## Deployment vs Service
 
-Två saker gör att teamet sover bättre om natten.
+Två beskrivningar som ofta blandas ihop, eftersom de nästan alltid skrivs i par.
 
-**Självläkning.** Kubernetes frågar löpande varje pod om den mår bra – en så kallad *health probe*. Svarar den inte startas den om automatiskt. Går en hel server sönder flyttas dess poddar över till de servrar som är kvar. Ingen behöver bli väckt.
+**Deployment** svarar på *vad som ska köras och i hur många kopior.*
 
-**Skalning.** Inför rean höjer Lisa `replicas` från 3 till 10, och tio minuter senare är kapaciteten på plats. Det går också att göra automatiskt: en regel som säger *”kör fler poddar när processorlasten går över 70 procent”* låter systemet skala upp under toppen och ner igen efteråt, utan att någon behöver titta på grafer.
+**Service** svarar på *hur något annat ska nå det.*
 
-Det är samma princip om och om igen. Teamet beskriver ett önskat läge, och Kubernetes arbetar oavbrutet för att verkligheten ska matcha det.
+Du behöver båda. En Deployment utan Service kör poddar som ingen kan nå på en stabil adress. En
+Service utan Deployment är en adress som pekar på ingenting.
+
+## kubectl
+
+`kubectl` är kommandoradsverktyget du använder för att prata med klustret. Det uttalas oftast
+"kube-control".
+
+Kommandot skickar din begäran till control plane. Det gör alltså ingenting självt — utan ett
+kluster att tala med kan det bara läsa sin egen version.
+
+```bash
+kubectl apply -f api.yaml     # skicka in beskrivningen
+kubectl get pods              # vad kör just nu?
+kubectl describe pod api-7f9c # varför startar den?
+kubectl logs api-7f9c         # vad skriver appen?
+```
+
+`apply` är deklarativ: du skickar in hur det ska se ut, inte vad som ska göras. Kör du samma fil
+igen utan ändringar händer ingenting, eftersom verkligheten redan stämmer.
+
+## Självläkning
+
+Kubernetes frågar löpande varje pod om den mår bra. Svarar den inte startas den om.
+
+Går en hel nod sönder flyttas dess poddar över till de noder som är kvar. Ingen behöver bli väckt,
+och ingen behöver skriva skriptet som gör det.
+
+Hur frågan ställs — vilken adress som pingas och hur ofta — konfigureras med *probes*. Det tar vi i
+del 1.2. Här räcker det att veta att självläkningen bygger på att någon frågar.
+
+## Skalning
+
+Inför rean höjer Lisa `replicas` från 3 till 10 och kör `kubectl apply` igen. Kubernetes startar sju
+poddar till, fördelade över noderna.
+
+Det går också automatiskt: en regel som säger *"kör fler poddar när processorlasten går över 70
+procent"* skalar upp under toppen och ner igen efteråt.
+
+Samma mekanism ger utrullning utan driftstopp. Byter Lisa `searchapi:v2` mot `v3` byts poddarna ut
+en i taget — en ny startas och kontrolleras innan en gammal tas bort. Under hela bytet finns
+fungerande poddar som svarar på trafik.
 
 ## När du inte behöver Kubernetes
 
-Det här är den del som ofta hoppas över, och den är viktigast av alla: **Kubernetes är inte gratis.**
-
-Ett kluster innebär nätverk, ingress-regler, behörigheter, certifikat, övervakning och uppgraderingar som någon måste förstå och underhålla. Den komplexiteten betalar sig när du faktiskt har problemet den löser – men bara då.
+Den här delen hoppas ofta över, och den är den viktigaste. Kubernetes är inte gratis.
 
 <Split
   leftTitle="Hoppa över Kubernetes"
@@ -151,54 +264,134 @@ Ett kluster innebär nätverk, ingress-regler, behörigheter, certifikat, överv
 >
   <div slot="left">
 
-  **En applikation på en server med jämn trafik** — Docker Compose räcker gott, och du slipper
-  ett helt lager att lära dig.
+  **En applikation på en server med jämn trafik** — Docker Compose räcker, och du slipper ett helt
+  lager att lära dig.
 
-  **Ett hobbyprojekt eller en tidig produkt** — en hanterad tjänst som Azure Container Apps
-  eller App Service ger dig utrullning och skalning utan att du driftar ett kluster.
+  **Ett hobbyprojekt eller en tidig produkt** — en hanterad tjänst som Azure Container Apps ger dig
+  utrullning och skalning utan att du driftar ett kluster.
 
-  **Ett litet team utan driftserfarenhet** — ett kluster ingen riktigt förstår blir en risk,
-  inte en trygghet.
+  **Ett litet team utan driftserfarenhet** — ett kluster ingen förstår är en risk, inte en trygghet.
 
   </div>
   <div slot="right">
 
-  **Många tjänster, flera servrar, krav på tillgänglighet och skalning** — då är Kubernetes
-  rätt verktyg, och då är det svårt att bygga något bättre själv.
+  **Många tjänster, flera servrar, krav på tillgänglighet** — då är Kubernetes rätt verktyg, och
+  svårt att bygga bättre själv.
 
   Signalen att titta efter: du har börjat **bygga det själv**. Skript som startar om kraschade
   containrar, fördelar trafik och håller reda på vilken server som har plats.
 
-  Då finns problemet på riktigt, och då är verktyget värt sin komplexitet.
+  Då finns problemet på riktigt, och då är komplexiteten värd sitt pris.
 
   </div>
 </Split>
 
-En rimlig tumregel: börja med Docker och Docker Compose, och gå vidare till Kubernetes den dag du märker att du håller på att bygga en sämre version av det.
+Ett kluster innebär nätverk, behörigheter, certifikat, övervakning och uppgraderingar som någon
+måste förstå och underhålla. Tumregeln: börja med Docker och Compose, gå vidare den dag du märker
+att du håller på att bygga en sämre version av Kubernetes.
+
+## Vad det här betyder i ditt arbete
+
+Som utvecklare kommer du sällan att sätta upp ett kluster. Du kommer att skriva manifest, läsa
+`kubectl get pods`, och felsöka med `kubectl logs` och `kubectl describe`.
+
+Det som är värt din tid nu är alltså inte hur control plane fungerar internt, utan att kunna läsa
+ett manifest och veta vilket av de fyra begreppen ett felmeddelande handlar om.
+
+Är du på väg mot en driftsroll byter det skepnad. Då blir noder, nätverk, behörigheter och
+uppgraderingar ditt jobb — men ingen av de sakerna går att förstå innan pod, Deployment och Service
+sitter.
+
+## Vanliga nybörjarförväxlingar
+
+Kubernetes ersätter inte Docker. Det ersätter `docker compose`. Images byggs fortfarande med Docker.
+
+En pod är inte en container. Den är ett skal runt en eller flera, och det är poddar Kubernetes
+räknar och flyttar.
+
+En pod är inte en server. Den försvinner, och det som sparats i den försvinner med den.
+
+`kubectl` är inte Kubernetes. Det är en klient som skickar begäran till ett kluster, och utan
+kluster kan den nästan ingenting.
+
+Att köra `kubectl apply` två gånger gör inte saken två gånger. Beskrivningen jämförs med
+verkligheten, och stämmer den redan händer ingenting.
+
+## Prova själv
+
+Första steget kräver inget kluster. Kontrollera att klienten finns:
+
+```bash
+kubectl version --client
+```
+
+Fråga sedan efter poddar:
+
+```bash
+kubectl get pods
+```
+
+Har du inget kluster får du ett fel om att anslutningen till servern nekades. **Det är inte ett
+fel i installationen** — det är hela poängen med avsnittet om kubectl. Det är en klient, och den
+har ingen control plane att fråga.
+
+Vill du gå vidare: slå på Kubernetes i Docker Desktop under Settings → Kubernetes. Då får du ett
+kluster med en nod på din egen maskin.
+
+```bash
+kubectl get nodes
+```
+
+Nu svarar klustret med en nod, ofta med namnet `docker-desktop`. Spara manifestet ovan som
+`api.yaml`, byt ut `image:` mot något som faktiskt går att hämta — `nginx` duger — och kör:
+
+```bash
+kubectl apply -f api.yaml
+kubectl get pods
+```
+
+Tre poddar, med namn som `api-6d4cf56db-xk29p`. Radera en av dem och fråga igen direkt:
+
+```bash
+kubectl delete pod api-6d4cf56db-xk29p
+kubectl get pods
+```
+
+Det finns fortfarande tre. En av dem har ett nytt namn. Det är självläkningen, och det är det
+enskilt tydligaste beviset för att beskrivningen — inte kommandot — är det som styr.
+
+Två saker som förvirrar: poddarna står först som `ContainerCreating` medan imagen hämtas, och
+`kubectl get pods` visar bara det aktuella namnrummet. Namnrum tar vi senare.
 
 <Callout type="kom-ihag">
 - Kubernetes är **deklarativt**: du beskriver önskat läge, systemet håller det sant — oavbrutet.
+- Kubernetes ersätter inte Docker. Det ersätter `docker compose`.
 - En **pod** är minsta enheten och är alltid tillfällig. Ny pod = nytt namn, ny IP.
-- En **Deployment** beskriver vad som alltid ska finnas, och ger både självläkning och
-  utrullning utan driftstopp.
-- En **Service** ger poddarna en fast adress och fördelar trafiken mellan dem.
-- Kubernetes löser problemet *många containrar på många servrar*. Har du inte det problemet är
-  Docker Compose fortfarande rätt svar.
+- En **Deployment** beskriver vad som alltid ska finnas. En **Service** ger det en fast adress.
+- Har du inte problemet *många containrar på många servrar* är Docker Compose fortfarande rätt svar.
 </Callout>
 
 <Check
   items={[
     {
-      q: "Du raderar en pod med `kubectl delete pod api-7f9c`. Vad händer?",
-      a: "En ny pod startas inom sekunder, med ett nytt namn och en ny IP. Deploymenten säger att det ska finnas tre, och Kubernetes rättar verkligheten så fort den avviker från beskrivningen.",
+      q: "Ersätter Kubernetes Docker?",
+      a: "Nej. Docker bygger images och kör containrar på en maskin. Kubernetes kör färdiga images över många maskiner. Det som ersätts är `docker compose`, inte Docker självt.",
     },
     {
-      q: "Varför är det en fördel att poddar är tillfälliga och utbytbara?",
-      a: "För att systemet då kan flytta runt dem, byta ut dem och skapa fler helt fritt. Vore en enskild pod viktig skulle varken självläkning, skalning eller utrullning utan driftstopp vara möjligt.",
+      q: "Du raderar en pod med `kubectl delete pod api-7f9c`. Vad händer?",
+      a: "En ny pod startas inom sekunder, med nytt namn och ny IP. Deploymenten säger att det ska finnas tre, och Kubernetes rättar verkligheten så fort den avviker från beskrivningen.",
     },
     {
       q: "Om poddarna hela tiden byter IP-adress — hur hittar frontend till API:et?",
-      a: "Via en Service. Den har ett namn som aldrig ändras, håller reda på vilka poddar som är friska just nu, och fördelar anropen mellan dem. Frontend anropar `http://api:5000` och behöver inte veta något mer.",
+      a: "Via en Service. Den har ett namn som aldrig ändras, håller reda på vilka poddar som är friska just nu, och fördelar anropen mellan dem. Frontend anropar `http://api:5000` och behöver inte veta mer.",
+    },
+    {
+      q: "Vad är skillnaden mellan en Deployment och en Service?",
+      a: "Deployment beskriver vad som ska köras och i hur många kopior. Service beskriver hur något annat når det, via en adress som inte ändras. De skrivs nästan alltid i par.",
+    },
+    {
+      q: "Du kör `kubectl apply -f api.yaml` två gånger utan att ändra filen. Vad händer andra gången?",
+      a: "Ingenting. `apply` är deklarativ: den jämför beskrivningen med verkligheten och rättar bara skillnaden. Stämmer det redan finns inget att göra.",
     },
     {
       q: "När är Kubernetes fel verktyg?",
@@ -207,12 +400,20 @@ En rimlig tumregel: börja med Docker och Docker Compose, och gå vidare till Ku
   ]}
 />
 
-## Sammanfattning
+## Snabb sammanfattning
 
-En **pod** är det minsta Kubernetes hanterar: ett skal runt en eller ett par containrar. Poddar är tillfälliga och utbytbara, och det är just därför systemet kan flytta runt dem fritt.
+- Kubernetes kör containrar över flera servrar. Det bygger dem inte — det ersätter `docker compose`.
+- Kubernetes är deklarativt: du beskriver önskat läge, systemet håller det sant, oavbrutet.
+- Ett kluster är servrarna hanterade som en enhet. Varje server är en nod.
+- Control plane tar emot beskrivningar och bestämmer var saker körs. Noderna kör dem.
+- En pod är minsta enheten — ett skal runt en eller några containrar på samma nod.
+- Poddar är tillfälliga och utbytbara. Ny pod betyder nytt namn och ny IP.
+- En Deployment beskriver vad som alltid ska finnas och i hur många kopior.
+- En Service ger poddarna en adress som inte ändras och fördelar trafiken mellan dem.
+- `kubectl` är klienten. Utan kluster att fråga kan den nästan ingenting.
+- Har du inte problemet många containrar på många servrar är Docker Compose fortfarande rätt svar.
 
-En **Deployment** beskriver vad som alltid ska finnas – vilken image och hur många kopior. Kubernetes jämför beskrivningen med verkligheten och rättar till skillnaden, vilket ger både självläkning och utrullning utan driftstopp.
+## Nästa del
 
-En **Service** ger poddarna en fast adress och fördelar trafiken mellan dem, så att resten av systemet slipper veta var de råkar köra just nu.
-
-I nästa del tar vi itu med den mening som lämnades hängande här: att frontend *exponeras utåt*. För hur når egentligen en besökare på internet ända fram till en pod?
+En mening lämnades hängande här: att frontend ska nås utifrån. En Service ger en adress *inuti*
+klustret — men hur når en besökare på internet ända fram till en pod?

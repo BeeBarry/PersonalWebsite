@@ -10,31 +10,51 @@ tags: ['Beginner', 'Git', 'Branch']
 
 ## Var vi är
 
-Förra delen landade i en modell: en commit är en ögonblicksbild av hela projektet plus en
-pekare till föregående. Historiken är en kedja av bilder.
+Förra delen landade i en modell: en commit är en ögonblicksbild av hela projektet plus en pekare
+till commiten före. Historiken är en kedja av bilder.
 
-Nu blir den modellen användbar. För om en commit bara är en bild med en pekare — vad är då en
-gren?
+Den här delen gör modellen användbar. Om en commit bara är en bild med en pekare bakåt — vad är
+då en gren, och varför blir det ibland konflikt när två grenar ska ihop?
 
-## Två personer, ett projekt
+## Vad en gren är
 
-Lisa bygger sökfunktionen. Maria bygger betalningen. Båda jobbar direkt mot `main`.
+En **gren** är en fil som innehåller en commit-hash.
 
-Det går i två dagar. Sedan hämtar Lisa hem Marias ändringar mitt i sitt eget halvfärdiga
-arbete, sajten slutar starta, och ingen av dem vet om felet ligger i sökningen, betalningen
-eller mötet mellan dem.
+Fyrtio tecken och en radbrytning. Det är allt. `main` är en sådan fil, `sok` är en annan, och båda
+pekar på var sin ögonblicksbild i kedjan du redan känner till.
 
-Problemet är inte att de skriver kod samtidigt. Det är att de skriver den **på samma ställe**.
+En gren är alltså inte en kopia av projektet, och inte en mapp. Ingenting dupliceras när du skapar
+en. Det är därför grenar i Git är gratis och omedelbara, medan de i äldre system var något man drog
+sig för.
 
-## En gren är mindre än du tror
+## Vad HEAD är
 
-Här kommer avsnittets viktigaste mening: **en gren är en fil som innehåller en commit-hash.**
+**`HEAD`** är en pekare som talar om var *du* står just nu.
 
-Fyrtio tecken och en radbrytning. Det är allt. `main` är en sådan fil, `sok` är en annan, och
-båda pekar på var sin ögonblicksbild i den kedja du redan känner till.
+Oftast pekar `HEAD` på en gren, och grenen pekar på en commit. Byter du gren flyttas `HEAD`, och Git
+skriver om filerna på disken så att de matchar den ögonblicksbilden.
 
-Det förklarar varför grenar i Git är gratis och omedelbara, medan de i äldre system var något
-man drog sig för. Det kopieras ingenting. Det skapas en pekare.
+Det är därför filerna i din editor byter innehåll när du byter gren. Ingenting laddas ner och inget
+går förlorat — Git plockar bara fram en annan bild ur historiken.
+
+## Gren vs HEAD
+
+De blandas ihop eftersom de båda är pekare.
+
+**En gren** pekar på den senaste commiten i en utvecklingslinje. Den flyttas framåt varje gång du
+committar.
+
+**`HEAD`** pekar ut vilken gren du står på. Den flyttas när du byter gren.
+
+Står `HEAD` direkt på en commit i stället för på en gren är du i *detached HEAD*. Committar du där
+hänger arbetet löst utan gren som håller i det. Det ordnas med att skapa en gren på plats, men det
+är också anledningen till att Git varnar tydligt när det händer.
+
+> **DOODLE** — Tre commit-cirklar på en linje märkta A, B, C. En liten flagga märkt `main` som pekar
+> på C, och ovanför den en mindre flagga märkt `HEAD` med pil ner på `main`-flaggan. Under bilden:
+> "Grenen pekar på en commit. HEAD pekar på grenen."
+
+## Hur en gren ser ut i historiken
 
 ```text
 main   A───B───────────────M
@@ -42,13 +62,13 @@ main   A───B───────────────M
 sok          C───D───E───┘
 ```
 
-`A` och `B` är gemensam historia. Vid `B` skapade Lisa grenen `sok` och gjorde tre commits på
-den, medan `main` stod stilla. I `M` fördes arbetet tillbaka.
+`A` och `B` är gemensam historia. Vid `B` skapade Lisa grenen `sok` och gjorde tre commits på den,
+medan `main` stod stilla. I `M` fördes arbetet tillbaka.
 
-Utöver grenpekarna finns en till: **`HEAD`**, som pekar ut var *du* står just nu. Byter du gren
-flyttas `HEAD`, och Git skriver om filerna på disken så att de matchar den bilden.
+Ingen av commitarna `C`, `D` eller `E` finns i `main` förrän sammanslagningen skett. Det är hela
+poängen med att arbeta på gren: `main` påverkas inte medan arbetet pågår.
 
-## Helheten först: en grens liv
+## En grens liv
 
 <Flow
   caption="Samma fyra steg varje gång, oavsett om arbetet tar en timme eller en vecka."
@@ -76,13 +96,18 @@ flyttas `HEAD`, och Git skriver om filerna på disken så att de matchar den bil
   ]}
 />
 
-<Callout type="sa-gor-du" title="switch och restore, inte checkout">
-Du kommer att se `git checkout` i varenda guide på nätet, och det fungerar fortfarande. Men
-kommandot gjorde två helt olika saker — bytte gren *och* kastade ändringar i filer — vilket
-gjorde det lätt att förlora arbete av misstag.
+Att radera grenen raderar inte arbetet. Grenen var bara en pekare; commitarna ligger kvar i
+historiken och nås via `main` efter sammanslagningen.
 
-Git delade därför upp det i två tydliga kommandon, och den officiella dokumentationens
-`giteveryday`-referens använder numera dem genomgående:
+## `switch` och `restore`, inte `checkout`
+
+<Callout type="sa-gor-du" title="Två kommandon i stället för ett">
+Du kommer att se `git checkout` i varenda guide på nätet, och det fungerar fortfarande. Men
+kommandot gjorde två helt olika saker — bytte gren *och* kastade ändringar i filer — vilket gjorde
+det lätt att förlora arbete av misstag.
+
+Git delade därför upp det, och den officiella `giteveryday`-referensen använder numera de nya
+kommandona genomgående:
 
 - `git switch <gren>` — byt gren. `-c` skapar den samtidigt.
 - `git restore <fil>` — släng ändringar i en fil. `--staged` plockar ut den ur staging.
@@ -90,25 +115,53 @@ Git delade därför upp det i två tydliga kommandon, och den officiella dokumen
 Lär dig de här två. Känn igen `checkout` när du ser det.
 </Callout>
 
-## Merge: två sätt, beroende på läget
+## Vad en merge är
 
-När arbetet ska tillbaka händer en av två saker, och Git väljer själv.
+En **merge** för tillbaka arbetet från en gren till en annan.
 
-**Fast-forward.** Har `main` stått stilla sedan grenen skapades behöver ingenting slås ihop —
+Du står på grenen som ska ta emot och pekar ut den som ska in: `git switch main` följt av
+`git merge sok`. Riktningen är lätt att kasta om, och det är den vanligaste orsaken till att
+resultatet blir tvärtom mot vad man tänkt.
+
+Vad Git faktiskt gör beror på hur de två grenarna står i förhållande till varandra.
+
+## Fast-forward vs merge-commit
+
+Git väljer själv mellan två sätt, och skillnaden syns i historiken.
+
+**Fast-forward** sker när målgrenen stått stilla sedan grenen skapades. Då finns inget att förena —
 Git flyttar bara `main`-pekaren framåt till grenens sista commit. Historiken blir en rak linje.
 
-**Merge-commit.** Har `main` fått nya commits under tiden finns två utvecklingslinjer som måste
-förenas. Git skapar då en ny commit — `M` i bilden ovan — som är den enda sortens commit med
+**Merge-commit** sker när målgrenen fått nya commits under tiden. Då finns två utvecklingslinjer som
+måste förenas, och Git skapar en ny commit — `M` i bilden ovan. Den är den enda sortens commit med
 **två föräldrar**.
 
-I båda fallen är det Git som räknar ut vad resultatet blir. Nästan alltid går det av sig självt,
-även när båda ändrat samma fil — så länge de inte rört samma rader.
+I båda fallen räknar Git ut resultatet. Nästan alltid går det av sig självt, även när båda ändrat
+samma fil — så länge de inte rört samma rader.
 
-## Konflikter är inte fel
+## Merge vs rebase
+
+Två sätt att få in andras arbete i sin gren, med olika resultat i historiken.
+
+**Merge** behåller historien som den var och lägger till en merge-commit som binder ihop linjerna.
+Grafen visar att arbetet skedde parallellt.
+
+**Rebase** skriver om din grens commits så att de ser ut att ha gjorts efter de nya på `main`.
+Historiken blir en rak linje, men commitarna får nya hashar — det är alltså inte samma commits längre.
+
+Rebase har en egen uppsättning regler och fallgropar, framför allt att aldrig göra det på commits
+någon annan redan hämtat. Vi tar det i en egen del. Kan du merge klarar du dig långt.
+
+## Vad en konflikt är
+
+En **konflikt** uppstår när samma rader har ändrats i båda grenarna och Git inte kan avgöra vilken
+version som ska gälla.
 
 <Split
   leftTitle="Vanlig reaktion"
   rightTitle="Vad som faktiskt hänt"
+  leftTone="bad"
+  rightTone="good"
   caption="Konflikten är inte problemet. Den är rapporten om ett problem som redan fanns."
 >
   <div slot="left">
@@ -124,15 +177,19 @@ I båda fallen är det Git som räknar ut vad resultatet blir. Nästan alltid g�
 
   **Två personer ändrade samma rader.**
 
-  Git kan inte veta vilken version som är rätt — och vägrar gissa, i stället för att tyst välja
-  fel.
+  Git kan inte veta vilken version som är rätt — och vägrar gissa, i stället för att tyst välja fel.
 
   Vanlig respons: läsa båda, avgöra vilken som ska gälla, och tala om det.
 
   </div>
 </Split>
 
-När det händer markerar Git de aktuella raderna direkt i filen:
+En konflikt kan bara uppstå i en merge. Under tiden du arbetar på din gren finns ingen att ha
+konflikt med.
+
+## Konfliktmarkörerna
+
+När det händer skriver Git in markörer direkt i filen:
 
 ```text
 <<<<<<< HEAD
@@ -142,42 +199,117 @@ const moms = beraknaMoms(pris, land);
 >>>>>>> sok
 ```
 
-Överst står versionen från grenen du står på, underst versionen från grenen du slår ihop.
-Ditt jobb är att **redigera filen till hur den ska se ut** — inklusive att ta bort alla tre
-markörraderna — och sedan:
+Överst står versionen från grenen du står på, underst versionen från grenen du slår ihop. Raden med
+likhetstecken skiljer dem åt.
+
+Markörerna är vanlig text i filen. Kompilerar du utan att ta bort dem får du ett syntaxfel — och det
+felmeddelandet är ofta första gången någon upptäcker att en konflikt fanns.
+
+## Att lösa en konflikt
+
+Ditt jobb är att redigera filen till hur den ska se ut, inklusive att ta bort alla tre
+markörraderna. Sedan:
 
 ```bash
 git add prisberakning.js    # så här ska det se ut
 git commit                  # avsluta sammanslagningen
 ```
 
-Ofta är svaret varken den ena eller den andra versionen, utan en tredje som tar hänsyn till
-båda. Att momsen ska beräknas per land *och* att den gamla satsen fortfarande gäller för Sverige,
-till exempel.
+`git add` betyder här *"det här är den lösta versionen"* — samma kommando som vanligt, men med en
+annan innebörd i sammanhanget.
 
-<Callout type="fallgrop" title="Långlivade grenar gör konflikter värre">
-En gren som levt i tre veckor har hunnit glida långt ifrån `main`. När den ska tillbaka är det
-inte en konflikt utan trettio, i filer du knappt minns att du rörde.
+Ofta är svaret varken den ena eller den andra versionen, utan en tredje som tar hänsyn till båda.
+Att momsen ska beräknas per land *och* att den gamla satsen fortfarande gäller för Sverige, till
+exempel.
+
+Ångrar du dig mitt i: `git merge --abort` tar dig tillbaka till läget före sammanslagningen.
+
+## Fallgropen: långlivade grenar
+
+<Callout type="fallgrop">
+En gren som levt i tre veckor har hunnit glida långt ifrån `main`. När den ska tillbaka är det inte
+en konflikt utan trettio, i filer du knappt minns att du rörde.
 
 Motmedlet är inte att undvika grenar utan att **hålla dem korta**. En gren per uppgift, sammanslagen
 inom en dag eller två. Behöver arbetet ta längre tid, hämta hem `main` regelbundet med
-`git merge main` — då tar du konflikterna några i taget, medan du fortfarande minns
-sammanhanget.
+`git merge main` — då tar du konflikterna några i taget, medan du fortfarande minns sammanhanget.
 </Callout>
 
-<Callout type="fallgrop" title="--force på en delad gren">
-`git push --force` skriver över det som ligger på servern med din version. På din egen gren är
-det ibland motiverat. På en gren någon annan arbetar mot **raderar det deras commits**, och de
-märker det först när deras nästa `pull` ser konstig ut.
+## Fallgropen: `--force` på en delad gren
 
-Behöver du ändå göra det, använd `--force-with-lease`. Den vägrar om någon hunnit pusha sedan
-du senast hämtade — alltså precis i det läge där `--force` hade gjort skada.
+<Callout type="fallgrop">
+`git push --force` skriver över det som ligger på servern med din version. På din egen gren är det
+ibland motiverat. På en gren någon annan arbetar mot **raderar det deras commits**, och de märker
+det först när deras nästa `pull` ser konstig ut.
+
+Behöver du ändå göra det, använd `--force-with-lease`. Den vägrar om någon hunnit pusha sedan du
+senast hämtade — alltså precis i det läge där `--force` hade gjort skada.
 </Callout>
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att skapa en gren per uppgift, committa på den, öppna en merge request och låta någon
+granska den. Det är arbetsflödet i så gott som varje team, och det bygger helt på det här avsnittet.
+
+Konflikter kommer du att lösa några gånger i månaden, oftast i en fil två personer råkat röra samma
+vecka. Att veta att markörerna bara är text i filen — inte ett trasigt tillstånd i Git — är
+skillnaden mellan fem minuter och en förlorad förmiddag.
+
+Rebase, cherry-pick och `reflog` kan du skjuta upp. De blir intressanta först när du behöver städa
+historik eller rädda något, och då är det inte längre nybörjarläge.
+
+## Vanliga nybörjarförväxlingar
+
+En gren är inte en kopia av projektet. Den är en fil med en commit-hash i.
+
+Att radera en gren raderar inte commitarna. Pekaren försvinner; historiken finns kvar.
+
+En konflikt är inte ett fel i Git. Det är Git som vägrar gissa mellan två versioner av samma rader.
+
+`git merge` körs på grenen som ska **ta emot**, inte på den som ska in.
+
+Alla merges skapar inte en merge-commit. Har målgrenen stått stilla flyttas bara pekaren framåt.
+
+`git checkout` är inte fel, bara gammalt. `switch` och `restore` gör samma sak tydligare.
+
+## Prova själv
+
+Gå till ett Git-projekt du har. Alla kommandon nedan bara läser.
+
+Titta först på vad `HEAD` faktiskt innehåller:
+
+```bash
+cat .git/HEAD
+```
+
+Du får en rad: `ref: refs/heads/main`. `HEAD` pekar alltså inte på en commit utan på en gren.
+
+Titta sedan på vad grenen innehåller:
+
+```bash
+git rev-parse main
+```
+
+En hash. Det är hela grenen — en fil med fyrtio tecken i, precis som avsnittet påstod.
+
+Se slutligen formen på historiken:
+
+```bash
+git log --graph --oneline --all | head -20
+```
+
+Linjerna till vänster visar var grenar delat sig och slagits ihop igen. En commit med två streck som
+går ihop är en merge-commit.
+
+Två saker som kan förvirra: du kan försöka `cat .git/refs/heads/main` och få *No such file or
+directory* — det betyder inte att grenen saknas, utan att Git packat ihop sina referenser i
+`.git/packed-refs` för att spara plats. Använd `git rev-parse` i stället. Och `git log` öppnas i en
+bläddrare som avslutas med `q`.
 
 <Callout type="kom-ihag">
 - En gren är **en fil med en commit-hash i**. Därför är den gratis och omedelbar.
-- `HEAD` pekar ut var du står. Att byta gren flyttar `HEAD` och skriver om filerna på disken.
-- **Fast-forward** när `main` stått stilla, **merge-commit** (två föräldrar) när den inte gjort det.
+- `HEAD` pekar på grenen du står på. Att byta gren flyttar `HEAD` och skriver om filerna på disken.
+- **Fast-forward** när målgrenen stått stilla, **merge-commit** (två föräldrar) när den inte gjort det.
 - En konflikt betyder att samma rader ändrats på båda hållen. Git vägrar gissa — det är en
   funktion, inte ett fel.
 - Håll grenar korta. `--force-with-lease` i stället för `--force`.
@@ -190,6 +322,10 @@ du senast hämtade — alltså precis i det läge där `--force` hade gjort skad
       a: "För att en gren bara är en fil som innehåller en commit-hash — fyrtio tecken. Ingenting kopieras; det skapas en pekare till en ögonblicksbild som redan finns.",
     },
     {
+      q: "Vad är skillnaden mellan en gren och `HEAD`?",
+      a: "Grenen pekar på den senaste commiten i en utvecklingslinje och flyttas när du committar. `HEAD` pekar på grenen du står på och flyttas när du byter gren.",
+    },
+    {
       q: "När blir en merge en fast-forward, och när skapas en merge-commit?",
       a: "Fast-forward när målgrenen inte fått några nya commits sedan grenen skapades — då räcker det att flytta pekaren framåt. Har målgrenen utvecklats parallellt måste linjerna förenas, och då skapas en merge-commit med två föräldrar.",
     },
@@ -198,21 +334,31 @@ du senast hämtade — alltså precis i det läge där `--force` hade gjort skad
       a: "Att samma rader ändrats i båda grenarna, och att den inte kan avgöra vilken version som är rätt. Den markerar raderna i filen och lämnar beslutet till dig i stället för att gissa fel i tysthet.",
     },
     {
+      q: "Du raderar grenen `sok` efter att ha slagit ihop den. Är arbetet borta?",
+      a: "Nej. Grenen var en pekare; commitarna ligger kvar i historiken och nås nu via `main`. Det som togs bort var namnet, inte innehållet.",
+    },
+    {
       q: "Varför är `--force-with-lease` säkrare än `--force`?",
       a: "Den vägrar skriva över om någon pushat till grenen sedan du senast hämtade — alltså exakt i det läge där en vanlig `--force` hade raderat någon annans commits.",
     },
   ]}
 />
 
-## Sammanfattning
+## Snabb sammanfattning
 
-En gren är en pekare till en ögonblicksbild, och `HEAD` pekar ut vilken du står på. Det är hela
-mekaniken — resten är konsekvenser av den.
+- En gren är en fil som innehåller en commit-hash. Ingenting kopieras när du skapar en.
+- `HEAD` pekar ut vilken gren du står på. Byte av gren skriver om filerna på disken.
+- Att radera en gren tar bort pekaren, inte commitarna.
+- En merge körs på grenen som ska ta emot och pekar ut den som ska in.
+- Fast-forward flyttar bara pekaren. En merge-commit har två föräldrar.
+- Rebase skriver om historien till en rak linje och ger commitarna nya hashar. Det tas i egen del.
+- En konflikt uppstår bara i en merge, och bara när samma rader ändrats på båda hållen.
+- Konfliktmarkörerna är vanlig text i filen. De ska redigeras bort innan du `git add`.
+- Korta grenar ger få konflikter. Långlivade grenar ger många på en gång.
+- `--force-with-lease` i stället för `--force` på allt någon annan kan tänkas arbeta mot.
 
-En merge är antingen en flyttad pekare eller en commit med två föräldrar, och en konflikt
-uppstår bara när samma rader ändrats på båda hållen. Att Git då stannar och frågar är det
-säkraste den kan göra.
+## Nästa del
 
-Med Git på plats har du det verktyg som resten av arbetsflödet vilar på — det var ju i en merge
-request som Terraform-planen granskades. Nästa serie tar sig an det som ligger mellan
-gränssnittet och databasen: API:et.
+Med Git på plats har du verktyget som resten av arbetsflödet vilar på — det var ju i en merge request
+som Terraform-planen granskades. Nästa serie tar sig an det som ligger mellan gränssnittet och
+databasen: API:et.
