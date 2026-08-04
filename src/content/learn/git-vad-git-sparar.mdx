@@ -176,6 +176,19 @@ mellan en historik man kan använda och en man skrollar förbi.
 
 `git add -p` går ett steg längre och låter dig välja ändring för ändring inuti samma fil.
 
+## `git add` vs `git commit`
+
+Den vanligaste missuppfattningen om de två kommandona är att båda sparar. Bara det ena gör det.
+
+**`git add`** flyttar filen till staging. Ingenting blir permanent, och kör du `git add` femton
+gånger finns fortfarande ingen commit.
+
+**`git commit`** tar det som ligger i staging och skriver en ögonblicksbild. Först nu finns något du
+kan återvända till.
+
+Följden märks när något går fel: har du bara kört `git add` och sedan skriver över filen är arbetet
+borta. Staging är en förberedelse, inte en säkerhetskopia.
+
 ## Spårade vs ospårade filer
 
 En fil som Git känner till kallas **spårad**. En fil som ligger i mappen men aldrig har lagts till
