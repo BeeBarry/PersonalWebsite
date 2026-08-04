@@ -121,6 +121,43 @@ export const hrTranslate: HrTranslateRow[] = content.translate;
 export const hrGlossary: HrGlossaryTerm[] = content.glossary;
 export const hrGlossaryCategories: string[] = content.glossaryCategories;
 
+// ---- Ikoner -----------------------------------------------------------------
+//
+// Ikonen är presentation, inte innehåll, och bor därför här och inte i
+// hr-content.json — samma uppdelning som src/data/categories.ts gör för
+// Learn Hub.
+//
+// Inga nya beroenden: namnen kommer ur de fyra Iconify-paket som redan är
+// installerade. Konventionen är densamma som på startsidan:
+//   `logos:*`  riktiga varumärkesloggor, i sina egna färger
+//   `mdi:*`    roller och arbetssätt utan logga — enfärgade, ärver textfärgen
+//
+// Saknas ett id faller iconFor tillbaka på en neutral kort-ikon, så guiden
+// aldrig kraschar på ett nytt kort någon lagt till i JSON:en.
+export const hrCardIcon: Record<string, string> = {
+  // Varumärken
+  "hr-react": "logos:react",
+  "hr-k8s": "logos:kubernetes",
+  "hr-ts": "logos:typescript-icon",
+  "hr-py": "logos:python",
+  "hr-cs": "logos:c-sharp",
+  "hr-docker": "logos:docker-icon",
+  "hr-next": "logos:nextjs-icon",
+
+  // Roller och arbetssätt — valda för att vara begripliga utan förklaring:
+  // servern bakom appen, skärmen framför den, DevOps-loopen, dataflödet,
+  // grenen som byggs om vid varje ändring, och tavlan teamet står vid.
+  "hr-backend": "mdi:server-outline",
+  "hr-fe": "mdi:monitor-dashboard",
+  "hr-devops": "mdi:infinity",
+  "hr-data": "mdi:database-sync-outline",
+  "hr-cicd": "mdi:source-branch-sync",
+  "hr-scrum": "mdi:view-dashboard-variant-outline",
+};
+
+export const iconFor = (id: string): string =>
+  hrCardIcon[id] ?? "mdi:card-text-outline";
+
 // ---- Hjälpare ---------------------------------------------------------------
 
 // Utkast = kort utan `what` (README: draftRule). draft:true är en explicit

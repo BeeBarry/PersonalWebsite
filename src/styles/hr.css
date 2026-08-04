@@ -275,6 +275,9 @@
 .hr-switch__item-title {
   display: flex;
   align-items: center;
+  gap: 7px;
+  display: flex;
+  align-items: center;
   gap: 8px;
   font-weight: 700;
   font-size: 13.5px;
@@ -610,6 +613,9 @@
 /* Korttiteln ska ligga under panelrubriken i hierarkin — 17 px konkurrerade
    med h2:an ovanför. */
 .hrcard__title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   font-weight: 700;
   font-size: 12.5px;
   letter-spacing: -0.01em;
@@ -617,6 +623,19 @@
   margin: 0;
   transition: color 0.18s ease;
 }
+/* Färgloggor (logos:*) bär sina egna färger. Enfärgade mdi-ikoner ärver
+   currentColor, som på titelraden är full textfärg — det blev för tungt
+   bredvid en logga, så de dämpas till sekundär. Samma konvention som
+   startsidans stack-ikoner. */
+.hrcard__icon {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  color: var(--c-text-secondary);
+}
+/* Ikonen ska inte färgskifta med titeln vid hover — en logga som byter färg
+   ser trasig ut. */
+.hrcard:hover .hrcard__icon { color: var(--c-text-secondary); }
 .hrcard__one {
   font-size: 11.5px;
   line-height: 1.48;

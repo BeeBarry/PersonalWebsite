@@ -4,6 +4,7 @@
 // själva är länkar till /for-hr/[card] så de fungerar utan JS och kan
 // djuplänkas. Tomma grupper och tomt läge togglas av scriptet.
 import Icon from "../site/Icon.astro";
+import { Icon as Iconify } from "astro-icon/components";
 import site from "../../config/site";
 import {
   hrCards,
@@ -12,6 +13,7 @@ import {
   isDraft,
   HR_TYPES,
   typo,
+  iconFor,
   type HrCard,
 } from "../../data/hr";
 
@@ -99,7 +101,10 @@ const typeLabels: Record<string, string> = {
                     </span>
                   )}
                 </div>
-                <h4 class="hrcard__title">{card.title}</h4>
+                <h4 class="hrcard__title">
+                  <Iconify name={iconFor(card.id)} class="hrcard__icon" />
+                  {card.title}
+                </h4>
                 <p class="hrcard__one">{typo(card.one)}</p>
               </a>
             ))}

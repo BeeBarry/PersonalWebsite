@@ -8,7 +8,8 @@
 //   Under 768 px är switchern hopfälld bakom en sökknapp (hrGuide.ts togglar
 //   data-switch-open på .hr-topbar) — den åt annars 96 px av skärmen.
 import Icon from "../site/Icon.astro";
-import { hrCards, groupLibrary, isDraft, HR_TYPES, typo } from "../../data/hr";
+import { Icon as Iconify } from "astro-icon/components";
+import { hrCards, groupLibrary, isDraft, HR_TYPES, typo, iconFor } from "../../data/hr";
 
 interface Props {
   active?: "bib" | "ovs" | "faq" | "ord";
@@ -72,20 +73,26 @@ const searchIndex = (c: (typeof hrCards)[number]) =>
       )
     }
 
-    <nav class="hr-topbar__tabs" data-hr-tablist aria-label="Guidens delar">
-      {
-        tabs.map((t) => (
-          <a
-            href={hrefFor(t.id)}
-            class:list={["hr-topbar__tab", active === t.id && "is-active"]}
-            data-hr-tab={t.id}
-            aria-current={active === t.id ? "page" : undefined}
-          >
-            {t.label}
-          </a>
-        ))
-      }
-    </nav>
+    {/* Flikraden hör till guidens startsida. På ett kort är den en nivå
+        användaren redan lämnat — där är vägen tillbaka "Alla kort", och
+        kort-switchern till höger är den navigering som gäller. hrGuide.ts
+        klarar att raden saknas (den avbryter när tabs eller paneler är tomma). */}
+    {
+      variant === "list" && (
+        <nav class="hr-topbar__tabs" data-hr-tablist aria-label="Guidens delar">
+          {tabs.map((t) => (
+            <a
+              href={hrefFor(t.id)}
+              class:list={["hr-topbar__tab", active === t.id && "is-active"]}
+              data-hr-tab={t.id}
+              aria-current={active === t.id ? "page" : undefined}
+            >
+              {t.label}
+            </a>
+          ))}
+        </nav>
+      )
+    }
   </div>
 
   {
@@ -145,6 +152,7 @@ const searchIndex = (c: (typeof hrCards)[number]) =>
                   {c.typ} · {c.dom}
                 </span>
                 <span class="hr-switch__item-title">
+                  <Iconify name={iconFor(c.id)} class="hrcard__icon" />
                   {c.title}
                   {isDraft(c) && (
                     <span class="hr-switch__item-badge">Kommer snart</span>

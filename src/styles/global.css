@@ -2368,6 +2368,13 @@ html[data-astro-transition-fallback] * {
         margin-inline: 0;
         padding-inline: 0;
     }
+    /* Läsvyer UTAN innehållsförteckning (projektvyn) — artikeln är då direkt
+       barn till .site.reader. Utan en panel som fyller högersidan lämnade
+       58ch ~230px tomt åt båda håll och texten läste som en smal remsa.
+       66ch ger ~78 tecken: bredare än idealet för långform, men projektvyn är
+       en beskrivning med listor och länkar, inte löpande brödtext. */
+    .site.reader > .article { max-width: 66ch; }
+
     .toc-jump,
     .toc-jump__label {
         display: none;
