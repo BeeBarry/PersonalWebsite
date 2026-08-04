@@ -1,6 +1,7 @@
 ---
 import AppLayout from "../../layouts/AppLayout.astro";
 import { getCollection } from "astro:content";
+import { Icon } from "astro-icon/components";
 import { categories } from "../../data/categories";
 import { domains } from "../../data/domains";
 import { showEntry } from "../../utils/content";
@@ -71,14 +72,7 @@ const showFilters = filters.length > 2;
             data-tags={c.domain}
             class="group flex items-center gap-4 rounded-xl border border-border bg-muted/10 p-4 transition-all hover:border-primary/40 hover:bg-muted/20"
           >
-            <img
-              src={c.iconUrl}
-              alt=""
-              width="40"
-              height="40"
-              loading="lazy"
-              class="h-10 w-10 shrink-0"
-            />
+            <Icon name={c.icon} class="h-10 w-10 shrink-0" />
             <div class="min-w-0">
               <h3 class="text-[15px] font-bold text-foreground/90 transition-colors group-hover:text-primary">
                 {c.title}

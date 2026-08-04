@@ -1015,55 +1015,9 @@
   .hrd-sec[id] { scroll-margin-top: 120px; }
 }
 
-/* Mobil/tablet: horisontell "hoppa till"-rad under titeln. Etiketten behövs —
-   utan den läses pillerraden som ämnestaggar, och den är enda överblicken av
-   ett 8–9 sektioner långt kort. */
-.hrd-jump__label {
-  font-family: var(--font-mono);
-  font-size: 9.5px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--c-text-muted);
-  margin: 20px 0 8px;
-}
-.hrd-jump {
-  display: flex;
-  gap: 6px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  margin: 0 0 6px;
-  padding-bottom: 4px;
-}
-.hrd-jump::-webkit-scrollbar { display: none; }
-@media (max-width: 767px) {
-  .hrd-jump {
-    mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
-  }
-}
-.hrd-jump__link {
-  flex: none;
-  padding: 9px 12px;
-  border-radius: 999px;
-  border: 1px solid var(--c-border);
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-  letter-spacing: 0.02em;
-  color: var(--c-text-muted);
-  text-decoration: none;
-  white-space: nowrap;
-  transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
-}
-.hrd-jump__link:hover { color: var(--c-text); border-color: var(--c-accent); }
-.hrd-jump__link.is-active {
-  color: var(--c-accent-contrast);
-  background: var(--c-accent);
-  border-color: var(--c-accent);
-}
-
-/* Desktop: sidopanel med sticky innehållsförteckning i det annars tomma
-   högerutrymmet. */
-.hrd-toc { display: none; }
+/* Innehållsförteckningens egna stilar bor i global.css (.toc-*) — den delas
+   numera med Learn Hub-artiklar och inlägg. Här stannar bara grid-layouten
+   som ger sidopanelen sin kolumn. */
 @media (min-width: 1200px) {
   .hrd-doc--toc {
     max-width: 62rem;
@@ -1074,42 +1028,8 @@
        den sticky innehållsförteckningen har utrymme att sticka längs hela
        kortet. */
   }
-  .hrd-jump,
-  .hrd-jump__label { display: none; }
   .hrd__lead[id],
   .hrd-sec[id] { scroll-margin-top: 184px; }
-  .hrd-toc { display: block; }
-  .hrd-toc__inner { position: sticky; top: 120px; }
-  .hrd-toc__title {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--c-text-muted);
-    margin: 0 0 12px;
-    padding-left: 14px;
-  }
-  .hrd-toc nav {
-    display: grid;
-    gap: 1px;
-    border-left: 1px solid var(--c-border);
-  }
-  .hrd-toc__link {
-    padding: 6px 0 6px 14px;
-    margin-left: -1px;
-    border-left: 2px solid transparent;
-    font-size: 12.5px;
-    line-height: 1.35;
-    color: var(--c-text-muted);
-    text-decoration: none;
-    transition: color 0.18s ease, border-color 0.18s ease;
-  }
-  .hrd-toc__link:hover { color: var(--c-text); }
-  .hrd-toc__link.is-active {
-    color: var(--c-accent);
-    border-left-color: var(--c-accent);
-    font-weight: 600;
-  }
 }
 
 .hrd__meta {

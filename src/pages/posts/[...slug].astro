@@ -1,9 +1,11 @@
 ---
 import { getCollection, render } from "astro:content";
 import AppLayout from "../../layouts/AppLayout.astro";
+import ArticleToc from "../../components/site/ArticleToc.astro";
 import Icon from "../../components/site/Icon.astro";
 import StickyBar from "../../components/site/StickyBar.astro";
 import { showEntry } from "../../utils/content";
+import { TOC_MIN_ITEMS } from "../../scripts/toc";
 
 export const prerender = true;
 export async function getStaticPaths() {
@@ -15,7 +17,15 @@ export async function getStaticPaths() {
 }
 
 const { entry } = Astro.props;
-const { Content } = await render(entry);
+const { Content, headings } = await render(entry);
+
+// Bara h2. Inlägg som lagrar brödtexten i frontmatterns `body` har ingen
+// markdown-text och därmed inga rubriker — då blir listan tom och komponenten
+// renderar ingenting.
+const toc = headings
+  .filter((h) => h.depth === 2)
+  .map((h) => ({ id: h.slug, label: h.text }));
+const showToc = toc.length >= TOC_MIN_ITEMS;
 
 const pageTitle = `${entry.data.title} · Fältnoteringar`;
 const metaLine = [entry.data.date, entry.data.read, entry.data.tags]
@@ -35,31 +45,38 @@ const ogImage = entry.data.image?.url ?? entry.data.cover?.url;
   <StickyBar backHref="/posts/" backLabel="Alla noteringar" title={entry.data.title} />
 
   <div class="site reader">
-    <article class="article animate-in">
-      <a class="backlink" href="/posts/">
-        <Icon name="ArrowLeft" size={14} />
-        tillbaka
-      </a>
+    <div class:list={["toc-doc", showToc && "toc-doc--toc"]}>
+      <article class="article animate-in">
+        <a class="backlink" href="/posts/">
+          <Icon name="ArrowLeft" size={14} />
+          tillbaka
+        </a>
 
-      {
-        entry.data.cover && (
-          <div class="cover">
-            <img src={entry.data.cover.url} alt={entry.data.cover.alt} />
-          </div>
-        )
-      }
-      <h1 class="amh1">{entry.data.title}</h1>
-      <div class="ammeta">{metaLine}</div>
-      <div data-sticky-anchor aria-hidden="true"></div>
+        {
+          entry.data.cover && (
+            <div class="cover">
+              <img src={entry.data.cover.url} alt={entry.data.cover.alt} />
+            </div>
+          )
+        }
+        <h1 class="amh1">{entry.data.title}</h1>
+        <div class="ammeta">{metaLine}</div>
+        <ArticleToc items={toc} variant="jump" />
+        <div data-sticky-anchor aria-hidden="true"></div>
 
-      <div class="prose">
-        <Content />
-      </div>
-    </article>
+        <div class="prose">
+          <Content />
+        </div>
+      </article>
+
+      <ArticleToc items={toc} variant="panel" title="I det här inlägget" />
+    </div>
   </div>
 
   <script>
     import { initStickyBar } from "../../scripts/stickyBar";
+    import { initToc } from "../../scripts/toc";
     initStickyBar();
+    initToc();
   </script>
 </AppLayout>

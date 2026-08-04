@@ -5,16 +5,13 @@
 // Idempotent + rebindas på astro:page-load (View Transitions), som sajtens
 // övriga script (domainFilter.ts, stickyBar.ts).
 
-import { DESKTOP_MQ } from "./breakpoints";
-
 const TABS = ["bib", "ovs", "faq", "ord"] as const;
 
 // Modul-scope-guard: kort-switcherns "stäng vid klick utanför"-lyssnare binds
 // bara en gång (överlever View Transitions, letar switchern dynamiskt).
 let switchDismissBound = false;
-// Samma mönster för innehållsförteckningens window-lyssnare och för
-// astro:page-load-bindningen — annars staplas de vid varje navigering.
-let tocWindowBound = false;
+// Samma mönster för astro:page-load-bindningen — annars staplas den vid
+// varje navigering.
 let pageLoadBound = false;
 
 function initTabs(root: HTMLElement) {
@@ -399,98 +396,6 @@ function initSwitcher(root: HTMLElement) {
   apply();
 }
 
-// Innehållsförteckning (kort-detalj): markera aktivt avsnitt vid scroll
-// (scroll-spy) och mjuk-scrolla vid klick. Fungerar för både sidopanelen
-// (desktop) och den horisontella hoppa-till-raden (mobil/surfplatta).
-
-// Offset = sticky topbarens faktiska höjd + luft (mäts dynamiskt).
-function tocOffset(root: HTMLElement) {
-  const topbar = root.querySelector<HTMLElement>(".hr-topbar");
-  return (topbar?.offsetHeight ?? 120) + 20;
-}
-
-// Modul-scope: slår upp elementen vid varje anrop, så samma funktionsreferens
-// fungerar även efter att DOM bytts ut vid en View-Transition-swap.
-function tocUpdate() {
-  const root = document.querySelector<HTMLElement>(".hr");
-  if (!root) return;
-  const links = Array.from(
-    root.querySelectorAll<HTMLAnchorElement>("[data-hr-toc-link]"),
-  );
-  if (!links.length) return;
-
-  const ids = [...new Set(links.map((l) => l.dataset.hrTocLink ?? ""))];
-  const targets = ids
-    .map((id) => document.getElementById(id))
-    .filter((el): el is HTMLElement => !!el);
-  if (!targets.length) return;
-
-  const refY = tocOffset(root) + 8;
-  let active = targets[0].id;
-  for (const t of targets) {
-    if (t.getBoundingClientRect().top <= refY) active = t.id;
-  }
-  links.forEach((l) =>
-    l.classList.toggle("is-active", l.dataset.hrTocLink === active),
-  );
-}
-
-function initToc(root: HTMLElement) {
-  const links = Array.from(
-    root.querySelectorAll<HTMLAnchorElement>("[data-hr-toc-link]"),
-  );
-  if (!links.length) return;
-
-  const hasTargets = [...new Set(links.map((l) => l.dataset.hrTocLink ?? ""))]
-    .map((id) => document.getElementById(id))
-    .some((el) => !!el);
-  if (!hasTargets) return;
-
-  const main = document.querySelector<HTMLElement>("main");
-
-  const setActive = (id: string) => {
-    links.forEach((l) => l.classList.toggle("is-active", l.dataset.hrTocLink === id));
-  };
-
-  // Element-lokala lyssnare: dör med elementen vid nästa swap.
-  links.forEach((l) =>
-    l.addEventListener("click", (e) => {
-      const id = l.dataset.hrTocLink ?? "";
-      const el = document.getElementById(id);
-      if (!el) return;
-      e.preventDefault();
-      // Instant scroll (fungerar överallt); CSS scroll-behavior på containern
-      // ger mjuk animation i browsers som stödjer det.
-      const off = tocOffset(root);
-      // Under lg scrollar hela sidan på window — main är ingen scroll-container.
-      if (window.matchMedia(DESKTOP_MQ).matches && main) {
-        const top =
-          el.getBoundingClientRect().top -
-          main.getBoundingClientRect().top +
-          main.scrollTop -
-          off;
-        main.scrollTo({ top: Math.max(0, top) });
-      } else {
-        const top = el.getBoundingClientRect().top + window.scrollY - off;
-        window.scrollTo({ top: Math.max(0, top) });
-      }
-      // Samma skäl som vid flikbytet: `null` här får Astros onPopState att
-      // returnera direkt (router.js: `if (ev.state === null) return`).
-      history.replaceState(history.state, "", `#${id}`);
-      setActive(id);
-    }),
-  );
-
-  main?.addEventListener("scroll", tocUpdate, { passive: true });
-  // Window-lyssnarna registreras en gång per sidsession.
-  if (!tocWindowBound) {
-    tocWindowBound = true;
-    window.addEventListener("scroll", tocUpdate, { passive: true });
-    window.addEventListener("resize", tocUpdate, { passive: true });
-  }
-  tocUpdate();
-}
-
 function bindHrGuide() {
   const root = document.querySelector<HTMLElement>(".hr");
   if (!root || root.dataset.hrBound === "1") return;
@@ -501,7 +406,6 @@ function bindHrGuide() {
   initAccordions(root);
   initGlossary(root);
   initSwitcher(root);
-  initToc(root);
 }
 
 export function initHrGuide() {

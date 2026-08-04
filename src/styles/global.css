@@ -2244,3 +2244,138 @@ html[data-astro-transition-fallback] * {
     padding-top: clamp(1.5rem, 4vw, 2.5rem);
 }
 
+/* ------------------------------------------------------------
+   INNEHÅLLSFÖRTECKNING (components/site/ArticleToc.astro)
+   Delad av kort-detaljvyn, Learn Hub-artiklar och inlägg.
+   Två varianter av samma poster: en horisontell ”hoppa till”-rad
+   som gäller upp till 1200px, och en sticky sidopanel därifrån —
+   först då finns tom yta bredvid textspalten att lägga den i.
+   ------------------------------------------------------------ */
+.toc-jump__label {
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--c-text-muted);
+    margin: 20px 0 8px;
+}
+.toc-jump {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin: 0 0 6px;
+    padding-bottom: 4px;
+}
+.toc-jump::-webkit-scrollbar {
+    display: none;
+}
+/* Uttoning i högerkanten: signalerar att raden fortsätter utanför skärmen. */
+@media (max-width: 767px) {
+    .toc-jump {
+        mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+    }
+}
+.toc-jump__link {
+    flex: none;
+    padding: 9px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--c-border);
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.02em;
+    color: var(--c-text-muted);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+.toc-jump__link:hover {
+    color: var(--c-text);
+    border-color: var(--c-accent);
+}
+.toc-jump__link.is-active {
+    color: var(--c-accent-contrast);
+    background: var(--c-accent);
+    border-color: var(--c-accent);
+}
+
+.toc {
+    display: none;
+}
+
+/* Läsvyns dokumentlayout (artikel + inlägg). Under 1200px är wrappern ett
+   vanligt block, så textspalten behåller exakt sin nuvarande bredd. */
+.toc-doc {
+    min-width: 0;
+}
+/* Ankarhopp direkt från adressfältet ska inte hamna under sticky-baren.
+   Klick i förteckningen scrollar däremot programmatiskt (scripts/toc.ts). */
+.toc-doc .prose :is(h2, h3)[id] {
+    scroll-margin-top: 80px;
+}
+
+@media (min-width: 1200px) {
+    .toc-doc--toc {
+        max-width: 62rem;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 13rem;
+        gap: 2.75rem;
+        /* Ingen align-items:start — TOC-kolumnen sträcks till artikelns höjd
+           så den sticky panelen kan följa med hela vägen ner. */
+    }
+    .toc-doc--toc > .article {
+        min-width: 0;
+        /* .article har `margin: 0 auto` för att centreras i läsvyn. Auto-
+           marginaler stänger av grid-itemets stretch — artikeln sattes då efter
+           sitt eget innehåll (632 px) i stället för kolumnen (574 px vid 1200 px)
+           och lade sig delvis över TOC-kolumnen. Nollade marginaler → artikeln
+           följer kolumnbredden. */
+        margin-inline: 0;
+    }
+    .toc-jump,
+    .toc-jump__label {
+        display: none;
+    }
+    .toc {
+        display: block;
+    }
+    .toc__inner {
+        position: sticky;
+        top: 120px;
+    }
+    .toc__title {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--c-text-muted);
+        margin: 0 0 12px;
+        padding-left: 14px;
+    }
+    .toc nav {
+        display: grid;
+        gap: 1px;
+        border-left: 1px solid var(--c-border);
+    }
+    .toc__link {
+        padding: 6px 0 6px 14px;
+        margin-left: -1px;
+        border-left: 2px solid transparent;
+        font-size: 12.5px;
+        line-height: 1.35;
+        color: var(--c-text-muted);
+        text-decoration: none;
+        transition: color 0.18s ease, border-color 0.18s ease;
+    }
+    .toc__link:hover {
+        color: var(--c-text);
+    }
+    .toc__link.is-active {
+        color: var(--c-accent);
+        border-left-color: var(--c-accent);
+        font-weight: 600;
+    }
+}
+

@@ -13,7 +13,7 @@ const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
 
 <AppLayout title={site.meta.title} description={site.meta.description}>
   <div class="animate-in mx-auto max-w-3xl p-6 lg:px-10 lg:py-12">
-    <!-- Hero: leder med roll + positionering, inte namnet.
+    <!-- Hero: leder med rollen, inte namnet (redundant givet lettermärke + URL).
          Profilbild, roll och certifikat hör ihop visuellt — certifikaten är
          ramlösa så de läses som meriter under rollen, inte som chips. -->
     <section class="mb-11">
@@ -31,11 +31,17 @@ const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
           />
         </div>
         <div class="min-w-0 pt-0.5">
-          <p class="font-mono text-[11px] tracking-[0.2em] text-primary uppercase">
+          {/* Rollen är sidans h1 — mb-0 nollar h1:ns basmarginal från @layer base,
+              och text-foreground i stället för accent: accentfärg på stor fet
+              text blir skrikig och tappar kontrast. */}
+          <h1
+            class="mb-0 text-[1.5rem] leading-tight font-extrabold tracking-tight text-foreground"
+          >
             {site.hero.role}
-          </p>
-          {/* Certifikat: leverantörslogga (Iconify) + officiellt namn. */}
-          <ul class="mt-2.5 flex flex-wrap gap-x-5 gap-y-1.5">
+          </h1>
+          {/* Certifikat: leverantörslogga (Iconify) + officiellt namn.
+              Mindre och dämpade så de läses som meriter under rollen. */}
+          <ul class="mt-2 flex flex-wrap gap-x-5 gap-y-1.5">
             {
               site.certs.map((c) => (
                 <li class="inline-flex items-center gap-1.5">
@@ -50,21 +56,14 @@ const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
         </div>
       </div>
 
-      <!-- Tagline + HR-ingång sitter i samma rad på breda skärmar: rubriken bär
-           vänsterkanten, guiden blir en tydlig sidoingång till höger. Ligger de
-           under varandra med högerställd ruta uppstår ett tomrum mitt på sidan. -->
-      <div class="mt-7 grid gap-6 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-        <!-- Taglinen är sidans h1 — mb-0 nollar h1:ns marginal från @layer base. -->
-        <h1
-          class="mb-0 max-w-[26ch] text-2xl leading-snug font-bold tracking-tight text-balance text-foreground"
-        >
-          {site.hero.tagline}
-        </h1>
-
-        <!-- Ingång till Teknik-guiden (HR-fliken) — riktad till rekryterare. -->
+      <!-- Ingång till Teknik-guiden (HR-fliken) — riktad till rekryterare.
+           Indraget till hero-textens vänsterkant (bildens 4rem + gap 1rem) och
+           hållen smal, så den läser som en sidoingång och inte som ett block i
+           huvudflödet. -->
+      <div class="mt-6 sm:ml-20">
         <a
           href="/for-hr/"
-          class="group flex items-center gap-3 rounded-xl border border-border bg-muted/10 p-3.5 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-muted/20 sm:w-[21rem] lg:p-4"
+          class="group flex items-center gap-3 rounded-xl border border-border bg-muted/10 p-3.5 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-muted/20 sm:w-[23rem] lg:p-4"
         >
           <span
             class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/12 text-primary"

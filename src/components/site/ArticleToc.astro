@@ -1,0 +1,57 @@
+---
+// Innehållsförteckning för långa sidor. Två varianter av samma poster:
+// ”hoppa till”-raden under titeln (mobil/surfplatta) och den sticky
+// sidopanelen med scroll-spy (från 1200px, då det finns plats bredvid
+// textspalten). Stilarna ligger i global.css (.toc-*), logiken i
+// scripts/toc.ts — sidan som använder komponenten måste anropa initToc().
+import { TOC_MIN_ITEMS } from "../../scripts/toc";
+
+interface Props {
+  items: { id: string; label: string }[];
+  title?: string;
+  // Dokumentlayouter placerar varianterna på olika ställen i DOM (raden inuti
+  // artikeln, panelen som egen grid-kolumn) och renderar därför komponenten
+  // två gånger. "both" passar när de kan stå bredvid varandra.
+  variant?: "both" | "jump" | "panel";
+}
+
+const { items, title = "Innehåll", variant = "both" } = Astro.props;
+
+// En innehållsförteckning för två rubriker är brus — rendera inget alls.
+const show = items.length >= TOC_MIN_ITEMS;
+const jump = show && variant !== "panel";
+const panel = show && variant !== "jump";
+---
+
+{
+  jump && (
+    <>
+      {/* Etiketten behövs — utan den läses pillerraden som ämnestaggar. */}
+      <p class="toc-jump__label">Hoppa till</p>
+      <nav class="toc-jump" data-toc aria-label="Hoppa till avsnitt">
+        {items.map((item) => (
+          <a class="toc-jump__link" href={`#${item.id}`} data-toc-link={item.id}>
+            {item.label}
+          </a>
+        ))}
+      </nav>
+    </>
+  )
+}
+
+{
+  panel && (
+    <aside class="toc" aria-label={title}>
+      <div class="toc__inner">
+        <p class="toc__title">{title}</p>
+        <nav data-toc>
+          {items.map((item) => (
+            <a class="toc__link" href={`#${item.id}`} data-toc-link={item.id}>
+              {item.label}
+            </a>
+          ))}
+        </nav>
+      </div>
+    </aside>
+  )
+}

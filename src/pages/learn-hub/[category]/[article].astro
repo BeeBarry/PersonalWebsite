@@ -3,9 +3,11 @@ import { getCollection, render } from "astro:content";
 import AppLayout from "../../../layouts/AppLayout.astro";
 import { categories } from "../../../data/categories";
 import ZoomableImage from "../../../components/ZoomableImage.astro";
+import ArticleToc from "../../../components/site/ArticleToc.astro";
 import Icon from "../../../components/site/Icon.astro";
 import StickyBar from "../../../components/site/StickyBar.astro";
 import { showEntry } from "../../../utils/content";
+import { TOC_MIN_ITEMS } from "../../../scripts/toc";
 
 export async function getStaticPaths() {
   const all = await getCollection("learn", showEntry);
@@ -16,8 +18,15 @@ export async function getStaticPaths() {
 }
 
 const { entry } = Astro.props;
-const { Content } = await render(entry);
+const { Content, headings } = await render(entry);
 const cat = categories.find((c) => c.slug === entry.data.category);
+
+// Bara h2 — h3 och nedåt gör förteckningen längre än den är användbar.
+// Astro sätter redan id på rubrikerna, så slug:en duger som ankare.
+const toc = headings
+  .filter((h) => h.depth === 2)
+  .map((h) => ({ id: h.slug, label: h.text }));
+const showToc = toc.length >= TOC_MIN_ITEMS;
 ---
 
 <AppLayout
@@ -33,24 +42,31 @@ const cat = categories.find((c) => c.slug === entry.data.category);
   />
 
   <div class="site reader">
-    <article class="article animate-in">
-      <a class="backlink" href={`/learn-hub/${entry.data.category}/`}>
-        <Icon name="ArrowLeft" size={14} />
-        {cat?.title ?? "Learn Hub"}
-      </a>
+    <div class:list={["toc-doc", showToc && "toc-doc--toc"]}>
+      <article class="article animate-in">
+        <a class="backlink" href={`/learn-hub/${entry.data.category}/`}>
+          <Icon name="ArrowLeft" size={14} />
+          {cat?.title ?? "Learn Hub"}
+        </a>
 
-      <h1 class="amh1">{entry.data.title}</h1>
-      <div class="ammeta">{entry.data.description}</div>
-      <div data-sticky-anchor aria-hidden="true"></div>
+        <h1 class="amh1">{entry.data.title}</h1>
+        <div class="ammeta">{entry.data.description}</div>
+        <ArticleToc items={toc} variant="jump" />
+        <div data-sticky-anchor aria-hidden="true"></div>
 
-      <div class="prose">
-        <Content components={{ ZoomableImage }} />
-      </div>
-    </article>
+        <div class="prose">
+          <Content components={{ ZoomableImage }} />
+        </div>
+      </article>
+
+      <ArticleToc items={toc} variant="panel" title="I den här artikeln" />
+    </div>
   </div>
 
   <script>
     import { initStickyBar } from "../../../scripts/stickyBar";
+    import { initToc } from "../../../scripts/toc";
     initStickyBar();
+    initToc();
   </script>
 </AppLayout>

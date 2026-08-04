@@ -6,7 +6,8 @@ import type { DomainSlug } from "./domains";
 export interface Category {
     title: string;
     description: string;
-    iconUrl: string;
+    /** Iconify-namn från lokalt installerat paket (bundlas, ingen runtime-fetch). */
+    icon: string;
     slug: string;
     domain: DomainSlug;
     isVisible?: boolean;
@@ -16,7 +17,7 @@ export const categories: Category[] = [
     {
         title: "Docker",
         description: "Containerisering från grunden till avancerad nivå.",
-        iconUrl: "https://api.iconify.design/skill-icons/docker.svg",
+        icon: "skill-icons:docker",
         slug: "docker",
         domain: "cloud",
         isVisible: true,
@@ -24,7 +25,7 @@ export const categories: Category[] = [
     {
         title: "Kubernetes",
         description: "Orkestrera och hantera containrar i produktion.",
-        iconUrl: "https://api.iconify.design/skill-icons/kubernetes.svg",
+        icon: "skill-icons:kubernetes",
         slug: "kubernetes",
         domain: "cloud",
         isVisible: true,
@@ -32,7 +33,7 @@ export const categories: Category[] = [
     {
         title: "Terraform",
         description: "Infrastructure as Code med Terraform.",
-        iconUrl: "https://api.iconify.design/skill-icons/terraform-light.svg",
+        icon: "skill-icons:terraform-light",
         slug: "terraform",
         domain: "cloud",
         isVisible: true,
@@ -40,7 +41,7 @@ export const categories: Category[] = [
     {
         title: "Azure",
         description: "Molntjänster och cloud-native utveckling.",
-        iconUrl: "https://api.iconify.design/skill-icons/azure-light.svg",
+        icon: "skill-icons:azure-light",
         slug: "azure",
         domain: "cloud",
         isVisible: true,
@@ -48,7 +49,7 @@ export const categories: Category[] = [
     {
         title: "Cybersecurity",
         description: "Säkerhet i moderna applikationer.",
-        iconUrl: "https://api.iconify.design/material-symbols:security.svg",
+        icon: "mdi:shield-lock-outline",
         slug: "cybersecurity",
         domain: "web",
         isVisible: true,

@@ -59,7 +59,16 @@ const learn = defineCollection({
     description: z.string(),
     category: z.enum(["docker", "kubernetes", "terraform", "azure", "cybersecurity"]),
     image: z.object({ url: z.string(), alt: z.string() }).optional(),
+    // Serienumreringen är tvånivåig: DEL.STEG (1.0, 1.1, 2.0 …). `part` är delen
+    // artikeln hör till, `order` dess plats i delen och är 1-baserad — visat
+    // nummer blir `${part}.${order - 1}`, så delens FÖRSTA artikel heter X.0.
+    // Default part: 1 gör att befintliga artiklar med bara `order` fortsätter
+    // validera och hamnar i del 1.
+    part: z.number().default(1),
     order: z.number(),
+    // Namn på delen, t.ex. ”Grunderna”, visas som rubrik över gruppen.
+    // Räcker att sätta på en artikel i delen.
+    partTitle: z.string().optional(),
     date: z.string(),
     tags: z.array(z.string()).optional(),
     draft: draftField,

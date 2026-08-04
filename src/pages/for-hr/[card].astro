@@ -6,7 +6,9 @@
 // Utkast (utan `what`) visar ett "på gång"-block.
 import AppLayout from "../../layouts/AppLayout.astro";
 import HrTabBar from "../../components/hr/HrTabBar.astro";
+import ArticleToc from "../../components/site/ArticleToc.astro";
 import Icon from "../../components/site/Icon.astro";
+import { TOC_MIN_ITEMS } from "../../scripts/toc";
 import site from "../../config/site";
 import { hrCards, isDraft, doneCards, faqForCard, typo } from "../../data/hr";
 import "../../styles/hr.css";
@@ -40,8 +42,10 @@ const toc = [
   { id: "fragor", label: "Frågor att ställa", show: !!card.ask?.length },
   { id: "niva", label: "Junior eller senior?", show: !!(card.junior || card.senior) },
   { id: "faq", label: "Vanliga frågor", show: faqs.length > 0 },
-].filter((t) => t.show);
-const showToc = !draft && toc.length >= 3;
+]
+  .filter((t) => t.show)
+  .map(({ id, label }) => ({ id, label }));
+const showToc = !draft && toc.length >= TOC_MIN_ITEMS;
 ---
 
 <AppLayout title={pageTitle} description={card.one} image="/og-hr.png">
@@ -91,17 +95,7 @@ const showToc = !draft && toc.length >= 3;
               <p class="hrd__meta">{card.typ} · {card.dom}</p>
               <h1 class="hrd__title">{card.title}</h1>
 
-              {showToc && <p class="hrd-jump__label">Hoppa till</p>}
-
-              {showToc && (
-                <nav class="hrd-jump" data-hr-toc aria-label="Hoppa till avsnitt">
-                  {toc.map((t) => (
-                    <a class="hrd-jump__link" href={`#${t.id}`} data-hr-toc-link={t.id}>
-                      {t.label}
-                    </a>
-                  ))}
-                </nav>
-              )}
+              {showToc && <ArticleToc items={toc} variant="jump" />}
 
               <p class="hrd__lead" id="oversikt">{typo(card.what)}</p>
 
@@ -222,18 +216,7 @@ const showToc = !draft && toc.length >= 3;
             </article>
 
             {showToc && (
-              <aside class="hrd-toc" aria-label="Innehåll">
-                <div class="hrd-toc__inner">
-                  <p class="hrd-toc__title">I det här kortet</p>
-                  <nav data-hr-toc>
-                    {toc.map((t) => (
-                      <a class="hrd-toc__link" href={`#${t.id}`} data-hr-toc-link={t.id}>
-                        {t.label}
-                      </a>
-                    ))}
-                  </nav>
-                </div>
-              </aside>
+              <ArticleToc items={toc} variant="panel" title="I det här kortet" />
             )}
           </div>
         )
@@ -243,6 +226,8 @@ const showToc = !draft && toc.length >= 3;
 
   <script>
     import { initHrGuide } from "../../scripts/hrGuide";
+    import { initToc } from "../../scripts/toc";
     initHrGuide();
+    initToc();
   </script>
 </AppLayout>

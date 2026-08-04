@@ -19,7 +19,7 @@ export interface Domain {
     bullets: string[];
     /**
      * Iconify-namn för kortets ikon (t.ex. "mdi:cloud-outline"). Utelämnas →
-     * ingen ikon renderas. Fyll i när ikonbiblioteket är valt.
+     * ingen ikon renderas.
      */
     icon?: string;
 }
@@ -30,6 +30,7 @@ export const domains: Domain[] = [
         title: "Fullstack & Web",
         short: "Fullstack",
         description: "Fullstack-appar, sajter och utvecklarverktyg.",
+        icon: "mdi:application-brackets-outline",
         bullets: [
             "Astro, React och Blazor i frontend",
             "API:er i C#/.NET och Node mot SQL",
@@ -41,6 +42,7 @@ export const domains: Domain[] = [
         title: "Cloud & DevOps",
         short: "Cloud",
         description: "Skalbar infrastruktur, containrar, pipelines och drift.",
+        icon: "mdi:cloud-outline",
         bullets: [
             "Docker och Kubernetes i drift",
             "Infrastruktur som kod med Terraform",
@@ -52,6 +54,7 @@ export const domains: Domain[] = [
         title: "IoT & Embedded",
         short: "IoT",
         description: "Hårdvarunära kod, CoAP/LTE-M och enheter ute i fält.",
+        icon: "mdi:access-point",
         bullets: [
             "CoAP och MQTT över LTE-M",
             "Sensordata från fält till moln",

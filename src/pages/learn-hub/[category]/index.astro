@@ -1,9 +1,8 @@
 ---
-import { getCollection } from "astro:content";
+import { getCollection, type CollectionEntry } from "astro:content";
 import AppLayout from "../../../layouts/AppLayout.astro";
 import { categories } from "../../../data/categories";
 import { showEntry } from "../../../utils/content";
-import ContentRow from "../../../components/site/ContentRow.astro";
 import { Icon } from "astro-icon/components";
 
 // Bara kategorier som faktiskt har minst en publicerad artikel får en sida —
@@ -22,12 +21,31 @@ export async function getStaticPaths() {
 const { category } = Astro.params;
 const { categoryTitle } = Astro.props;
 
-const articles = (
-  await getCollection(
-    "learn",
-    (e) => e.data.category === category && showEntry(e),
-  )
-).sort((a, b) => a.data.order - b.data.order);
+const articles = await getCollection(
+  "learn",
+  (e) => e.data.category === category && showEntry(e),
+);
+
+// Serien grupperas per del och sorteras del för del, steg för steg.
+// Se content.config.ts: `order` är 1-baserad inom delen, visat nummer part.(order-1).
+const byPart = new Map<number, CollectionEntry<"learn">[]>();
+for (const article of articles) {
+  const list = byPart.get(article.data.part) ?? [];
+  list.push(article);
+  byPart.set(article.data.part, list);
+}
+
+const parts = [...byPart.entries()]
+  .sort(([a], [b]) => a - b)
+  .map(([part, items]) => ({
+    part,
+    // Delens namn behöver bara sättas på en av artiklarna i delen.
+    partTitle: items.find((i) => i.data.partTitle)?.data.partTitle,
+    items: items.sort((a, b) => a.data.order - b.data.order),
+  }));
+
+// En enda namnlös del är inte en indelning — då är rubriken bara brus.
+const showPartHeadings = parts.length > 1 || parts.some((p) => p.partTitle);
 ---
 
 <AppLayout
@@ -54,18 +72,184 @@ const articles = (
       <h1 class="text-xl font-bold tracking-tight text-foreground">
         {categoryTitle}
       </h1>
+      <p class="mt-2 text-[13px] text-muted-foreground">
+        Artiklarna hänger ihop och bygger på varandra — läs dem i ordning.
+      </p>
     </header>
 
-    <div>
-      {
-        articles.map((a) => (
-          <ContentRow
-            href={`/learn-hub/${category}/${a.id}/`}
-            title={a.data.title}
-            description={a.data.description}
-          />
-        ))
-      }
-    </div>
+    {
+      parts.map(({ part, partTitle, items }) => (
+        <section class="serie-del">
+          {showPartHeadings && (
+            <h2 class="serie-del-rubrik">
+              Del {part}
+              {partTitle && <span class="serie-del-namn">{partTitle}</span>}
+            </h2>
+          )}
+
+          <ol class="serie">
+            {items.map((a) => (
+              <li class="serie-steg">
+                <a class="serie-lank" href={`/learn-hub/${category}/${a.id}/`}>
+                  <span class="serie-rail">
+                    <span class="serie-nr">{`${part}.${a.data.order - 1}`}</span>
+                  </span>
+                  <span class="serie-kort">
+                    <span class="serie-titel">{a.data.title}</span>
+                    <span class="serie-beskrivning">{a.data.description}</span>
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ))
+    }
   </div>
 </AppLayout>
+
+<style>
+  .serie-del + .serie-del {
+    margin-top: 1.75rem;
+  }
+
+  .serie-del-rubrik {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin-bottom: 0.625rem;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--c-text-muted);
+    opacity: 0.75;
+  }
+
+  .serie-del-namn {
+    color: var(--c-accent);
+  }
+  .serie-del-namn::before {
+    content: "·";
+    margin-right: 0.5rem;
+    color: var(--c-border);
+  }
+
+  .serie {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Rail-bredden styr både nummerkolumnen och var stegen-linjen hamnar. */
+  .serie-steg {
+    --rail: 2.75rem;
+    /* Nodens (numrets) mittpunkt räknat från stegets överkant: steg-padding
+       + kortets padding-top + halva radhöjden. */
+    --nod: 1.8rem;
+    /* Halva luckan linjen lämnar runt numret. */
+    --nod-luft: 0.65rem;
+    position: relative;
+    padding-block: 0.3125rem;
+  }
+
+  /* Stegen ritas som två segment per steg — ett upp mot numret, ett ner mot
+     nästa. Segmenten går kant i kant så linjen fortsätter genom mellanrummen,
+     och genom att kapa i ändarna slipper vi mala över numret med en bakgrund
+     (som hade tvingat komponenten att känna till layoutens bakgrundsfärg).
+     Med ett enda steg faller båda segmenten bort och stegen syns inte alls. */
+  .serie-steg::before,
+  .serie-steg::after {
+    content: "";
+    position: absolute;
+    left: calc(var(--rail) / 2);
+    width: 1px;
+    background: var(--c-border);
+  }
+  .serie-steg::before {
+    top: 0;
+    height: calc(var(--nod) - var(--nod-luft));
+  }
+  .serie-steg::after {
+    top: calc(var(--nod) + var(--nod-luft));
+    bottom: 0;
+  }
+  .serie-steg:first-child::before,
+  .serie-steg:last-child::after {
+    content: none;
+  }
+
+  .serie-lank {
+    display: grid;
+    grid-template-columns: var(--rail) minmax(0, 1fr);
+    align-items: start;
+    text-decoration: none;
+  }
+
+  /* Samma padding-top som kortet + line-height som ger samma radhöjd som
+     titeln → numret hamnar på titelns optiska mitt. */
+  .serie-rail {
+    display: flex;
+    justify-content: center;
+    padding-top: 0.875rem;
+  }
+
+  .serie-nr {
+    position: relative;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    line-height: 1.75;
+    letter-spacing: 0.04em;
+    font-variant-numeric: tabular-nums;
+    color: var(--c-text-muted);
+    transition: color 0.2s ease;
+  }
+
+  .serie-kort {
+    display: block;
+    padding: 0.875rem 1rem;
+    border: 1px solid var(--c-border);
+    border-radius: 13px;
+    background: var(--c-surface);
+    transition:
+      border-color 0.2s ease,
+      background-color 0.2s ease;
+  }
+
+  .serie-titel {
+    display: block;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--c-text);
+    transition: color 0.2s ease;
+  }
+
+  .serie-beskrivning {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--c-text-muted);
+  }
+
+  .serie-lank:hover .serie-kort,
+  .serie-lank:focus-visible .serie-kort {
+    border-color: color-mix(in oklab, var(--c-accent) 40%, transparent);
+    background: var(--c-muted);
+  }
+  .serie-lank:hover .serie-nr,
+  .serie-lank:hover .serie-titel,
+  .serie-lank:focus-visible .serie-nr,
+  .serie-lank:focus-visible .serie-titel {
+    color: var(--c-accent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .serie-nr,
+    .serie-kort,
+    .serie-titel {
+      transition: none;
+    }
+  }
+</style>
