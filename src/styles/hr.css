@@ -24,11 +24,11 @@
 /* Sidhuvud och innehållskropp delar padding; .hr-nav mellan dem går kant i kant
    så dess underkant läser som en avdelare över hela panelen. */
 .hr-head { padding: 1.5rem 1.5rem 1.25rem; }
-.hr-body { padding: 1.25rem 1.5rem 1.5rem; }
+.hr-body { padding: 1.5rem 1.5rem 2rem; }
 .hr-inner { padding: 1.5rem; }
 @media (min-width: 768px) {
   .hr-head { padding: 2.25rem 2.75rem 1.5rem; }
-  .hr-body { padding: 1.75rem 2.75rem 3rem; }
+  .hr-body { padding: 2.25rem 3.25rem 3.5rem; }
   .hr-inner { padding: 2.25rem 2.75rem 3rem; }
 }
 
@@ -375,7 +375,7 @@
 
 /* Introrad per panel: sidhuvudet står oförändrat på alla fyra flikar, så det är
    här besökaren får veta vad just den här fliken gör. */
-.hr-panel__head { margin: 0 0 18px; }
+.hr-panel__head { margin: 0 0 26px; }
 .hr-panel__title {
   font-weight: 700;
   font-size: 18px;
@@ -451,8 +451,8 @@
 /* ---- Chips (typ/kategori) ------------------------------------------------- */
 .hr-chips {
   display: flex;
-  gap: 6px;
-  margin: 14px 0 0;
+  gap: 7px;
+  margin: 18px 0 0;
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -511,7 +511,9 @@
    dem tätare än ett grid (som hade lämnat luckor efter den kortaste gruppen).
    break-inside håller ihop en grupp med sina kort. Halverar scrollsträckan och
    ger överblick direkt — Frontend hamnar bredvid Backend i stället för under. */
-.hr-groups { margin-top: 4px; }
+/* 4px lämnade filterraden och första gruppen hopklistrade — det var det
+   som gjorde biblioteket trångt. Här börjar en ny nivå och den behöver synas. */
+.hr-groups { margin-top: 26px; }
 @media (min-width: 900px) {
   .hr-groups {
     columns: 2;
@@ -555,7 +557,7 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: 6px;
-  margin-top: 9px;
+  margin-top: 12px;
 }
 .hrcard {
   display: block;
@@ -837,6 +839,11 @@
   color: var(--c-text-secondary);
   margin: 6px 0 0;
 }
+/* Kapad bredd: dragspelet sträckte sig över hela panelen (~1130px) medan
+   rubrikens ingress bröt vid ~600. Det läste som en tabell utan ram i stället
+   för som ett innehåll som hör till rubriken ovanför. */
+[data-hr-translate] { max-width: 54rem; }
+
 @media (min-width: 768px) {
   .hr-tr__colhead {
     display: grid;
@@ -861,21 +868,20 @@
   .hr-tr__eyebrow { display: none; }
   .hr-tr__means { margin: 0; font-size: 13px; }
 }
+/* Staplad etikett, inte en egen kolumn: en label-kolumn gav en tredje
+   vänsterkant i det utfällda innehållet och gjorde raden svårläst. */
 .hr-tr__row {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  margin-top: 6px;
+  display: block;
+  margin-top: 10px;
 }
 .hr-tr__label {
-  flex: none;
-  width: 72px;
+  display: block;
   font-family: var(--font-mono);
   font-size: 9.5px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--c-text-muted);
-  margin-top: 3px;
+  margin: 0 0 5px;
 }
 .hr-tr__text { font-size: 13px; line-height: 1.55; color: var(--c-text-secondary); margin: 0; }
 .hr-tr__watch {
@@ -893,9 +899,7 @@
 .hr-tr__watch p { font-size: 12px; line-height: 1.5; color: var(--c-text-secondary); margin: 0 0 12px; }
 .hr-tr__open { margin-top: 14px; }
 @media (min-width: 768px) {
-  .hr-tr__label { width: 86px; }
   .hr-tr__watch p { font-size: 12.5px; }
-  .hr-acc__body--tr { max-width: 88ch; }
 }
 
 /* FAQ-specifikt */
@@ -978,7 +982,7 @@
   transition: color 0.18s ease, border-color 0.18s ease;
 }
 .hr-gloss__sort:hover { color: var(--c-text); border-color: var(--c-accent); }
-.hr-gloss__list { margin-top: 18px; }
+.hr-gloss__list { margin-top: 26px; }
 .hr-gloss__letter {
   font-family: var(--font-mono);
   font-weight: 700;
@@ -1025,23 +1029,38 @@
    Bokstavsrubrikerna spänner över båda spalterna (de sätts in av hrGuide.ts
    som syskon till raderna), så varje bokstavsgrupp får en egen ren start. */
 @media (min-width: 1000px) {
-  /* columns, inte grid. Med grid + helbred bokstavsrubrik får varje bokstav en
+  /* columns, inte grid: med grid + helbred bokstavsrubrik fick varje bokstav en
      egen rad, och eftersom nästan varje bokstav bara rymmer en term stod
-     högerspalten tom. Flerspaltsflödet fyller i stället spalt 1 uppifrån och
-     ner och fortsätter i spalt 2 — den klassiska uppslagsboksättningen. */
+     högerspalten tom. Flerspaltsflödet fyller spalt 1 uppifrån och ner och
+     fortsätter i spalt 2 — klassisk uppslagsboksättning. */
   .hr-gloss__list {
     columns: 2;
-    column-gap: 40px;
+    column-gap: 44px;
   }
-  /* En bokstavsrubrik får inte bli kvar i botten av en spalt medan dess första
-     term hamnar överst i nästa. */
-  .hr-gloss__letter { break-after: avoid; }
+
+  /* Bokstavsrubrikerna döljs i tvåspaltsläge. Två skäl: (1) de kan inte
+     nollställas för den första posten i spalt 2 — CSS kan bara träffa den
+     första i FLÖDET — vilket gav olika starthöjd i spalterna och läste som
+     ett fel. (2) Med sexton termer, sökfält och kategorifilter tillför de
+     ingenting; ordningen är alfabetisk ändå. Under 1000px, där listan är en
+     enda lång spalt, syns de som förut. */
+  .hr-gloss__letter { display: none; }
+
+  /* Termen ÖVER definitionen, inte bredvid. Sida vid sida i en halvbred spalt
+     gav en smal, raggig definitionskolumn med ojämna radlängder. */
   .hr-gloss__row {
     break-inside: avoid;
-    grid-template-columns: 104px 1fr;
-    gap: 14px;
+    display: block;
+    padding: 9px 0;
   }
-  .hr-gloss__def { max-width: none; }
+  .hr-gloss__meta {
+    display: flex;
+    align-items: baseline;
+    gap: 9px;
+    margin-bottom: 3px;
+  }
+  .hr-gloss__cat { margin: 0; }
+  .hr-gloss__def { margin: 0; max-width: none; }
 }
 
 /* ============================================================
@@ -1082,9 +1101,9 @@
   .hrd-doc--toc {
     max-width: 58rem;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 11.5rem;
+    grid-template-columns: minmax(0, 1fr) 11rem;
     /* Samma smala panel och breda gap som Learn Hubs .toc-doc--toc. */
-    gap: 5.5rem;
+    gap: 6.5rem;
     /* Ingen align-items:start — TOC-kolumnen sträcks till artikelns höjd så
        den sticky innehållsförteckningen har utrymme att sticka längs hela
        kortet. */

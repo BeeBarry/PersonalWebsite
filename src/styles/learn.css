@@ -92,6 +92,13 @@
    finns för korta flöden (2–3 steg) och faller tillbaka till
    kolumn under 720px.
    ============================================================ */
+/* Container query av samma skäl som i Split: över 1200px tar innehålls-
+   förteckningen 13rem + gap av textspalten, och ett fönstermått hade då sagt
+   "gott om plats" i precis det läge där spalten krympt. */
+.lk-flow {
+    container-type: inline-size;
+}
+
 .lk-flow__track {
     display: flex;
     flex-direction: column;
@@ -139,7 +146,7 @@
 
 /* Horisontell variant. min-width:0 på noderna är nödvändigt — utan den
    vägrar flex-items krympa under sitt innehåll och raden spiller över. */
-@media (min-width: 720px) {
+@container (min-width: 30rem) {
     .lk-flow[data-layout="row"] .lk-flow__track {
         flex-direction: row;
         align-items: stretch;

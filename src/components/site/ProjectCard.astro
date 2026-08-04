@@ -32,10 +32,10 @@ const { href, title, description, stack, image, live, tags } = Astro.props;
       </div>
     )
   }
-  <div class="flex flex-1 flex-col p-4">
+  <div class="flex flex-1 flex-col p-3">
     <div class="flex items-center gap-2">
       <h3
-        class="text-[14px] font-bold text-foreground/90 transition-colors group-hover:text-primary"
+        class="text-[13.5px] font-bold text-foreground/90 transition-colors group-hover:text-primary"
       >
         {title}
       </h3>
@@ -49,14 +49,14 @@ const { href, title, description, stack, image, live, tags } = Astro.props;
     </div>
     {
       description && (
-        <p class="mt-1 line-clamp-2 text-[12.5px] leading-relaxed text-muted-foreground">
+        <p class="mt-1 line-clamp-2 text-[12px] leading-snug text-muted-foreground">
           {description}
         </p>
       )
     }
     {
       stack && (
-        <p class="mt-auto pt-3 font-mono text-[10px] tracking-wide text-muted-foreground/60">
+        <p class="mt-auto pt-2 font-mono text-[9.5px] tracking-wide text-muted-foreground/60">
           {stack}
         </p>
       )
