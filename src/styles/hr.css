@@ -21,9 +21,69 @@
   --hr-soft-line: color-mix(in srgb, var(--c-accent) 34%, transparent);
 }
 /* Innehållet under topbaren (startsidan + kort-sidan delar denna padding). */
+/* Sidhuvud och innehållskropp delar padding; .hr-nav mellan dem går kant i kant
+   så dess underkant läser som en avdelare över hela panelen. */
+.hr-head { padding: 1.5rem 1.5rem 1.25rem; }
+.hr-body { padding: 1.25rem 1.5rem 1.5rem; }
 .hr-inner { padding: 1.5rem; }
 @media (min-width: 768px) {
+  .hr-head { padding: 2.25rem 2.75rem 1.5rem; }
+  .hr-body { padding: 1.75rem 2.75rem 3rem; }
   .hr-inner { padding: 2.25rem 2.75rem 3rem; }
+}
+
+/* ---- Huvudnavigering i innehållsflödet (sticky) -------------------------- */
+/* Överordnad panelernas chips-rader: egen full-bredds rad med underkant,
+   större text och fylld aktiv flik. Sticky mot närmaste scroll-container —
+   <main> på desktop, fönstret under lg — så den står kvar när panelen byts. */
+.hr-nav {
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  display: flex;
+  gap: 2px;
+  padding: 0 1.5rem;
+  background: var(--c-card);
+  border-bottom: 1px solid var(--c-border);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.hr-nav::-webkit-scrollbar { display: none; }
+.hr-nav__tab {
+  flex: none;
+  position: relative;
+  padding: 13px 14px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 13.5px;
+  color: var(--c-text-muted);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.18s ease;
+}
+.hr-nav__tab:hover { color: var(--c-text); }
+/* Understruken aktiv flik i stället för pill: läser som en flikrad (nivå 1),
+   medan panelernas filter är pillformade chips (nivå 2). */
+.hr-nav__tab::after {
+  content: "";
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: transparent;
+  transition: background 0.18s ease;
+}
+.hr-nav__tab.is-active {
+  color: var(--c-text);
+  font-weight: 700;
+}
+.hr-nav__tab.is-active::after { background: var(--c-accent); }
+@media (min-width: 768px) {
+  .hr-nav { padding: 0 2.75rem; gap: 4px; }
+  .hr-nav__tab { padding: 14px 16px; font-size: 14px; }
+  .hr-nav__tab::after { left: 16px; right: 16px; }
 }
 
 /* ---- Persistent topbar (sticky, alltid synlig) --------------------------- */
@@ -302,7 +362,8 @@
 }
 
 /* Flikpaneler (topbaren växlar dem client-side; utan JS visas de staplat). */
-.hr-panel { margin-top: 28px; }
+/* .hr-body ger redan luft under navigeringen — ingen egen toppmarginal här. */
+.hr-panel { margin-top: 0; }
 .hr-panel[hidden] { display: none; }
 .hr-panel + .hr-panel { margin-top: 44px; }
 @media (min-width: 768px) {
@@ -443,7 +504,22 @@
 }
 
 /* ---- Grupper -------------------------------------------------------------- */
-.hr-group { margin-top: 20px; }
+/* Två spalter på breda skärmar: grupperna är olika höga, så CSS-kolumner packar
+   dem tätare än ett grid (som hade lämnat luckor efter den kortaste gruppen).
+   break-inside håller ihop en grupp med sina kort. Halverar scrollsträckan och
+   ger överblick direkt — Frontend hamnar bredvid Backend i stället för under. */
+.hr-groups { margin-top: 4px; }
+@media (min-width: 900px) {
+  .hr-groups {
+    columns: 2;
+    column-gap: 26px;
+  }
+  .hr-group { break-inside: avoid; }
+}
+/* Avstånd via margin-BOTTOM, inte top: i kolumnlayout får bara den allra
+   första gruppen sin top-marginal kollapsad, vilket gjorde att spalt 2
+   startade högre än spalt 1. */
+.hr-group { margin-bottom: 22px; }
 .hr-group[hidden] { display: none; }
 .hr-group__title {
   font-weight: 700;
@@ -457,28 +533,26 @@
   margin: 3px 0 0;
 }
 @media (min-width: 768px) {
-  .hr-group { margin-top: 24px; }
-  .hr-group__title { font-size: 15px; }
+  .hr-group { margin-bottom: 26px; }
+  .hr-group__title { font-size: 14px; }
   .hr-group__sub { font-size: 11.5px; }
 }
 
 /* ---- Bibliotekskort ------------------------------------------------------- */
+/* En kortspalt per grupp — gruppen är själv en av två spalter (.hr-groups). */
 .hr-cardgrid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 12px;
-  margin-top: 13px;
-}
-@media (min-width: 768px) {
-  .hr-cardgrid { grid-template-columns: 1fr 1fr; gap: 14px; }
+  gap: 8px;
+  margin-top: 11px;
 }
 .hrcard {
   display: block;
   text-decoration: none;
   background: var(--c-surface);
   border: 1px solid var(--c-border);
-  border-radius: 14px;
-  padding: 15px 16px;
+  border-radius: 12px;
+  padding: 11px 13px;
   color: var(--c-text);
   transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
 }
@@ -494,11 +568,11 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 9px;
+  margin-bottom: 5px;
 }
 .hrcard__meta {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 9px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--c-text-muted);
@@ -520,25 +594,27 @@
   color: var(--c-text-muted);
   transition: color 0.18s ease, transform 0.18s ease;
 }
+/* Korttiteln ska ligga under panelrubriken i hierarkin — 17 px konkurrerade
+   med h2:an ovanför. */
 .hrcard__title {
   font-weight: 700;
-  font-size: 15.5px;
+  font-size: 13.5px;
   letter-spacing: -0.01em;
   color: var(--c-text);
   margin: 0;
   transition: color 0.18s ease;
 }
 .hrcard__one {
-  font-size: 13.5px;
-  line-height: 1.55;
+  font-size: 12px;
+  line-height: 1.5;
   color: var(--c-text-secondary);
-  margin: 7px 0 0;
+  margin: 4px 0 0;
   text-wrap: pretty;
 }
 @media (min-width: 768px) {
-  .hrcard { padding: 18px; }
-  .hrcard__title { font-size: 17px; }
-  .hrcard__one { font-size: 14px; }
+  .hrcard { padding: 12px 14px; }
+  .hrcard__title { font-size: 14px; }
+  .hrcard__one { font-size: 12.5px; }
   .hrcard:hover {
     transform: translateY(-3px);
     border-color: var(--c-accent);

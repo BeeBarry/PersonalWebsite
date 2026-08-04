@@ -1,11 +1,11 @@
 ---
-// Teknik-guiden — HR-fliken. En jämbördig route med fyra inre flikar som styrs
-// av den persistenta topbaren (HrTabBar): Bibliotek, Översätt, FAQ, Ordlista.
-// Topbaren ligger kvar på kort-sidorna också, så navigeringen känns dynamisk
-// utan bakåtknapp. hrGuide.ts sköter flikväxling (+ ?flik=-djuplänk), sök,
-// filter, dragspel och sortering. Korten djuplänkas via /for-hr/[card].
+// Teknik-guiden — HR-fliken. Fyra inre flikar (Slå upp, Annonsen, Frågor,
+// Ordlista) som styrs av den sticky .hr-nav i innehållsflödet — inte av ett
+// sidhuvud, så navigeringen syns där blicken redan är. Kort-sidorna
+// (/for-hr/[card]) använder istället HrTabBar, som bär tillbaka-knapp och
+// kort-switcher. hrGuide.ts sköter flikväxling (+ ?flik=-djuplänk), sök,
+// filter, dragspel och sortering.
 import AppLayout from "../../layouts/AppLayout.astro";
-import HrTabBar from "../../components/hr/HrTabBar.astro";
 import Library from "../../components/hr/Library.astro";
 import Translate from "../../components/hr/Translate.astro";
 import Faq from "../../components/hr/Faq.astro";
@@ -23,19 +23,28 @@ const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
   description="Teknik-guiden — tech-roller, språk och verktyg förklarade för HR och rekryterare. Ingen förkunskap krävs."
   image="/og-hr.png"
 >
-  <div class="hr">
-    <HrTabBar active="bib" />
+  <div class="hr animate-in">
+    {/* Sidhuvudet scrollar bort; navigeringen nedanför gör det inte. */}
+    <header class="hr-head">
+      <p class="hr-eyebrow">För HR &amp; rekryterare</p>
+      <h1 class="hr-title">Teknik-guiden</h1>
+      <p class="hr-lead">
+        Fyra sätt att förstå orden i en tech-annons. Ingen förkunskap krävs.
+      </p>
+    </header>
 
-    <div class="hr-inner animate-in">
-      <header>
-        <p class="hr-eyebrow">För HR &amp; rekryterare</p>
-        <h1 class="hr-title">Teknik-guiden</h1>
-        <p class="hr-lead">
-          Slå upp ett ord ur annonsen, se vad det betyder i praktiken och vilka
-          frågor du kan ställa — utan förkunskaper.
-        </p>
-      </header>
+    {/* Guidens huvudnavigering. Ligger i innehållsflödet direkt under rubriken
+        — inte i sidhuvudet — och är sticky, så den står kvar när panelen under
+        den byts ut. Den fyllda aktiva fliken och den egna raden med underkant
+        gör den visuellt överordnad panelernas chips-rader. */}
+    <nav class="hr-nav" data-hr-tablist aria-label="Guidens delar">
+      <a href="/for-hr/" class="hr-nav__tab is-active" data-hr-tab="bib" aria-current="page">Slå upp</a>
+      <a href="/for-hr/?flik=ovs" class="hr-nav__tab" data-hr-tab="ovs">Annonsen</a>
+      <a href="/for-hr/?flik=faq" class="hr-nav__tab" data-hr-tab="faq">Frågor</a>
+      <a href="/for-hr/?flik=ord" class="hr-nav__tab" data-hr-tab="ord">Ordlista</a>
+    </nav>
 
+    <div class="hr-body">
       <section
         class="hr-panel"
         data-hr-panel="bib"
@@ -45,8 +54,8 @@ const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
         <div class="hr-panel__head">
           <h2 class="hr-panel__title" id="hr-h-bib">Slå upp ett ord</h2>
           <p class="hr-panel__intro">
-            Sök på ett ord ur annonsen eller bläddra bland korten — varje kort
-            förklarar en roll, ett språk eller ett verktyg på en minut.
+            Varje kort förklarar en roll, ett språk eller ett verktyg på en
+            minut.
           </p>
         </div>
         <Library />

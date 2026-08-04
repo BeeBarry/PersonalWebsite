@@ -54,7 +54,13 @@ const filters = [
         <>
           {filters.length > 1 && <DomainChips filters={filters} />}
           <div data-sticky-anchor aria-hidden="true"></div>
-          <div class="grid gap-4 sm:grid-cols-2" data-filter-target>
+          {/* Auto-fill med takbredd i stället för två fasta spalter: korten blir
+              smalare och prydligare i den breda panelen, och antalet spalter
+              följer ytan i stället för brytpunkten. */}
+          <div
+            class="grid gap-4 grid-cols-[repeat(auto-fill,minmax(min(100%,17rem),1fr))]"
+            data-filter-target
+          >
             {allPosts.map((p) => (
               <PostCard
                 href={`/posts/${p.id}/`}
