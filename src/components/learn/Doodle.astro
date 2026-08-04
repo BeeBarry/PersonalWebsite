@@ -1,0 +1,38 @@
+---
+// Doodle — handritad eller teknisk förklaringsbild mellan sektioner.
+//
+// Bär det lärkitet inte kan: metaforen och anatomin. Flow/Stack/Split visar
+// STRUKTUR (leder till, vilar på, i stället för); doodlen visar hur något ser
+// ut och vad det liknar. Se docs/pedagogik/00-referens-monsteranalys.md §5.
+//
+// SVG:n inlinas ur doodles.ts i stället för att laddas som <img>, så att
+// currentColor följer temaväxlaren. En fil, båda lägena.
+//
+// Bildtexten är obligatorisk och ska säga vad man ska SE — inte upprepa
+// brödtexten. Bilden och texten är komplementära: kan bilden strykas utan att
+// något går förlorat ska den strykas.
+import { DOODLES } from "./doodles";
+
+interface Props {
+    /** Nyckel i doodles.ts. */
+    name: keyof typeof DOODLES | string;
+    /** Bildtext under bilden. En mening, gärna poängen i bilden. */
+    caption: string;
+}
+
+const { name, caption } = Astro.props;
+const svg = DOODLES[name];
+
+if (!svg) {
+    throw new Error(
+        `Doodle "${name}" finns inte i doodles.ts. Tillgängliga: ${Object.keys(DOODLES).join(", ")}`,
+    );
+}
+---
+
+{/* div/span, inte figure/figcaption: `.site .prose p` (0,2,1) slår scopade
+    klasser (0,2,0), och figcaption ärver p-reglerna i vissa webbläsare. */}
+<div class="lk-doodle">
+    <div class="lk-doodle__art" set:html={svg} />
+    <span class="lk-doodle__caption">{caption}</span>
+</div>

@@ -66,10 +66,10 @@ Priset för skillnaden är att containrar inte kan köra vilket operativsystem s
 ju kärnan. En Linux-container behöver en Linux-kärna, och det är därför Docker Desktop på macOS och
 Windows i tysthet kör en liten Linux-maskin i bakgrunden.
 
-> **DOODLE** — Två staplar bredvid varandra, lika breda. Vänster märkt "Virtuell maskin": rutor
-> "App", "Bibliotek", "Gäst-OS" (hög ruta), "Hypervisor", "Värd-OS", "Hårdvara". Höger märkt
-> "Container": "App", "Bibliotek", "Docker", "Värd-OS", "Hårdvara" — samma botten, men gäst-OS-rutan
-> saknas helt. Under: "Skillnaden är rutan som inte finns."
+<Doodle
+  name="vm-vs-container"
+  caption="Skillnaden är rutan som inte finns. Containern delar värdens kärna i stället för att bära en egen."
+/>
 
 <Del titel="Imagen" />
 
@@ -102,9 +102,6 @@ en portion.
     { label: "Container", via: "docker run", note: "En körande kopia av ritningen.", accent: true },
   ]}
 />
-
-> **DOODLE** — En låda märkt "Image · searchapi:v2" med tre streckade pilar ut till tre identiska
-> lådor märkta "container". Under: "En ritning. Hur många kopior som helst."
 
 ## Images består av lager
 
@@ -167,9 +164,10 @@ Fullständigt skrivs det `registry/repository:tagg`. Utelämnar du registryt ant
 Docker Hub, och utelämnar du taggen antar den `latest`. Att `latest` inte betyder "senaste stabila"
 tar vi i nästa del.
 
-> **DOODLE** — En hylla märkt "Registry · ghcr.io". På hyllan en märkt sektion "Repository ·
-> searchapi" som innehåller tre lådor märkta `:v1`, `:v2`, `:latest`. Under: "En hylla, en sektion,
-> flera lådor."
+<Doodle
+  name="registry-hyllan"
+  caption="Registryt är hyllan, repositoryt är sektionen, taggarna är lådorna."
+/>
 
 ## Vad Docker Compose är
 
@@ -240,9 +238,10 @@ fil du kan versionshantera, i stället för i ett kommando någon måste komma i
   </div>
 </Split>
 
-> **DOODLE** — En fil märkt `compose.yaml` med tre heldragna pilar ut till tre lådor märkta
-> "webshop", "api", "db", omslutna av en ring märkt "eget nätverk". Under: "En fil. Tre containrar.
-> Ett kommando."
+<Doodle
+  name="compose-en-fil"
+  caption="En fil, tre containrar, ett kommando — och nätverket får du på köpet."
+/>
 
 <Del titel="Öva och förstå" />
 

@@ -49,6 +49,41 @@
 }
 
 /* ============================================================
+   DOODLE — förklaringsbild (components/learn/Doodle.astro)
+   Ingen ram och ingen platta: bilden ska ligga på sidan som en
+   anteckning i marginalen, inte som ett inramat diagram. Ramen
+   är lärkitets språk för STRUKTUR (Flow/Stack) — doodlen bär
+   metaforen och ska läsa annorlunda.
+   ============================================================ */
+.lk-doodle {
+    display: block;
+    margin: 1.9rem 0;
+}
+
+.lk-doodle__art {
+    display: block;
+}
+
+/* SVG:n ritar med currentColor. Något dämpad mot brödtexten, annars
+   konkurrerar linjerna med rubrikerna omkring. */
+.lk-doodle__art svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    color: color-mix(in oklab, var(--c-text) 82%, transparent);
+}
+
+.lk-doodle__caption {
+    display: block;
+    margin-top: 0.55rem;
+    font-family: var(--font-display);
+    font-size: 12.5px;
+    line-height: 1.5;
+    text-align: center;
+    color: var(--c-text-muted);
+}
+
+/* ============================================================
    DEL — avdelare mellan sektionsblock (components/learn/Del.astro)
    Medvetet svagare än allt annat i kitet: den ska ge artikeln en
    makrostruktur utan att konkurrera med h2-raderna omkring sig.

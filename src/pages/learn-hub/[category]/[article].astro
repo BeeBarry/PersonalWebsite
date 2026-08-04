@@ -18,6 +18,7 @@ import Split from "../../../components/learn/Split.astro";
 import Callout from "../../../components/learn/Callout.astro";
 import Check from "../../../components/learn/Check.astro";
 import Del from "../../../components/learn/Del.astro";
+import Doodle from "../../../components/learn/Doodle.astro";
 import "../../../styles/learn.css";
 
 export async function getStaticPaths() {
@@ -98,7 +99,7 @@ const showToc = toc.length >= TOC_MIN_ITEMS;
             import-rader, och komponenterna kan bytas ut på ett ställe. */}
         <div class="prose">
           <Content
-            components={{ ZoomableImage, Flow, Stack, Split, Callout, Check, Del }}
+            components={{ ZoomableImage, Flow, Stack, Split, Callout, Check, Del, Doodle }}
           />
         </div>
 
