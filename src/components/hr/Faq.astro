@@ -9,7 +9,10 @@ import { hrFaq, cardById, typo } from "../../data/hr";
 ---
 
 <div data-hr-faq>
-  <div class="hr-acc" data-hr-accordion>
+  {/* --cols delar upp frågorna i två spalter från 1000px. Modifieraren behövs
+      för att Annonsen använder samma .hr-acc men har en tvåkolumns-layout
+      INUTI varje rad — den ska förbli en spalt. */}
+  <div class="hr-acc hr-acc--cols" data-hr-accordion>
     {
       hrFaq.map((item) => {
         // flatMap i stället för filter med typpredikat: `(c): c is …` går inte

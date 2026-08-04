@@ -53,13 +53,16 @@
   flex: none;
   position: relative;
   padding: 13px 14px;
+  border-radius: 10px 10px 0 0;
   font-family: var(--font-display);
   font-weight: 600;
   font-size: 13.5px;
   color: var(--c-text-muted);
   text-decoration: none;
   white-space: nowrap;
-  transition: color 0.18s ease;
+  transition:
+    color 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 0.24s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .hr-nav__tab:hover { color: var(--c-text); }
 /* Understruken aktiv flik i stället för pill: läser som en flikrad (nivå 1),
@@ -70,20 +73,20 @@
   left: 14px;
   right: 14px;
   bottom: -1px;
-  height: 2px;
-  border-radius: 2px 2px 0 0;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
   background: transparent;
-  transition: background 0.18s ease;
+  transition: background 0.24s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .hr-nav__tab.is-active {
-  color: var(--c-text);
-  font-weight: 700;
+  color: var(--c-accent);
+  background: color-mix(in oklab, var(--c-accent) 12%, transparent);
 }
 .hr-nav__tab.is-active::after { background: var(--c-accent); }
 @media (min-width: 768px) {
   .hr-nav { padding: 0 2.75rem; gap: 4px; }
   .hr-nav__tab { padding: 14px 16px; font-size: 14px; }
-  .hr-nav__tab::after { left: 16px; right: 16px; }
+  .hr-nav__tab::after { left: 10px; right: 10px; }
 }
 
 /* ---- Persistent topbar (sticky, alltid synlig) --------------------------- */
@@ -516,6 +519,14 @@
   }
   .hr-group { break-inside: avoid; }
 }
+/* Tre spalter där det finns plats: korten blir smalare, one-linern bryter på
+   tre rader i stället för två breda, och fler grupper syns utan att scrolla. */
+@media (min-width: 1180px) {
+  .hr-groups {
+    columns: 3;
+    column-gap: 22px;
+  }
+}
 /* Avstånd via margin-BOTTOM, inte top: i kolumnlayout får bara den allra
    första gruppen sin top-marginal kollapsad, vilket gjorde att spalt 2
    startade högre än spalt 1. */
@@ -543,16 +554,16 @@
 .hr-cardgrid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 8px;
-  margin-top: 11px;
+  gap: 6px;
+  margin-top: 9px;
 }
 .hrcard {
   display: block;
   text-decoration: none;
   background: var(--c-surface);
   border: 1px solid var(--c-border);
-  border-radius: 12px;
-  padding: 11px 13px;
+  border-radius: 10px;
+  padding: 9px 11px;
   color: var(--c-text);
   transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
 }
@@ -568,7 +579,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 5px;
+  margin-bottom: 3px;
 }
 .hrcard__meta {
   font-family: var(--font-mono);
@@ -598,23 +609,23 @@
    med h2:an ovanför. */
 .hrcard__title {
   font-weight: 700;
-  font-size: 13.5px;
+  font-size: 12.5px;
   letter-spacing: -0.01em;
   color: var(--c-text);
   margin: 0;
   transition: color 0.18s ease;
 }
 .hrcard__one {
-  font-size: 12px;
-  line-height: 1.5;
+  font-size: 11.5px;
+  line-height: 1.48;
   color: var(--c-text-secondary);
-  margin: 4px 0 0;
+  margin: 3px 0 0;
   text-wrap: pretty;
 }
 @media (min-width: 768px) {
-  .hrcard { padding: 12px 14px; }
-  .hrcard__title { font-size: 14px; }
-  .hrcard__one { font-size: 12.5px; }
+  .hrcard { padding: 10px 12px; }
+  .hrcard__title { font-size: 13px; }
+  .hrcard__one { font-size: 12px; }
   .hrcard:hover {
     transform: translateY(-3px);
     border-color: var(--c-accent);
@@ -739,6 +750,32 @@
   overflow: hidden;
 }
 .hr-acc__item + .hr-acc__item { border-top: 1px solid var(--c-border); }
+
+/* Tvåspaltiga frågor (Faq). Grid, inte CSS-columns: en utfälld fråga får då
+   INTE flyta om posterna mellan spalterna. align-items:start gör att grannen
+   behåller sin höjd när en post fälls ut.
+   Varje post blir ett eget kort — den delade ramen runt hela listan skulle
+   annars rita en rektangel runt två fristående spalter. */
+@media (min-width: 1000px) {
+  .hr-acc--cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+    gap: 8px;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    overflow: visible;
+  }
+  .hr-acc--cols .hr-acc__item {
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: 11px;
+    overflow: hidden;
+  }
+  .hr-acc--cols .hr-acc__head { padding: 13px 15px; }
+  .hr-acc--cols .hr-acc__body { padding: 0 15px 13px; }
+}
 .hr-acc__head {
   width: 100%;
   display: flex;
@@ -984,6 +1021,29 @@
   .hr-gloss__def { margin: 0; max-width: 78ch; }
 }
 
+/* Ordlistan i två spalter — en ordlista läses uppslagsvis, inte som löptext.
+   Bokstavsrubrikerna spänner över båda spalterna (de sätts in av hrGuide.ts
+   som syskon till raderna), så varje bokstavsgrupp får en egen ren start. */
+@media (min-width: 1000px) {
+  /* columns, inte grid. Med grid + helbred bokstavsrubrik får varje bokstav en
+     egen rad, och eftersom nästan varje bokstav bara rymmer en term stod
+     högerspalten tom. Flerspaltsflödet fyller i stället spalt 1 uppifrån och
+     ner och fortsätter i spalt 2 — den klassiska uppslagsboksättningen. */
+  .hr-gloss__list {
+    columns: 2;
+    column-gap: 40px;
+  }
+  /* En bokstavsrubrik får inte bli kvar i botten av en spalt medan dess första
+     term hamnar överst i nästa. */
+  .hr-gloss__letter { break-after: avoid; }
+  .hr-gloss__row {
+    break-inside: avoid;
+    grid-template-columns: 104px 1fr;
+    gap: 14px;
+  }
+  .hr-gloss__def { max-width: none; }
+}
+
 /* ============================================================
    KORT-DETALJVY (/for-hr/[card]) — namespacead .hrd, byggd på
    .site .article-läsvyn (importeras av sidan) men med egna
@@ -1020,10 +1080,11 @@
    som ger sidopanelen sin kolumn. */
 @media (min-width: 1200px) {
   .hrd-doc--toc {
-    max-width: 56rem;
+    max-width: 58rem;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 13rem;
-    gap: 2.75rem;
+    grid-template-columns: minmax(0, 1fr) 11.5rem;
+    /* Samma smala panel och breda gap som Learn Hubs .toc-doc--toc. */
+    gap: 5.5rem;
     /* Ingen align-items:start — TOC-kolumnen sträcks till artikelns höjd så
        den sticky innehållsförteckningen har utrymme att sticka längs hela
        kortet. */

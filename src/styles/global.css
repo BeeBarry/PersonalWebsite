@@ -2345,12 +2345,15 @@ html[data-astro-transition-fallback] * {
        29 px yttermarginal, vilket fick panelen att se utkastad mot högerkanten
        ut. Nu fyller artikeln sin kolumn och gapet är exakt grid-gapet. */
     .toc-doc--toc {
-        max-width: 56rem;
+        max-width: 58rem;
         margin: 0 auto;
         padding-inline: clamp(1.75rem, 5vw, 3.25rem);
         display: grid;
-        grid-template-columns: minmax(0, 1fr) 13rem;
-        gap: 2.75rem;
+        grid-template-columns: minmax(0, 1fr) 11.5rem;
+        /* Brett gap + smal panel: förteckningen ska läsa som en fristående
+           kolumn ute till höger, inte som en marginalanteckning klistrad
+           intill brödtexten. */
+        gap: 5.5rem;
         /* Ingen align-items:start — TOC-kolumnen sträcks till artikelns höjd
            så den sticky panelen kan följa med hela vägen ner. */
     }
@@ -2378,7 +2381,7 @@ html[data-astro-transition-fallback] * {
     }
     .toc__title {
         font-family: var(--font-mono);
-        font-size: 10px;
+        font-size: 9.5px;
         letter-spacing: 0.14em;
         text-transform: uppercase;
         color: var(--c-text-muted);
@@ -2391,22 +2394,29 @@ html[data-astro-transition-fallback] * {
         border-left: 1px solid var(--c-border);
     }
     .toc__link {
-        padding: 6px 0 6px 14px;
+        padding: 5px 0 5px 13px;
         margin-left: -1px;
         border-left: 2px solid transparent;
-        font-size: 12.5px;
-        line-height: 1.35;
+        font-size: 11.5px;
+        line-height: 1.4;
         color: var(--c-text-muted);
         text-decoration: none;
-        transition: color 0.18s ease, border-color 0.18s ease;
+        /* Samma mjuka deceleration som sticky-baren. Längre än 0.18s eftersom
+           scroll-spy byter aktiv post medan sidan rör sig — en snabb växling
+           läses då som ett hack. */
+        transition:
+            color 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+            border-left-color 0.38s cubic-bezier(0.22, 1, 0.36, 1);
     }
     .toc__link:hover {
         color: var(--c-text);
     }
+    /* INGEN font-weight-ändring: vikt går inte att transitionera och ändrar
+       radens bredd, så posten hoppade till vid varje byte. Accentfärgen och
+       kantlinjen bär markeringen. */
     .toc__link.is-active {
         color: var(--c-accent);
         border-left-color: var(--c-accent);
-        font-weight: 600;
     }
 }
 
