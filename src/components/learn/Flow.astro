@@ -1,0 +1,67 @@
+---
+// Flow — steg i följd, med pilar emellan.
+//
+// Används för att visa HELHETEN innan detaljerna (steg 3 i artikelmallen):
+// en läsare som sett hela kedjan har någonstans att hänga varje nytt begrepp.
+//
+// Vertikal som standard. Lässpalten är ~68ch bred, och uppifrån-och-ner
+// matchar läsordningen i texten runt omkring. layout="row" finns för korta
+// flöden (2–3 korta etiketter) och faller ändå tillbaka till kolumn under
+// 720px — se styles/learn.css.
+import Md from "./Md.astro";
+
+export interface FlowStep {
+    /** Huvudetikett, sätts i mono. Ett kommando, en komponent, en fil. */
+    label: string;
+    /** Förklarande underrad i brödtext. Stödjer `kod`. */
+    note?: string;
+    /**
+     * Etikett på pilen IN till detta steg — vad som händer i övergången.
+     * Ofta är det pilen, inte noderna, som bär den pedagogiska poängen:
+     * "terraform apply" säger mer än att två rutor står efter varandra.
+     */
+    via?: string;
+    /** Markerar noden med accent — det steg avsnittet just nu handlar om. */
+    accent?: boolean;
+}
+
+interface Props {
+    steps: FlowStep[];
+    caption?: string;
+    layout?: "column" | "row";
+}
+
+const { steps, caption, layout = "column" } = Astro.props;
+---
+
+<figure class="lk lk-flow" data-layout={layout}>
+    {/* Inga ARIA-listroller: pilarnas etiketter är innehåll, inte listobjekt,
+        och DOM-ordningen läses redan upp i rätt följd. */}
+    <div class="lk-flow__track">
+        {
+            steps.map((step, i) => (
+                <>
+                    {i > 0 && (
+                        <span class="lk-arrow">
+                            <span class="lk-arrow__line" aria-hidden="true" />
+                            {step.via && (
+                                <span class="lk-arrow__label">
+                                    <Md text={step.via} />
+                                </span>
+                            )}
+                        </span>
+                    )}
+                    <span class="lk-node" data-accent={step.accent ? "" : undefined}>
+                        <span class="lk-node__label">{step.label}</span>
+                        {step.note && (
+                            <span class="lk-node__note">
+                                <Md text={step.note} />
+                            </span>
+                        )}
+                    </span>
+                </>
+            ))
+        }
+    </div>
+    {caption && <figcaption>{caption}</figcaption>}
+</figure>

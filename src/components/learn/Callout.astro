@@ -1,0 +1,44 @@
+---
+// Callout — inramad poäng.
+//
+// Ersätter de 📍-emojier som de första artiklarna använde. Poängen med typade
+// varianter är igenkänning: när "fallgrop" alltid ser likadan ut genom hela
+// hubben kan en läsare bläddra och hitta dem, och en återkommande elev vet
+// vad rutan innehåller innan hen läser den.
+//
+// Fyra varianter, som speglar artikelmallen:
+//   varfor    — motiveringen bakom ett val (steg 4: varför görs det?)
+//   sa-gor-du — det konkreta handgreppet (steg 4: hur görs det?)
+//   fallgrop  — det som brukar gå fel (steg 5)
+//   kom-ihag  — summering att ta med sig (steg 6)
+import Icon from "../site/Icon.astro";
+
+type CalloutType = "varfor" | "sa-gor-du" | "fallgrop" | "kom-ihag";
+
+interface Props {
+    type?: CalloutType;
+    /** Egen rubrik. Utelämnad → variantens standardetikett. */
+    title?: string;
+}
+
+const { type = "varfor", title } = Astro.props;
+
+const VARIANTS: Record<CalloutType, { icon: string; label: string }> = {
+    varfor: { icon: "Lightbulb", label: "Varför" },
+    "sa-gor-du": { icon: "Wrench", label: "Så gör du" },
+    fallgrop: { icon: "AlertTriangle", label: "Fallgrop" },
+    "kom-ihag": { icon: "CircleCheck", label: "Kom ihåg" },
+};
+
+const variant = VARIANTS[type];
+---
+
+<div class="lk-callout" data-type={type}>
+    <div class="lk-callout__head">
+        <Icon name={variant.icon} size={13} />
+        {title ?? variant.label}
+    </div>
+    <div class="lk-callout__body">
+        <slot />
+    </div>
+</div>

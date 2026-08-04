@@ -1,0 +1,279 @@
+---
+title: 'Provider, resource och state'
+description: 'Din första Terraform-fil, rad för rad — och filen som håller reda på verkligheten'
+category: 'terraform'
+part: 1
+order: 2
+date: '2026-08-04'
+tags: ['Beginner', 'HCL']
+---
+
+## Var vi är
+
+Förra delen svarade på *varför*: infrastrukturen ska bo i textfiler som går att granska och
+köra om, och Terraform gör det deklarativt. Nu öppnar vi filen och tittar på *vad* som
+faktiskt står i den.
+
+Allt i det här avsnittet skrivs i **HCL** (HashiCorp Configuration Language). Det är ett eget
+litet språk, men det består i praktiken av **block** — namngivna klamrar med inställningar i.
+Kan du läsa ett block kan du läsa en hel Terraform-fil.
+
+## Filen, uppifrån och ner
+
+Här är en komplett `main.tf` som skapar två saker i Azure åt Lisas e-handelssystem: en
+resursgrupp och en app-plan att köra webben på.
+
+```hcl
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 4.0"
+    }
+  }
+}
+
+provider "azurerm" {
+  features {}
+}
+
+resource "azurerm_resource_group" "shop" {
+  name     = "rg-shop-prod"
+  location = "swedencentral"
+}
+
+resource "azurerm_service_plan" "shop" {
+  name                = "asp-shop-prod"
+  resource_group_name = azurerm_resource_group.shop.name
+  location            = azurerm_resource_group.shop.location
+  os_type             = "Linux"
+  sku_name            = "B1"
+}
+```
+
+Tre sorters block, i den ordning de nästan alltid står. Vi tar dem ett i taget.
+
+## `terraform`-blocket: vad projektet behöver
+
+Det första blocket handlar inte om molnet alls — det handlar om Terraform självt. Här står
+vilka **providers** projektet är beroende av och vilka versioner som duger.
+
+`source = "hashicorp/azurerm"` pekar ut paketet i Terraform Registry. `version = "~> 4.0"`
+betyder "4.x, men inte 5.0" — nya rättningar hämtas automatiskt, men inte en ny huvudversion
+som kan innehålla brytande ändringar.
+
+<Callout type="varfor" title="Varför versionen ska stå där">
+Utan versionsgräns hämtar varje utvecklare — och pipelinen — den senaste providern som råkar
+finnas den dagen. Samma fil kan då ge olika resultat hos olika personer. Det är exakt samma
+problem som `FROM node:latest` i en Dockerfile: bygget slutar vara reproducerbart.
+</Callout>
+
+## `provider`-blocket: översättaren
+
+Terraform kan i sig ingenting om Azure. Den vet inte vad en resursgrupp är, vilket API som
+ska anropas eller hur inloggningen går till. Allt det ligger i **providern** — ett insticks­program
+som översätter dina block till anrop mot leverantörens API.
+
+<Stack
+  caption="Providern är lagret som gör Terraform leverantörsoberoende. Byter du moln byter du provider, inte verktyg."
+  ground="Azures API — det som faktiskt skapar saker"
+  layers={[
+    {
+      label: "main.tf",
+      note: "Din beskrivning. Samma språk oavsett leverantör.",
+    },
+    {
+      label: "Terraform Core",
+      note: "Räknar ut skillnaden mellan önskat och faktiskt läge. Kan inget om något specifikt moln.",
+    },
+    {
+      label: "Provider · azurerm",
+      note: "Vet vad `azurerm_resource_group` är och vilka API-anrop som motsvarar den.",
+      accent: true,
+    },
+  ]}
+/>
+
+Själva `provider "azurerm"`-blocket är där providerns egna inställningar hamnar — prenumeration,
+region, autentisering. `features {}` ser tomt ut men är obligatoriskt för Azure-providern.
+
+**När hämtas providern?** Det gör den inte automatiskt. Det är därför `terraform init` finns,
+och varför det är det första du kör i ett nytt projekt.
+
+## `resource`-blocket: en sak som ska finnas
+
+Här är arbetshästen. Varje `resource`-block beskriver **en sak som ska existera**, och rubriken
+har alltid tre delar:
+
+```hcl
+resource "azurerm_resource_group" "shop" {
+#         └── typ ──────────────┘  └ namn ┘
+```
+
+- **Typen** (`azurerm_resource_group`) bestäms av providern och säger *vad* det är. Prefixet
+  avslöjar vilken provider som äger den.
+- **Namnet** (`shop`) väljer du själv. Det används bara inne i din egen kod, för att kunna
+  peka på resursen från andra block. Det syns aldrig i Azure.
+- **Innehållet** är inställningarna för just den resurstypen.
+
+Att skilja på de två namnen är värt en extra sekund: `name = "rg-shop-prod"` är vad resursen
+heter **i Azure**. `"shop"` är vad den heter **i din fil**.
+
+## Referenser bygger beroendena åt dig
+
+Titta på den andra resursen igen:
+
+```hcl
+resource_group_name = azurerm_resource_group.shop.name
+```
+
+Här pekar app-planen på resursgruppen — `typ.namn.attribut`. Det är inte bara ett sätt att
+slippa skriva samma sträng två gånger. Det är så Terraform får reda på **ordningen**.
+
+<Callout type="varfor" title="Vem bestämmer i vilken ordning saker skapas?">
+Inte du. Terraform läser alla referenser i filen och bygger en beroendegraf: eftersom
+app-planen refererar till resursgruppen måste resursgruppen skapas först. Du kan flytta om
+blocken i filen hur du vill — resultatet blir detsamma.
+
+Det är också därför du sällan behöver skriva ut beroenden manuellt. Skriver du i stället
+`resource_group_name = "rg-shop-prod"` som en hårdkodad sträng ser Terraform ingen koppling,
+och kan råka försöka skapa app-planen först.
+</Callout>
+
+## De tre kommandona
+
+<Flow
+  caption="Grundflödet i ett nytt projekt. Bara det sista steget rör verkligheten."
+  steps={[
+    {
+      label: "terraform init",
+      note: "Hämtar providern till `.terraform/`. Körs en gång per projekt — och igen när du lägger till eller uppgraderar en provider.",
+    },
+    {
+      label: "terraform plan",
+      note: "Läser din fil, frågar Azure hur det ser ut, och listar skillnaden. Ändrar ingenting — kör den hur ofta du vill.",
+      via: "läser, jämför",
+    },
+    {
+      label: "terraform apply",
+      note: "Visar samma lista igen och frågar om du är säker. Först efter ett `yes` skapas något.",
+      via: "efter granskning",
+      accent: true,
+    },
+  ]}
+/>
+
+Det finns ett fjärde: `terraform destroy` river allt som beskrivningen äger. Det låter
+dramatiskt, men är precis det man vill ha i en testmiljö som bara ska leva över en
+demonstration.
+
+## State: Terraforms anteckningsbok
+
+Nu till den del som förvirrar flest i början.
+
+När `apply` skapat resursgruppen skriver Terraform ner vad den gjorde i en fil som heter
+`terraform.tfstate`. Där står vilka resurser som finns, vilka id:n de fick i Azure och vilka
+inställningar de hade. **State är Terraforms bild av verkligheten.**
+
+<Split
+  leftTitle="Utan state"
+  rightTitle="Med state"
+  leftTone="bad"
+  rightTone="good"
+  caption="State är det som gör skillnaden mellan att skapa och att ändra."
+>
+  <div slot="left">
+
+  Du byter `sku_name` från `B1` till `B2` och kör `apply`.
+
+  Terraform ser en beskrivning av en app-plan, men vet inte att den redan skapat en. Den
+  försöker **skapa en till** — eller kraschar på att namnet är upptaget.
+
+  </div>
+  <div slot="right">
+
+  Samma ändring, men Terraform slår upp i state och ser: *den här app-planen finns redan,
+  och den hade `B1`.*
+
+  Förhandsbeskedet blir därför **1 att ändra**, inte 1 att skapa.
+
+  </div>
+</Split>
+
+Att döpa filen till "anteckningsbok" är inte en förenkling — det är precis vad den är. Den
+skapas av Terraform, läses av Terraform, och du ska normalt aldrig redigera den för hand.
+
+## Fallgropen: var state bor
+
+Så länge du övar ensam ligger `terraform.tfstate` i din projektmapp och allt fungerar. I ett
+team gör det inte det.
+
+<Callout type="fallgrop">
+Ligger state lokalt hos dig har **Maria en egen kopia** — eller ingen alls. Hennes Terraform
+tror att inget finns och försöker skapa allt en gång till. Kör ni dessutom samtidigt kan ni
+skriva över varandras ändringar mitt i.
+
+Lösningen är en **remote backend**: state flyttas till en delad lagringsplats som alla kör
+mot, med ett lås som gör att bara en `apply` i taget kan pågå.
+
+```hcl
+terraform {
+  backend "s3" {
+    bucket       = "shop-tfstate"
+    key          = "prod/terraform.tfstate"
+    region       = "eu-north-1"
+    use_lockfile = true
+  }
+}
+```
+</Callout>
+
+Två saker till om state, som brukar bita:
+
+- **Den ska inte in i Git.** State innehåller ofta genererade lösenord och nycklar i klartext.
+  Lägg `terraform.tfstate*` och `.terraform/` i `.gitignore`.
+- **Låsfilen ska däremot in i Git.** `.terraform.lock.hcl` spikar exakt vilka provider-versioner
+  projektet använder, så att alla — inklusive pipelinen — får samma. Den är alltså raka
+  motsatsen till state.
+
+<Callout type="kom-ihag">
+- HCL består av block. Tre räcker för att komma igång: `terraform`, `provider`, `resource`.
+- Providern är översättaren mellan Terraform och leverantörens API. `terraform init` hämtar den.
+- I `resource "typ" "namn"` är namnet ditt internt — resursens riktiga namn står i `name`.
+- Referenser mellan resurser skapar beroendegrafen. Hårdkodade strängar gör det inte.
+- State är Terraforms bild av verkligheten. Utan den kan den inte skilja *ändra* från *skapa*.
+- State i delad backend, aldrig i Git. `.terraform.lock.hcl` i Git, alltid.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "I `resource \"azurerm_service_plan\" \"shop\"` — var syns egentligen `shop`?",
+      a: "Bara i din egen kod, som handtag när andra block ska referera till resursen. Namnet som Azure ser står i argumentet `name`, alltså `asp-shop-prod`.",
+    },
+    {
+      q: "Du flyttar app-plansblocket överst i filen, före resursgruppen. Vad händer?",
+      a: "Ingenting. Terraform bygger ordningen från referenserna, inte från filens ordning — och app-planen refererar till resursgruppen, så resursgruppen skapas ändå först.",
+    },
+    {
+      q: "Varför ska `.terraform.lock.hcl` committas men inte `terraform.tfstate`?",
+      a: "Låsfilen spikar provider-versionerna så alla får samma bygge — den ska delas. State beskriver en specifik miljös verkliga innehåll och rymmer ofta hemligheter i klartext — den hör hemma i en delad backend med lås, inte i repot.",
+    },
+    {
+      q: "Vad gör `terraform plan` med din infrastruktur?",
+      a: "Ingenting. Den läser filen, frågar leverantören hur det ser ut och skriver ut skillnaden. Det är därför den går att köra hur ofta som helst, även i en merge request.",
+    },
+  ]}
+/>
+
+## Sammanfattning
+
+En Terraform-fil är block: `terraform` säger vad projektet behöver, `provider` konfigurerar
+översättaren, och `resource` beskriver sakerna som ska finnas. Referenser mellan resurser ger
+Terraform ordningen gratis.
+
+`init` hämtar, `plan` visar, `apply` genomför. Mellan körningarna håller state reda på vad som
+redan finns — och i ett team måste den filen bo delat, med lås.
+
+Härifrån är nästa steg att sluta hårdkoda värden och börja återanvända: variabler, outputs och
+moduler, så att samma beskrivning kan sätta upp både test och produktion.

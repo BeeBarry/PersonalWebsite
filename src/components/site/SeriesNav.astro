@@ -1,0 +1,94 @@
+---
+// Serienavigering längst ner i en Learn Hub-artikel.
+//
+// Kategorisidan visar serien som en stege, men artikelvyn saknade helt en väg
+// vidare: läsaren fick backa ut för att komma till nästa del. Det bryter precis
+// den kronologiska röda tråden som serien är byggd för. Här får artikeln i
+// stället både VAR i serien den ligger och vad som kommer härnäst.
+//
+// Ordningen är densamma som på kategorisidan (del, sedan steg i delen), så
+// "nästa" alltid betyder samma sak på båda ställena.
+import { getCollection, type CollectionEntry } from "astro:content";
+import { categories } from "../../data/categories";
+import { showEntry } from "../../utils/content";
+import Icon from "./Icon.astro";
+
+interface Props {
+    entry: CollectionEntry<"learn">;
+}
+
+const { entry } = Astro.props;
+const category = entry.data.category;
+
+const siblings = (
+    await getCollection(
+        "learn",
+        (e) => e.data.category === category && showEntry(e),
+    )
+).sort((a, b) => a.data.part - b.data.part || a.data.order - b.data.order);
+
+const index = siblings.findIndex((e) => e.id === entry.id);
+const prev = index > 0 ? siblings[index - 1] : undefined;
+const next =
+    index >= 0 && index < siblings.length - 1 ? siblings[index + 1] : undefined;
+
+const cat = categories.find((c) => c.slug === category);
+const href = (e: CollectionEntry<"learn">) => `/learn-hub/${category}/${e.id}/`;
+
+// Delens namn tas från artikeln själv om den bär det, annars från den första
+// artikeln i samma del — partTitle behöver bara sättas på en av dem.
+const partTitle =
+    entry.data.partTitle ??
+    siblings.find((e) => e.data.part === entry.data.part && e.data.partTitle)
+        ?.data.partTitle;
+
+// Med en ensam artikel finns ingen serie att navigera i — då är den här raden
+// bara brus, och tillbaka-länken högst upp räcker.
+const show = siblings.length > 1;
+---
+
+{
+    show && (
+        <nav class="serienav" aria-label="Serienavigering">
+            <span class="serienav__meta">
+                {cat?.title ?? "Learn Hub"}
+                {partTitle && ` · ${partTitle}`}
+                {` · ${index + 1} av ${siblings.length}`}
+            </span>
+
+            <div class="serienav__links">
+                {prev && (
+                    <a class="serienav__link" data-dir="prev" href={href(prev)}>
+                        <Icon name="ArrowLeft" size={16} class="serienav__icon" />
+                        <span class="serienav__text">
+                            <span class="serienav__dir">Föregående</span>
+                            <span class="serienav__title">{prev.data.title}</span>
+                        </span>
+                    </a>
+                )}
+
+                {next && (
+                    <a class="serienav__link" data-dir="next" href={href(next)}>
+                        <Icon name="ArrowRight" size={16} class="serienav__icon" />
+                        <span class="serienav__text">
+                            <span class="serienav__dir">Nästa</span>
+                            <span class="serienav__title">{next.data.title}</span>
+                        </span>
+                    </a>
+                )}
+
+                {!next && (
+                    <div class="serienav__slut">
+                        Det var sista delen i {cat?.title ?? "serien"}-serien så här
+                        långt. Gå tillbaka till{" "}
+                        <a href={`/learn-hub/${category}/`}>
+                            översikten
+                        </a>{" "}
+                        eller titta på{" "}
+                        <a href="/learn-hub/">de andra områdena</a>.
+                    </div>
+                )}
+            </div>
+        </nav>
+    )
+}

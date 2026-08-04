@@ -1,0 +1,76 @@
+---
+// Split — två spalter sida vid sida.
+//
+// Bär steg 5 i artikelmallen: kontrasterande fall. Forskningen bakom
+// (Schwartz & Bransford) är att man lär sig en princip snabbare av att se
+// två fall bredvid varandra än av att få principen förklarad — skillnaden
+// mellan spalterna GÖR poängen.
+//
+// Till skillnad från Flow och Stack tar den här komponenten MDX-innehåll via
+// slots, så spalterna kan innehålla kodblock, listor och länkar.
+//
+// Användning i MDX (tomraderna krävs för att innehållet ska tolkas som
+// markdown och inte som JSX):
+//
+//   <Split leftTitle="Utan modul" rightTitle="Med modul">
+//     <div slot="left">
+//
+//     Samma tolv rader upprepas i varje miljö.
+//
+//     </div>
+//     <div slot="right">
+//
+//     En källa, tre anrop.
+//
+//     </div>
+//   </Split>
+import Icon from "../site/Icon.astro";
+
+type Tone = "bad" | "good" | "neutral";
+
+interface Props {
+    leftTitle: string;
+    rightTitle: string;
+    /** Standard är bad→good: det vanligaste fallet är "så här går det fel / så här gör man". */
+    leftTone?: Tone;
+    rightTone?: Tone;
+    caption?: string;
+}
+
+const {
+    leftTitle,
+    rightTitle,
+    leftTone = "bad",
+    rightTone = "good",
+    caption,
+} = Astro.props;
+
+// Ikonen är redundant med färgen — och det är meningen. Färg ensam bär inte
+// information för den som inte skiljer tonerna åt (WCAG 1.4.1).
+const toneIcon: Record<Tone, string | null> = {
+    bad: "CircleX",
+    good: "CircleCheck",
+    neutral: null,
+};
+---
+
+<figure class="lk lk-split">
+    <div class="lk-split__cols">
+        <div class="lk-split__col" data-tone={leftTone}>
+            <div class="lk-split__head">
+                {toneIcon[leftTone] && <Icon name={toneIcon[leftTone]!} size={13} />}
+                {leftTitle}
+            </div>
+            <slot name="left" />
+        </div>
+
+        <div class="lk-split__col" data-tone={rightTone}>
+            <div class="lk-split__head">
+                {toneIcon[rightTone] && <Icon name={toneIcon[rightTone]!} size={13} />}
+                {rightTitle}
+            </div>
+            <slot name="right" />
+        </div>
+    </div>
+    {caption && <figcaption>{caption}</figcaption>}
+</figure>

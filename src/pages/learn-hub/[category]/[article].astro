@@ -6,8 +6,18 @@ import ZoomableImage from "../../../components/ZoomableImage.astro";
 import ArticleToc from "../../../components/site/ArticleToc.astro";
 import Icon from "../../../components/site/Icon.astro";
 import StickyBar from "../../../components/site/StickyBar.astro";
+import SeriesNav from "../../../components/site/SeriesNav.astro";
 import { showEntry } from "../../../utils/content";
 import { TOC_MIN_ITEMS } from "../../../scripts/toc";
+
+// Lärkitet — pedagogiska komponenter som artiklarna använder utan att behöva
+// importera dem själva (se components-propen på <Content /> längre ner).
+import Flow from "../../../components/learn/Flow.astro";
+import Stack from "../../../components/learn/Stack.astro";
+import Split from "../../../components/learn/Split.astro";
+import Callout from "../../../components/learn/Callout.astro";
+import Check from "../../../components/learn/Check.astro";
+import "../../../styles/learn.css";
 
 export async function getStaticPaths() {
   const all = await getCollection("learn", showEntry);
@@ -54,9 +64,16 @@ const showToc = toc.length >= TOC_MIN_ITEMS;
         <ArticleToc items={toc} variant="jump" />
         <div data-sticky-anchor aria-hidden="true"></div>
 
+        {/* Kitet skickas in via components-propen i stället för att varje MDX-fil
+            importerar det själv: författandet ska handla om innehåll, inte om
+            import-rader, och komponenterna kan bytas ut på ett ställe. */}
         <div class="prose">
-          <Content components={{ ZoomableImage }} />
+          <Content
+            components={{ ZoomableImage, Flow, Stack, Split, Callout, Check }}
+          />
         </div>
+
+        <SeriesNav entry={entry} />
       </article>
 
       <ArticleToc items={toc} variant="panel" title="I den här artikeln" />

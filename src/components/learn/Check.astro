@@ -1,0 +1,51 @@
+---
+// Check — kontrollfrågor i slutet av ett avsnitt.
+//
+// Bygger på retrieval practice (Roediger & Karpicke): att FÖRSÖKA minnas
+// befäster kunskap betydligt bättre än att läsa om samma text. Därför är
+// svaret dolt bakom <details> — läsaren ska hinna svara i huvudet först.
+// Att svaret finns direkt under frågan är lika viktigt: återkopplingen ska
+// komma medan försöket är färskt, inte i ett facit längst bak.
+//
+// Noll JS: <details>/<summary> gör hela jobbet, fungerar utan hydration
+// och är utfällbart för sökmotorer och skärmläsare.
+import Icon from "../site/Icon.astro";
+import Md from "./Md.astro";
+
+export interface CheckItem {
+    /** Frågan. Stödjer `kod`. */
+    q: string;
+    /** Svaret — kort, ett par meningar. Stödjer `kod`. */
+    a: string;
+}
+
+interface Props {
+    items: CheckItem[];
+    title?: string;
+}
+
+const { items, title = "Kolla att du hänger med" } = Astro.props;
+---
+
+<div class="lk-check">
+    <div class="lk-check__head">
+        <Icon name="CircleHelp" size={13} />
+        {title}
+    </div>
+
+    {
+        items.map((item) => (
+            <details class="lk-check__item">
+                <summary class="lk-check__q">
+                    <Icon name="ChevronRight" size={13} class="lk-check__chev" />
+                    <span>
+                        <Md text={item.q} />
+                    </span>
+                </summary>
+                <div class="lk-check__a">
+                    <Md text={item.a} />
+                </div>
+            </details>
+        ))
+    }
+</div>

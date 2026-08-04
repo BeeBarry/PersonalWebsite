@@ -1,0 +1,51 @@
+---
+// Stack — lager ovanpå varandra.
+//
+// Skillnaden mot Flow är avsiktligt visuell: Flow har mellanrum och pilar
+// ("leder till"), Stack har delade kanter och ingen pil ("vilar på"). Läsaren
+// ska kunna se vilken sorts samband det handlar om utan att läsa bildtexten.
+//
+// Första lagret i arrayen ritas ÖVERST — abstraktionsordning, precis som man
+// pratar: "applikationen ligger ovanpå operativsystemet".
+import Md from "./Md.astro";
+
+export interface StackLayer {
+    /** Lagrets namn, sätts i mono. */
+    label: string;
+    /** Förklarande underrad i brödtext. Stödjer `kod`. */
+    note?: string;
+    /** Markerar lagret med accent — det avsnittet handlar om. */
+    accent?: boolean;
+}
+
+interface Props {
+    layers: StackLayer[];
+    caption?: string;
+    /**
+     * Grunden stapeln vilar på (t.ex. "Fysiska servrar i ett datacenter").
+     * Ritas med streckad ram: finns, men ligger utanför det vi pratar om.
+     */
+    ground?: string;
+}
+
+const { layers, caption, ground } = Astro.props;
+---
+
+<figure class="lk lk-stack">
+    <div class="lk-stack__layers">
+        {
+            layers.map((layer) => (
+                <span class="lk-node" data-accent={layer.accent ? "" : undefined}>
+                    <span class="lk-node__label">{layer.label}</span>
+                    {layer.note && (
+                        <span class="lk-node__note">
+                            <Md text={layer.note} />
+                        </span>
+                    )}
+                </span>
+            ))
+        }
+    </div>
+    {ground && <div class="lk-stack__ground">{ground}</div>}
+    {caption && <figcaption>{caption}</figcaption>}
+</figure>

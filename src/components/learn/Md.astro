@@ -1,0 +1,30 @@
+---
+// Minimal inline-formatering för kit-props.
+//
+// Komponenterna i lärkitet tar sina etiketter som RENA STRÄNGAR (props), inte
+// som MDX-innehåll — och strängar går inte genom markdown-pipelinen. Utan den
+// här skulle `terraform apply` i en nod renderas med bokstavliga backticks.
+//
+// Stödet är avsiktligt begränsat till `kod`. Behövs mer formatering i ett
+// element är det en signal om att texten hör hemma i brödtexten eller i en
+// slot (Split/Callout tar MDX-innehåll), inte i en etikett.
+interface Props {
+    text: string;
+}
+
+const { text } = Astro.props;
+
+// Behåll avgränsarna i resultatet (capture group) så vi kan skilja kod-delar
+// från löptext utan att räkna index.
+const parts = text.split(/(`[^`]+`)/g).filter(Boolean);
+---
+
+{
+    parts.map((part) =>
+        part.length > 2 && part.startsWith("`") && part.endsWith("`") ? (
+            <code>{part.slice(1, -1)}</code>
+        ) : (
+            <Fragment>{part}</Fragment>
+        ),
+    )
+}

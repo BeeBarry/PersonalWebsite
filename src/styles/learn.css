@@ -1,0 +1,551 @@
+/* ============================================================
+   LÄRKITET — pedagogiska komponenter för Learn Hub-artiklar
+   (src/components/learn/*.astro)
+
+   Varför ett delat stilblad i stället för scopade <style>-block:
+   komponenterna renderas INUTI .site .prose, vars element-selektorer
+   (.site .prose p = 0,2,1) väger tyngre än en Astro-scopad klass
+   (.lk-node[data-astro-cid-x] = 0,2,0). Med ett delat blad kan vi
+   dessutom hålla hela wireframe-grammatiken — linjetjocklek, radie,
+   etikettstorlek — på ETT ställe i stället för utspridd i fem filer.
+
+   Regel för komponentmarkupen: bygg av div/span. Undvik p/ul/ol/li
+   som bärande element inuti kitet — de plockas upp av prose. Slot-
+   innehåll är undantaget: där VILL vi att prose stylar texten.
+
+   Samma mönster som styles/hr.css. Importeras av
+   pages/learn-hub/[category]/[article].astro.
+   ============================================================ */
+
+/* ---- Gemensam grammatik ------------------------------------
+   Tokens ligger på :root, INTE på .lk. Callout, Check och SeriesNav bär
+   inte .lk-klassen och är inte heller barn till ett .lk-element — en
+   var(--lk-line) där hade varit invalid at computed-value time, vilket
+   för border-color tyst faller tillbaka på currentColor (vit ram i mörkt
+   läge) och för border-radius på 0. Delade tokens hör hemma i roten.
+
+   Värdena härleds ur --c-*-paletten i stället för att hårdkodas, så hela
+   kitet följer temaväxlingen utan egna .light-regler. */
+:root {
+    --lk-line: var(--c-border);
+    --lk-fill: var(--c-surface);
+    --lk-radius: 11px;
+    --lk-pad: 0.7rem 0.85rem;
+    /* Kopplingslinjerna behöver mer tyngd än nodernas ramar. --c-border är
+       ~10 % opacitet, vilket räcker för en 1px-ram runt en fylld ruta men
+       försvinner helt som fristående 1px-streck mellan två noder. */
+    --lk-stroke: color-mix(in oklab, var(--c-text-muted) 55%, transparent);
+
+    /* Varningsfärgen är kitets ENDA extra kulör. Regeln är att färg ska
+       betyda något — accent = emfas/interaktion — så bara "fallgrop" och
+       "fel väg" får en egen ton. Övriga varianter håller sig till neutralt
+       plus accent på ikonen. */
+    --lk-warn: #e8b34a;
+    --lk-warn-soft: rgba(232, 179, 74, 0.09);
+}
+:root.light {
+    --lk-warn: #8a5a00;
+    --lk-warn-soft: rgba(138, 90, 0, 0.07);
+}
+
+/* ---- Nod — den delade byggstenen i Flow och Stack ---------- */
+.lk-node {
+    display: block;
+    padding: var(--lk-pad);
+    border: 1px solid var(--lk-line);
+    border-radius: var(--lk-radius);
+    background: var(--lk-fill);
+}
+
+.lk-node__label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    font-weight: 500;
+    line-height: 1.4;
+    letter-spacing: 0.01em;
+    color: var(--c-text);
+}
+
+.lk-node__note {
+    display: block;
+    margin-top: 0.2rem;
+    font-family: var(--font-display);
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--c-text-muted);
+}
+
+/* Markerad nod: det steg artikeln just nu handlar om. Accenten ligger på
+   ramen och etiketten — ingen fylld bakgrund, som skulle läsa som en knapp. */
+.lk-node[data-accent] {
+    border-color: color-mix(in oklab, var(--c-accent) 45%, transparent);
+}
+.lk-node[data-accent] .lk-node__label {
+    color: var(--c-accent);
+}
+
+/* ============================================================
+   FLOW — steg i följd (components/learn/Flow.astro)
+   Vertikal som standard: lässpalten är ~68ch och läsordningen
+   uppifrån och ner matchar texten runt omkring. layout="row"
+   finns för korta flöden (2–3 steg) och faller tillbaka till
+   kolumn under 720px.
+   ============================================================ */
+.lk-flow__track {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+/* Kopplingen mellan två noder: en linje med en nedåtpil, och plats för
+   en etikett som säger VAD som händer i steget (t.ex. "terraform apply").
+   Det är ofta pilen — inte noderna — som bär den pedagogiska poängen. */
+.lk-arrow {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-height: 2rem;
+    padding-left: 1.35rem;
+}
+
+.lk-arrow__line {
+    position: relative;
+    flex: none;
+    width: 1px;
+    align-self: stretch;
+    background: var(--lk-stroke);
+}
+/* Pilspetsen: två kanter roterade 45° → en chevron utan extra markup. */
+.lk-arrow__line::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    border-right: 1px solid var(--lk-stroke);
+    border-bottom: 1px solid var(--lk-stroke);
+    transform: translate(-50%, 1px) rotate(45deg);
+}
+
+.lk-arrow__label {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.04em;
+    line-height: 1.4;
+    color: var(--c-text-muted);
+}
+
+/* Horisontell variant. min-width:0 på noderna är nödvändigt — utan den
+   vägrar flex-items krympa under sitt innehåll och raden spiller över. */
+@media (min-width: 720px) {
+    .lk-flow[data-layout="row"] .lk-flow__track {
+        flex-direction: row;
+        align-items: stretch;
+    }
+    .lk-flow[data-layout="row"] .lk-node {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+    .lk-flow[data-layout="row"] .lk-arrow {
+        flex: 0 0 auto;
+        flex-direction: column;
+        justify-content: center;
+        min-height: 0;
+        min-width: 2.75rem;
+        padding: 0 0.4rem;
+        gap: 0.3rem;
+    }
+    .lk-flow[data-layout="row"] .lk-arrow__line {
+        width: 100%;
+        height: 1px;
+        align-self: auto;
+    }
+    .lk-flow[data-layout="row"] .lk-arrow__line::after {
+        bottom: auto;
+        top: 50%;
+        left: auto;
+        right: 0;
+        border-bottom: 0;
+        border-top: 1px solid var(--lk-stroke);
+        transform: translate(1px, -50%) rotate(45deg);
+    }
+    .lk-flow[data-layout="row"] .lk-arrow__label {
+        text-align: center;
+    }
+}
+
+/* ============================================================
+   STACK — lager ovanpå varandra (components/learn/Stack.astro)
+   Delade kanter i stället för mellanrum: det är den visuella
+   skillnaden mot Flow och signalerar "vilar på" i stället för
+   "leder till".
+   ============================================================ */
+.lk-stack__layers {
+    display: flex;
+    flex-direction: column;
+}
+
+.lk-stack__layers .lk-node {
+    border-radius: 0;
+}
+.lk-stack__layers .lk-node:first-child {
+    border-radius: var(--lk-radius) var(--lk-radius) 0 0;
+}
+.lk-stack__layers .lk-node:last-child {
+    border-radius: 0 0 var(--lk-radius) var(--lk-radius);
+}
+.lk-stack__layers .lk-node:only-child {
+    border-radius: var(--lk-radius);
+}
+/* Dubbla ramar mellan lagren skulle läsa som ett mellanrum. */
+.lk-stack__layers .lk-node + .lk-node {
+    border-top: 0;
+}
+
+/* Grunden lagret vilar på (t.ex. "Linux-kärnan", "Fysiska servrar").
+   Streckad ram = "utanför det vi pratar om, men det finns där". */
+.lk-stack__ground {
+    margin-top: 0.4rem;
+    padding: 0.5rem 0.85rem;
+    border: 1px dashed var(--lk-line);
+    border-radius: var(--lk-radius);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--c-text-muted);
+    text-align: center;
+}
+
+/* ============================================================
+   SPLIT — två spalter sida vid sida (components/learn/Split.astro)
+   Bär steg 5 i artikelmallen: kontrasterande fall. Fel bredvid
+   rätt, utan bredvid med, före bredvid efter.
+   ============================================================ */
+/* Container query, inte media query: komponenten bryr sig om hur bred
+   TEXTSPALTEN är, inte hur bred skärmen är. Läsvyn ger artikeln olika bredd
+   beroende på om innehållsförteckningen visas (över 1200px tas 13rem + gap
+   av panelen), så ett fönstermått hade sagt "gott om plats" i precis det
+   läge där spalten i själva verket krympt. */
+.lk-split {
+    container-type: inline-size;
+}
+
+/* minmax(0, 1fr) — INTE 1fr. Grid-items har min-width:auto, så ett kodblock
+   med en lång rad trycker ut sin spalt bredare än 1fr och hela rutnätet
+   växer utanför textkolumnen (lägger sig då under innehållsförteckningen).
+   Med minmax(0,…) + min-width:0 nedan får kodblockets overflow-x ta hand om
+   det i stället, som .site .prose pre redan är byggd för. */
+.lk-split__cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.75rem;
+}
+@container (min-width: 33rem) {
+    .lk-split__cols {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+}
+
+.lk-split__col {
+    min-width: 0;
+    border: 1px solid var(--lk-line);
+    border-radius: var(--lk-radius);
+    padding: 0.85rem 1rem 1rem;
+    background: var(--lk-fill);
+}
+
+.lk-split__head {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.55rem;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--c-text-muted);
+}
+.lk-split__head svg {
+    flex: none;
+}
+
+.lk-split__col[data-tone="bad"] {
+    border-color: color-mix(in oklab, var(--lk-warn) 42%, transparent);
+    background: var(--lk-warn-soft);
+}
+.lk-split__col[data-tone="bad"] .lk-split__head {
+    color: var(--lk-warn);
+}
+.lk-split__col[data-tone="good"] {
+    border-color: color-mix(in oklab, var(--c-accent) 42%, transparent);
+}
+.lk-split__col[data-tone="good"] .lk-split__head {
+    color: var(--c-accent);
+}
+
+/* Slot-innehållet stylas av prose (det är poängen — texten ska se ut som
+   brödtext). Men prose ger första stycket toppmarginal i vissa lägen;
+   nolla den så rubriken sitter tätt mot innehållet. */
+.lk-split__col > :first-child:not(.lk-split__head),
+.lk-split__head + * {
+    margin-top: 0;
+}
+
+/* Kodblock i en spalt ska inte spränga rutan. */
+.lk-split__col pre {
+    margin-top: 0.5rem;
+    font-size: 0.78rem;
+}
+
+/* ============================================================
+   CALLOUT — inramad poäng (components/learn/Callout.astro)
+   Ersätter de tidigare 📍-emojierna med typade varianter, så
+   samma sorts poäng alltid ser likadan ut genom hela hubben.
+   ============================================================ */
+.lk-callout {
+    margin: 1.6em 0 0;
+    padding: 0.9rem 1.05rem 1rem;
+    border: 1px solid var(--lk-line);
+    border-left: 2px solid color-mix(in oklab, var(--c-accent) 55%, transparent);
+    border-radius: var(--lk-radius);
+    background: var(--lk-fill);
+}
+
+.lk-callout__head {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-bottom: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--c-accent);
+}
+.lk-callout__head svg {
+    flex: none;
+}
+
+/* Fallgropen är den enda varianten som byter kulör — den ska gå att
+   hitta genom att bläddra, utan att läsa. */
+.lk-callout[data-type="fallgrop"] {
+    border-left-color: var(--lk-warn);
+    background: var(--lk-warn-soft);
+}
+.lk-callout[data-type="fallgrop"] .lk-callout__head {
+    color: var(--lk-warn);
+}
+
+/* Prose ger p margin:0 och p+p toppmarginal, så innehållet sitter redan
+   rätt. Nolla bara en ev. toppmarginal på det första elementet (t.ex. ul). */
+.lk-callout__body > :first-child {
+    margin-top: 0;
+}
+
+/* ============================================================
+   CHECK — kontrollfrågor (components/learn/Check.astro)
+   Retrieval practice: läsaren ska försöka svara INNAN facit
+   fälls ut. Därför <details> och inget synligt svar från start.
+   Noll JS.
+   ============================================================ */
+.lk-check {
+    margin: 1.75em 0 0;
+    padding: 0.95rem 1.1rem 1.1rem;
+    border: 1px dashed var(--lk-line);
+    border-radius: var(--lk-radius);
+}
+
+.lk-check__head {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-bottom: 0.65rem;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--c-text-muted);
+}
+.lk-check__head svg {
+    flex: none;
+}
+
+.lk-check__item + .lk-check__item {
+    margin-top: 0.4rem;
+    padding-top: 0.4rem;
+    border-top: 1px solid var(--lk-line);
+}
+
+.lk-check__q {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding: 0.3rem 0;
+    font-family: var(--font-display);
+    font-size: 14.5px;
+    line-height: 1.55;
+    color: var(--c-text);
+    cursor: pointer;
+    list-style: none;
+}
+/* Safari renderar annars en egen disclosure-triangel bredvid vår chevron. */
+.lk-check__q::-webkit-details-marker {
+    display: none;
+}
+.lk-check__q:hover {
+    color: var(--c-accent);
+}
+
+.lk-check__chev {
+    flex: none;
+    align-self: center;
+    color: var(--c-text-muted);
+    transition: transform 0.18s ease;
+}
+.lk-check__item[open] .lk-check__chev {
+    transform: rotate(90deg);
+    color: var(--c-accent);
+}
+
+.lk-check__a {
+    padding: 0.1rem 0 0.45rem 1.35rem;
+    font-family: var(--font-display);
+    font-size: 13.5px;
+    line-height: 1.65;
+    color: var(--c-text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .lk-check__chev {
+        transition: none;
+    }
+}
+
+/* ============================================================
+   SERIENAVIGERING (components/site/SeriesNav.astro)
+   Föregående/nästa längst ner i artikeln + var i serien man är.
+   Den röda tråden ska synas i UI:t, inte bara påstås i texten.
+   ============================================================ */
+.serienav {
+    margin-top: clamp(2.5rem, 6vw, 3.5rem);
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--c-border);
+}
+
+.serienav__meta {
+    display: block;
+    margin-bottom: 0.85rem;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--c-text-muted);
+}
+
+.serienav__links {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
+}
+@media (min-width: 640px) {
+    .serienav__links {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.serienav__link {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.8rem 0.95rem;
+    border: 1px solid var(--c-border);
+    border-radius: 13px;
+    background: var(--c-surface);
+    text-decoration: none;
+    transition:
+        border-color 0.2s ease,
+        background-color 0.2s ease;
+}
+.serienav__link:hover {
+    border-color: color-mix(in oklab, var(--c-accent) 40%, transparent);
+    background: var(--c-muted);
+}
+/* Nästa-kortet ligger i höger kolumn och läses högerställt, så pilarna
+   pekar utåt från mitten — riktningen blir avläsbar utan att läsa texten. */
+.serienav__link[data-dir="next"] {
+    flex-direction: row-reverse;
+    text-align: right;
+}
+@media (min-width: 640px) {
+    .serienav__link[data-dir="next"] {
+        grid-column: 2;
+    }
+}
+
+.serienav__icon {
+    flex: none;
+    color: var(--c-text-muted);
+    transition: color 0.2s ease;
+}
+.serienav__link:hover .serienav__icon {
+    color: var(--c-accent);
+}
+
+.serienav__text {
+    min-width: 0;
+}
+
+.serienav__dir {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--c-text-muted);
+}
+
+.serienav__title {
+    display: block;
+    margin-top: 0.15rem;
+    font-size: 13.5px;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--c-text);
+    transition: color 0.2s ease;
+}
+.serienav__link:hover .serienav__title {
+    color: var(--c-accent);
+}
+
+/* Sista artikeln i serien: ingen nästa-länk, utan en väg vidare. */
+.serienav__slut {
+    grid-column: 1 / -1;
+    padding: 0.85rem 1rem;
+    border: 1px dashed var(--c-border);
+    border-radius: 13px;
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: var(--c-text-muted);
+}
+.serienav__slut a {
+    color: var(--c-text);
+    text-decoration: underline;
+    text-decoration-color: var(--c-accent);
+    text-underline-offset: 3px;
+}
+.serienav__slut a:hover {
+    color: var(--c-accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .serienav__link,
+    .serienav__icon,
+    .serienav__title {
+        transition: none;
+    }
+}
