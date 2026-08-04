@@ -10,23 +10,16 @@ tags: ['Beginner', 'SQL', 'Prestanda']
 
 ## Var vi är
 
-Förra delen delade upp data: kategorin på ett ställe, produkten på ett annat, en pekare
-emellan. Det gör ändringar säkra.
+Förra delen delade upp data: kategorin på ett ställe, produkten på ett annat, en pekare emellan. Det
+gör ändringar säkra.
 
-Priset är att informationen nu ligger utspridd — och API:et behöver den ihopsatt igen. Det är
-vad `JOIN` gör. Och det är också där prestandan avgörs.
+Priset är att informationen nu ligger utspridd, och API:et behöver den ihopsatt igen. Den här delen
+handlar om `JOIN` som gör det — och om de två skäl som gör att en fråga plötsligt tar nio sekunder i
+produktion.
 
-## Nio sekunder
+## Vad en JOIN är
 
-Lisas produktsökning gick på 40 millisekunder i testmiljön. I produktion tar den nio sekunder.
-
-Ingen har ändrat frågan. Skillnaden är att testmiljön har tvåhundra produkter och produktion
-fyrahundratusen.
-
-Det är den vanligaste sortens prestandaproblem, och den har nästan alltid en av två orsaker.
-Vi tar dem i tur och ordning — men först själva ihopsättningen.
-
-## Helheten först: JOIN sätter ihop rader
+En **JOIN** sätter ihop rader från två tabeller till en gemensam rad i svaret.
 
 ```sql
 SELECT  p.namn,
@@ -38,10 +31,6 @@ WHERE   p.pris < 200
 ORDER BY p.namn;
 ```
 
-Läs `JOIN`-raden som en mening: *ta med raden ur `kategorier` vars `id` är samma som produktens
-`kategori_id`.* Villkoret efter `ON` är kopplingen — nästan alltid främmande nyckel mot
-primärnyckel.
-
 Resultatet är en ny tabell som bara existerar under frågan, med kolumner från båda:
 
 ```text
@@ -50,11 +39,33 @@ Hammare 500g       189    Handverktyg
 Skruvmejsel PH2    149    Handverktyg
 ```
 
-`p` och `k` är alias. De sparar skrivande, men gör framför allt varje kolumn entydig — båda
-tabellerna har en kolumn som heter `namn`, och utan alias vet varken databasen eller läsaren
-vilken som avses.
+Ingenting ändras i databasen. En `JOIN` är ett sätt att läsa, inte ett sätt att lagra.
 
-## INNER eller LEFT: vad händer med det som saknas?
+> **DOODLE** — Två smala rutnät till vänster, `produkter` och `kategorier`, med en heldragen pil från
+> en rad i det första till en rad i det andra. Till höger ett brett rutnät där de två raderna sitter
+> ihop till en. Under: "Två rader in. En rad ut."
+
+## Vad `ON` gör
+
+`ON` anger **villkoret** för vilka rader som hör ihop.
+
+Läs raden som en mening: *ta med raden ur `kategorier` vars `id` är samma som produktens
+`kategori_id`.*
+
+Kopplingen är nästan alltid främmande nyckel mot primärnyckel — precis den relation förra delen
+byggde. Glöms `ON` bort paras varje rad ihop med varje rad i den andra tabellen, vilket ger ett svar
+med hundratusentals rader ur två små tabeller.
+
+## Vad ett alias är
+
+`p` och `k` i frågan ovan är **alias**: kortnamn för tabellerna, satta direkt efter tabellnamnet.
+
+De sparar skrivande, men gör framför allt varje kolumn entydig. Båda tabellerna har en kolumn som
+heter `namn`, och utan alias vet varken databasen eller läsaren vilken som avses.
+
+`AS kategori` gör samma sak för en kolumn i svaret: det är namnet den får i resultatet.
+
+## INNER vs LEFT JOIN
 
 Det enda du behöver bestämma vid en `JOIN` är vad som ska hända med rader som **inte** har någon
 motsvarighet.
@@ -86,37 +97,39 @@ motsvarighet.
   </div>
 </Split>
 
-Den skillnaden är också ett felsökningsverktyg. Får du färre rader än väntat ur en fråga med
-`JOIN`, byt tillfälligt till `LEFT JOIN` och leta efter `NULL`. Raderna som dyker upp är
-precis de som saknade sin koppling:
+Skriver du bara `JOIN` får du `INNER JOIN`. Att den tystar bort rader utan att säga något är den
+vanligaste orsaken till att ett svar innehåller färre poster än väntat.
+
+## LEFT JOIN som felsökningsverktyg
+
+Skillnaden ovan är också ett sätt att hitta trasig data.
+
+Får du färre rader än väntat ur en fråga med `JOIN`, byt tillfälligt till `LEFT JOIN` och leta efter
+`NULL`. Raderna som dyker upp är precis de som saknade sin koppling:
 
 ```sql
 SELECT p.namn
 FROM   produkter p
 LEFT JOIN kategorier k ON k.id = p.kategori_id
-WHERE  k.id IS NULL;   -- saknar giltig kategori
+WHERE  k.id IS NULL;
 ```
 
-## Orsak ett: databasen läser hela tabellen
+Notera att `WHERE k.id IS NULL` bara är meningsfullt tillsammans med `LEFT JOIN`. Med `INNER JOIN`
+kan villkoret aldrig bli sant, eftersom raderna redan är bortsorterade.
 
-Nu till de nio sekunderna. `EXPLAIN ANALYZE` visar vad databasen faktiskt gjorde — inte vad du
-tror att den gjorde:
+## Vad en full table scan är
 
-```text
-EXPLAIN ANALYZE
-SELECT * FROM kunder WHERE epost = 'lisa@example.se';
+En **full table scan** betyder att databasen läser varenda rad i tabellen och jämför.
 
-Seq Scan on kunder
-  Filter: (epost = 'lisa@example.se'::text)
-  Rows Removed by Filter: 399999
-  Execution Time: 214.882 ms
-```
+På tvåhundra rader kostar det ingenting. På fyrahundratusen kostar det allt du har.
 
-**`Seq Scan`** är ordet att leta efter. Det betyder *sekventiell genomsökning*: databasen läste
-varenda rad och jämförde. Fyrahundratusen rader för att hitta en.
+Det är den ena av de två orsakerna till Lisas nio sekunder: hennes fråga gick på 40 millisekunder i
+test med tvåhundra produkter, och samma fråga läser nu hela produktionstabellen.
 
-Ett **index** löser det. Det är en sorterad struktur vid sidan av tabellen, som låter databasen
-leta binärt i stället för att läsa allt:
+## Vad ett index är
+
+Ett **index** är en sorterad struktur vid sidan av tabellen, som låter databasen hitta rätt rad utan
+att läsa alla.
 
 <Stack
   caption="Ett index är en sorterad kopia av en kolumn plus en pekare till raden. Uppslag i tjugo steg i stället för fyrahundratusen."
@@ -142,7 +155,54 @@ leta binärt i stället för att läsa allt:
 CREATE INDEX ON kunder (epost);
 ```
 
-Samma fråga igen:
+Ett index är alltså inte en inställning på tabellen utan en egen struktur som databasen underhåller.
+Det har konsekvenser åt båda hållen, som vi tar strax.
+
+## Index vs primärnyckel
+
+De blandas ihop eftersom primärnyckeln alltid är indexerad.
+
+**Primärnyckeln** är en regel om identitet: värdet är unikt och pekar ut precis en rad. Databasen
+skapar ett index för den automatiskt, eftersom den behöver det för att kontrollera regeln.
+
+**Ett index** är bara en sökstruktur. Det säger ingenting om unikhet och har inget med identitet att
+göra.
+
+Den praktiska följden är viktig: **främmande nycklar indexeras inte automatiskt i PostgreSQL.** En
+oindexerad främmande nyckel är en av de vanligaste orsakerna till att en `JOIN` är långsam, och det
+är det första du bör kolla.
+
+## Vad EXPLAIN visar
+
+`EXPLAIN` visar hur databasen tänker utföra frågan. `EXPLAIN ANALYZE` kör den också och visar vad
+som faktiskt hände.
+
+```text
+EXPLAIN ANALYZE
+SELECT * FROM kunder WHERE epost = 'lisa@example.se';
+
+Seq Scan on kunder
+  Filter: (epost = 'lisa@example.se'::text)
+  Rows Removed by Filter: 399999
+  Execution Time: 214.882 ms
+```
+
+`Rows Removed by Filter: 399999` är hela historien: databasen läste fyrahundratusen rader för att
+hitta en.
+
+`EXPLAIN ANALYZE` **kör frågan på riktigt**. På en `SELECT` är det ofarligt, men på en `UPDATE` eller
+`DELETE` genomförs ändringen. Kör den i en transaktion du rullar tillbaka om du är osäker.
+
+## Seq Scan vs Index Scan
+
+De två raderna du letar efter i utdatan.
+
+**`Seq Scan`** betyder sekventiell genomsökning: hela tabellen lästes. På en liten tabell är det
+oproblematiskt och ofta snabbast. På en stor är det signalen att ett index saknas.
+
+**`Index Scan`** betyder att databasen slog upp i indexet och bara läste de rader den behövde.
+
+Samma fråga med ett index på plats:
 
 ```text
 Index Scan using kunder_epost_idx on kunder
@@ -150,32 +210,34 @@ Index Scan using kunder_epost_idx on kunder
   Execution Time: 0.071 ms
 ```
 
-Från 215 millisekunder till 0,07. Och skillnaden växer med tabellen — det är därför problemet
+Från 215 millisekunder till 0,07. Skillnaden växer med tabellen — det är precis därför problemet
 inte syns i test.
 
-<Callout type="sa-gor-du" title="Vad ska indexeras?">
+## Vad som ska indexeras
+
 Kolumner som står i **`WHERE`**, i **`JOIN ... ON`** eller i **`ORDER BY`**.
 
-Primärnycklar får ett index automatiskt. Främmande nycklar gör det **inte** i PostgreSQL, vilket
-förvånar många — och en oindexerad främmande nyckel är en av de vanligaste orsakerna till att en
-`JOIN` blir långsam. Kolla dem först.
-</Callout>
+Det är de tre ställen där databasen behöver leta, koppla eller sortera. Kolumner som bara läses ut i
+`SELECT` behöver inget index.
+
+Börja med de främmande nycklarna, eftersom de används i varje `JOIN` och inte indexeras automatiskt.
+
+## Priset för ett index
 
 <Callout type="fallgrop" title="Index på allt är också fel">
 Ett index är en extra struktur som måste hållas uppdaterad. Varje `INSERT` och `UPDATE` skriver
 alltså till både tabellen och varje index på den.
 
-Ett bord med tolv index blir märkbart långsammare att skriva till, tar mer diskutrymme och gör
-säkerhetskopiorna större. På en tabell som skrivs mer än den läses kan ett index kosta mer än
-det ger.
+En tabell med tolv index blir märkbart långsammare att skriva till, tar mer diskutrymme och gör
+säkerhetskopiorna större. På en tabell som skrivs mer än den läses kan ett index kosta mer än det
+ger.
 
 Indexera det du faktiskt söker på — och mät med `EXPLAIN ANALYZE` i stället för att gissa.
 </Callout>
 
-## Orsak två: N+1
+## Vad N+1 är
 
-Den andra orsaken syns inte alls i databasen, för varje enskild fråga är snabb. Den syns i
-*antalet*.
+**N+1** är mönstret där koden ställer en fråga för listan, plus en fråga per rad i den.
 
 <Flow
   caption="Femtioen anrop där ett hade räckt. Varje fråga tar 2 ms — tillsammans blir det över hundra."
@@ -203,8 +265,7 @@ Den andra orsaken syns inte alls i databasen, för varje enskild fråga är snab
   ]}
 />
 
-Mönstret heter **N+1**: en fråga för listan, plus en per rad. Det uppstår nästan alltid av att
-någon skriver en helt rimlig loop:
+Det uppstår nästan alltid av att någon skriver en helt rimlig loop:
 
 ```js
 const produkter = await hamtaProdukter();   // 1 fråga
@@ -215,27 +276,124 @@ for (const p of produkter) {
 }
 ```
 
-Lösningen är den `JOIN` vi började med — en fråga som hämtar allt på en gång. Använder du ett
-ORM finns oftast en inställning för det (`include`, `with`, `preload`), och den behöver sättas
-uttryckligen: standardbeteendet är just den här loopen.
+Ingen enskild fråga är långsam. Det är antalet som är problemet.
 
-<Callout type="fallgrop" title="N+1 syns inte i utvecklingsmiljön">
-Med tvåhundra rader och en databas på samma maskin tar femtioen frågor kanske tjugo
-millisekunder. Ingen märker något.
+## N+1 vs en JOIN
+
+Samma resultat, helt olika kostnad.
+
+**N+1** ställer 51 frågor. Varje fråga är snabb, men var och en kostar en tur till databasen.
+
+**En JOIN** ställer 1 fråga som hämtar allt på en gång, och databasen gör kopplingen internt.
+
+Använder du ett ORM finns oftast en inställning för det — `include`, `with` eller `preload` — och den
+måste sättas uttryckligen. Standardbeteendet är just den där loopen.
+
+## Varför N+1 inte syns i test
+
+<Callout type="fallgrop">
+Med tvåhundra rader och en databas på samma maskin tar femtioen frågor kanske tjugo millisekunder.
+Ingen märker något.
 
 I produktion ligger databasen på en annan maskin, och varje fråga kostar en nätverksresa till.
 Femtioen resor à två millisekunder blir hundra — per anrop, för varje besökare samtidigt.
 
-Det är exakt samma sorts fel som Lisas trasiga sidindelning i API-artikeln: koden är inte fel,
-den skalar bara inte. Och den enda tillförlitliga upptäckten är att **logga antalet frågor per
-anrop** — då syns det direkt, långt innan det blir ett problem.
+Det är exakt samma sorts fel som den saknade sidindelningen i API-serien: koden är inte fel, den
+skalar bara inte. Den enda tillförlitliga upptäckten är att **logga antalet frågor per anrop** — då
+syns det direkt, långt innan det blir ett problem.
 </Callout>
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att skriva `JOIN` i nästan varje fråga som hämtar något användbart, och du kommer att
+orsaka minst ett N+1 innan året är slut. Det gör alla.
+
+Två vanor räcker långt: kör `EXPLAIN` på frågor som känns långsamma i stället för att gissa, och
+logga antalet databasfrågor per API-anrop så att N+1 syns medan tabellerna fortfarande är små.
+
+Query planners, partitionering och replikering kan vänta. De blir aktuella när ett index inte längre
+räcker — och då är `EXPLAIN` fortfarande verktyget du börjar med.
+
+## Vanliga nybörjarförväxlingar
+
+En `JOIN` ändrar ingenting i databasen. Den sätter ihop rader i svaret.
+
+`JOIN` utan `ON` är inte samma fråga med färre tecken. Den parar ihop varje rad med varje rad.
+
+`JOIN` är inte neutral. Utan ordet `LEFT` tystas rader utan träff bort utan varning.
+
+Ett index är inte samma sak som en primärnyckel. Nyckeln är en regel; indexet är en sökstruktur.
+
+Främmande nycklar indexeras inte automatiskt i PostgreSQL, hur mycket de än används i `JOIN`.
+
+Fler index är inte bättre. Varje index kostar vid varje skrivning.
+
+Att en fråga är snabb betyder inte att sidan är det. Femtio snabba frågor är fortfarande femtio
+frågor.
+
+## Prova själv
+
+Samma verktyg som förra delen: `sqlite3 :memory:` skapar en databas som försvinner när du avslutar.
+
+```bash
+sqlite3 :memory:
+```
+
+Slå på tidtagning och skapa en tabell med tvåhundratusen rader:
+
+```sql
+.timer on
+
+CREATE TABLE kunder (
+  id    INTEGER PRIMARY KEY,
+  epost TEXT NOT NULL
+);
+
+INSERT INTO kunder (epost)
+WITH RECURSIVE n(i) AS (
+  SELECT 1
+  UNION ALL
+  SELECT i+1 FROM n WHERE i < 200000
+)
+SELECT 'k' || i || '@example.se' FROM n;
+```
+
+Fråga nu efter en enda kund, och be databasen berätta hur den tänker göra det:
+
+```sql
+EXPLAIN QUERY PLAN
+SELECT * FROM kunder
+WHERE epost = 'k150000@example.se';
+```
+
+Svaret innehåller ordet `SCAN`. Databasen tänker läsa hela tabellen. Kör frågan utan `EXPLAIN QUERY
+PLAN` och notera tiden.
+
+Lägg till ett index och fråga igen:
+
+```sql
+CREATE INDEX idx_epost ON kunder(epost);
+
+EXPLAIN QUERY PLAN
+SELECT * FROM kunder
+WHERE epost = 'k150000@example.se';
+```
+
+Nu står det `SEARCH` i stället för `SCAN`. Kör frågan igen och jämför tiden med förra mätningen —
+skillnaden är ungefär tusenfaldig. **Det är hela avsnittet, demonstrerat på din egen maskin.**
+
+Tre saker som kan förvirra: raden säger troligen `USING COVERING INDEX`, inte bara `USING INDEX`.
+*Covering* betyder att indexet ensamt räckte för att svara — databasen behövde inte ens öppna
+tabellen. På små tabeller väljer databasen ibland `SCAN` ändå eftersom det faktiskt är snabbare,
+vilket ser ut som att indexet inte fungerar. Och `.timer on` är sqlite3:s eget kommando, inte SQL —
+det är därför tidsraderna dyker upp mellan svaren.
 
 <Callout type="kom-ihag">
 - `JOIN ... ON` sätter ihop rader från två tabeller, oftast främmande nyckel mot primärnyckel.
 - **INNER** (standard) tystar bort rader utan träff. **LEFT** behåller dem med `NULL` — och är
   därför också ett felsökningsverktyg.
-- `EXPLAIN ANALYZE` visar sanningen. Leta efter **`Seq Scan`** på stora tabeller.
+- `EXPLAIN` visar planen, `EXPLAIN ANALYZE` kör frågan. Leta efter **`Seq Scan`** på stora tabeller.
+- Ett index är en sökstruktur, primärnyckeln en regel om identitet.
 - Indexera det som står i `WHERE`, `JOIN ... ON` och `ORDER BY`. Främmande nycklar indexeras
   **inte** automatiskt i PostgreSQL.
 - Index kostar vid varje skrivning. Indexera medvetet, inte allt.
@@ -250,7 +408,11 @@ anrop** — då syns det direkt, långt innan det blir ett problem.
     },
     {
       q: "Vad betyder `Seq Scan` i utdata från `EXPLAIN ANALYZE`?",
-      a: "Att databasen läste igenom hela tabellen rad för rad. På en liten tabell är det oproblematiskt, men på en stor är det signalen om att ett index saknas på kolumnen du filtrerar eller kopplar på.",
+      a: "Att databasen läste igenom hela tabellen rad för rad. På en liten tabell är det oproblematiskt och ofta snabbast, men på en stor är det signalen om att ett index saknas på kolumnen du filtrerar eller kopplar på.",
+    },
+    {
+      q: "Primärnyckeln indexeras automatiskt. Gäller det främmande nycklar också?",
+      a: "Inte i PostgreSQL. En främmande nyckel är bara en regel om att värdet måste finnas — inget index skapas. Eftersom den används i varje `JOIN` är en oindexerad främmande nyckel en av de vanligaste orsakerna till långsamma frågor.",
     },
     {
       q: "Varför är det inte en bra idé att lägga index på alla kolumner?",
@@ -260,18 +422,32 @@ anrop** — då syns det direkt, långt innan det blir ett problem.
       q: "Varför märks N+1 sällan i utvecklingsmiljön?",
       a: "Där är tabellerna små och databasen ligger ofta på samma maskin, så femtio extra frågor kostar nästan ingenting. I produktion tillkommer en nätverksresa per fråga, och antalet växer med sidstorleken. Logga antalet frågor per anrop för att se det tidigt.",
     },
+    {
+      q: "Du vill köra `EXPLAIN ANALYZE` på en `DELETE` för att se varför den är långsam. Vad ska du tänka på?",
+      a: "Att den faktiskt kör frågan. Raderna raderas på riktigt. Kör den i en transaktion du rullar tillbaka, eller nöj dig med `EXPLAIN` utan `ANALYZE`, som bara visar planen.",
+    },
   ]}
 />
 
-## Sammanfattning
+## Snabb sammanfattning
 
-`JOIN` sätter ihop det som normaliseringen delade upp, och det enda valet som spelar roll är om
-rader utan motsvarighet ska följa med eller inte.
+- En `JOIN` sätter ihop rader från två tabeller i svaret. Ingenting ändras i databasen.
+- `ON` anger villkoret för vilka rader som hör ihop — oftast främmande nyckel mot primärnyckel.
+- Alias gör kolumnerna entydiga när båda tabellerna har kolumner med samma namn.
+- `INNER` (standard) tystar bort rader utan träff. `LEFT` behåller dem med `NULL`.
+- `LEFT JOIN` plus `WHERE ... IS NULL` hittar raderna som saknar sin koppling.
+- En full table scan läser varenda rad. Gratis på tvåhundra, dyrt på fyrahundratusen.
+- Ett index är en sorterad sökstruktur vid sidan av tabellen.
+- Primärnyckeln är en regel och indexeras automatiskt. Främmande nycklar är det inte.
+- `EXPLAIN` visar planen. `EXPLAIN ANALYZE` kör frågan — även när det är en `DELETE`.
+- `Seq Scan` på en stor tabell betyder att ett index saknas. `Index Scan` betyder att det används.
+- Indexera det som står i `WHERE`, `JOIN ... ON` och `ORDER BY` — inte allt.
+- N+1 är en fråga plus en per rad. Lös med `JOIN` och logga antalet frågor per anrop.
 
-Prestandan har nästan alltid en av två förklaringar. Antingen läser databasen hela tabellen för
-att ett index saknas — och `EXPLAIN ANALYZE` säger det rakt ut. Eller så ställs femtioen frågor
-där en hade räckt, vilket inte syns förrän databasen ligger på en annan maskin än koden.
+## Nästa del
 
 Med det står fundamenten: maskinen, nätet, versionshanteringen, gränssnittet mellan system och
-lagringen bakom. Det är underlaget som Docker-, Kubernetes- och Terraform-serierna vilar på —
-och nu går de att läsa utan att något steg är magi.
+lagringen bakom.
+
+Det är underlaget som Docker-, Kubernetes- och Terraform-serierna vilar på — och nu går de att läsa
+utan att något steg är magi.

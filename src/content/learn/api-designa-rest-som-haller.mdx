@@ -10,15 +10,26 @@ tags: ['Beginner', 'API', 'REST']
 
 ## Var vi är
 
-Du vet vad ett API är: ett kontrakt, med reglerna på serversidan. Nu handlar det om hur
+Du vet vad ett API är: ett kontrakt, med reglerna på serversidan. Den här delen handlar om hur
 kontraktet **formuleras**.
 
-Det låter som en smaksak. Det är det inte, av ett enda skäl: ett API är svårt att ändra när
-någon väl använder det. Namnen du väljer första veckan lever kvar länge.
+Det låter som en smaksak. Det är det inte, av ett enda skäl: ett API är svårt att ändra när någon väl
+använder det. Namnen du väljer första veckan lever kvar länge.
 
-## Ett API där varje ny endpoint är en diskussion
+Vi bygger på nätverksserien här. Metoderna, deras egenskaper och statuskodernas grupper är redan
+genomgångna — nu handlar det om vilka man ska välja, och när.
 
-Marias API har vuxit ett halvår. Så här ser en del av det ut:
+## Vad REST är
+
+**REST** är en uppsättning konventioner för hur ett API över HTTP bör se ut.
+
+Den bärande konventionen är en enda mening: **sökvägen säger vad du pratar om, metoden säger vad du
+vill göra.**
+
+Håller du den regeln behöver ingen minnas namnen — de går att räkna ut. Det är hela vinsten, och den
+växer med varje endpoint.
+
+Så här ser ett API ut som inte gör det. Marias API har vuxit ett halvår:
 
 ```text
 GET   /getProdukt?id=8842
@@ -28,21 +39,81 @@ POST  /deleteProduktById
 GET   /produkt/aktiva/lista
 ```
 
-Ingenting är direkt fel. Varje endpoint fungerar. Men fem olika personer har namngett fem
-endpoints, och nu måste varje ny börja med en diskussion om vad den ska heta — eller ännu
-oftare, med att någon slår upp hur de gamla såg ut.
+Ingenting är direkt fel. Varje endpoint fungerar. Men fem personer har namngett fem endpoints, och
+nu måste varje ny börja med en diskussion om vad den ska heta.
 
-<Callout type="varfor" title="Vad REST faktiskt löser">
-REST är inte en teknik eller ett bibliotek. Det är en handfull konventioner, och den bärande
-är den här:
+## REST vs "HTTP-API"
 
-**Sökvägen säger vad du pratar om. Metoden säger vad du vill göra.**
+Orden används om vartannat, och det är värt att veta varför.
 
-Håller du den regeln behöver ingen minnas namnen — de går att räkna ut. Det är hela vinsten,
-och den växer med varje endpoint.
-</Callout>
+**REST** i ursprunglig mening är en arkitekturstil med flera villkor, bland annat att svaren ska
+innehålla länkar som talar om vad klienten kan göra härnäst.
 
-## Helheten först: en resurs, fem operationer
+**Ett HTTP-API** är vad de allra flesta faktiskt bygger: resurser, metoder och JSON över HTTP, utan
+de länkarna.
+
+I praktiken kallas det senare för REST av alla. Det är ingen katastrof, men det förklarar varför du
+ibland möter påståendet att "nästan inget API är egentligen REST".
+
+Länkdelen heter HATEOAS och behöver du inte nu. Konventionerna nedan är det som ger nästan hela
+värdet.
+
+## Substantiv i sökvägen, verb i metoden
+
+Grundregeln, i praktiken:
+
+<Split
+  leftTitle="Verb i sökvägen"
+  rightTitle="Substantiv + metod"
+  leftTone="bad"
+  rightTone="good"
+  caption="Samma funktionalitet. Den ena går att lära sig, den andra måste läras utantill."
+>
+  <div slot="left">
+
+  `GET /getProdukt?id=8842`
+  `POST /deleteProduktById`
+
+  Varje operation blir ett eget namn någon hittat på.
+
+  `POST` för att radera betyder dessutom att metoden inte längre säger något — allt är `POST` eller
+  `GET`.
+
+  </div>
+  <div slot="right">
+
+  `GET /produkter/8842`
+  `DELETE /produkter/8842`
+
+  Adressen pekar ut **saken**, metoden bär **avsikten**.
+
+  Metoden blir därmed meningsfull igen — och därmed även dess egenskaper: `DELETE` är idempotent,
+  `GET` är säkert.
+
+  </div>
+</Split>
+
+Kopplingen till nätverksserien är direkt. Ett `POST /deleteProduktById` ljuger för alla lager under
+dig: mellanservrar tror att något skapas, och automatiska omförsök blir farliga fast operationen
+egentligen var idempotent.
+
+## Samlingar och medlemmar
+
+Två sorters adresser, och all struktur bygger på skillnaden.
+
+**En samling** är alla resurser av ett slag: `/produkter`.
+
+**En medlem** är en bestämd av dem: `/produkter/8842`.
+
+Metoden betyder olika saker beroende på vilken du riktar dig mot. `GET /produkter` listar; `GET
+/produkter/8842` hämtar en. `POST /produkter` skapar en ny i samlingen; `DELETE /produkter/8842` tar
+bort en medlem.
+
+> **DOODLE** — En hylla märkt `/produkter` med fem lådor. En av lådorna utdragen och märkt
+> `/produkter/8842`. Heldragen pil till hyllan märkt "GET → lista", heldragen pil till den utdragna
+> lådan märkt "GET → en". Under: "Samlingen och medlemmen. Samma metod, olika svar."
+
+## De sex operationerna
 
 Samma produkter, uttryckta enligt konventionen:
 
@@ -55,81 +126,125 @@ PATCH   /produkter/8842     → ändra delar av den
 DELETE  /produkter/8842     → ta bort den
 ```
 
-Två sökvägar. Sex operationer. Och den som lär sig mönstret kan gissa hur `/ordrar` och
-`/kunder` ser ut utan att fråga.
+Två sökvägar. Sex operationer. Den som lärt sig mönstret kan gissa hur `/ordrar` och `/kunder` ser ut
+utan att fråga.
 
-<Split
-  leftTitle="Verb i sökvägen"
-  rightTitle="Substantiv + metod"
-  caption="Samma funktionalitet. Den ena går att lära sig, den andra måste läras utantill."
->
-  <div slot="left">
+Skillnaden mellan `PUT` och `PATCH` gick nätverksserien igenom: `PUT` ersätter hela resursen, `PATCH`
+bara de fält du skickar.
 
-  `GET /getProdukt?id=8842`
-  `POST /deleteProduktById`
+## Plural och konsekvens
 
-  Varje operation blir ett eget namn någon hittat på.
+Skriv samlingen i plural: `/produkter`, inte `/produkt`.
 
-  `POST` för att radera betyder dessutom att metoden inte längre säger något — allt är `POST`
-  eller `GET`.
+Medlemmen blir då en post i den: `/produkter/8842`. Läst högt blir det "produkt nummer 8842 bland
+produkterna", vilket stämmer med vad adressen faktiskt pekar ut.
 
-  </div>
-  <div slot="right">
+Konsekvensen är viktigare än valet. Ett API där hälften av samlingarna är plural och hälften singular
+går inte att gissa sig till, och då är hela poängen borta.
 
-  `GET /produkter/8842`
-  `DELETE /produkter/8842`
+## Hierarki när något hör till något annat
 
-  Adressen pekar ut **saken**, metoden bär **avsikten**.
-
-  Metoden blir därmed meningsfull igen — och därmed även dess egenskaper: `DELETE` är
-  idempotent, `GET` är säkert.
-
-  </div>
-</Split>
-
-Kopplingen till HTTP-artikeln är direkt. Ett `POST /deleteProduktById` ljuger för alla lager
-under dig: mellanservrar tror att något skapas, och automatiska omförsök blir farliga fast
-operationen egentligen var idempotent.
-
-## Fyra konventioner som räcker långt
-
-**Plural i sökvägen.** `/produkter`, inte `/produkt`. Samlingen är plural, och en enskild post
-är en medlem i den: `/produkter/8842`. Konsekvensen är viktigare än valet.
-
-**Hierarki när något hör till något annat.** Recensioner tillhör en produkt:
+Hör en resurs bara hemma inuti en annan får den ligga under den.
 
 ```text
 GET  /produkter/8842/recensioner
 POST /produkter/8842/recensioner
 ```
 
-Men sluta där. `/kunder/12/ordrar/55/rader/3/produkt` är en sökväg ingen vill skriva. Har
-resursen ett eget id räcker det: `/orderrader/3`.
+Men sluta där. `/kunder/12/ordrar/55/rader/3/produkt` är en sökväg ingen vill skriva eller felsöka.
 
-**Filtrering, sortering och sidindelning i frågesträngen.** De beskriver inte en annan resurs
-utan en annan *vy* av samma:
+Tumregeln: har resursen ett eget id räcker det med en egen samling. `/orderrader/3` säger samma sak
+och är läsbart.
+
+## Sökväg vs frågesträng
+
+En förväxling som ger API:er som växer okontrollerat.
+
+**Sökvägen** pekar ut vilken resurs det handlar om. `/produkter/8842`.
+
+**Frågesträngen** beskriver vilken *vy* av resursen du vill ha: filter, sortering, sidindelning.
+`/produkter?kategori=verktyg&sida=2`.
+
+Därför är `/produkter/aktiva` fel och `/produkter?status=aktiv` rätt. "Aktiva produkter" är inte en
+annan resurs — det är samma resurs sedd genom ett filter.
+
+Väljer du sökvägen behöver du en ny sådan för varje kombination någon någonsin efterfrågar. Väljer du
+frågesträngen behöver du ingen.
+
+## POST vs PUT vid skapande
+
+Båda kan skapa något, och valet beror på vem som bestämmer id:t.
+
+**`POST /produkter`** skickar resursen till samlingen och låter **servern** hitta på id:t. Det är det
+vanliga fallet, och det är inte idempotent — två anrop ger två produkter.
+
+**`PUT /produkter/8842`** skickar resursen till en adress **du** valt. Finns den inte skapas den;
+finns den ersätts den. Anropet är idempotent.
+
+Använd `POST` när servern äger numreringen, vilket är nästan alltid. `PUT` för att skapa är rimligt
+när klienten redan har ett naturligt id, till exempel ett artikelnummer från ett annat system.
+
+## Vilken statuskod till vilket svar
+
+Nätverksserien gick igenom vad grupperna betyder. I API-design handlar det om att välja rätt kod
+inom dem.
 
 ```text
-GET /produkter?kategori=verktyg&sortera=pris&sida=2
+200 OK          lyckades, resultatet bifogas
+201 Created     något skapades
+204 No Content  lyckades, inget att skicka
+400 Bad Request innehållet gick inte att godta
+404 Not Found   resursen finns inte
+409 Conflict    krockar med nuvarande läge
 ```
 
-Därför är `/produkter/aktiva` fel och `/produkter?status=aktiv` rätt. Annars får du en ny
-sökväg för varje kombination någon någonsin behöver.
+Poängen är att koden ska vara **sann**. En klient som får `201` vet att något skapades utan att
+behöva läsa kroppen.
 
-**Version i sökvägen.** `/v1/produkter`. Det är fult, och alternativen är värre. Den dagen ett
-fältnamn måste ändras kan du köra `/v2` parallellt medan gamla klienter fortsätter fungera — i
-stället för att bryta dem alla en tisdag.
+## 200 vs 201 vs 204
 
-<Callout type="fallgrop" title="Sidindelning som glöms bort">
-`GET /produkter` returnerar alla produkter. I utvecklingsmiljön finns tvåhundra, och det går på
-40 millisekunder.
+De tre lyckade koderna blandas ihop mest.
 
-I produktion finns fyrahundratusen. Nu läser databasen hela tabellen, servern bygger en
-JSON-sträng på tiotals megabyte, och klienten försöker rendera alltihop. Endpointen fungerade
-i ett år och slutade fungera utan att någon rörde den.
+**`200 OK`** — det gick bra, och här är resultatet. Används för `GET` och för `PUT`/`PATCH` som
+returnerar den uppdaterade resursen.
 
-Bygg in sidindelning från början, med en **rimlig standard även när klienten inte ber om
-något**:
+**`201 Created`** — något nytt skapades. Används för `POST` som skapar en resurs, och bör följas av
+en `Location`-header.
+
+**`204 No Content`** — det gick bra, och det finns medvetet ingenting att skicka. Vanligast för
+`DELETE`.
+
+Skillnaden mellan `200` och `204` är alltså inte om det lyckades, utan om det finns en kropp. Skickar
+du `204` med innehåll bryter du mot det du just lovade.
+
+## Vad `Location` gör
+
+När `POST` skapat något vet klienten ännu inte var det hamnade.
+
+Svara därför med adressen till den nya resursen i en `Location`-header:
+
+```http
+HTTP/1.1 201 Created
+Location: /produkter/8842
+Content-Type: application/json
+
+{"id":8842,"namn":"Skruvmejsel PH2"}
+```
+
+Nu kan klienten hämta, uppdatera eller radera resursen utan att gissa hur adressen är uppbyggd. Det
+kostar en rad och tar bort ett antagande.
+
+## Sidindelning
+
+<Callout type="fallgrop" title="Listendpointen som slutar fungera av sig själv">
+`GET /produkter` returnerar alla produkter. I utvecklingsmiljön finns tvåhundra, och det går på 40
+millisekunder.
+
+I produktion finns fyrahundratusen. Nu läser databasen hela tabellen, servern bygger en JSON-sträng
+på tiotals megabyte, och klienten försöker rendera alltihop. Endpointen fungerade i ett år och slutade
+fungera utan att någon rörde den.
+
+Bygg in sidindelning från början, med en **rimlig standard även när klienten inte ber om något**:
 
 ```text
 GET /produkter              → 50 första
@@ -139,10 +254,13 @@ GET /produkter?sida=2       → nästa 50
 Det kostar ingenting i början och går inte att lägga till senare utan att bryta kontraktet.
 </Callout>
 
+Sidnummer är den enkla varianten och räcker långt. Det finns en robustare som heter cursor-baserad
+sidindelning, där klienten får en markör i stället för ett sidnummer — den blir intressant först när
+listan ändras medan någon bläddrar i den.
+
 ## Felsvar som går att göra något åt
 
-Statuskoden säger *vem* som ska felsöka — det etablerade HTTP-artikeln. Men `400 Bad Request`
-utan mer information lämnar frontend-utvecklaren med en gissningslek.
+`400 Bad Request` utan mer information lämnar frontend-utvecklaren med en gissningslek.
 
 Skicka med vad som var fel, i ett format som är sig likt varje gång:
 
@@ -157,13 +275,28 @@ Skicka med vad som var fel, i ett format som är sig likt varje gång:
 }
 ```
 
-Nu kan klienten markera rätt fält i formuläret i stället för att visa en allmän ruta. Och lika
-viktigt: **skriv aldrig ut interna detaljer.** Ett stack trace eller en SQL-fråga i ett felsvar
+Nu kan klienten markera rätt fält i formuläret i stället för att visa en allmän ruta.
+
+Lika viktigt: **skriv aldrig ut interna detaljer.** Ett stack trace eller en SQL-fråga i ett felsvar
 berättar för en angripare hur systemet är byggt.
 
+Det finns en standard för felsvar som heter Problem Details, med mediatypen
+`application/problem+json`. Du behöver den inte för att komma igång, men den är värd att känna till
+den dag ditt API får externa klienter.
+
+## Versionering
+
+Lägg en version i sökvägen från början: `/v1/produkter`.
+
+Det är fult, och alternativen är värre. Den dagen ett fältnamn måste ändras kan du köra `/v2`
+parallellt medan gamla klienter fortsätter mot `/v1` — i stället för att bryta dem alla en tisdag.
+
+Vad som räknas som brytande gick förra delen igenom: att ta bort ett fält, byta namn på det eller
+ändra dess typ. Att lägga till ett är normalt ofarligt och kräver ingen ny version.
+
 <Callout type="sa-gor-du" title="Skriv kontraktet innan koden">
-Det mest värdefulla du kan göra innan första endpointen byggs är att skriva ner resurserna och
-deras fält — i en OpenAPI-fil eller bara i ett dokument.
+Det mest värdefulla du kan göra innan första endpointen byggs är att skriva ner resurserna och deras
+fält — i en OpenAPI-fil eller bara i ett dokument.
 
 Två saker faller ut av det. Frontend kan börja arbeta mot ett svar som ännu inte finns, och
 diskussionen om vad saker ska heta tas **en gång**, inte vid varje ny endpoint.
@@ -171,13 +304,83 @@ diskussionen om vad saker ska heta tas **en gång**, inte vid varje ny endpoint.
 Det är samma princip som `plan` i Terraform: se överenskommelsen innan den blir verklighet.
 </Callout>
 
+## Vad det här betyder i ditt arbete
+
+Du kommer att lägga till endpoints i ett befintligt API oftare än du designar ett nytt. Det viktigaste
+du gör då är att **följa mönstret som redan finns**, även när du hade valt annorlunda själv —
+konsekvens är värd mer än att varje enskild adress är optimal.
+
+Designar du från början är tre beslut svåra att ändra i efterhand och värda att ta direkt: version i
+sökvägen, sidindelning med rimlig standard, och ett felformat klienten kan agera på.
+
+OpenAPI-generering, HATEOAS och GraphQL kan vänta. Det första är ett verktyg, det andra sällan
+använt, och det tredje ett annat sätt att lösa samma problem — inget av dem ändrar konventionerna
+ovan.
+
+## Vanliga nybörjarförväxlingar
+
+REST är inte en teknik eller ett bibliotek. Det är en uppsättning konventioner.
+
+Verbet hör inte hemma i sökvägen. `DELETE /produkter/8842`, inte `POST /deleteProduktById`.
+
+`/produkter/aktiva` är inte en resurs. Det är ett filter och hör hemma i frågesträngen.
+
+`201` och `200` är inte utbytbara. `201` säger att något skapades, och bör följas av `Location`.
+
+`204` betyder inte att inget hände. Det betyder att det lyckades och att det inte finns någon kropp.
+
+Att en listendpoint fungerar i test betyder inte att den håller. Utan sidindelning slutar den
+fungera av sig själv.
+
+## Prova själv
+
+GitHubs API är ett välbyggt REST-API och går att läsa utan inloggning.
+
+```bash
+API=https://api.github.com/repos/withastro/astro
+curl -i "$API" | head -12
+```
+
+Du ser statusraden `200 OK` och ett antal response-headers. Jämför sedan samlingen med en medlem:
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" "$API"
+curl -s -o /dev/null -w "%{http_code}\n" "$API/issues"
+```
+
+Båda svarar `200`, men den första är en resurs och den andra en samling under den — precis
+hierarkimönstret från avsnittet ovan. Lägg nu till ett filter i frågesträngen:
+
+```bash
+curl -s "$API/issues?per_page=2" | head -5
+```
+
+Samma samling, en annan vy. Testa slutligen ett villkorat anrop:
+
+```bash
+ETAG=$(curl -s -D - -o /dev/null "$API" \
+  | grep -i '^etag:' | cut -d' ' -f2 | tr -d '\r')
+curl -s -o /dev/null -w "%{http_code}\n" \
+  -H "If-None-Match: $ETAG" "$API"
+```
+
+Nu får du `304 Not Modified`: servern säger att du redan har den senaste versionen och skickar ingen
+kropp alls.
+
+Tre saker som kan förvirra: URL:en måste stå inom citattecken när den innehåller `&`, annars tolkar
+skalet tecknet som ett kommando. Utan inloggning tillåter GitHub omkring sextio anrop i timmen och
+svarar sedan `403` med ett meddelande om rate limit. Och ett `304`-svar har tom kropp med flit — det
+är inte ett trasigt svar.
+
 <Callout type="kom-ihag">
 - **Substantiv i sökvägen, verb i metoden.** Då går API:et att gissa i stället för att memorera.
-- Plural och konsekvens: `/produkter`, `/produkter/8842`, `/produkter/8842/recensioner`.
-- Filter, sortering och sidindelning hör hemma i **frågesträngen** — de beskriver en vy, inte
-  en resurs.
-- Version i sökvägen från början. Sidindelning med rimlig standard från början.
-- Felsvar ska gå att agera på, i samma form varje gång — och aldrig avslöja interna detaljer.
+- Samling i plural, medlem under den: `/produkter`, `/produkter/8842`.
+- Filter, sortering och sidindelning hör hemma i **frågesträngen** — de beskriver en vy, inte en
+  resurs.
+- `POST` till samlingen när servern äger id:t, `PUT` till en adress när klienten gör det.
+- `201` när något skapas, med `Location`. `204` när det lyckades och kroppen är tom med flit.
+- Version i sökvägen och sidindelning med rimlig standard — båda från början.
+- Felsvar ska gå att agera på, i samma form varje gång, och aldrig avslöja interna detaljer.
 </Callout>
 
 <Check
@@ -191,6 +394,14 @@ Det är samma princip som `plan` i Terraform: se överenskommelsen innan den bli
       a: "Frågesträngen. Det är samma resurs sedd genom ett filter, inte en annan resurs. Väljer du sökvägen behöver du en ny sådan för varje kombination av filter någon någonsin efterfrågar.",
     },
     {
+      q: "När är `PUT` rimligare än `POST` för att skapa något?",
+      a: "När klienten redan har ett naturligt id, till exempel ett artikelnummer från ett annat system. Då kan resursen läggas på en adress du valt, och anropet blir idempotent. Äger servern numreringen är `POST` till samlingen rätt.",
+    },
+    {
+      q: "Vad är skillnaden mellan att svara `200` och `204`?",
+      a: "Inte om det lyckades, utan om det finns en kropp. `200` betyder att resultatet bifogas, `204` att det medvetet inte finns något att skicka — typiskt efter en `DELETE`.",
+    },
+    {
       q: "En endpoint som fungerat i ett år slutar plötsligt fungera, utan att koden ändrats. Vad är en trolig orsak?",
       a: "Sidindelning saknas. Listan har vuxit tills databasläsningen, svarets storlek eller renderingen inte längre går. Därför ska en listendpoint ha en rimlig standardgräns redan från början — den går inte att lägga till senare utan att bryta kontraktet.",
     },
@@ -201,14 +412,22 @@ Det är samma princip som `plan` i Terraform: se överenskommelsen innan den bli
   ]}
 />
 
-## Sammanfattning
+## Snabb sammanfattning
 
-REST är i praktiken en handfull konventioner som gör API:et gissningsbart: adressen pekar ut
-saken, metoden bär avsikten, och frågesträngen beskriver vilken vy du vill ha av den.
+- REST är konventioner, inte en teknik. Den bärande: sökvägen säger vad, metoden säger vad du vill.
+- De flesta "REST-API:er" är egentligen HTTP-API:er utan länkar. Det räcker gott.
+- En samling är plural, en medlem ligger under den. Konsekvens är viktigare än valet.
+- Sex operationer på två sökvägar täcker en resurs helt.
+- Hierarki bara när något hör hemma inuti något annat. Har det eget id räcker en egen samling.
+- Sökvägen pekar ut resursen, frågesträngen beskriver vilken vy av den du vill ha.
+- `POST` till samlingen när servern äger id:t. `PUT` till en adress när klienten gör det.
+- `200` med resultat, `201` när något skapats, `204` när kroppen är tom med flit.
+- `Location` efter `201` talar om var resursen hamnade.
+- Sidindelning med rimlig standard från början — den går inte att lägga till utan att bryta.
+- Felsvar i samma form varje gång, utan interna detaljer.
+- Version i sökvägen från början. Att lägga till ett fält kräver ingen ny version.
 
-Tre beslut är svåra att ändra i efterhand och värda att ta direkt: version i sökvägen,
-sidindelning med en rimlig standard, och ett felformat som klienten kan agera på.
+## Nästa del
 
-Nu har vi följt kedjan från webbläsaren till API:et. Sista steget är det som ligger bakom
-det — hur data faktiskt lagras, och varför en fråga som var snabb i test kan ta nio sekunder i
-produktion.
+Nu har vi följt kedjan från webbläsaren till API:et. Sista steget är det som ligger bakom det — hur
+data faktiskt lagras, och varför en fråga som var snabb i test kan ta nio sekunder i produktion.
