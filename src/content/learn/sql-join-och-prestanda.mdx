@@ -1,0 +1,277 @@
+---
+title: 'JOIN — och varför frågor blir långsamma'
+description: 'Sätt ihop tabellerna igen, och förstå vad databasen faktiskt gör med din fråga'
+category: 'sql'
+part: 1
+order: 2
+date: '2026-08-04'
+tags: ['Beginner', 'SQL', 'Prestanda']
+---
+
+## Var vi är
+
+Förra delen delade upp data: kategorin på ett ställe, produkten på ett annat, en pekare
+emellan. Det gör ändringar säkra.
+
+Priset är att informationen nu ligger utspridd — och API:et behöver den ihopsatt igen. Det är
+vad `JOIN` gör. Och det är också där prestandan avgörs.
+
+## Nio sekunder
+
+Lisas produktsökning gick på 40 millisekunder i testmiljön. I produktion tar den nio sekunder.
+
+Ingen har ändrat frågan. Skillnaden är att testmiljön har tvåhundra produkter och produktion
+fyrahundratusen.
+
+Det är den vanligaste sortens prestandaproblem, och den har nästan alltid en av två orsaker.
+Vi tar dem i tur och ordning — men först själva ihopsättningen.
+
+## Helheten först: JOIN sätter ihop rader
+
+```sql
+SELECT  p.namn,
+        p.pris,
+        k.namn AS kategori
+FROM    produkter p
+JOIN    kategorier k ON k.id = p.kategori_id
+WHERE   p.pris < 200
+ORDER BY p.namn;
+```
+
+Läs `JOIN`-raden som en mening: *ta med raden ur `kategorier` vars `id` är samma som produktens
+`kategori_id`.* Villkoret efter `ON` är kopplingen — nästan alltid främmande nyckel mot
+primärnyckel.
+
+Resultatet är en ny tabell som bara existerar under frågan, med kolumner från båda:
+
+```text
+namn               pris   kategori
+Hammare 500g       189    Handverktyg
+Skruvmejsel PH2    149    Handverktyg
+```
+
+`p` och `k` är alias. De sparar skrivande, men gör framför allt varje kolumn entydig — båda
+tabellerna har en kolumn som heter `namn`, och utan alias vet varken databasen eller läsaren
+vilken som avses.
+
+## INNER eller LEFT: vad händer med det som saknas?
+
+Det enda du behöver bestämma vid en `JOIN` är vad som ska hända med rader som **inte** har någon
+motsvarighet.
+
+<Split
+  leftTitle="JOIN (INNER)"
+  rightTitle="LEFT JOIN"
+  leftTone="neutral"
+  rightTone="neutral"
+  caption="Standarden är INNER. Den tystar bort rader — vilket ibland är rätt och ibland är buggen."
+>
+  <div slot="left">
+
+  Bara rader som **har** en träff i båda tabellerna kommer med.
+
+  En produkt utan kategori försvinner ur resultatet — utan varning.
+
+  Rätt när kopplingen alltid ska finnas, till exempel när kolumnen är `NOT NULL`.
+
+  </div>
+  <div slot="right">
+
+  Alla rader från vänstra tabellen kommer med, även utan träff.
+
+  Produkten utan kategori finns kvar, med `NULL` i kategorikolumnerna.
+
+  Rätt när kopplingen är valfri — och när du vill kunna hitta dem som saknar den.
+
+  </div>
+</Split>
+
+Den skillnaden är också ett felsökningsverktyg. Får du färre rader än väntat ur en fråga med
+`JOIN`, byt tillfälligt till `LEFT JOIN` och leta efter `NULL`. Raderna som dyker upp är
+precis de som saknade sin koppling:
+
+```sql
+SELECT p.namn
+FROM   produkter p
+LEFT JOIN kategorier k ON k.id = p.kategori_id
+WHERE  k.id IS NULL;   -- saknar giltig kategori
+```
+
+## Orsak ett: databasen läser hela tabellen
+
+Nu till de nio sekunderna. `EXPLAIN ANALYZE` visar vad databasen faktiskt gjorde — inte vad du
+tror att den gjorde:
+
+```text
+EXPLAIN ANALYZE
+SELECT * FROM kunder WHERE epost = 'lisa@example.se';
+
+Seq Scan on kunder
+  Filter: (epost = 'lisa@example.se'::text)
+  Rows Removed by Filter: 399999
+  Execution Time: 214.882 ms
+```
+
+**`Seq Scan`** är ordet att leta efter. Det betyder *sekventiell genomsökning*: databasen läste
+varenda rad och jämförde. Fyrahundratusen rader för att hitta en.
+
+Ett **index** löser det. Det är en sorterad struktur vid sidan av tabellen, som låter databasen
+leta binärt i stället för att läsa allt:
+
+<Stack
+  caption="Ett index är en sorterad kopia av en kolumn plus en pekare till raden. Uppslag i tjugo steg i stället för fyrahundratusen."
+  ground="Disken"
+  layers={[
+    {
+      label: "Frågan",
+      note: "`WHERE epost = 'lisa@example.se'`",
+    },
+    {
+      label: "Index på epost",
+      note: "Sorterat träd. Databasen halverar sökrymden vid varje steg.",
+      accent: true,
+    },
+    {
+      label: "Tabellen kunder",
+      note: "400 000 rader, i ingen särskild ordning. Endast raden indexet pekar ut behöver läsas.",
+    },
+  ]}
+/>
+
+```sql
+CREATE INDEX ON kunder (epost);
+```
+
+Samma fråga igen:
+
+```text
+Index Scan using kunder_epost_idx on kunder
+  Index Cond: (epost = 'lisa@example.se'::text)
+  Execution Time: 0.071 ms
+```
+
+Från 215 millisekunder till 0,07. Och skillnaden växer med tabellen — det är därför problemet
+inte syns i test.
+
+<Callout type="sa-gor-du" title="Vad ska indexeras?">
+Kolumner som står i **`WHERE`**, i **`JOIN ... ON`** eller i **`ORDER BY`**.
+
+Primärnycklar får ett index automatiskt. Främmande nycklar gör det **inte** i PostgreSQL, vilket
+förvånar många — och en oindexerad främmande nyckel är en av de vanligaste orsakerna till att en
+`JOIN` blir långsam. Kolla dem först.
+</Callout>
+
+<Callout type="fallgrop" title="Index på allt är också fel">
+Ett index är en extra struktur som måste hållas uppdaterad. Varje `INSERT` och `UPDATE` skriver
+alltså till både tabellen och varje index på den.
+
+Ett bord med tolv index blir märkbart långsammare att skriva till, tar mer diskutrymme och gör
+säkerhetskopiorna större. På en tabell som skrivs mer än den läses kan ett index kosta mer än
+det ger.
+
+Indexera det du faktiskt söker på — och mät med `EXPLAIN ANALYZE` i stället för att gissa.
+</Callout>
+
+## Orsak två: N+1
+
+Den andra orsaken syns inte alls i databasen, för varje enskild fråga är snabb. Den syns i
+*antalet*.
+
+<Flow
+  caption="Femtioen anrop där ett hade räckt. Varje fråga tar 2 ms — tillsammans blir det över hundra."
+  steps={[
+    {
+      label: "GET /produkter",
+      note: "Klienten ber om första sidan, femtio produkter.",
+    },
+    {
+      label: "1 fråga",
+      via: "hämta listan",
+      note: "`SELECT * FROM produkter LIMIT 50`. Snabb.",
+    },
+    {
+      label: "50 frågor",
+      via: "för varje produkt",
+      note: "Koden loopar och hämtar kategorin per produkt: `SELECT … WHERE id = ?`. Var och en snabb.",
+      accent: true,
+    },
+    {
+      label: "51 anrop totalt",
+      via: "summan",
+      note: "Och hundra produkter per sida ger 101. Problemet växer linjärt med sidstorleken.",
+    },
+  ]}
+/>
+
+Mönstret heter **N+1**: en fråga för listan, plus en per rad. Det uppstår nästan alltid av att
+någon skriver en helt rimlig loop:
+
+```js
+const produkter = await hamtaProdukter();   // 1 fråga
+
+for (const p of produkter) {
+  // en fråga till — för varje produkt i listan
+  p.kategori = await hamtaKategori(p.kategori_id);
+}
+```
+
+Lösningen är den `JOIN` vi började med — en fråga som hämtar allt på en gång. Använder du ett
+ORM finns oftast en inställning för det (`include`, `with`, `preload`), och den behöver sättas
+uttryckligen: standardbeteendet är just den här loopen.
+
+<Callout type="fallgrop" title="N+1 syns inte i utvecklingsmiljön">
+Med tvåhundra rader och en databas på samma maskin tar femtioen frågor kanske tjugo
+millisekunder. Ingen märker något.
+
+I produktion ligger databasen på en annan maskin, och varje fråga kostar en nätverksresa till.
+Femtioen resor à två millisekunder blir hundra — per anrop, för varje besökare samtidigt.
+
+Det är exakt samma sorts fel som Lisas trasiga sidindelning i API-artikeln: koden är inte fel,
+den skalar bara inte. Och den enda tillförlitliga upptäckten är att **logga antalet frågor per
+anrop** — då syns det direkt, långt innan det blir ett problem.
+</Callout>
+
+<Callout type="kom-ihag">
+- `JOIN ... ON` sätter ihop rader från två tabeller, oftast främmande nyckel mot primärnyckel.
+- **INNER** (standard) tystar bort rader utan träff. **LEFT** behåller dem med `NULL` — och är
+  därför också ett felsökningsverktyg.
+- `EXPLAIN ANALYZE` visar sanningen. Leta efter **`Seq Scan`** på stora tabeller.
+- Indexera det som står i `WHERE`, `JOIN ... ON` och `ORDER BY`. Främmande nycklar indexeras
+  **inte** automatiskt i PostgreSQL.
+- Index kostar vid varje skrivning. Indexera medvetet, inte allt.
+- **N+1** = en fråga plus en per rad. Lös med `JOIN`, och logga antalet frågor per anrop.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "En fråga med `JOIN` ger färre rader än du väntade dig. Hur tar du reda på varför?",
+      a: "Byt till `LEFT JOIN` och filtrera på `WHERE <den andra tabellens nyckel> IS NULL`. Raderna som då dyker upp är precis de som saknade en motsvarighet och därför tystades bort av INNER JOIN.",
+    },
+    {
+      q: "Vad betyder `Seq Scan` i utdata från `EXPLAIN ANALYZE`?",
+      a: "Att databasen läste igenom hela tabellen rad för rad. På en liten tabell är det oproblematiskt, men på en stor är det signalen om att ett index saknas på kolumnen du filtrerar eller kopplar på.",
+    },
+    {
+      q: "Varför är det inte en bra idé att lägga index på alla kolumner?",
+      a: "Varje index måste uppdateras vid varje `INSERT` och `UPDATE`. Många index gör skrivningar långsammare och tar mer utrymme. Indexera de kolumner du faktiskt söker, kopplar eller sorterar på, och mät med `EXPLAIN ANALYZE`.",
+    },
+    {
+      q: "Varför märks N+1 sällan i utvecklingsmiljön?",
+      a: "Där är tabellerna små och databasen ligger ofta på samma maskin, så femtio extra frågor kostar nästan ingenting. I produktion tillkommer en nätverksresa per fråga, och antalet växer med sidstorleken. Logga antalet frågor per anrop för att se det tidigt.",
+    },
+  ]}
+/>
+
+## Sammanfattning
+
+`JOIN` sätter ihop det som normaliseringen delade upp, och det enda valet som spelar roll är om
+rader utan motsvarighet ska följa med eller inte.
+
+Prestandan har nästan alltid en av två förklaringar. Antingen läser databasen hela tabellen för
+att ett index saknas — och `EXPLAIN ANALYZE` säger det rakt ut. Eller så ställs femtioen frågor
+där en hade räckt, vilket inte syns förrän databasen ligger på en annan maskin än koden.
+
+Med det står fundamenten: maskinen, nätet, versionshanteringen, gränssnittet mellan system och
+lagringen bakom. Det är underlaget som Docker-, Kubernetes- och Terraform-serierna vilar på —
+och nu går de att läsa utan att något steg är magi.

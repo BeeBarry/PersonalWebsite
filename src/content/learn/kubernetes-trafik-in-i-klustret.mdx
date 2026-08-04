@@ -1,0 +1,251 @@
+---
+title: 'Trafiken in i klustret'
+description: 'Service-typerna, Ingress — och hur en besökare faktiskt når fram till en pod'
+category: 'kubernetes'
+part: 1
+order: 2
+date: '2026-08-04'
+tags: ['Beginner', 'Nätverk', 'Ingress']
+---
+
+## Var vi är
+
+Introduktionen lämnade en mening obesvarad. Den sa att databasen kan ligga bakom en Service
+som bara är nåbar inifrån klustret, *medan frontend exponeras utåt* — men inte ett ord om hur
+den sista delen går till.
+
+Det är hålet vi fyller här, för det är också där de flesta fastnar första gången.
+
+## Fungerar inifrån, syns inte utifrån
+
+Lisa har rullat ut sitt API. En `Deployment` håller tre poddar vid liv och en `Service` ger dem
+en fast adress. Hon kontrollerar att det fungerar genom att starta en tillfällig pod i klustret
+och anropa tjänsten därifrån:
+
+```bash
+kubectl run test --rm -it --image=curlimages/curl \
+  -- curl http://api:5000/health
+# {"status":"ok"}
+```
+
+Perfekt — inifrån. Men när hon försöker nå samma sak från sin egen dator finns ingenting att
+ansluta till. Ingen IP, inget värdnamn, inget svar.
+
+<Callout type="varfor" title="Varför är det stängt som standard?">
+En `Service` är av typen **ClusterIP** om du inte säger något annat, och en ClusterIP finns
+bara på klustrets interna nätverk. Det är ett medvetet säkerhetsval: allt är stängt utåt tills
+någon uttryckligen öppnar det.
+
+För databasen är det precis vad du vill. För frontend måste du göra något aktivt.
+</Callout>
+
+## Helheten först
+
+Så här ser hela vägen ut för en besökare i det uppsättning de flesta produktionskluster
+använder. Fyra av de fem stegen är sådant du själv konfigurerar:
+
+<Flow
+  caption="Ingress-controllern är den enda komponenten som både har en fot utanför klustret och kan läsa dina regler."
+  steps={[
+    {
+      label: "Besökaren",
+      note: "Skriver `shop.example.se` i webbläsaren.",
+    },
+    {
+      label: "DNS",
+      via: "slår upp namnet",
+      note: "Pekar på lastbalanserarens publika IP-adress.",
+    },
+    {
+      label: "Molnets lastbalanserare",
+      via: "TCP 443",
+      note: "Skapas åt dig när en Service av typen LoadBalancer finns i klustret.",
+    },
+    {
+      label: "Ingress-controllern",
+      via: "vidare in i klustret",
+      note: "Läser dina Ingress-regler och avgör vilken tjänst anropet ska till, utifrån värdnamn och sökväg.",
+      accent: true,
+    },
+    {
+      label: "Service → Pod",
+      via: "`/api` → tjänsten `api`",
+      note: "Servicen fördelar anropet på en av de friska poddarna.",
+    },
+  ]}
+/>
+
+## De tre Service-typerna bygger på varandra
+
+Det är lätt att tro att ClusterIP, NodePort och LoadBalancer är tre alternativ att välja
+mellan. De är snarare tre lager, där varje typ innehåller det som ligger under.
+
+<Stack
+  caption="Väljer du LoadBalancer får du automatiskt NodePort och ClusterIP på köpet — de försvinner inte."
+  ground="Poddarna, som Servicen hittar via sina labels"
+  layers={[
+    {
+      label: "type: LoadBalancer",
+      note: "Ber molnleverantören skapa en riktig lastbalanserare med publik IP. Kostar pengar — en per Service.",
+    },
+    {
+      label: "type: NodePort",
+      note: "Öppnar samma port på **varje** nod, i intervallet 30000–32767. Användbart i test, klumpigt i drift.",
+    },
+    {
+      label: "type: ClusterIP",
+      note: "Standard. En intern adress som bara finns inne i klustret. Det är den `http://api:5000` pekar på.",
+      accent: true,
+    },
+  ]}
+/>
+
+Servicen från introduktionen är alltså en ClusterIP, även om det aldrig står i filen:
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+spec:
+  selector:
+    app: api        # matchar poddarnas label
+  ports:
+    - port: 5000    # adressen andra anropar
+      targetPort: 5000  # porten i containern
+```
+
+Lägg märke till `selector`. Servicen känner inte till någon Deployment — den letar helt enkelt
+upp alla poddar som bär label `app: api`. Det är därför nya poddar plockas in automatiskt, och
+därför en felstavad label får trafiken att ta slut i tomma intet.
+
+## Ingress — en dörr i stället för tio
+
+Lisa skulle kunna sätta `type: LoadBalancer` på frontend och vara klar. Problemet dyker upp
+när systemet växer.
+
+<Split
+  leftTitle="LoadBalancer per tjänst"
+  rightTitle="En Ingress framför alla"
+  caption="Samma trafik, mycket olika kostnad och administration."
+>
+  <div slot="left">
+
+  Frontend, API och admin får varsin lastbalanserare — och varsin publik IP-adress.
+
+  Tre poster i DNS, tre certifikat att förnya, tre fakturarader varje månad.
+
+  Sökvägsregler går inte att göra alls: en lastbalanserare pekar på en tjänst, punkt.
+
+  </div>
+  <div slot="right">
+
+  **En** lastbalanserare tar emot all trafik och skickar den vidare enligt regler du skriver.
+
+  Ett certifikat, en DNS-post, en kostnad.
+
+  `shop.example.se/api` går till API:et, allt annat till frontend — bestämt i en fil.
+
+  </div>
+</Split>
+
+Reglerna beskrivs i ett `Ingress`-objekt:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: shop
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: shop.example.se
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 5000
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000
+```
+
+Reglerna läses uppifrån och ner efter hur specifika de är: `/api` matchar före `/`, så
+ordningen i filen spelar mindre roll än man tror. `pathType: Prefix` betyder att allt som
+börjar med sökvägen matchar — `/api/produkter` hamnar alltså också hos API:et.
+
+## Fallgropen: objektet gör ingenting av sig självt
+
+<Callout type="fallgrop">
+Ett `Ingress`-objekt är bara en **beskrivning**. Det är en text i klustret som säger vad som
+borde hända — och ingenting läser den om du inte installerat en **Ingress-controller**
+(exempelvis ingress-nginx eller Traefik).
+
+Symtomet är förrädiskt: `kubectl get ingress` listar din regel och allt ser rätt ut, men
+`ADDRESS`-kolumnen är tom och inget svarar. Klustret har accepterat beskrivningen utan att
+någon åtagit sig att förverkliga den.
+
+`ingressClassName` är kopplingen dem emellan: den pekar ut vilken controller som ska ta hand
+om just den här regeln. Stavar du fel där ignoreras hela objektet, tyst.
+</Callout>
+
+<Callout type="sa-gor-du" title="Felsök utifrån och in">
+Gå baklänges längs kedjan i diagrammet ovan, ett steg i taget:
+
+- `kubectl get ingress` — finns en adress i `ADDRESS`-kolumnen? Nej → controllern saknas eller `ingressClassName` är fel.
+- `kubectl get svc` — har tjänsten rätt typ, och har LoadBalancern fått en `EXTERNAL-IP`?
+- `kubectl get endpoints api` — står det några IP-adresser? Tomt → Servicens `selector` matchar inga poddar.
+- `kubectl get pods -l app=api` — körs poddarna, och bär de rätt label?
+
+Nio gånger av tio faller felet ut på det tredje kommandot: en label som inte stämmer.
+</Callout>
+
+<Callout type="kom-ihag">
+- En Service är **ClusterIP** som standard — intern, osynlig utifrån. Det är avsiktligt.
+- Typerna bygger på varandra: LoadBalancer innehåller NodePort, som innehåller ClusterIP.
+- Servicen hittar poddar via **labels**, inte via Deployment-namnet.
+- Ingress ger en ingång för många tjänster, med regler på värdnamn och sökväg.
+- Ett Ingress-objekt utan Ingress-controller gör ingenting alls, utan felmeddelande.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Du skapar en Service utan att ange `type`. Vad får du, och vem kan nå den?",
+      a: "En ClusterIP — klustrets standard. Den har en intern adress som bara andra poddar i klustret kan anropa, till exempel via `http://api:5000`. Ingenting utanför klustret når den.",
+    },
+    {
+      q: "`kubectl get endpoints api` returnerar en tom lista. Vad är felet?",
+      a: "Servicens `selector` matchar inga poddar. Antingen körs inga poddar med den labeln, eller så skiljer sig labeln i Deployment från selectorn i Service — ofta en stavning eller ett bindestreck.",
+    },
+    {
+      q: "Varför räcker det inte att skapa ett `Ingress`-objekt?",
+      a: "Objektet är bara en regelbeskrivning. Det krävs en Ingress-controller i klustret som läser regeln och faktiskt dirigerar trafiken. Utan controller får Ingressen aldrig någon adress, och inget felmeddelande skrivs ut.",
+    },
+    {
+      q: "Vad är den praktiska nackdelen med `type: LoadBalancer` på varje tjänst?",
+      a: "Varje Service får en egen lastbalanserare med egen publik IP — alltså egen DNS-post, eget certifikat och egen kostnad. Dessutom går det inte att dirigera på sökväg. En Ingress löser alla fyra med en enda ingång.",
+    },
+  ]}
+/>
+
+## Sammanfattning
+
+Allt i ett kluster är stängt utåt tills du öppnar det. En Service är intern som standard, och
+de tre typerna är lager som bygger på varandra snarare än alternativ.
+
+För ett riktigt system är mönstret nästan alltid detsamma: **en** LoadBalancer framför en
+Ingress-controller, och därefter regler i ett Ingress-objekt som pekar vidare till interna
+ClusterIP-tjänster. Kom bara ihåg att objektet är en beskrivning — någon måste vara där för
+att läsa den.
+
+I nästa del tar vi hand om det som ligger *inuti* poddarna: hur samma image kan köras i test
+och produktion med olika inställningar, och hur Kubernetes egentligen avgör om en pod mår bra.

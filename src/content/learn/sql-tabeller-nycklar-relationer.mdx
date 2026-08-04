@@ -1,0 +1,248 @@
+---
+title: 'Tabeller, nycklar och relationer'
+description: 'Säg samma sak på ett ställe — och låt databasen bevaka att det stämmer'
+category: 'sql'
+part: 1
+partTitle: 'Grunderna'
+order: 1
+date: '2026-08-04'
+tags: ['Beginner', 'SQL', 'Databas']
+---
+
+## Var vi är
+
+API-serien slutade vid gränsen: API:et hämtar sin data någonstans ifrån, men vi tittade aldrig
+dit. Nu gör vi det.
+
+Och vi börjar inte med `SELECT`. Frågespråket är den enkla delen — det svåra, och det som
+avgör hur systemet mår om två år, är hur data är **uppdelad** från början.
+
+## Kolumnen med kommatecken
+
+Lisa behöver kategorier på sina produkter. Hon löser det snabbast möjliga sätt: en kolumn med
+en textsträng.
+
+```text
+id    namn              kategorier
+8842  Skruvmejsel PH2   verktyg,handverktyg,skruvmejslar
+8843  Hammare 500g      verktyg,handverktyg
+```
+
+Det fungerar. Det fungerar i sex månader.
+
+Sedan ber marknad om att "Handverktyg" ska heta "Handverktyg & tillbehör". Lisa inser att hon
+måste söka igenom fyrahundratusen textsträngar och skriva om dem — och att `handverktyg` också
+förekommer som del av andra ord. Samma vecka upptäcker hon att någon stavat det `handvektyg` i
+niohundra rader, och att kategorin därmed inte funnits på dem sedan i mars.
+
+<Callout type="varfor" title="Vad som gick fel, egentligen">
+Felet var inte kommatecknen. Felet var att **samma faktum står på fyrahundratusen ställen.**
+
+Kategorins namn borde finnas exakt en gång. Produkterna borde peka på den. Då är namnbytet en
+enda uppdatering, och en felstavning är omöjlig eftersom det inte går att peka på något som
+inte finns.
+
+Det är hela idén bakom relationsdatabaser, och den är värd att formulera som en regel: **varje
+faktum ska ha ett enda hem.**
+</Callout>
+
+## Helheten först: två tabeller och en pekare
+
+<Split
+  leftTitle="Allt i en tabell"
+  rightTitle="Uppdelat med en nyckel"
+  caption="Samma information. Bara den ena går att ändra på ett ställe."
+>
+  <div slot="left">
+
+  Kategorinamnet upprepas i varje rad.
+
+  Byta namn = skriva om alla rader. Stavfel = en tyst dubblett som ingen upptäcker.
+
+  Databasen kan inte hjälpa dig, för för den är det bara text.
+
+  </div>
+  <div slot="right">
+
+  Kategorin står en gång, i en egen tabell. Produkten pekar på den med ett id.
+
+  Byta namn = en rad ändras. Stavfel omöjligt.
+
+  Databasen **vägrar** spara en produkt som pekar på en kategori som inte finns.
+
+  </div>
+</Split>
+
+Så här ser det ut i SQL:
+
+```sql
+CREATE TABLE kategorier (
+  id    SERIAL PRIMARY KEY,
+  namn  TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE produkter (
+  id          SERIAL PRIMARY KEY,
+  namn        TEXT NOT NULL,
+  pris        INTEGER NOT NULL CHECK (pris >= 0),
+  kategori_id INTEGER NOT NULL REFERENCES kategorier(id)
+);
+```
+
+Och så här hittar databasen fram när någon frågar efter en produkts kategori:
+
+<Flow
+  layout="row"
+  caption="Kopplingen är ett tal, inte en text. Det är därför namnbytet bara berör ett ställe."
+  steps={[
+    { label: "produkter", note: "`kategori_id` = 4" },
+    { label: "kategorier", via: "slår upp id 4", note: "Raden med `id` = 4", accent: true },
+    { label: '"Handverktyg"', via: "läser namn", note: "Namnet, hämtat från sitt enda hem." },
+  ]}
+/>
+
+## Kolumnens typ är ett löfte
+
+`TEXT`, `INTEGER`, `BOOLEAN`, `TIMESTAMPTZ`. Typen är inte bara lagringsformat — den är en
+regel databasen upprätthåller åt dig. I en `INTEGER`-kolumn kan aldrig `"nittionio"` hamna, hur
+buggig koden ovanför än är.
+
+Samma sak gäller de andra villkoren i exemplet ovan, och de förtjänar var sin mening:
+
+- **`NOT NULL`** — värdet måste finnas.
+- **`UNIQUE`** — inget annat får ha samma värde.
+- **`CHECK (pris >= 0)`** — ett eget villkor. Här: inga negativa priser, någonsin.
+- **`REFERENCES kategorier(id)`** — värdet måste peka på en rad som finns.
+
+<Callout type="varfor" title="Varför regler i databasen och inte bara i koden">
+API-artikeln slog fast att validering i klienten inte är skydd, eftersom den går att kringgå.
+Samma resonemang fortsätter ett steg till.
+
+Databasen nås inte bara av ditt API. Den nås av migreringar, av ett dataimportskript någon
+skrev en gång, av en kollega i ett administratörsverktyg, och av dig själv klockan sju en
+morgon. Regler som bara finns i applikationskoden gäller inte för någon av dem.
+
+Ett villkor i databasen är det **sista** stället där ett fel kan stoppas — och därför det enda
+som alltid gäller.
+</Callout>
+
+## Primärnyckel och främmande nyckel
+
+**Primärnyckeln** är radens identitet. Den är unik, den ändras aldrig, och den är hur allt
+annat pekar på raden.
+
+Ett ofta ställd fråga är om man inte kan använda något som redan finns — e-postadressen för en
+användare, till exempel. Svaret är nästan alltid nej: e-postadresser byts. Och byter den, måste
+allt som pekat på den ändras samtidigt. Ett `id` som inte betyder något slipper det problemet
+just för att det inte betyder något.
+
+**Främmande nyckeln** är pekaren. `kategori_id INTEGER REFERENCES kategorier(id)` säger till
+databasen att kolumnen bara får innehålla id:n som faktiskt finns i `kategorier`.
+
+Den kopplingen svarar också på frågan *vad ska hända om kategorin raderas?*
+
+```sql
+kategori_id INTEGER
+  REFERENCES kategorier(id) ON DELETE RESTRICT
+```
+
+`RESTRICT` vägrar radera en kategori som fortfarande används — oftast det du vill. Alternativet
+`ON DELETE CASCADE` raderar produkterna med, vilket är rätt för sådant som *hör till* raden
+(en produkts recensioner) och farligt för allt annat.
+
+## En till många, och många till många
+
+Relationen ovan är **en till många**: en kategori har många produkter, en produkt har en
+kategori. Pekaren sitter på "många"-sidan.
+
+Men Lisas produkter ska ha flera taggar, och varje tagg ska kunna sitta på flera produkter. Då
+räcker inte en kolumn åt något håll. Lösningen är en tabell vars enda uppgift är att bära
+kopplingen:
+
+```sql
+CREATE TABLE produkt_taggar (
+  produkt_id INTEGER NOT NULL
+    REFERENCES produkter(id) ON DELETE CASCADE,
+  tagg_id    INTEGER NOT NULL
+    REFERENCES taggar(id),
+  PRIMARY KEY (produkt_id, tagg_id)
+);
+```
+
+Varje rad är ett påstående: *den här produkten har den här taggen.* Att primärnyckeln består av
+båda kolumnerna gör dessutom samma tagg omöjlig att lägga till två gånger på samma produkt.
+
+Det är exakt den lösning som ersätter Lisas kommaseparerade kolumn — och nu är namnbytet en
+uppdatering av en rad.
+
+## NULL betyder "vet inte"
+
+Sista begreppet, och det som ger flest överraskningar. `NULL` är inte noll, inte tom sträng och
+inte `false`. Det betyder **att värdet saknas**.
+
+Konsekvensen är logisk men förvånar ändå:
+
+```sql
+-- ger ALLTID noll rader, aldrig ett felmeddelande:
+SELECT * FROM produkter WHERE rabatt = NULL;
+
+-- så här gör man:
+SELECT * FROM produkter WHERE rabatt IS NULL;
+```
+
+<Callout type="fallgrop">
+Jämförelser med `NULL` blir varken sanna eller falska — de blir *okända*, och en `WHERE` släpper
+bara igenom det som är sant. Därför returnerar `= NULL` inga rader, utan felmeddelande.
+
+Samma sak gäller åt andra hållet, och den är lömskare: `WHERE rabatt <> 10` utesluter också
+raderna där `rabatt` är `NULL`. Frågan *"alla produkter som inte har tio procents rabatt"* missar
+alltså tyst alla produkter som saknar rabatt — troligen de flesta.
+
+Vill du ha med dem måste du säga det: `WHERE rabatt <> 10 OR rabatt IS NULL`.
+
+Bästa motmedlet är att inte tillåta `NULL` där det inte betyder något: sätt `NOT NULL` med ett
+`DEFAULT` när kolumnen alltid ska ha ett värde.
+</Callout>
+
+<Callout type="kom-ihag">
+- **Varje faktum ska ha ett enda hem.** Upprepad text är framtida fel.
+- Primärnyckeln är radens identitet — helst ett id utan egen betydelse, så det aldrig behöver
+  ändras.
+- Främmande nyckeln är pekaren, och databasen bevakar att den pekar på något som finns.
+- Många-till-många löses med en kopplingstabell där båda kolumnerna utgör primärnyckeln.
+- Villkor i databasen (`NOT NULL`, `UNIQUE`, `CHECK`) gäller **alla** som skriver, inte bara
+  ditt API.
+- `NULL` betyder "vet inte". Använd `IS NULL`, och kom ihåg att `<>` tyst utesluter dem.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Varför är en kommaseparerad kolumn med kategorier ett problem?",
+      a: "Samma faktum lagras i varje rad. Ett namnbyte kräver att alla rader skrivs om, stavfel skapar tysta dubbletter, och databasen kan inte hjälpa till eftersom den bara ser text. Lägg kategorin i en egen tabell och peka på den.",
+    },
+    {
+      q: "Varför är e-postadressen ett dåligt val av primärnyckel?",
+      a: "Den kan ändras. Byter användaren adress måste allt som pekar på raden uppdateras samtidigt. Ett id utan egen betydelse slipper det problemet just för att det aldrig behöver ändras.",
+    },
+    {
+      q: "Du har `NOT NULL` i applikationskoden. Varför lägga det i databasen också?",
+      a: "För att databasen skrivs till av fler än ditt API — migreringar, importskript, administratörsverktyg och manuella körningar. Ett villkor i databasen är det enda som gäller för dem alla.",
+    },
+    {
+      q: "`WHERE rabatt <> 10` returnerar färre rader än du väntade dig. Varför?",
+      a: "Rader där `rabatt` är `NULL` faller bort. En jämförelse med `NULL` blir okänd, inte sann, och `WHERE` släpper bara igenom det som är sant. Skriv `WHERE rabatt <> 10 OR rabatt IS NULL` — eller undvik `NULL` i kolumnen från början.",
+    },
+  ]}
+/>
+
+## Sammanfattning
+
+En relationsdatabas är byggd kring en enda idé: säg varje sak på ett ställe, och låt de andra
+peka dit. Primärnyckeln är stället, den främmande nyckeln är pekaren.
+
+Villkoren — `NOT NULL`, `UNIQUE`, `CHECK`, `REFERENCES` — är inte formaliteter utan det sista
+skyddsnätet, det som gäller även när data kommer från något helt annat håll än ditt API.
+
+I nästa del sätter vi ihop tabellerna igen med `JOIN`, och tar reda på varför en fråga som tog
+40 millisekunder i test kan ta nio sekunder i produktion.

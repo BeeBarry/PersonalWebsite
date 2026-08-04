@@ -1,0 +1,249 @@
+---
+title: 'Flera containrar som hittar varandra'
+description: 'Compose, det automatiska nätverket och varför localhost inte betyder vad du tror'
+category: 'docker'
+part: 1
+order: 3
+date: '2026-08-04'
+tags: ['Beginner', 'Compose', 'Nätverk']
+---
+
+## Var vi är
+
+I förra delen paketerade Lisa sin applikation i en image med hjälp av en `Dockerfile`. Den
+startar, den svarar — men den gör ingenting användbart, för e-handelssystemet behöver en
+databas bredvid sig.
+
+Docker Compose nämndes redan i den första artikeln, som ett sätt att starta allt med ett
+kommando. Nu ska vi titta på det som faktiskt är svårt: **hur två containrar hittar varandra.**
+
+## Felet alla får först
+
+Lisa gör det som känns rimligast. Hon startar databasen i en container, appen i en annan, och
+låter appen ansluta till `localhost:5432` — precis som när Postgres låg installerat direkt på
+hennes dator.
+
+Resultatet är ett felmeddelande hon kommer att se många gånger:
+
+```
+Error: connect ECONNREFUSED 127.0.0.1:5432
+```
+
+Anledningen är värd att stanna vid, för den förklarar det mesta om containernätverk.
+
+<Callout type="varfor" title="Vad localhost betyder inuti en container">
+En container har sitt **eget nätverksutrymme**. `localhost` betyder alltid "den här maskinen",
+och inuti API-containern är den maskinen just API-containern — inte din laptop, och absolut
+inte databascontainern.
+
+Lisas app frågar alltså sig själv efter en databas den inte har. Svaret blir nej, direkt.
+</Callout>
+
+## Helheten först
+
+Compose löser det genom att sätta alla tjänster på ett gemensamt nätverk och ge varje tjänst
+ett namn som går att slå upp. Så här ser vägen ut när appen ansluter:
+
+<Flow
+  caption="Tjänstnamnet i Compose-filen är också värdnamnet på nätverket. Ingen IP-adress behöver skrivas någonstans."
+  steps={[
+    {
+      label: "api-containern",
+      note: "Ansluter till `db:5432` — namnet, inte en adress.",
+    },
+    {
+      label: "Composes DNS",
+      via: "slår upp `db`",
+      note: "Varje Compose-projekt får ett eget nätverk med inbyggd namnuppslagning.",
+    },
+    {
+      label: "172.18.0.3",
+      via: "svarar med IP",
+      note: "Adressen kan ändras vid omstart — därför använder vi aldrig den direkt.",
+    },
+    {
+      label: "db-containern",
+      via: "ansluter på 5432",
+      note: "Postgres lyssnar, anslutningen går igenom.",
+      accent: true,
+    },
+  ]}
+/>
+
+## Filen som binder ihop det
+
+```yaml
+services:
+  api:
+    build: ./backend
+    ports:
+      - "5000:5000"
+    environment:
+      DATABASE_URL: postgres://user:hemligt@db:5432/shop
+
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: hemligt
+      POSTGRES_DB: shop
+```
+
+Tre saker händer här som är lätta att missa.
+
+**Compose skapar ett nätverk åt dig.** Du behöver inte skriva ett `networks`-block. Startar du
+projektet i mappen `shop` får du ett nätverk som heter `shop_default`, och båda tjänsterna
+kopplas in på det.
+
+**Tjänstnamnet blir värdnamnet.** Nyckeln `db:` i filen är det som gör att `db:5432` fungerar.
+Döper du om tjänsten till `postgres` måste anslutningssträngen ändras samtidigt — det är samma
+namn på två ställen.
+
+**`ports` behövs inte för att containrarna ska prata med varandra.** Notera att `db` saknar
+`ports`. Den är ändå fullt nåbar för `api`, eftersom de ligger på samma nätverk.
+
+## Vad `ports` faktiskt gör
+
+Det här förvirrar nästan alla i början, så det förtjänar en egen bild. `ports` handlar inte om
+containrarna emellan — det handlar om att öppna en dörr från **din dator** in i nätverket.
+
+<Stack
+  caption="`ports: 5000:5000` läses vänster till höger: värdens port först, containerns sist."
+  ground="Compose-nätverket shop_default — här behövs ingen portmappning alls"
+  layers={[
+    {
+      label: "Din dator · localhost:5000",
+      note: "Det du skriver i webbläsaren. Finns bara tack vare `ports`.",
+    },
+    {
+      label: "Portmappning · 5000 → 5000",
+      note: "Docker vidarebefordrar trafiken in i containern.",
+      accent: true,
+    },
+    {
+      label: "api-containern · 0.0.0.0:5000",
+      note: "Applikationen lyssnar här, oavsett om någon mappat porten eller inte.",
+    },
+  ]}
+/>
+
+Att `db` saknar `ports` är alltså ett medvetet val, inte en glömska: databasen ska vara nåbar
+för API:et men **inte** från din dator eller ditt nätverk. Vill du felsöka med ett
+databasverktyg lägger du tillfälligt till `ports: ["5432:5432"]` — och tar bort det efteråt.
+
+<Callout type="fallgrop">
+Applikationen inuti containern måste lyssna på `0.0.0.0`, inte på `127.0.0.1`. Många ramverk
+lyssnar på `127.0.0.1` som standard i utvecklingsläge, och då släpps bara trafik som redan är
+inne i containern fram — portmappningen ser ut att vara trasig fast felet ligger i appen.
+
+Symtomet är typiskt: containern körs, loggen ser glad ut, och webbläsaren säger *tom
+svarsfil*.
+</Callout>
+
+## `depends_on` betyder inte "redo"
+
+Nu till den fälla som kostar mest tid. Compose-exemplet i den första artikeln använde
+`depends_on`, och det låter som en garanti. Det är det inte.
+
+<Split
+  leftTitle="Bara depends_on"
+  rightTitle="depends_on + healthcheck"
+  caption="Skillnaden mellan 'processen har startat' och 'tjänsten svarar'."
+>
+  <div slot="left">
+
+  Compose väntar bara på att databascontainern ska ha **startats**.
+
+  Postgres behöver därefter några sekunder på sig att initiera. API:et hinner ansluta under
+  tiden, får nej, och kraschar.
+
+  Det ser slumpmässigt ut: fungerar på din dator, misslyckas i pipelinen — där maskinen är
+  långsammare.
+
+  </div>
+  <div slot="right">
+
+  Databasen får ett eget hälsotest, och API:et väntar tills det testet **går igenom**.
+
+  Nu startar API:et först när Postgres faktiskt svarar på anrop, oavsett hur lång tid det tog.
+
+  Beteendet blir likadant på alla maskiner.
+
+  </div>
+</Split>
+
+Så här ser den andra varianten ut:
+
+```yaml
+services:
+  api:
+    build: ./backend
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:17-alpine
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d shop"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+```
+
+`healthcheck` kör kommandot inuti databascontainern med jämna mellanrum. Så länge det
+misslyckas räknas tjänsten som ohälsosam, och `condition: service_healthy` håller kvar API:et
+i startgroparna.
+
+<Callout type="sa-gor-du" title="När något ändå inte hittar fram">
+Tre kommandon räcker nästan alltid för att hitta felet:
+
+- `docker compose ps` — körs tjänsten, och vad säger dess hälsostatus?
+- `docker compose logs db` — vad sa databasen när den startade?
+- `docker compose exec api ping db` — når API-containern över huvud taget namnet `db`?
+
+Svarar det sista kommandot inte alls ligger felet i nätverket eller stavningen av tjänstnamnet.
+Svarar det men applikationen ändå inte ansluter, ligger felet i anslutningssträngen.
+</Callout>
+
+<Callout type="kom-ihag">
+- `localhost` inuti en container är containern själv — aldrig din dator, aldrig grannen.
+- Compose skapar ett nätverk automatiskt och gör **tjänstnamnet till värdnamn**.
+- `ports` öppnar en dörr från din dator. Containrar emellan behövs det inte.
+- Applikationen måste lyssna på `0.0.0.0` för att portmappningen ska fungera.
+- `depends_on` väntar på start, inte på att tjänsten är redo. Lägg till `healthcheck` och
+  `condition: service_healthy`.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Varför fungerar `db:5432` men inte `localhost:5432` inifrån API-containern?",
+      a: "`localhost` pekar på API-containern själv, som inte kör någon databas. `db` är tjänstnamnet i Compose-filen, och Composes DNS översätter det till databascontainerns IP-adress på det gemensamma nätverket.",
+    },
+    {
+      q: "Databastjänsten saknar `ports`. Är det ett fel?",
+      a: "Nej, det är önskvärt. Containrar på samma Compose-nätverk når varandra utan portmappning. Utan `ports` är databasen nåbar för API:et men inte från din dator — vilket är precis vad man vill.",
+    },
+    {
+      q: "Pipelinen misslyckas ibland med anslutningsfel mot databasen, men på din dator fungerar allt. Vad är den troligaste orsaken?",
+      a: "`depends_on` utan hälsotest. Compose väntar bara på att databascontainern ska ha startat, inte på att Postgres är redo. På en långsammare maskin hinner API:et ansluta för tidigt. Lägg till `healthcheck` på databasen och `condition: service_healthy` på beroendet.",
+    },
+    {
+      q: "Vad betyder vänster respektive höger tal i `ports: \"8080:5000\"`?",
+      a: "Vänster är porten på din dator, höger är porten inuti containern. Du surfar alltså till `localhost:8080`, medan applikationen i containern lyssnar på 5000.",
+    },
+  ]}
+/>
+
+## Sammanfattning
+
+Compose sätter alla tjänster i projektet på ett gemensamt nätverk och låter tjänstnamnet
+fungera som värdnamn. Det är därför `db:5432` fungerar och `localhost:5432` inte gör det.
+
+`ports` handlar bara om vägen in från din egen dator — inte om containrarna emellan. Och
+`depends_on` säger "har startat", inte "är redo"; vill du ha det senare behövs ett
+`healthcheck`.
+
+I nästa del tar vi itu med det som händer när Lisa stänger av allt: varför databasens innehåll
+försvinner, och hur volymer gör att data överlever containern.

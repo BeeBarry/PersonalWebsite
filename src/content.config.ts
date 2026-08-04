@@ -57,7 +57,20 @@ const learn = defineCollection({
   schema: z.object({
     title: z.string(),
     description: z.string(),
-    category: z.enum(["docker", "kubernetes", "terraform", "azure", "cybersecurity"]),
+    // Måste hållas i synk med src/data/categories.ts — enum:en gör att en
+    // felstavad kategori failar bygget i stället för att tyst tappa artikeln.
+    category: z.enum([
+      "docker",
+      "kubernetes",
+      "terraform",
+      "azure",
+      "cybersecurity",
+      "linux",
+      "natverk",
+      "git",
+      "api",
+      "sql",
+    ]),
     image: z.object({ url: z.string(), alt: z.string() }).optional(),
     // Serienumreringen är tvånivåig: DEL.STEG (1.0, 1.1, 2.0 …). `part` är delen
     // artikeln hör till, `order` dess plats i delen och är 1-baserad — visat

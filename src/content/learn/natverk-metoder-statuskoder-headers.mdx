@@ -1,0 +1,244 @@
+---
+title: 'Metoder, statuskoder och headers'
+description: 'Vad som står i ett HTTP-anrop — och varför 4xx och 5xx avgör vem som ska felsöka'
+category: 'natverk'
+part: 1
+order: 2
+date: '2026-08-04'
+tags: ['Beginner', 'HTTP', 'API']
+---
+
+## Var vi är
+
+Förra delen tog oss fram till servern: namnet slogs upp, anslutningen öppnades, certifikatet
+kontrollerades. Kvar står det sista steget — själva samtalet.
+
+**HTTP** är förvånansvärt enkelt när man ser det. Det är text, det är läsbart, och det består
+av två meddelanden: en fråga och ett svar.
+
+## Vems fel är det?
+
+Lisas nya produktformulär fungerar inte. Frontend-utvecklaren säger att API:et är trasigt.
+Maria, som byggt API:et, säger att frontend skickar fel data. Ingen kan visa vem som har rätt,
+och diskussionen tar en halv dag.
+
+Den diskussionen behöver aldrig uppstå igen efter det här avsnittet, för svaret står redan i
+anropet.
+
+## Helheten först: ett anrop är text
+
+Så här ser en fullständig HTTP-förfrågan ut. Ingenting är dolt — det här är bokstavligen vad
+som skickas över anslutningen:
+
+```http
+POST /api/produkter HTTP/1.1
+Host: shop.example.se
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
+
+{"namn":"Skruvmejsel","pris":149,"lager":12}
+```
+
+Fyra delar, alltid i den ordningen:
+
+1. **Startraden** — metoden (`POST`), sökvägen (`/api/produkter`) och protokollversionen.
+2. **Headers** — rad efter rad med metadata om anropet.
+3. **En tom rad** — som markerar att headers är slut.
+4. **Body** — själva innehållet. Saknas ofta, till exempel vid `GET`.
+
+Svaret har exakt samma form, med en statusrad överst i stället:
+
+```http
+HTTP/1.1 201 Created
+Content-Type: application/json
+Location: /api/produkter/8842
+
+{"id":8842,"namn":"Skruvmejsel","pris":149}
+```
+
+<Callout type="varfor" title="Varför det är värt att se rådatan">
+Så länge HTTP är något ramverket sköter blir felsökning gissningar. Ser du de här två
+meddelandena kan du i stället avgöra saken: skickades rätt `Content-Type`? Fanns
+`Authorization` med? Vad svarade servern, exakt?
+
+`curl -v` visar precis det här, och är därför det snabbaste sättet att avgöra om felet ligger i
+det som skickas eller i det som tas emot.
+</Callout>
+
+## Metoderna: vad du vill göra
+
+Sökvägen säger *vad* du pratar om, metoden säger *vad du vill göra med det*.
+
+- **`GET`** — hämta. Ska aldrig ändra något på servern.
+- **`POST`** — skapa något nytt, eller starta en åtgärd.
+- **`PUT`** — ersätt hela resursen med det du skickar.
+- **`PATCH`** — ändra delar av den.
+- **`DELETE`** — ta bort den.
+
+Två egenskaper skiljer dem åt, och den ena har du redan mött:
+
+**Säker** betyder att anropet inte ändrar något. `GET` är säkert. Det är därför en webbläsare
+kan hämta en sida i förväg utan att fråga dig — och därför ett `GET`-anrop aldrig får radera
+något, hur bekvämt det än vore.
+
+**Idempotent** betyder att fler anrop ger samma slutläge som ett. Exakt samma begrepp som i
+Terraform-serien: beskriv målet, och det spelar ingen roll hur många gånger det körs.
+
+<Callout type="varfor" title="Varför idempotens är mer än teori">
+Nätverk tappar paket. Skickar Lisas app ett `POST` och svaret försvinner på vägen tillbaka vet
+klienten inte om produkten skapades eller inte. Försöker den igen kan resultatet bli **två
+produkter**.
+
+`PUT` och `DELETE` har inte det problemet: att sätta samma värde två gånger, eller radera något
+som redan är raderat, ändrar ingenting. Det är därför automatiska omförsök är ofarliga för dem
+och farliga för `POST`.
+</Callout>
+
+## Statuskoderna: den viktigaste siffran är den första
+
+Det finns dussintals koder, men du behöver bara komma ihåg vad **första siffran** betyder:
+
+- **2xx — det gick bra.** `200 OK`, `201 Created` (något skapades), `204 No Content` (gick bra,
+  inget att skicka tillbaka).
+- **3xx — leta någon annanstans.** `301` permanent flyttad, `302` tillfälligt, `304` oförändrad
+  sedan sist.
+- **4xx — förfrågan var felaktig.** Klientens sida.
+- **5xx — servern klarade inte av det.** Serverns sida.
+
+Ett `3xx` är enklast att se i praktiken. Nästan varje sajt gör den här kedjan innan sidan ens
+visas:
+
+<Flow
+  layout="row"
+  caption="Två anrop och en omdirigering — det är därför adressfältet byter till https av sig självt."
+  steps={[
+    { label: "GET http://…", note: "Du skrev adressen utan `s`." },
+    { label: "301", via: "svarar", note: "Flyttad permanent, hit i stället." },
+    { label: "GET https://…", via: "nytt anrop", note: "Webbläsaren följer med automatiskt.", accent: true },
+  ]}
+/>
+
+Och nu till det som avslutar diskussionen mellan Lisa och Maria:
+
+<Split
+  leftTitle="4xx — klientens fel"
+  rightTitle="5xx — serverns fel"
+  leftTone="neutral"
+  rightTone="neutral"
+  caption="Statuskoden pekar ut vem som ska titta först. Det är hela poängen med indelningen."
+>
+  <div slot="left">
+
+  Servern förstod frågan och avvisar den medvetet.
+
+  `400` felaktig data · `401` inte inloggad · `403` inte behörig · `404` finns inte ·
+  `409` konflikt
+
+  **Frontend felsöker.** Något i det som skickas är fel — fält, format eller behörighet.
+
+  </div>
+  <div slot="right">
+
+  Servern försökte och misslyckades. Frågan kan ha varit helt korrekt.
+
+  `500` kraschade · `502` trasigt svar bakåt · `503` överbelastad · `504` tog för lång tid
+
+  **Backend felsöker.** Börja i serverns loggar.
+
+  </div>
+</Split>
+
+Ett `502` eller `504` är för övrigt precis vad en Ingress-controller svarar när ingen frisk pod
+finns bakom Servicen — samma sak du läste om i Kubernetes-serien, sett från utsidan.
+
+<Callout type="fallgrop" title="401 och 403 är inte samma sak">
+De blandas ihop hela tiden, och skillnaden är enkel:
+
+- **401 Unauthorized** — *jag vet inte vem du är.* Inloggning saknas eller är ogiltig. Lösningen
+  är att autentisera sig.
+- **403 Forbidden** — *jag vet vem du är, och du får inte.* Inloggningen är i sin ordning, men
+  kontot saknar behörighet. Att logga in igen hjälper inte.
+
+Svarar ett API `401` när det borde vara `403` skickas användaren till inloggningssidan i
+onödan — och hamnar i en loop där hen loggar in om och om igen utan att komma vidare.
+</Callout>
+
+## Headers: allt utom innehållet
+
+Headers bär metadata. Fyra dyker upp överallt:
+
+- **`Content-Type`** — vad body innehåller. `application/json` för API:er,
+  `application/x-www-form-urlencoded` för ett vanligt formulär. Skickar du JSON men uppger fel
+  typ svarar många ramverk `400` utan närmare förklaring.
+- **`Authorization`** — vem du är. Typiskt `Bearer <token>`.
+- **`Accept`** — vad du vill ha tillbaka. Klientens motsvarighet till `Content-Type`.
+- **`Cache-Control`** — hur länge svaret får återanvändas.
+
+<Callout type="fallgrop" title="Alltid 200 är ingen vänlighet">
+Ett vanligt mönster i API:er som byggts i hast: svara `200 OK` på allt, och lägga det
+egentliga resultatet i body — `{"success": false, "error": "..."}`.
+
+Det förstör allt som bygger på statuskoden. Övervakningen ser en frisk tjänst, lastbalanseraren
+tror att servern mår bra, klientbibliotek kastar inga fel, och loggarna visar hundraprocentig
+framgång under ett pågående avbrott.
+
+Statuskoden är inte dekoration — den läses av infrastruktur hela vägen ut. Låt den vara sann.
+</Callout>
+
+## Ett anrop minns ingenting
+
+Sista egenskapen, och den som förklarar mest om hur webben är byggd: HTTP är **statslöst**.
+Varje anrop är fristående, och servern minns ingenting från förra gången.
+
+Det låter opraktiskt — hur vet en sajt då att du är inloggad? Svaret är att den inte vet det.
+Klienten skickar med beviset **varje gång**, som en cookie eller en token i `Authorization`.
+
+Priset är den extra raden i varje anrop. Vinsten är att vilken server som helst kan svara på
+vilket anrop som helst, eftersom ingen av dem sitter på information de andra saknar. Det är
+just den egenskapen som gör att Kubernetes kan lägga till och ta bort poddar fritt — precis som
+Deployment-artikeln beskrev.
+
+<Callout type="kom-ihag">
+- Ett HTTP-meddelande är text: startrad, headers, tom rad, body.
+- `GET` är **säkert** (ändrar inget). `PUT` och `DELETE` är **idempotenta** — samma begrepp som
+  i Terraform, och skälet till att omförsök är ofarliga för dem men inte för `POST`.
+- Första siffran räcker: **4xx = frågan var fel, 5xx = servern klarade det inte.** Den pekar ut
+  vem som felsöker.
+- `401` = vi vet inte vem du är. `403` = vi vet, du får ändå inte.
+- Svara aldrig `200` på ett fel — hela infrastrukturen läser statuskoden.
+- HTTP minns ingenting mellan anrop. Därför skickas beviset på vem du är varje gång.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "API:et svarar `500`. Vem bör titta först, och varför?",
+      a: "Backend. 5xx betyder att servern tog emot frågan men misslyckades med att hantera den — felet ligger på serversidan oavsett hur anropet såg ut. Börja i serverns loggar.",
+    },
+    {
+      q: "Varför är det farligare att göra automatiska omförsök på `POST` än på `PUT`?",
+      a: "`PUT` är idempotent: samma anrop två gånger ger samma slutläge. `POST` skapar något nytt varje gång, så ett omförsök efter ett tappat svar kan ge två poster i databasen.",
+    },
+    {
+      q: "En användare får `403` och skickas till inloggningssidan, loggar in, och får `403` igen. Vad är fel?",
+      a: "Statuskoden är rätt men klienten behandlar den fel. `403` betyder att användaren är identifierad men saknar behörighet — inloggning hjälper inte. Det är `401` som ska leda till inloggningssidan.",
+    },
+    {
+      q: "Vad är problemet med ett API som svarar `200 OK` och lägger felet i body?",
+      a: "Allt utanför applikationen läser statuskoden: övervakning, lastbalanserare, klientbibliotek och loggar. Med enbart 200 ser en pågående incident ut som full framgång, och inget larm går.",
+    },
+  ]}
+/>
+
+## Sammanfattning
+
+HTTP är två textmeddelanden med samma uppbyggnad: en startrad, några headers, en tom rad och
+eventuellt ett innehåll. Att kunna läsa dem gör skillnad mellan att gissa och att veta.
+
+Metoden säger vad du vill göra, och egenskaperna säker och idempotent avgör vad som är
+ofarligt att göra om. Statuskodens första siffra säger vem som ska felsöka — och det är den
+enskilt mest användbara sak du kan ta med dig härifrån.
+
+Med Linux-serien och den här står de två fundamenten som resten vilar på: maskinen och
+kommunikationen. Nästa steg är att bygga ovanpå dem — Git för att hålla ordning på koden, och
+API:er för att låta system prata med varandra på riktigt.

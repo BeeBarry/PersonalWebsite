@@ -54,4 +54,47 @@ export const categories: Category[] = [
         domain: "web",
         isVisible: true,
     },
+    // Fundamenten. Ligger sist eftersom cloud-stacken är den profil en
+    // rekryterare ska se först — men de är förkunskapen till allt ovanför,
+    // och det är dem elever hänvisas till.
+    {
+        title: "Linux & terminalen",
+        description: "Filsystemet, rättigheter och processer från grunden.",
+        icon: "skill-icons:linux-light",
+        slug: "linux",
+        domain: "cloud",
+        isVisible: true,
+    },
+    {
+        title: "Nätverk & HTTP",
+        description: "Vad som händer mellan adressfältet och servern.",
+        icon: "mdi:lan-connect",
+        slug: "natverk",
+        domain: "web",
+        isVisible: true,
+    },
+    {
+        title: "Git & versionshantering",
+        description: "Ögonblicksbilder, grenar och konflikter — utan magi.",
+        icon: "skill-icons:git",
+        slug: "git",
+        domain: "web",
+        isVisible: true,
+    },
+    {
+        title: "API:er & REST",
+        description: "Kontraktet mellan system som ska prata med varandra.",
+        icon: "mdi:api",
+        slug: "api",
+        domain: "web",
+        isVisible: true,
+    },
+    {
+        title: "Databaser & SQL",
+        description: "Tabeller, relationer och varför frågor blir långsamma.",
+        icon: "mdi:database-outline",
+        slug: "sql",
+        domain: "web",
+        isVisible: true,
+    },
 ];

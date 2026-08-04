@@ -1,0 +1,184 @@
+---
+title: 'Filsystemet och var du befinner dig'
+description: 'Att orientera sig i en terminal utan skrivbord, filutforskare eller karta'
+category: 'linux'
+part: 1
+partTitle: 'Grunderna'
+order: 1
+date: '2026-08-04'
+tags: ['Beginner', 'Terminal']
+---
+
+## Var vi är
+
+I de tidigare serierna har du kört kommandon: `docker compose up`, `kubectl apply`,
+`terraform plan`. Men alltid kommandon någon annan skrivit åt dig, i en terminal du inte behövt
+förstå.
+
+Den här serien tar terminalen på allvar. Inte för att den är märkvärdig, utan för att den är
+det enda gränssnitt du får på en server — och för att varje verktyg i de andra serierna
+förutsätter att du hittar i den.
+
+## En prompt och ingenting annat
+
+Lisa loggar in på teamets server för första gången:
+
+```bash
+ssh lisa@shop-prod-01
+```
+
+Det som möter henne är en rad:
+
+```
+lisa@shop-prod-01:~$
+```
+
+Inget skrivbord, ingen filutforskare, inga ikoner. Hennes första tanke är rimlig: *var är
+jag, och vad finns här?*
+
+<Callout type="varfor" title="Varför det ser ut så här">
+En server har inget grafiskt gränssnitt installerat, och det är avsiktligt. Allt som körs tar
+minne och utgör en möjlig säkerhetslucka. En maskin vars enda jobb är att köra din applikation
+ska inte lägga resurser på att rita fönster ingen tittar på.
+
+Raden är inte tom, förresten. Den berättar redan tre saker: du är inloggad som `lisa`, på
+maskinen `shop-prod-01`, och du står i katalogen `~`.
+</Callout>
+
+## Helheten först: allt hänger i ett träd
+
+Windows har flera diskar — `C:`, `D:`. Linux har **en enda rot**, skriven `/`, och allting
+annat hänger under den. En sökväg är därför en lista över hur du tar dig ner genom trädet.
+
+<Stack
+  caption="Sökvägen `/home/lisa/shop/backend` läses uppifrån och ner i den här bilden — varje nivå ligger inuti den under."
+  ground="/ — roten. Allt på maskinen hänger under den här."
+  layers={[
+    {
+      label: "backend",
+      note: "Där du står just nu. `pwd` svarar med hela vägen hit.",
+      accent: true,
+    },
+    { label: "shop", note: "Projektmappen." },
+    { label: "lisa", note: "Din hemkatalog. Förkortas `~` och är där du hamnar vid inloggning." },
+    { label: "home", note: "Här ligger alla användares hemkataloger." },
+  ]}
+/>
+
+Uttalat i ord: `backend` ligger i `shop`, som ligger i `lisa`, som ligger i `home`, som ligger
+i roten. Skrivet blir det `/home/lisa/shop/backend`.
+
+## De fyra kommandona du klarar dig med
+
+Att orientera sig kräver egentligen bara fyra saker. Vem gör vad:
+
+- **`pwd`** — *print working directory*. Frågar systemet var du står. Svarar med hela sökvägen.
+- **`ls`** — listar vad som finns här. `ls -l` ger en rad per fil med detaljer, `ls -a` visar
+  även dolda filer (de som börjar med punkt, som `.env` och `.gitignore`).
+- **`cd`** — *change directory*. Flyttar dig. `cd` helt utan argument tar dig alltid hem.
+- **`cat`** — skriver ut innehållet i en fil. För långa filer är `less` bättre, som du lämnar
+  med `q`.
+
+```bash
+pwd                # /home/lisa
+ls -la             # allt här, även dolda filer
+cd shop/backend    # gå neråt i trädet
+pwd                # /home/lisa/shop/backend
+```
+
+<Callout type="sa-gor-du" title="Två tangenter som sparar mest tid">
+**Tabb** kompletterar namn åt dig. Skriv `cd sh` och tryck tabb — terminalen fyller i `shop/`.
+Det är inte bara bekvämt: det är också en kontroll, för kompletteras inget så finns inte filen
+du tror.
+
+**Pil upp** hämtar föregående kommando. De flesta kommandon du kör är varianter av det förra.
+</Callout>
+
+## Absoluta och relativa sökvägar
+
+Det finns två sätt att peka ut en fil, och skillnaden mellan dem orsakar mer förvirring än
+något annat i det här avsnittet.
+
+En **absolut** sökväg börjar med `/` och utgår från roten. Den betyder samma sak oavsett var du
+står: `/home/lisa/shop/backend/server.js`.
+
+En **relativ** sökväg utgår från där du är just nu. Står du i `/home/lisa/shop` räcker det med
+`backend/server.js`.
+
+Tre genvägar används hela tiden:
+
+- **`.`** — den här katalogen. Det är därför `docker build -t app .` slutar med en punkt: du
+  pekar ut katalogen du står i som byggkontext.
+- **`..`** — katalogen ovanför. `cd ..` går upp ett steg, `cd ../..` två.
+- **`~`** — din hemkatalog. `cd ~/shop` fungerar var du än står.
+
+<Callout type="fallgrop">
+Relativa sökvägar i **skript** är den vanligaste källan till "det fungerar när jag kör det men
+inte i pipelinen".
+
+Kör Lisa `./scripts/backup.sh` från projektmappen hittar skriptet sin databasfil på
+`data/shop.db`. Kör samma skript från ett schemalagt jobb, som startar i en helt annan katalog,
+letar det efter `data/shop.db` någon annanstans — och hittar ingenting.
+
+Använd absoluta sökvägar i allt som körs av något annat än dig själv, eller låt skriptet först
+ställa sig i rätt katalog.
+</Callout>
+
+## Katalogerna som betyder något
+
+Du behöver inte kunna hela trädet, men fem platser dyker upp om och om igen:
+
+- **`/home`** — användarnas kataloger. Dina egna filer bor här.
+- **`/etc`** — systemets konfiguration, i textfiler. Här ligger `/etc/hosts`, som du kommer att
+  redigera i nätverksserien.
+- **`/var/log`** — loggarna. Första stället att titta när något gått sönder.
+- **`/usr/bin`** — programmen. `ls`, `git` och `docker` ligger som filer här.
+- **`/tmp`** — tillfälliga filer. Töms vid omstart, så lägg inget här du vill behålla.
+
+Att `/usr/bin` bara är en katalog med filer är värt att stanna vid, för det illustrerar den
+bärande idén i Linux: **allting är en fil.** Program är filer. Konfiguration är textfiler. Även
+hårdvara nås som filer. Det är därför samma handfull kommandon räcker för att inspektera nästan
+vad som helst på maskinen.
+
+<Callout type="kom-ihag">
+- Linux har **en rot**, `/`. Allt annat hänger under den.
+- `pwd` säger var du är, `ls` vad som finns, `cd` flyttar dig, `cat` visar innehållet.
+- Absolut sökväg börjar med `/` och betyder alltid samma sak. Relativ utgår från var du står.
+- `.` = här, `..` = uppåt, `~` = hemma.
+- Använd absoluta sökvägar i skript som körs av någon annan än du.
+- Tabb kompletterar och verifierar samtidigt. Använd den alltid.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Du står i `/home/lisa/shop`. Vad gör `cd ../..`?",
+      a: "Flyttar dig två nivåer upp, till `/home`. Varje `..` betyder katalogen ovanför den du står i.",
+    },
+    {
+      q: "Varför slutar `docker build -t app .` med en punkt?",
+      a: "Punkten är en relativ sökväg som betyder \"den här katalogen\". Den pekar ut byggkontexten — vilken mapps innehåll som skickas till Docker och alltså vad `COPY` kan komma åt.",
+    },
+    {
+      q: "Ett skript fungerar när du kör det själv men misslyckas som schemalagt jobb, med \"file not found\". Vad är den troligaste orsaken?",
+      a: "Skriptet använder relativa sökvägar. Du kör det från projektmappen, medan det schemalagda jobbet startar i en annan katalog — och då pekar den relativa sökvägen någon helt annanstans. Använd absoluta sökvägar, eller låt skriptet byta katalog först.",
+    },
+    {
+      q: "`ls` visar ingen `.env`-fil trots att du vet att den finns. Varför?",
+      a: "Filer vars namn börjar med punkt är dolda och listas inte som standard. `ls -a` visar dem.",
+    },
+  ]}
+/>
+
+## Sammanfattning
+
+Terminalen ger dig ingen karta, men den ger dig fyra kommandon som räcker: `pwd` för att veta
+var du är, `ls` för att se vad som finns, `cd` för att flytta dig och `cat` för att titta in i
+en fil.
+
+Filsystemet är ett enda träd med `/` som rot. En absolut sökväg beskriver hela vägen dit
+uppifrån, en relativ utgår från var du råkar stå — och det senare är precis det som gör skript
+sköra.
+
+I nästa del tar vi itu med det som möter dig så fort du försöker göra något: `Permission
+denied`, hur processer hanteras, och hur man kedjar ihop kommandon så att de blir användbara.

@@ -1,0 +1,215 @@
+---
+title: 'Volymer — data som överlever containern'
+description: 'Varför databasen tömdes, och skillnaden mellan named volumes och bind mounts'
+category: 'docker'
+part: 1
+order: 4
+date: '2026-08-04'
+tags: ['Beginner', 'Volymer', 'Data']
+---
+
+## Var vi är
+
+Nu pratar API:et med databasen, hälsotestet håller ordning på startordningen, och hela
+systemet går igång med `docker compose up`. Lisa lägger in tvåhundra testprodukter och går
+hem för dagen.
+
+Nästa morgon kör hon `docker compose down` och `docker compose up` igen. Databasen är tom.
+
+Det är inte en bugg. Det är hur containrar fungerar — och att förstå varför är sista
+byggstenen innan Docker sitter.
+
+## Var en container skriver
+
+I artikeln om `Dockerfile` såg vi att varje instruktion skapar ett lager, och att lagren
+cachas. Det som inte sades då är att alla de lagren är **skrivskyddade**. När containern
+startar lägger Docker ett tunt skrivbart lager överst, och allt som applikationen ändrar
+hamnar där.
+
+<Stack
+  caption="Bara det översta lagret går att skriva till — och det tillhör containern, inte imagen."
+  ground="Värdens filsystem"
+  layers={[
+    {
+      label: "Skrivbart lager",
+      note: "Containerns eget. Nya rader i databasen, loggfiler, uppladdade bilder. **Raderas med containern.**",
+      accent: true,
+    },
+    { label: "COPY . .", note: "Applikationskoden. Skrivskyddad." },
+    { label: "RUN npm ci", note: "Beroendena. Skrivskyddad." },
+    { label: "FROM node:22-alpine", note: "Basimagen. Skrivskyddad, delas mellan alla containrar från samma image." },
+  ]}
+/>
+
+Det förklarar Lisas morgon. `docker compose down` tar bort containrarna, och med dem det
+skrivbara lagret. Imagen är kvar, koden är kvar — men allt Postgres hunnit skriva är borta.
+
+<Callout type="varfor" title="Varför är det designat så?">
+Det är samma egenskap som gör containrar användbara. En container ska vara **utbytbar**: går
+den sönder kastar du den och startar en ny från samma image, och den nya är garanterat
+identisk med den gamla.
+
+Den garantin håller bara om containern inte bär på något unikt. Data som ska överleva måste
+därför bo någon annanstans — och det är precis vad en volym är.
+</Callout>
+
+## Volymen, och vägen dit
+
+En **volym** är lagring som Docker hanterar separat från containern. Du pekar ut en katalog
+inuti containern, och allt som skrivs dit hamnar i stället utanför.
+
+<Flow
+  caption="Postgres märker ingen skillnad — den skriver till en helt vanlig katalog. Omdirigeringen sker under den."
+  steps={[
+    {
+      label: "Postgres",
+      note: "Skriver sina datafiler till `/var/lib/postgresql/data`, som vanligt.",
+    },
+    {
+      label: "Monteringspunkten",
+      via: "katalogen är monterad",
+      note: "Docker har kopplat just den sökvägen till en volym i stället för till det skrivbara lagret.",
+    },
+    {
+      label: "Volymen `shop_db_data`",
+      via: "skriver igenom",
+      note: "Lever kvar även när containern tas bort.",
+      accent: true,
+    },
+  ]}
+/>
+
+I Compose-filen är det två rader plus en deklaration:
+
+```yaml
+services:
+  db:
+    image: postgres:17-alpine
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+volumes:
+  db_data:
+```
+
+Raden under `volumes:` i tjänsten läses `källa:mål` — volymen `db_data` monteras på sökvägen
+`/var/lib/postgresql/data`. Blocket längst ner är obligatoriskt: en namngiven volym måste
+deklareras på toppnivå innan en tjänst får använda den.
+
+Nu överlever produkterna både `down` och `up`.
+
+## Två sorters volymer
+
+Det finns två varianter, och valet mellan dem handlar om **vem som äger katalogen**.
+
+<Split
+  leftTitle="Bind mount"
+  rightTitle="Named volume"
+  leftTone="neutral"
+  rightTone="neutral"
+  caption="Båda behövs — men till olika saker."
+>
+  <div slot="left">
+
+  `./backend:/app`
+
+  En mapp på **din dator** monteras in i containern. Du ser filerna i din editor, och ändringar
+  slår igenom direkt.
+
+  Perfekt under utveckling: spara i editorn, och appen laddar om utan ombyggnad.
+
+  Beroende av att sökvägen finns — och av vilket operativsystem du kör.
+
+  </div>
+  <div slot="right">
+
+  `db_data:/var/lib/postgresql/data`
+
+  **Docker** äger lagringen och lägger den på en plats du normalt inte rör.
+
+  Rätt val för databasfiler och annat applikationen själv producerar.
+
+  Fungerar likadant på Linux, macOS och Windows, och är snabbare på de två sistnämnda.
+
+  </div>
+</Split>
+
+Tumregeln är kort: **bind mount för kod du redigerar, named volume för data appen skapar.**
+
+<Callout type="sa-gor-du" title="Kommandona du behöver">
+- `docker volume ls` — vilka volymer finns?
+- `docker compose down` — tar bort containrarna, **behåller** volymerna.
+- `docker compose down -v` — tar bort volymerna också.
+- `docker volume inspect shop_db_data` — var på disken ligger den, och när skapades den?
+
+Vill du börja om från tomma bordet är `down -v` följt av `up` det snabbaste sättet att få en
+ren databas.
+</Callout>
+
+## Fallgroparna
+
+<Callout type="fallgrop">
+**`-v` är inte ett oskyldigt tillägg.** `docker compose down -v` raderar volymerna utan att
+fråga, och det finns ingen papperskorg. Kommandot är utmärkt i en testmiljö och farligt i
+alla andra — särskilt i ett skript som "städar" innan varje körning.
+
+**En bind mount kan gömma undan det som redan finns.** Monterar du `./backend:/app` läggs din
+mapp *ovanpå* `/app` i containern. Katalogen `node_modules` som byggdes in i imagen blir då
+osynlig, eftersom din mapp saknar den. Symtomet är `Cannot find module` på något du
+uttryckligen installerade i `Dockerfile`.
+
+Vanligaste lösningen är en anonym volym som skyddar just den katalogen:
+
+```yaml
+volumes:
+  - ./backend:/app
+  - /app/node_modules
+```
+</Callout>
+
+En sista sak värd att veta: en volym är inte en säkerhetskopia. Den ligger på samma disk som
+allt annat. Ska databasen kunna återställas behöver du en riktig dump — `pg_dump` på schema —
+som lagras någon annanstans.
+
+<Callout type="kom-ihag">
+- Imagens lager är skrivskyddade. Containern får ett tunt skrivbart lager som **försvinner med
+  containern**.
+- En volym flyttar en katalog ut ur containerns livscykel, så data överlever `down` och `up`.
+- **Named volume** för data applikationen skapar; **bind mount** för kod du redigerar.
+- Namngivna volymer måste deklareras i `volumes:`-blocket på toppnivå.
+- `down` behåller volymerna, `down -v` raderar dem. Utan varning.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Du kör `docker compose down` och sedan `up`. Koden finns kvar men databasen är tom. Varför?",
+      a: "Koden ligger i imagens skrivskyddade lager och byggs in vid `build`. Databasens innehåll skrevs till containerns skrivbara lager, som togs bort tillsammans med containern. Utan volym finns det ingenstans för datan att ta vägen.",
+    },
+    {
+      q: "När ska du välja en bind mount framför en named volume?",
+      a: "När du vill se och redigera filerna själv — typiskt källkod under utveckling, så att en sparning i editorn slår igenom i containern utan ombyggnad. För data applikationen producerar, som databasfiler, är named volume rätt val.",
+    },
+    {
+      q: "Du monterar `./backend:/app` och får plötsligt `Cannot find module` för ett paket du installerade i `Dockerfile`. Vad hände?",
+      a: "Bind mounten lade din lokala mapp ovanpå `/app` i containern och dolde `node_modules` som byggdes in i imagen. Lägg till en anonym volym för `/app/node_modules` så skyddas den katalogen från att skrivas över.",
+    },
+    {
+      q: "Räcker en volym som säkerhetskopia av databasen?",
+      a: "Nej. Volymen ligger på samma disk och skyddar bara mot att containern tas bort — inte mot diskhaveri, radering eller trasig data. En riktig säkerhetskopia är en dump som lagras någon annanstans.",
+    },
+  ]}
+/>
+
+## Sammanfattning
+
+En container skriver till ett tunt lager som tillhör just den containern, och som försvinner
+med den. Det är avsiktligt: det är vad som gör containrar utbytbara.
+
+Data som ska överleva flyttas ut i en volym. Named volumes för det applikationen producerar,
+bind mounts för kod du själv redigerar — och `-v` på `down` är kommandot att behandla med
+respekt.
+
+Därmed har du de fyra delarna: containern, imagen, nätverket och lagringen. Det räcker för att
+köra ett riktigt system på en maskin. Kubernetes-serien tar vid där den frågan tar slut: vad
+händer när en maskin inte längre räcker?

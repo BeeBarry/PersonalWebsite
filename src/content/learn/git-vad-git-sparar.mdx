@@ -1,0 +1,212 @@
+---
+title: 'Vad Git egentligen sparar'
+description: 'Ögonblicksbilder, inte ändringar — och varför den skillnaden förklarar allt annat'
+category: 'git'
+part: 1
+partTitle: 'Grunderna'
+order: 1
+date: '2026-08-04'
+tags: ['Beginner', 'Git']
+---
+
+## Var vi är
+
+Git har funnits i bakgrunden genom hela Learn Hub. Terraform-filerna skulle ligga i ett repo,
+merge requesten var där infrastrukturändringen granskades, och `.dockerignore` fungerade
+"precis som `.gitignore`".
+
+Nu tar vi Git självt. Och vi börjar inte med kommandon, för det är inte där folk fastnar.
+Nästan all Git-förvirring kommer från en enda felaktig mental modell.
+
+## Filerna ingen vågar radera
+
+Lisa öppnar en gammal fil i projektet och hittar två hundra rader utkommenterad kod, med en
+kommentar överst: *"gammal beräkning, ta bort sen"*. Bredvid filen ligger `prisberakning.js`,
+`prisberakning_gammal.js` och `prisberakning_ny_TEST.js`.
+
+Ingen vågar radera något, eftersom ingen vet om det behövs. Så allt ligger kvar.
+
+<Callout type="varfor" title="Varför det här är ett Git-problem">
+Alla tre vanorna — utkommenterad kod, filer med `_gammal`, mappar med datum i namnet — är
+försök att lösa samma sak: *jag vill kunna komma tillbaka till hur det såg ut förut.*
+
+Det är exakt det Git gör, och gör bättre. Men bara om du litar på att det faktiskt finns kvar
+— och den tilliten kommer av att förstå vad som sparas.
+</Callout>
+
+## Den felaktiga modellen
+
+Här är den missuppfattning som orsakar mest problem:
+
+<Split
+  leftTitle="Vanlig föreställning"
+  rightTitle="Så fungerar det"
+  caption="Skillnaden verkar akademisk tills du ska förstå varför grenar är gratis."
+>
+  <div slot="left">
+
+  *"En commit sparar mina ändringar."*
+
+  Git tänks lagra en lista av ändringar — rad 12 ändrad, rad 40 borttagen — som staplas på
+  varandra.
+
+  Med den modellen känns en gren som en riskabel avvikelse, och att gå tillbaka i historiken
+  som att ångra en lång rad steg.
+
+  </div>
+  <div slot="right">
+
+  **En commit sparar hela projektet.**
+
+  Varje commit är en **ögonblicksbild** av alla filer, precis som de såg ut i det ögonblicket,
+  plus en pekare till den föregående.
+
+  Med den modellen är en gren bara *en till pekare*, och att gå tillbaka är att titta på en
+  annan bild.
+
+  </div>
+</Split>
+
+Att bilderna är billiga beror på att Git inte sparar oförändrade filer på nytt — den återanvänder
+dem. Men det är en optimering under huven. **Modellen du ska tänka i är ögonblicksbilder.**
+
+Diffen du ser i `git diff` är alltså inte det som lagrats. Den räknas ut i stunden, genom att
+jämföra två bilder.
+
+## Helheten först: tre platser
+
+En fil i ett Git-projekt kan befinna sig på tre ställen, och två kommandon flyttar den mellan
+dem. Det här diagrammet förklarar det mesta av vardagen:
+
+<Flow
+  caption="`git status` visar just var dina filer befinner sig i den här kedjan. Det är därför det är det mest användbara kommandot i Git."
+  steps={[
+    {
+      label: "Arbetskatalogen",
+      note: "Filerna som de ser ut på din disk just nu. Här redigerar du.",
+    },
+    {
+      label: "Staging (index)",
+      via: "git add",
+      note: "Det du valt ut till nästa ögonblicksbild. Ett utrymme att komponera commiten i.",
+      accent: true,
+    },
+    {
+      label: "Repositoryt",
+      via: "git commit",
+      note: "Ögonblicksbilden är sparad och får ett eget namn. Härifrån kan du alltid komma tillbaka.",
+    },
+  ]}
+/>
+
+<Callout type="varfor" title="Varför staging finns — den delen alla hoppar över">
+Att `git add` behövs känns i början som ett onödigt extra steg. Poängen är att du sällan gör
+**en** sak åt gången.
+
+Lisa fixar en bugg, och råkar samtidigt rätta en stavning i en helt annan fil. Utan staging
+måste båda in i samma commit. Med staging kan hon lägga in buggfixen, committa den för sig,
+och sedan ta stavfelet i en egen commit.
+
+Resultatet är en historik där varje commit gör **en begriplig sak** — och det är skillnaden
+mellan en historik man kan använda och en man bara skrollar förbi.
+</Callout>
+
+## Vad som faktiskt står i en commit
+
+Fyra saker, varje gång:
+
+- **Ögonblicksbilden** — hela filträdet som det såg ut.
+- **Föräldern** — vilken commit som kom före. Det är den här pekaren som gör historiken till
+  en kedja.
+- **Metadata** — vem, när, och meddelandet du skrev.
+- **En hash** — det där långa `a3f9c2e…`, som är commitens namn.
+
+Hashen är inte ett löpnummer. Den är **uträknad ur innehållet**: ändras en enda bokstav i en
+fil, i meddelandet eller i föräldern, blir hashen en annan.
+
+Det ger en användbar garanti. Två utvecklare med samma hash har garanterat exakt samma kod —
+och historik går inte att ändra i smyg, eftersom varje ändring bakåt ger alla efterföljande
+commits nya hashar.
+
+## De kommandon du faktiskt använder
+
+```bash
+git status               # var står mina filer?
+git add prisberakning.js # lägg en fil i staging
+git add -p               # välj ändring för ändring
+git commit -m "Rätta momsberäkning för utlandet"
+git log --oneline        # en rad per commit
+git diff                 # arbetskatalog mot staging
+git diff --staged        # staging mot senaste commit
+```
+
+<Callout type="sa-gor-du" title="Skriv commit-meddelanden någon kan använda">
+Meddelandet är det enda som gör historiken sökbar. En rimlig regel: skriv vad commiten **gör**,
+i imperativ, och lägg *varför* i raderna under om det inte är uppenbart.
+
+Bra: `Rätta momsberäkning för utländska kunder`
+Sämre: `fix`, `wip`, `ändringar`, `funkar nu`
+
+Testet är enkelt: kommer någon som läser `git log` om ett halvår att förstå raden utan att
+öppna diffen?
+</Callout>
+
+## Fallgropen: historiken glömmer inte
+
+<Callout type="fallgrop">
+Lisa committar av misstag en `.env` med databaslösenordet. Hon upptäcker det, raderar filen,
+committar igen — och tror att saken är löst.
+
+Det är den inte. Den **första** ögonblicksbilden finns kvar, och lösenordet med den. Vem som
+helst som klonar repot får hela historiken, och kan läsa filen med ett kommando.
+
+Två saker följer av det:
+
+- Lägg in `.env` i `.gitignore` **innan** första commiten. `.gitignore` skyddar bara filer som
+  Git inte redan spårar — lägger du till en redan spårad fil händer ingenting.
+- Har en hemlighet väl committats är den att betrakta som läckt. **Byt den.** Att städa
+  historiken i efterhand är möjligt men jobbigt, och hjälper inte om någon redan klonat.
+</Callout>
+
+<Callout type="kom-ihag">
+- En commit är en **ögonblicksbild av hela projektet** plus en pekare till föräldern — inte en
+  lista med ändringar.
+- Tre platser: arbetskatalog → staging → repository. `git add` och `git commit` flyttar mellan
+  dem.
+- Staging finns för att du ska kunna committa **en sak i taget**, även när du gjort flera.
+- Hashen räknas ut ur innehållet. Samma hash betyder garanterat samma kod.
+- `.gitignore` skyddar bara filer som inte redan spåras. En committad hemlighet är läckt — byt
+  den.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Vad sparar Git i en commit — dina ändringar eller hela projektet?",
+      a: "Hela projektet, som en ögonblicksbild, plus en pekare till föregående commit. Diffen du ser i `git diff` räknas ut i stunden genom att jämföra två bilder — den är inte det som lagras.",
+    },
+    {
+      q: "Du har fixat en bugg och samtidigt rättat ett stavfel i en annan fil. Varför är staging användbart här?",
+      a: "Du kan lägga bara buggfixen i staging och committa den för sig, och sedan ta stavfelet i en egen commit. Varje commit gör då en begriplig sak, vilket är det som gör historiken användbar.",
+    },
+    {
+      q: "Du committade en `.env`-fil, raderade den och committade igen. Är lösenordet borta?",
+      a: "Nej. Den första ögonblicksbilden finns kvar i historiken och innehåller filen. Alla som klonar repot får med den. Lösenordet ska betraktas som läckt och bytas.",
+    },
+    {
+      q: "Varför ändras en commits hash om du redigerar en tidigare commit?",
+      a: "Hashen räknas ut ur innehållet, inklusive pekaren till föräldern. Ändras något bakåt i kedjan får alla efterföljande commits nya hashar — vilket är precis det som gör att historik inte kan ändras i smyg.",
+    },
+  ]}
+/>
+
+## Sammanfattning
+
+Git sparar ögonblicksbilder, inte ändringar. Varje commit är hela projektet plus en pekare
+bakåt, och namnet är en hash uträknad ur innehållet.
+
+Mellan din disk och historiken ligger staging — steget som låter dig bestämma vad som ska ingå,
+så att varje commit gör en sak.
+
+Håller du den modellen i huvudet blir nästa del nästan självklar: om en commit bara är en bild
+med en pekare, vad är då egentligen en gren?

@@ -1,0 +1,243 @@
+---
+title: 'Rättigheter, processer och rör'
+description: 'Permission denied, vad som körs just nu, och hur kommandon kopplas ihop'
+category: 'linux'
+part: 1
+order: 2
+date: '2026-08-04'
+tags: ['Beginner', 'Terminal', 'Rättigheter']
+---
+
+## Var vi är
+
+Lisa hittar i filsystemet nu. Hon vet var hon står och hur hon tar sig dit hon ska.
+
+Sedan försöker hon faktiskt göra något — och möts av tre meddelanden som alla nybörjare möter,
+i ungefär den här ordningen:
+
+```
+bash: deploy.sh: command not found
+bash: ./deploy.sh: Permission denied
+```
+
+Båda är rimliga. Båda har enkla förklaringar. Och tillsammans lär de ut det mesta man behöver
+veta om rättigheter.
+
+## Varför `./` behövs
+
+Det första felet handlar inte om rättigheter alls. När du skriver `deploy.sh` letar skalet
+efter ett program med det namnet i en lista av kataloger som heter `PATH` — typiskt
+`/usr/bin`, `/usr/local/bin` och några till.
+
+Din nuvarande katalog ingår **inte** i den listan.
+
+<Callout type="varfor" title="Varför är det så, egentligen?">
+Det är ett säkerhetsval. Låg din katalog i `PATH` skulle en fil som råkade heta `ls` i en
+nedladdad mapp köras i stället för det riktiga `ls` — bara för att du stod där. Genom att kräva
+`./` blir det ett aktivt beslut att köra just den filen på just den platsen.
+
+`./deploy.sh` betyder alltså: *skriptet som ligger här*, inte *ett program som råkar heta så
+någonstans i systemet*.
+</Callout>
+
+## Vad `-rwxr-xr--` faktiskt säger
+
+Det andra felet är rättighetsfelet. `ls -l` visar en rad per fil, och den börjar med tio
+tecken som beskriver vem som får göra vad:
+
+```text
+-rwxr-xr--
+│└┬┘└┬┘└┬┘
+│ │  │  └── övriga:  r--  får läsa
+│ │  └───── gruppen: r-x  får läsa och köra
+│ └──────── ägaren:  rwx  får läsa, skriva och köra
+└────────── typ:     vanlig fil
+```
+
+Tre bokstäver, tre grupper. **r** = läsa, **w** = skriva, **x** = köra. Och tre sorters *vem*:
+filens ägare, den grupp filen tillhör, och alla andra.
+
+Första tecknet är inte en rättighet utan filens typ: `-` för en vanlig fil, `d` för en katalog
+och `l` för en länk. Det är därför en `ls -l` över en mapp full av kataloger börjar varje rad
+med `d`.
+
+Lisas `deploy.sh` saknar `x` för henne, alltså vägrar systemet köra den. Fixen är ett
+kommando:
+
+```bash
+chmod +x deploy.sh    # ge körrättighet
+ls -l deploy.sh       # kontrollera att det tog
+```
+
+<Callout type="fallgrop" title="chmod 777 är inte en lösning">
+Söker man felet på nätet dyker `chmod 777` upp som svar. Det sätter `rwx` för **alla** — ägare,
+grupp och alla andra, inklusive vem som helst som får fotfäste på maskinen.
+
+Det får felet att försvinna, vilket är precis vad som gör det farligt: du får aldrig veta vad
+det egentliga problemet var. På en server betyder det ofta att en konfigurationsfil med
+lösenord blir skrivbar för alla konton.
+
+Ge den rättighet som faktiskt saknas. `chmod +x` för ett skript, `chmod 600` för en fil med
+hemligheter (bara ägaren får läsa och skriva).
+</Callout>
+
+`sudo` finns för det som kräver systemrättigheter — installera paket, redigera i `/etc`, starta
+tjänster. Regeln är enkel: använd det när kommandot verkligen rör systemet, aldrig som
+reflex för att få ett felmeddelande att sluta. Ett `Permission denied` är oftast korrekt.
+
+## Vad som körs just nu
+
+En **process** är ett program som körs. Att kunna se och stoppa dem är halva felsökningen på
+en server.
+
+- **`ps aux`** — listar alla processer. Kombineras nästan alltid med sökning, se nedan.
+- **`top`** (eller `htop`) — löpande vy över vad som drar processorkraft och minne. Avslutas
+  med `q`.
+- **`kill 4821`** — ber process 4821 att avsluta snyggt. `kill -9` tvingar, och används först
+  när det snälla sättet inte fungerat.
+
+Två tangentbordsgrepp hör hit, och de förväxlas ofta:
+
+- **Ctrl+C** avbryter det som körs i förgrunden. Det du vill ha nästan alltid.
+- **Ctrl+Z** *pausar* processen och lämnar den liggande i bakgrunden. Kör du det av misstag
+  ligger programmet kvar och håller kanske en port upptagen. `fg` hämtar tillbaka den.
+
+Det förklarar en klassiker: `Error: port 3000 is already in use` fast du "stängde ju" servern.
+Du pausade den.
+
+## Rör: kommandon som kopplas ihop
+
+Nu till det som gör terminalen kraftfull. Varje kommando skriver ut text, och ett **rör** —
+tecknet `|` — skickar den texten vidare som indata till nästa kommando.
+
+Lisa vill veta hur många serverfel som finns i dagens logg:
+
+{/* caption som uttryck, inte attribut: citattecknen inuti kommandot går inte
+    att escapa i ett vanligt JSX-attribut — där avslutar \" bara värdet. */}
+<Flow
+  layout="row"
+  caption={'`cat access.log | grep " 500 " | wc -l` — tre små verktyg som tillsammans blir ett svar.'}
+  steps={[
+    {
+      label: "cat access.log",
+      note: "Skriver ut hela loggen. 40 000 rader.",
+    },
+    {
+      label: 'grep " 500 "',
+      via: "rör vidare",
+      note: "Släpper bara igenom rader som innehåller texten.",
+    },
+    {
+      label: "wc -l",
+      via: "rör vidare",
+      note: "Räknar raderna. Svarar: 137.",
+      accent: true,
+    },
+  ]}
+/>
+
+Det här är hela filosofin bakom Linux-verktygen: **många små program som gör en sak, och ett
+sätt att koppla ihop dem.** Inget av de tre kommandona vet något om de andra. `grep` filtrerar
+text, oavsett om texten kom från en loggfil, ett annat kommando eller ditt tangentbord.
+
+Några kombinationer du kommer att använda varje vecka:
+
+```bash
+ps aux | grep node       # körs någon node-process?
+ls -l | grep ".env"      # finns filen, och rättigheter?
+tail -f /var/log/app.log # följ loggen live
+grep -r "TODO" src/      # sök rekursivt nedåt
+```
+
+## Att spara utdata i en fil
+
+Röret skickar vidare till ett annat kommando. Vill du i stället spara till fil används `>` och
+`>>` — och skillnaden mellan dem är värd att lära sig innan du behöver den.
+
+<Split
+  leftTitle="&gt; skriver över"
+  rightTitle="&gt;&gt; lägger till"
+  caption="Ett tecken isär, och bara det ena går att ångra."
+>
+  <div slot="left">
+
+  `echo "start" > logg.txt`
+
+  Töm filen och skriv innehållet. Fanns det något där sedan tidigare är det **borta**, utan
+  fråga och utan säkerhetskopia.
+
+  Kör du samma rad två gånger finns bara den andra körningens text kvar.
+
+  </div>
+  <div slot="right">
+
+  `echo "start" >> logg.txt`
+
+  Lägg till sist i filen. Det som redan fanns är kvar.
+
+  Kör du samma rad två gånger har du två rader.
+
+  </div>
+</Split>
+
+<Callout type="fallgrop">
+`>` mot en fil som redan finns raderar innehållet **innan** kommandot till vänster ens hunnit
+köra. Det betyder att en rad som `sort data.txt > data.txt` tömmer filen i stället för att
+sortera den.
+
+Vill du bearbeta en fil och behålla resultatet: skriv till en ny fil och byt namn efteråt.
+</Callout>
+
+En sista sak om utdata som förvirrar många: kommandon skriver på **två** kanaler — vanlig
+utdata och felutdata. `>` fångar bara den första. Vill du ha med felen också:
+
+```bash
+./deploy.sh > logg.txt 2>&1
+```
+
+`2>&1` betyder ungefär "skicka kanal 2 dit kanal 1 går". Utan den hamnar felmeddelandena på
+skärmen medan loggfilen ser misstänkt lyckad ut.
+
+<Callout type="kom-ihag">
+- `./` behövs för att köra en fil i nuvarande katalog — den ligger inte i `PATH`, av
+  säkerhetsskäl.
+- `rwx` för ägare, grupp och övriga. `chmod +x` ger körrättighet; `chmod 777` ger bort allt.
+- Ctrl+C avbryter, **Ctrl+Z pausar**. Det senare förklarar oväntat upptagna portar.
+- `|` skickar utdata vidare till nästa kommando. Små verktyg, ihopkopplade.
+- `>` skriver över, `>>` lägger till. `2>&1` tar med felmeddelandena.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Varför fungerar `./deploy.sh` men inte `deploy.sh`?",
+      a: "Utan `./` letar skalet bara i katalogerna som står i `PATH`, och din nuvarande katalog ingår inte där. Det är ett säkerhetsval: en fil som råkar heta som ett systemkommando ska inte kunna köras av misstag bara för att du står i mappen.",
+    },
+    {
+      q: "Filen visar `-rw-r--r--` och du får `Permission denied` när du kör den. Vad saknas?",
+      a: "Körrättigheten `x`. Ägaren har `rw-`, alltså läsa och skriva men inte köra. `chmod +x filen` löser det — och notera att det räcker, `chmod 777` ger dessutom bort skrivrättighet till alla.",
+    },
+    {
+      q: "Du stängde servern men får ändå \"port 3000 is already in use\". Vad hände troligen?",
+      a: "Du tryckte Ctrl+Z i stället för Ctrl+C. Ctrl+Z pausar processen och lämnar den kvar i bakgrunden med porten upptagen. `fg` hämtar tillbaka den, eller så avslutas den med `kill`.",
+    },
+    {
+      q: "Vad är fel med `sort data.txt > data.txt`?",
+      a: "`>` tömmer målfilen innan `sort` hinner läsa den, så resultatet blir en tom fil. Skriv till en ny fil och byt namn efteråt.",
+    },
+  ]}
+/>
+
+## Sammanfattning
+
+`Permission denied` och `command not found` är inte hinder att kringgå — de är systemet som
+berättar exakt vad som saknas. Det första löses nästan alltid med `./` eller `chmod +x`, inte
+med `sudo` eller `777`.
+
+Processer går att se med `ps` och `top`, och stoppas med Ctrl+C — inte Ctrl+Z, som bara pausar.
+
+Och rören är det som gör resten värt något: små verktyg som var för sig gör en enda sak, men
+som kopplade i följd svarar på nästan vilken fråga som helst om vad som händer på maskinen.
+
+Med det står Linux-grunderna. Nästa serie tar vid där maskinen slutar: vad som faktiskt händer
+när två datorer ska prata med varandra.

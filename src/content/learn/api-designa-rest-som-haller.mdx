@@ -1,0 +1,214 @@
+---
+title: 'Designa ett REST-API som håller'
+description: 'Substantiv i sökvägen, verb i metoden — och de beslut som blir dyra att ändra'
+category: 'api'
+part: 1
+order: 2
+date: '2026-08-04'
+tags: ['Beginner', 'API', 'REST']
+---
+
+## Var vi är
+
+Du vet vad ett API är: ett kontrakt, med reglerna på serversidan. Nu handlar det om hur
+kontraktet **formuleras**.
+
+Det låter som en smaksak. Det är det inte, av ett enda skäl: ett API är svårt att ändra när
+någon väl använder det. Namnen du väljer första veckan lever kvar länge.
+
+## Ett API där varje ny endpoint är en diskussion
+
+Marias API har vuxit ett halvår. Så här ser en del av det ut:
+
+```text
+GET   /getProdukt?id=8842
+POST  /produktSkapa
+GET   /hamtaAllaProdukter
+POST  /deleteProduktById
+GET   /produkt/aktiva/lista
+```
+
+Ingenting är direkt fel. Varje endpoint fungerar. Men fem olika personer har namngett fem
+endpoints, och nu måste varje ny börja med en diskussion om vad den ska heta — eller ännu
+oftare, med att någon slår upp hur de gamla såg ut.
+
+<Callout type="varfor" title="Vad REST faktiskt löser">
+REST är inte en teknik eller ett bibliotek. Det är en handfull konventioner, och den bärande
+är den här:
+
+**Sökvägen säger vad du pratar om. Metoden säger vad du vill göra.**
+
+Håller du den regeln behöver ingen minnas namnen — de går att räkna ut. Det är hela vinsten,
+och den växer med varje endpoint.
+</Callout>
+
+## Helheten först: en resurs, fem operationer
+
+Samma produkter, uttryckta enligt konventionen:
+
+```text
+GET     /produkter          → lista dem
+POST    /produkter          → skapa en ny
+GET     /produkter/8842     → hämta en bestämd
+PUT     /produkter/8842     → ersätt den
+PATCH   /produkter/8842     → ändra delar av den
+DELETE  /produkter/8842     → ta bort den
+```
+
+Två sökvägar. Sex operationer. Och den som lär sig mönstret kan gissa hur `/ordrar` och
+`/kunder` ser ut utan att fråga.
+
+<Split
+  leftTitle="Verb i sökvägen"
+  rightTitle="Substantiv + metod"
+  caption="Samma funktionalitet. Den ena går att lära sig, den andra måste läras utantill."
+>
+  <div slot="left">
+
+  `GET /getProdukt?id=8842`
+  `POST /deleteProduktById`
+
+  Varje operation blir ett eget namn någon hittat på.
+
+  `POST` för att radera betyder dessutom att metoden inte längre säger något — allt är `POST`
+  eller `GET`.
+
+  </div>
+  <div slot="right">
+
+  `GET /produkter/8842`
+  `DELETE /produkter/8842`
+
+  Adressen pekar ut **saken**, metoden bär **avsikten**.
+
+  Metoden blir därmed meningsfull igen — och därmed även dess egenskaper: `DELETE` är
+  idempotent, `GET` är säkert.
+
+  </div>
+</Split>
+
+Kopplingen till HTTP-artikeln är direkt. Ett `POST /deleteProduktById` ljuger för alla lager
+under dig: mellanservrar tror att något skapas, och automatiska omförsök blir farliga fast
+operationen egentligen var idempotent.
+
+## Fyra konventioner som räcker långt
+
+**Plural i sökvägen.** `/produkter`, inte `/produkt`. Samlingen är plural, och en enskild post
+är en medlem i den: `/produkter/8842`. Konsekvensen är viktigare än valet.
+
+**Hierarki när något hör till något annat.** Recensioner tillhör en produkt:
+
+```text
+GET  /produkter/8842/recensioner
+POST /produkter/8842/recensioner
+```
+
+Men sluta där. `/kunder/12/ordrar/55/rader/3/produkt` är en sökväg ingen vill skriva. Har
+resursen ett eget id räcker det: `/orderrader/3`.
+
+**Filtrering, sortering och sidindelning i frågesträngen.** De beskriver inte en annan resurs
+utan en annan *vy* av samma:
+
+```text
+GET /produkter?kategori=verktyg&sortera=pris&sida=2
+```
+
+Därför är `/produkter/aktiva` fel och `/produkter?status=aktiv` rätt. Annars får du en ny
+sökväg för varje kombination någon någonsin behöver.
+
+**Version i sökvägen.** `/v1/produkter`. Det är fult, och alternativen är värre. Den dagen ett
+fältnamn måste ändras kan du köra `/v2` parallellt medan gamla klienter fortsätter fungera — i
+stället för att bryta dem alla en tisdag.
+
+<Callout type="fallgrop" title="Sidindelning som glöms bort">
+`GET /produkter` returnerar alla produkter. I utvecklingsmiljön finns tvåhundra, och det går på
+40 millisekunder.
+
+I produktion finns fyrahundratusen. Nu läser databasen hela tabellen, servern bygger en
+JSON-sträng på tiotals megabyte, och klienten försöker rendera alltihop. Endpointen fungerade
+i ett år och slutade fungera utan att någon rörde den.
+
+Bygg in sidindelning från början, med en **rimlig standard även när klienten inte ber om
+något**:
+
+```text
+GET /produkter              → 50 första
+GET /produkter?sida=2       → nästa 50
+```
+
+Det kostar ingenting i början och går inte att lägga till senare utan att bryta kontraktet.
+</Callout>
+
+## Felsvar som går att göra något åt
+
+Statuskoden säger *vem* som ska felsöka — det etablerade HTTP-artikeln. Men `400 Bad Request`
+utan mer information lämnar frontend-utvecklaren med en gissningslek.
+
+Skicka med vad som var fel, i ett format som är sig likt varje gång:
+
+```json
+{
+  "fel": "validering",
+  "meddelande": "Produkten kunde inte sparas.",
+  "detaljer": [
+    { "falt": "pris", "problem": "måste vara > 0" },
+    { "falt": "namn", "problem": "får inte vara tomt" }
+  ]
+}
+```
+
+Nu kan klienten markera rätt fält i formuläret i stället för att visa en allmän ruta. Och lika
+viktigt: **skriv aldrig ut interna detaljer.** Ett stack trace eller en SQL-fråga i ett felsvar
+berättar för en angripare hur systemet är byggt.
+
+<Callout type="sa-gor-du" title="Skriv kontraktet innan koden">
+Det mest värdefulla du kan göra innan första endpointen byggs är att skriva ner resurserna och
+deras fält — i en OpenAPI-fil eller bara i ett dokument.
+
+Två saker faller ut av det. Frontend kan börja arbeta mot ett svar som ännu inte finns, och
+diskussionen om vad saker ska heta tas **en gång**, inte vid varje ny endpoint.
+
+Det är samma princip som `plan` i Terraform: se överenskommelsen innan den blir verklighet.
+</Callout>
+
+<Callout type="kom-ihag">
+- **Substantiv i sökvägen, verb i metoden.** Då går API:et att gissa i stället för att memorera.
+- Plural och konsekvens: `/produkter`, `/produkter/8842`, `/produkter/8842/recensioner`.
+- Filter, sortering och sidindelning hör hemma i **frågesträngen** — de beskriver en vy, inte
+  en resurs.
+- Version i sökvägen från början. Sidindelning med rimlig standard från början.
+- Felsvar ska gå att agera på, i samma form varje gång — och aldrig avslöja interna detaljer.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Varför är `POST /deleteProduktById` sämre än `DELETE /produkter/8842`?",
+      a: "Metoden slutar bära någon betydelse. `DELETE` är idempotent, vilket gör omförsök ofarliga, medan `POST` signalerar att något skapas. Allt under dig — mellanservrar, klientbibliotek, omförsökslogik — läser metoden och blir vilselett.",
+    },
+    {
+      q: "Ska \"aktiva produkter\" vara `/produkter/aktiva` eller `/produkter?status=aktiv`?",
+      a: "Frågesträngen. Det är samma resurs sedd genom ett filter, inte en annan resurs. Väljer du sökvägen behöver du en ny sådan för varje kombination av filter någon någonsin efterfrågar.",
+    },
+    {
+      q: "En endpoint som fungerat i ett år slutar plötsligt fungera, utan att koden ändrats. Vad är en trolig orsak?",
+      a: "Sidindelning saknas. Listan har vuxit tills databasläsningen, svarets storlek eller renderingen inte längre går. Därför ska en listendpoint ha en rimlig standardgräns redan från början — den går inte att lägga till senare utan att bryta kontraktet.",
+    },
+    {
+      q: "Varför räcker det inte att svara `400 Bad Request` när valideringen misslyckas?",
+      a: "Klienten får veta att något var fel men inte vad, och kan varken markera rätt fält eller ge användaren ett begripligt besked. Skicka med vilka fält som brast och varför — i samma format varje gång, och utan interna detaljer.",
+    },
+  ]}
+/>
+
+## Sammanfattning
+
+REST är i praktiken en handfull konventioner som gör API:et gissningsbart: adressen pekar ut
+saken, metoden bär avsikten, och frågesträngen beskriver vilken vy du vill ha av den.
+
+Tre beslut är svåra att ändra i efterhand och värda att ta direkt: version i sökvägen,
+sidindelning med en rimlig standard, och ett felformat som klienten kan agera på.
+
+Nu har vi följt kedjan från webbläsaren till API:et. Sista steget är det som ligger bakom
+det — hur data faktiskt lagras, och varför en fråga som var snabb i test kan ta nio sekunder i
+produktion.

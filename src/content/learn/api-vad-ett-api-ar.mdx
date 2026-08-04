@@ -1,0 +1,221 @@
+---
+title: 'Vad ett API är och vem som anropar vem'
+description: 'Kontraktet mellan två system — och varför frontend aldrig får prata med databasen'
+category: 'api'
+part: 1
+partTitle: 'Grunderna'
+order: 1
+date: '2026-08-04'
+tags: ['Beginner', 'API', 'REST']
+---
+
+## Var vi är
+
+HTTP-serien tog oss hela vägen till svaret: metoden, statuskoden, headers och body. Du kan
+läsa ett anrop.
+
+Nu handlar det om vad man **bygger** med dem. För ett API är inte en teknik — det är en
+överenskommelse, och HTTP råkar bara vara det vanligaste sättet att uttrycka den.
+
+## Priset Lisa inte kan räkna ut
+
+Lisas kassa behöver visa fraktpris. Priset beror på vikt, mottagarens postnummer och vilken
+tjänst kunden väljer — och den informationen finns hos fraktbolaget, inte hos Lisa.
+
+Hon kan omöjligt få tillgång till deras databas. De skulle aldrig ge ut den, och även om de
+gjorde det skulle hon behöva veta hur deras tabeller ser ut och hålla sig uppdaterad varje gång
+de ändrade något.
+
+I stället gör hon ett anrop:
+
+```http
+GET /v2/priser?vikt=1200&postnr=11122&typ=hemleverans
+```
+
+Och får tillbaka:
+
+```json
+{
+  "pris": 79,
+  "valuta": "SEK",
+  "leverans": "2026-08-06"
+}
+```
+
+<Callout type="varfor" title="Vad som egentligen just hände">
+Lisa fick svaret utan att veta något om hur det räknades ut. Fraktbolaget svarade utan att
+släppa in henne någonstans.
+
+Det är hela idén: **ett API är ett kontrakt om vad man kan fråga om och vad man får tillbaka
+— inget mer.** Bakom det får fraktbolaget byta databas, programspråk och algoritm hur de vill,
+så länge svaret ser likadant ut.
+
+Den friheten är inte en bieffekt. Den är poängen.
+</Callout>
+
+## Vem anropar vem
+
+Två roller, och det är värt att vara noggrann med dem, för de förväxlas hela tiden.
+
+**Klienten** är den som ställer frågan. **Servern** är den som svarar. Ingendera är en maskin
+— det är roller i just det anropet.
+
+Lisas webbshop är alltså **klient** när den frågar fraktbolaget om priser, och **server** när
+kundens webbläsare frågar den om produkter. Samma system, båda rollerna, olika anrop.
+
+Det förklarar också varför "backend" och "server" inte är synonymer. Ett backend-API som anropar
+tre andra API:er är klient tre gånger om.
+
+## Helheten först: lagren
+
+<Stack
+  caption="Varje lager pratar bara med det närmast under sig. Ingen hoppar över ett steg."
+  ground="Fraktbolagets API — ett annat system, med sitt eget kontrakt"
+  layers={[
+    {
+      label: "Webbläsaren",
+      note: "Vet ingenting om databasen. Känner bara till API:ets adresser och svarsformat.",
+    },
+    {
+      label: "API:et",
+      note: "Bestämmer **vad** som får hämtas, **av vem**, och i vilken form. Här ligger reglerna.",
+      accent: true,
+    },
+    {
+      label: "Databasen",
+      note: "Nås aldrig utifrån. I Docker-artikeln var det just därför tjänsten `db` saknade `ports`.",
+    },
+  ]}
+/>
+
+## Varför inte bara prata med databasen?
+
+Det är en rimlig fråga, särskilt när API:et till en början ser ut att bara skicka vidare det
+databasen redan har. Fyra svar, i stigande allvar:
+
+<Split
+  leftTitle="Frontend mot databasen"
+  rightTitle="Frontend mot API:et"
+  caption="Skillnaden märks inte på första endpointen. Den märks på den femtionde."
+>
+  <div slot="left">
+
+  Anslutningsuppgifterna måste finnas i webbläsaren — alltså **synliga för alla**.
+
+  Ingen kan hindra en användare från att hämta andras ordrar, eller skriva vad som helst.
+
+  Byter ni databas måste varje klient skrivas om.
+
+  Varje ny skärm blir en ny fråga direkt mot tabellerna, och reglerna sprids ut överallt.
+
+  </div>
+  <div slot="right">
+
+  Uppgifterna stannar på servern. Klienten ser dem aldrig.
+
+  API:et avgör vem som får se vad, och kan **validera** innan något sparas.
+
+  Byter ni databas märker klienterna ingenting, så länge kontraktet står kvar.
+
+  Reglerna bor på ett ställe, och gäller därmed lika för webben, appen och integrationerna.
+
+  </div>
+</Split>
+
+Den andra punkten är den som gör frågan avgjord snarare än en avvägning: **validering som körs
+i klienten är ingen validering.** Den hjälper en användare att fylla i rätt, men går att gå
+förbi med ett anrop utanför webbläsaren. Regeln måste finnas där data faktiskt tas emot.
+
+## Representationen är inte raden
+
+När Lisas API svarar med en produkt skickar det inte databasraden. Det skickar en
+**representation** — en version av resursen, vald för det här sammanhanget:
+
+```json
+{
+  "id": 8842,
+  "namn": "Skruvmejsel PH2",
+  "pris": 149,
+  "iLager": true
+}
+```
+
+Databasraden bakom kan mycket väl innehålla `inkopspris`, `leverantor_id`, `lagerplats` och
+`senast_andrad_av`. Ingen av dem hör hemma i ett svar till en webbläsare.
+
+<Callout type="fallgrop" title="Att skicka hela raden">
+Det bekvämaste sättet att bygga en endpoint är att hämta raden och returnera den rakt av:
+
+```js
+const produkt = await db.query(
+  "SELECT * FROM produkter WHERE id = $1", [id]);
+res.json(produkt);   // ← allt som råkar finnas i raden
+```
+
+Det fungerar — tills någon lägger till en kolumn. Då börjar API:et plötsligt skicka ut den
+också, utan att någon bestämt det. På användartabeller är det så här `losenord_hash` och
+`ar_admin` läcker ut, och `SELECT *` gör att ingen märker det i kodgranskningen.
+
+Välj fälten uttryckligen. Det är fem sekunders extra arbete och den enda versionen som håller
+över tid.
+</Callout>
+
+## Internt och publikt är olika saker
+
+Alla API:er är inte till för omvärlden.
+
+Ett **internt** API är det Kubernetes-serien beskrev: `http://api:5000`, nåbart bara inifrån
+klustret, byggt för ett känt antal klienter du själv äger. Ändras kontraktet kan du ändra
+klienterna samtidigt.
+
+Ett **publikt** API — som fraktbolagets — har klienter du varken känner till eller kan
+kontakta. Där blir kontraktet ett löfte du inte ensidigt kan bryta, och det är därför
+versionering, dokumentation och stabila fältnamn plötsligt är avgörande.
+
+Skillnaden avgör hur mycket omsorg som är rimlig. Att bygga ett internt API som om det vore
+publikt är slöseri; att bygga ett publikt som om det vore internt är ett löfte du kommer att
+bryta.
+
+<Callout type="kom-ihag">
+- Ett API är ett **kontrakt** om vad man får fråga om och vad man får tillbaka — inte en teknik.
+- Klient och server är **roller i ett anrop**. Samma system kan vara båda.
+- Frontend pratar med API:et, aldrig med databasen. Anslutningsuppgifter i en webbläsare är
+  publika.
+- Validering i klienten är hjälp, inte skydd. Regeln måste ligga där data tas emot.
+- Svara med en **vald representation**, inte databasraden. `SELECT *` är hur fält läcker.
+- Internt API = kända klienter du kan ändra. Publikt API = ett löfte du inte kan bryta ensidigt.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Lisas webbshop hämtar fraktpriser från ett annat företag. Är webbshoppen klient eller server?",
+      a: "Båda, beroende på anropet. Den är klient när den frågar fraktbolaget om priser, och server när kundens webbläsare frågar den om produkter. Klient och server är roller i ett enskilt anrop, inte egenskaper hos en maskin.",
+    },
+    {
+      q: "Varför räcker det inte att validera formuläret i webbläsaren?",
+      a: "För att den valideringen går att gå förbi — vem som helst kan skicka ett anrop direkt till API:et utan att gå via sidan. Klientvalidering är hjälp för användaren; skyddet måste finnas där data faktiskt tas emot.",
+    },
+    {
+      q: "Vad är risken med `SELECT *` följt av att returnera raden rakt av?",
+      a: "API:et börjar automatiskt skicka ut varje ny kolumn någon lägger till, utan att det syns i kodgranskningen. Det är så fält som `losenord_hash` eller `ar_admin` läcker ut. Välj fälten uttryckligen i stället.",
+    },
+    {
+      q: "Varför är versionering viktigare för ett publikt API än för ett internt?",
+      a: "Ett internt API har klienter du själv äger och kan ändra samtidigt. Ett publikt har klienter du varken känner till eller kan kontakta, så kontraktet blir ett löfte som inte går att bryta ensidigt.",
+    },
+  ]}
+/>
+
+## Sammanfattning
+
+Ett API är en överenskommelse: det här får du fråga om, det här får du tillbaka. Bakom
+överenskommelsen är den som svarar fri att bygga hur den vill — och det är just den friheten
+som gör API:et värt besväret.
+
+Klienten frågar, servern svarar, och samma system kan vara båda i olika anrop. Mellan
+webbläsaren och databasen ligger API:et som det enda stället där reglerna bor: vem får se vad,
+vad är giltigt, och vilka fält lämnar huset.
+
+I nästa del går vi från *vad* till *hur*: hur man namnger och strukturerar ett API så att den
+femtionde endpointen är lika förutsägbar som den första.
