@@ -12,7 +12,7 @@ const items = site.navigation.filter(
 ---
 
 <nav
-  class="no-scrollbar flex flex-wrap gap-2 overflow-x-auto max-md:justify-between md:flex-1 md:flex-col md:gap-2 md:overflow-x-visible"
+  class="no-scrollbar flex gap-2 overflow-x-auto lg:flex-1 lg:flex-col lg:gap-2 lg:overflow-x-visible"
 >
   {
     items.map((item) => {
@@ -24,9 +24,11 @@ const items = site.navigation.filter(
           href={item.href}
           aria-current={isActive ? "page" : undefined}
           class:list={[
-            "group flex min-w-24 items-center justify-center rounded-2xl border border-transparent px-4 py-3 transition-all md:min-w-0 md:justify-between md:py-3.5",
+            // Under lg: en scrollbar rad (shrink-0 så posterna behåller sin
+            // bredd i stället för att wrappa till en ojämn 3+1-layout).
+            "group flex min-w-0 items-center justify-center rounded-2xl border border-transparent px-4 py-3 transition-all max-lg:shrink-0 lg:justify-between lg:py-3.5",
             isActive
-              ? "border-primary/20 bg-primary/10 md:hover:bg-primary/15"
+              ? "border-primary/20 bg-primary/10 lg:hover:bg-primary/15"
               : "hover:bg-muted/50",
           ]}
         >
@@ -43,7 +45,7 @@ const items = site.navigation.filter(
             </span>
             <span
               class:list={[
-                "text-[10px] tracking-widest uppercase",
+                "text-[10px] tracking-widest uppercase max-lg:hidden",
                 isActive ? "text-primary/60" : "text-muted-foreground/50",
               ]}
             >
@@ -53,7 +55,7 @@ const items = site.navigation.filter(
 
           <span
             class:list={[
-              "hidden text-primary transition-all md:block",
+              "hidden text-primary transition-all lg:block",
               isActive
                 ? ""
                 : "-translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100",

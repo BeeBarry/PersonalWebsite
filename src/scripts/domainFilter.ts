@@ -42,7 +42,11 @@ export function initDomainFilter() {
                 c.setAttribute("aria-pressed", String(on));
             });
             // Mjuk scroll till toppen så nyfiltrerat innehåll visas lugnt.
-            if (scroll && main) main.scrollTo({ top: 0, behavior: "smooth" });
+            // Under lg är <main> ingen scroll-container — då scrollar fönstret.
+            if (scroll) {
+                main?.scrollTo({ top: 0, behavior: "smooth" });
+                window.scrollTo({ top: 0, behavior: "smooth" });
+            }
         };
 
         allChips.forEach((c) =>

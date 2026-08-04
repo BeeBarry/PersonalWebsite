@@ -54,7 +54,7 @@
     --c-accent-contrast: #0b0b0d;
     --c-border: rgba(255, 255, 255, 0.09);
     /* Breeze-brygga: kort-yta (lyfter mot bg), solid muted-yta, kort-skugga */
-    --c-card: #111114;
+    --c-card: #17171b;
     --c-muted: #1b1b1f;
     --c-shadow-main: 0 30px 60px -15px rgba(0, 0, 0, 0.5);
     --dot-color: transparent;
@@ -74,7 +74,8 @@
 
     /* Bakåtkompatibla alias (gamla variabelnamn används i Learn Hub-komponenter) */
     --background: var(--c-bg);
-    --background-light: #f7f6f2;
+    /* Speglar ljusa lägets --c-bg (kan inte peka på var(--c-bg) här: i :root är den mörk). */
+    --background-light: #f2f0ea;
     --white: #ffffff;
     --black: #000000;
     --button: var(--c-accent);
@@ -92,19 +93,19 @@
 
 /* ---- Färgtokens: LJUST (.light) — portfolio-palett ---- */
 html.light {
-    --c-bg: #f7f6f2;
-    --c-surface: rgba(0, 0, 0, 0.035);
+    --c-bg: #f2f0ea;
+    --c-surface: rgba(0, 0, 0, 0.05);
     --c-text: #14130d;
     --c-text-secondary: #38362e;
     /* Höjd kontrast för läsbarhet (brödtext/meta) mot ljus bg. */
     --c-text-muted: #4d4a42;
-    --c-accent: #5f9c0a;
-    --c-accent-contrast: #f7f6f2;
+    --c-accent: #446f0a;
+    --c-accent-contrast: var(--c-bg);
     --c-border: rgba(0, 0, 0, 0.10);
     /* Breeze-brygga (ljust) */
     --c-card: #fffefb;
     --c-muted: #ecebe4;
-    --c-shadow-main: 0 10px 40px -10px rgba(60, 50, 20, 0.10);
+    --c-shadow-main: 0 10px 40px -12px rgba(60, 50, 20, 0.18);
     --dot-color: rgba(22, 21, 15, 0.05);
 
     --text-light: #16150f;
@@ -245,6 +246,37 @@ a {
     outline: 2px solid var(--c-accent);
     outline-offset: 3px;
     border-radius: 4px;
+}
+
+/* Skip-link (WCAG 2.4.1). Ligger först i kortet men utanför skärmen tills den
+   får tangentbordsfokus — då hoppar den in över innehållet. Utanför @layer base
+   så den vinner över utilities. */
+.skip-link {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    z-index: 100;
+    padding: 0.6rem 1rem;
+    border-radius: 0.75rem;
+    background: var(--c-accent);
+    color: var(--c-accent-contrast);
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-decoration: none;
+    transform: translateY(calc(-100% - 1.5rem));
+    transition: transform 0.15s ease;
+}
+
+.skip-link:focus,
+.skip-link:focus-visible {
+    transform: translateY(0);
+}
+
+/* Fokusramen på <main> är bara ett hoppmål — visa ingen outline. */
+main:focus,
+main:focus-visible {
+    outline: none;
 }
 
 /* ============================================================

@@ -10,19 +10,19 @@ import { Icon } from "astro-icon/components";
 ---
 
 <aside
-  class="flex w-full flex-col border-b border-border bg-muted/20 p-5 md:w-80 md:shrink-0 md:border-r md:border-b-0 md:p-10"
+  class="flex w-full flex-col border-b border-border bg-muted/20 p-5 lg:w-80 lg:shrink-0 lg:border-r lg:border-b-0 lg:p-10"
 >
   <Brand />
 
   <Nav />
 
-  <div class="mt-5 flex items-center justify-between md:mt-12">
-    <div class="flex gap-1 md:gap-3.5">
+  <div class="mt-5 flex items-center justify-between lg:mt-12">
+    <div class="flex gap-1 lg:gap-3.5">
       {
         site.social.map((item) => (
           <a
             href={item.href}
-            class="p-2 text-muted-foreground transition-colors hover:text-primary md:p-0"
+            class="p-2 text-muted-foreground transition-colors hover:text-primary lg:p-0"
             aria-label={item.name}
             target="_blank"
             rel="noopener noreferrer"
