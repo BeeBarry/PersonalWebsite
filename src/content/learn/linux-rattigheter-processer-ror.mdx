@@ -67,13 +67,16 @@ korrekt besked, inte ett hinder att kringgå.
 ```text
 -rwxr-xr--
 │└┬┘└┬┘└┬┘
-│ │  │  └── övriga:  r--  får läsa
-│ │  └───── gruppen: r-x  får läsa och köra
-│ └──────── ägaren:  rwx  får läsa, skriva och köra
-└────────── typ:     vanlig fil
+│ │  │  └── övriga    r--
+│ │  └───── gruppen   r-x
+│ └──────── ägaren    rwx
+└────────── typ       vanlig fil
 ```
 
 Tre bokstäver, tre grupper. **r** = läsa, **w** = skriva, **x** = köra.
+
+Ägaren får här alltså läsa, skriva och köra. Gruppen får läsa och köra men inte skriva. Övriga får
+bara läsa.
 
 Första tecknet är inte en rättighet utan filens **typ**: `-` för en vanlig fil, `d` för en katalog
 och `l` för en länk. Det är därför en `ls -l` över en mapp full av kataloger börjar varje rad med

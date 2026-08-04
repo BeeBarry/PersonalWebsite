@@ -139,8 +139,40 @@ står: `/home/lisa/shop/backend/server.js`.
 **En relativ sökväg** utgår från där du är just nu. Står du i `/home/lisa/shop` räcker det med
 `backend/server.js`.
 
-Relativa sökvägar är bekväma när du sitter och arbetar. De är opålitliga i allt som körs av något
-annat än dig — vilket avsnittet om skript längre ner handlar om.
+<Split
+  leftTitle="Absolut sökväg"
+  rightTitle="Relativ sökväg"
+  leftTone="neutral"
+  rightTone="neutral"
+  caption="Samma fil, två sätt att peka ut den. Bara det ena betyder samma sak överallt."
+>
+  <div slot="left">
+
+  `cat /home/lisa/shop/data.txt`
+
+  Börjar med `/` och beskriver hela vägen från roten.
+
+  Fungerar likadant oavsett var du står — och oavsett vem som kör den.
+
+  Längre att skriva, och den bryts om katalogen flyttas.
+
+  </div>
+  <div slot="right">
+
+  `cat data.txt`
+
+  Utgår från din nuvarande katalog.
+
+  Kort och bekväm när du sitter och arbetar i projektet.
+
+  Betyder olika saker beroende på var den körs ifrån — och det är precis det som gör den opålitlig
+  i skript.
+
+  </div>
+</Split>
+
+Relativa sökvägar är alltså inte sämre. De är bara beroende av ett sammanhang som inte alltid följer
+med — vilket avsnittet om skript längre ner handlar om.
 
 ## `.`, `..` och `~`
 
