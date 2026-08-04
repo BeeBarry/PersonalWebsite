@@ -1,6 +1,6 @@
 ---
 title: 'Introduktion till Docker'
-description: 'Lär dig grunderna i Docker och containers'
+description: 'Container, image, registry och Compose — de fyra begreppen resten av serien vilar på'
 category: 'docker'
 image:
     url: '/docker-intro.svg'
@@ -12,55 +12,83 @@ date: '2025-02-03'
 tags: ['Beginner', 'Overview']
 ---
 
-## Containers
+## Var vi är
 
-En **container** är som en liten låda som innehåller allt din applikation behöver för att fungera: programkod, bibliotek och konfigurationer. Grundtanken med containers är att säkerställa att **applikationen fungerar på exakt samma sätt oavsett var den körs** – på din laptop, en kollegas dator eller i molnet.
+Det här är första delen i Docker-serien, och den förutsätter ingenting mer än att du sett en
+terminal förut. Har du läst Linux-delarna känner du igen filsystemet och rättigheterna som dyker
+upp här och där.
 
-När Lisa, en ny utvecklare, börjar i teamet förväntar hon sig att det kommer ta **flera timmar, kanske en hel dag**, att installera alla verktyg och konfigurera sin utvecklingsmiljö. Men det kanske finns en bättre lösning?
+Den här delen ger överblicken: fyra begrepp som resten av serien bygger vidare på. Vi skriver inga
+egna filer än — det gör vi i nästa del.
 
-*”Det finns ett smidigare sätt”*, säger en kollega och visar hur teamet använder containers.
+## Vad Docker är
 
-**Eftersom allt är paketerat i en container**, behöver Lisa bara köra ett enda kommando för att få exakt samma utvecklingsmiljö som sina teammedlemmar.
+Docker är ett verktyg som paketerar en applikation med allt den behöver för att köra, och startar
+paketet isolerat från resten av datorn.
 
-<Callout type="varfor" title="Vad containers löser">
-- **Alla utvecklare i teamet arbetar i en identisk miljö,** vilket minskar ”det funkar ju inte på min dator”-problem.
-- Nya utvecklare kan starta upp sin miljö **på några minuter istället för timmar.**
-- Alla använder **exakt samma versioner** av t.ex. C#, Node, databaser och andra beroenden.
-- **Lisas utvecklingsmiljö påverkar inte andra projekt på hennes dator** – hon kan arbeta med flera projekt utan att behöva installera om eller ändra inställningar varje gång.
+Allt applikationen är beroende av — programkod, bibliotek, körtid, inställningar — följer med i
+paketet. Därför beter den sig likadant på din laptop, på en kollegas dator och på en server.
+
+Docker är inte ett operativsystem och inte ett programmeringsspråk. Det är ett paketerings- och
+körverktyg, och det ligger ovanpå det operativsystem du redan har.
+
+## Vad en container är
+
+En **container** är en körande applikation som är isolerad från resten av systemet.
+
+Isolerad betyder att containern har sitt eget filsystem, sina egna processer och sitt eget
+nätverksutrymme. Den ser inte dina andra program, och de ser inte den.
+
+När Lisa börjar i teamet räknar hon med en dag av installationer innan hon kan köra
+e-handelssystemet. I stället kör hon ett kommando och har samma miljö som alla andra — samma
+Node-version, samma databas, samma inställningar.
+
+<Callout type="varfor" title="Vad containers faktiskt löser">
+- Alla i teamet arbetar i en **identisk** miljö, vilket tar bort "det funkar på min dator".
+- En ny utvecklare är igång på minuter i stället för timmar.
+- Alla använder **exakt samma versioner** av språk, databaser och beroenden.
+- Projekten stör inte varandra. Två projekt kan använda olika Node-versioner på samma dator.
 </Callout>
 
-<ZoomableImage
-    src="/intro-to-docker-pic1.svg"
-    alt="Docker Container"
-    caption="En container är en låda som håller koll på innehållet"
-/>
+## Container vs virtuell maskin
 
-## Container Images
+Den här jämförelsen är den som får containrar att klicka, och den är värd att ta ordentligt.
 
-Om containers är lådorna, så är **container images** ritningen över vad som ska finnas i lådan. En image specificerar alla filer, inställningar och program som ska ingå när containern startas.
+**En virtuell maskin** härmar en hel dator. Den kör ett eget operativsystem ovanpå ditt, med egen
+kärna, egna drivrutiner och egen systemstart. Den mäts i gigabyte och startar på minuter.
 
-Med container images kan teamet hantera olika versioner av sin applikation:
+**En container** delar operativsystemets kärna med din dator och isolerar bara processerna och
+filsystemet. Den mäts i megabyte och startar på sekunder.
 
-**En stabil version för produktion** – säkerställer att kunderna alltid använder en testad och fungerande version.
+Priset för skillnaden är att containrar inte kan köra vilket operativsystem som helst — de delar
+ju kärnan. En Linux-container behöver en Linux-kärna, och det är därför Docker Desktop på macOS och
+Windows i tysthet kör en liten Linux-maskin i bakgrunden.
 
-**En testversion för kvalitetssäkring** – teamet kan köra tester och upptäcka buggar innan koden når produktionen.
+> **DOODLE** — Två staplar bredvid varandra, lika breda. Vänster märkt "Virtuell maskin": rutor
+> "App", "Bibliotek", "Gäst-OS" (hög ruta), "Hypervisor", "Värd-OS", "Hårdvara". Höger märkt
+> "Container": "App", "Bibliotek", "Docker", "Värd-OS", "Hårdvara" — samma botten, men gäst-OS-rutan
+> saknas helt. Under: "Skillnaden är rutan som inte finns."
 
-**En utvecklingsversion med de senaste funktionerna** – utvecklare kan experimentera utan att riskera att påverka den stabila versionen.
+## Vad en image är
 
-<Callout type="varfor" title="Varför container images är viktiga">
-- **Enklare versionshantering** – Lisa kan snabbt växla mellan olika versioner av appen utan att installera om något.
-- **Reproducerbara miljöer** – Vid testning testar teamet exakt samma version som kommer att rullas ut i produktion.
-- **Snabb återställning vid fel** – om en ny version skapar problem kan teamet enkelt rulla tillbaka till en tidigare fungerande image.
-- **Delning och samarbete** – utvecklare kan skapa en image, dela den med teamet och vara säkra på att alla jobbar i samma miljö.
-</Callout>
+En **image** är den färdiga, oföränderliga ritningen som en container startas ur.
 
-<ZoomableImage
-    src="/intro-to-docker-pic2.svg"
-    alt="Docker image"
-    caption="Vi skapar en image och lägger den i lådan för att specificera innehållet"
-/>
+I imagen ligger filsystemet som containern ska se: operativsystemets grunddelar, applikationens
+kod, dess bibliotek och beskedet om vad som ska köras vid start.
 
-Skillnaden mellan de två begreppen är värd att fästa direkt, för den återkommer i varje senare del:
+En image byggs en gång och ändras sedan aldrig. Vill du ändra något bygger du en ny.
+
+## Image vs container
+
+De två blandas ihop hela tiden, och skillnaden återkommer i varje senare del.
+
+**Imagen** är ritningen. Den ligger still, tar plats på disken och går att dela med andra.
+
+**Containern** är en körande kopia av ritningen. Den startas, stoppas och kastas.
+
+Från en enda image kan du starta hur många containrar du vill, och alla blir identiska när de
+startar. Det är samma förhållande som mellan en klass och ett objekt, eller mellan ett recept och
+en portion.
 
 <Flow
   layout="row"
@@ -71,98 +99,78 @@ Skillnaden mellan de två begreppen är värd att fästa direkt, för den återk
   ]}
 />
 
-## Docker Registry
+> **DOODLE** — En låda märkt "Image · searchapi:v2" med tre streckade pilar ut till tre identiska
+> lådor märkta "container". Under: "En ritning. Hur många kopior som helst."
 
-När vi har byggt en container image vill vi kunna dela den med resten av teamet eller distribuera den till servrar. Det gör vi via en **Docker Registry**, som fungerar som ett gemensamt bibliotek där teamet lagrar och hämtar images.
+## Images består av lager
 
-Nu när personerna i teamet sitter och utvecklar olika delar av applikationen är det viktigt att alla snabbt och enkelt kan dela sina ändringar:
+En image byggs inte i ett stycke utan i **lager**, ett per instruktion i bygget.
 
-- **Maria har uppdaterat API:et med nya funktioner** som gör det möjligt att filtrera produkter.
-- **Johan har optimerat databasen** för att snabba upp laddningstider.
-- **Rufus och Kurt behöver testa båda ändringarna tillsammans (API:et och databasen)** innan de går vidare till produktionsversionen.
+Lagren är skrivskyddade och återanvänds mellan images. Har du tio images som alla utgår från
+`node:22-alpine` lagras det lagret en gång, inte tio.
+
+Det är också därför en image på 900 MB inte tar 900 MB extra plats när du redan har en liknande.
+Hur lagren byggs och varför ordningen mellan dem spelar roll tar vi i nästa del.
+
+## Vad ett registry är
+
+Ett **registry** är en tjänst som lagrar images så att andra kan hämta dem.
+
+Docker Hub är det mest kända. Företag använder ofta ett eget: GitHub Container Registry, Azure
+Container Registry eller motsvarande.
+
+Det är samma förhållande som mellan Git och GitHub. Verktyget bygger lokalt; registryt är platsen
+där resultatet delas.
 
 <Split
   leftTitle="Utan registry"
   rightTitle="Med registry"
+  leftTone="bad"
+  rightTone="good"
   caption="Skillnaden är inte bekvämlighet — det är om teamet kan lita på att de testar samma sak."
 >
   <div slot="left">
 
-  Varje utvecklare bygger och hanterar sina egna versioner av applikationen manuellt.
+  Varje utvecklare bygger sina egna versioner lokalt.
 
-  Ingen kan vara säker på att de testar exakt samma bygge, och kompatibilitetsproblem dyker upp
-  först när något går sönder.
-
-  </div>
-  <div slot="right">
-
-  Teamet laddar upp, versionerar och delar sina containers på ett ställe.
-
-  Alla hämtar samma image, och den som testar en ändring testar precis det som senare rullas ut.
-
-  </div>
-</Split>
-
-<Callout type="sa-gor-du" title="Ett typiskt arbetsflöde med registry">
-1. Lisa utvecklar en ny sökfunktion lokalt och testar funktionen i sin utvecklingscontainer.
-2. När allt fungerar bygger hon **en ny image**: `docker build -t searchapi:v2 .` och laddar upp den till teamets registry.
-3. Hela teamet **har nu tillgång** och kan testa den nya sökfunktionen och verifiera den innan ändringarna går live.
-
-Det förenklar särskilt **kodgranskning** (andra kan enkelt testa ändringarna), **versionshantering** (alla versioner finns sparade) och **utrullning** (samma image används i alla miljöer).
-</Callout>
-
-<ZoomableImage
-    src="/8.png"
-    alt="Docker Registry"
-    caption="Vi förvarar våra images i ett registry så andra behöriga lätt kan komma åt dem"
-/>
-
-## Docker Compose
-
-Många moderna applikationer består av flera tjänster som behöver samverka – en backend, en frontend och en databas. Att manuellt starta och koppla ihop alla dessa containers kan vara krångligt, och det är här **Docker Compose** kommer in.
-
-När Lisa ska starta applikationen som teamet jobbar med (ett e-handelssystem) märker hon att systemet består av flera delar:
-
-- **En webbserver för frontend**, där kunder kan bläddra bland produkter och lägga beställningar.
-- **Ett backend API**, som hanterar orderprocesser och affärslogik.
-- **En SQL-databas**, som lagrar produktinformation och kundorder.
-
-<Split
-  leftTitle="Starta för hand"
-  rightTitle="docker compose up"
-  caption="Samma system, samma tjänster — men bara det ena sättet går att upprepa utan att tänka."
->
-  <div slot="left">
-
-  Varje del måste startas **separat och i rätt ordning**.
-
-  Backend försöker starta **innan databasen är redo**, vilket leder till fel.
-
-  Varje tjänst behöver rätt konfiguration **för att hitta varandra**.
-
-  Flera terminalfönster måste hållas öppna för att **köra allt samtidigt**.
+  Ingen kan vara säker på att de testar exakt samma bygge, och skillnaderna märks först när något
+  går sönder.
 
   </div>
   <div slot="right">
 
-  Alla containers startar **automatiskt i rätt ordning**.
+  Teamet laddar upp, versionerar och hämtar images från ett ställe.
 
-  Backend väntar tills **databasen är redo** innan den startar.
-
-  Tjänsterna är redan **konfigurerade att prata med varandra**.
-
-  Lisa kan **fokusera på att skriva kod** i stället för att hantera miljöproblem.
+  Den som testar en ändring testar precis det bygge som senare rullas ut i produktion.
 
   </div>
 </Split>
 
-<ZoomableImage
-    src="/6.png"
-    alt="Docker Compose"
-    caption="Vi använder Docker compose för att med ett kommando få alla containers att samverka"
-/>
+## Registry, repository och tagg
 
-Vi definierar hela vår miljö och hur Docker Compose ska starta alla delarna i en **YAML-fil**. Den kan se ut så här:
+Tre ord som ofta används om vartannat, men som betyder olika saker.
+
+**Registryt** är servern som lagrar images — `docker.io`, `ghcr.io`.
+
+**Repositoryt** är den namngivna samlingen av en images alla versioner — `node`, `postgres`,
+`mitt-foretag/searchapi`.
+
+**Taggen** är versionen inuti repositoryt — `22-alpine`, `v2`, `latest`.
+
+Fullständigt skrivs det `registry/repository:tagg`. Utelämnar du registryt antar Docker att du menar
+Docker Hub, och utelämnar du taggen antar den `latest`. Att `latest` inte betyder "senaste stabila"
+tar vi i nästa del.
+
+> **DOODLE** — En hylla märkt "Registry · ghcr.io". På hyllan en märkt sektion "Repository ·
+> searchapi" som innehåller tre lådor märkta `:v1`, `:v2`, `:latest`. Under: "En hylla, en sektion,
+> flera lådor."
+
+## Vad Docker Compose är
+
+**Docker Compose** startar flera containrar tillsammans utifrån en fil som beskriver dem.
+
+E-handelssystemet består av tre delar: en frontend, ett API och en databas. Var och en kör i sin
+egen container, och de måste kunna hitta varandra.
 
 ```yaml
 services:
@@ -170,69 +178,177 @@ services:
     build: ./frontend
     ports:
       - "3000:3000"
-    depends_on:
-      - api
 
   api:
     build: ./backend
     ports:
       - "5000:5000"
-    depends_on:
-      - db
     environment:
-      DATABASE_URL: postgres://user:password@db:5432/shop
+      DATABASE_URL: postgres://user:pw@db:5432/shop
 
   db:
-    image: postgres:latest
+    image: postgres:17-alpine
     environment:
       POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD: pw
       POSTGRES_DB: shop
-    volumes:
-      - db_data:/var/lib/postgresql/data
-
-volumes:
-  db_data:
 ```
 
-Nu kan hela teamet starta miljön med ett kommando – `docker compose up` – och vara säkra på att alla delar är korrekt konfigurerade.
+Hela miljön startar med `docker compose up`, och den startar likadant hos alla i teamet.
+
+## Docker vs Docker Compose
+
+**Docker** kör en container i taget. Varje `docker run` är ett eget kommando med sina egna flaggor
+för portar, miljövariabler och nätverk.
+
+**Docker Compose** läser en fil som beskriver flera containrar och startar dem tillsammans, med
+nätverket redan uppsatt.
+
+Compose ersätter inte Docker — det använder Docker. Det du vinner är att uppsättningen ligger i en
+fil du kan versionshantera, i stället för i ett kommando någon måste komma ihåg.
+
+<Split
+  leftTitle="Starta för hand"
+  rightTitle="docker compose up"
+  leftTone="bad"
+  rightTone="good"
+  caption="Samma system, samma tjänster — men bara det ena sättet går att upprepa utan att tänka."
+>
+  <div slot="left">
+
+  Varje del startas separat, i rätt ordning, med rätt flaggor.
+
+  Varje tjänst behöver konfigureras för att hitta de andra.
+
+  Flera terminalfönster måste hållas öppna.
+
+  </div>
+  <div slot="right">
+
+  Allt startar med ett kommando, i ordning.
+
+  Tjänsterna är redan konfigurerade att prata med varandra.
+
+  Uppsättningen ligger i en fil som granskas som all annan kod.
+
+  </div>
+</Split>
+
+> **DOODLE** — En fil märkt `compose.yaml` med tre heldragna pilar ut till tre lådor märkta
+> "webshop", "api", "db", omslutna av en ring märkt "eget nätverk". Under: "En fil. Tre containrar.
+> Ett kommando."
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att köra `docker compose up` varje morgon och `docker build` varje gång du ändrat något
+som ska paketeras. De två kommandona bär det mesta av vardagen.
+
+Du kommer också att läsa andras Dockerfiles och Compose-filer i merge requests, och det är där de
+fyra begreppen betalar sig: du behöver kunna se på en rad om den rör imagen eller containern,
+bygget eller körningen.
+
+Registry-drift, imagesignering och säkerhetsskanning är oftast någon annans ansvar. De blir dina
+den dag du äger utrullningen — och då är det ändå samma fyra begrepp, bara med fler krav på sig.
+
+## Vanliga nybörjarförväxlingar
+
+En container är inte en virtuell maskin. Den delar operativsystemets kärna och startar på sekunder.
+
+En image är inte en container. Imagen ligger still; containern är den körande kopian.
+
+Docker Hub är inte Docker. Registryt lagrar images; Docker bygger och kör dem.
+
+Docker Compose ersätter inte Docker. Det använder Docker för att starta flera containrar samtidigt.
+
+Att en container stoppar betyder inte att den är borta. Den ligger kvar tills den tas bort.
+
+## Prova själv
+
+Alla kommandon nedan är ofarliga och kräver bara att Docker Desktop är igång.
+
+```bash
+docker run hello-world
+```
+
+Docker hämtar en liten image från Docker Hub, startar en container ur den och skriver ut ett
+meddelande. Fråga sedan vilka containrar som körs:
+
+```bash
+docker ps
+```
+
+**Listan är tom.** Det är inte ett fel — `hello-world` skrev sitt meddelande och avslutade direkt,
+och `docker ps` visar bara containrar som körs just nu. Fråga i stället efter alla:
+
+```bash
+docker ps -a
+```
+
+Nu syns containern, med status `Exited`. Den finns kvar tills du tar bort den, vilket är precis
+poängen med förväxlingen ovan.
+
+Titta slutligen på imagen den startades ur:
+
+```bash
+docker images
+```
+
+Två saker som kan förvirra: `docker ps` utan `-a` är den vanligaste anledningen till att folk tror
+att en container "försvann", och första körningen tar längre tid eftersom imagen hämtas — därefter
+går den på en bråkdel av tiden.
 
 <Callout type="kom-ihag">
-- En **container** är en låda med programmen och inställningarna applikationen behöver.
-- En **image** är ritningen över lådans innehåll. Samma image kan starta många containrar.
-- Ett **registry** är det gemensamma lagret där images förvaras och hämtas.
-- **Docker Compose** startar flera containers samtidigt och kopplar ihop dem.
+- En **container** är en isolerad, körande applikation. Den delar värdens kärna — den är ingen VM.
+- En **image** är den oföränderliga ritningen. Samma image kan starta hur många containrar som helst.
+- Images består av **lager** som återanvänds mellan images.
+- Ett **registry** lagrar images. `registry/repository:tagg` är det fullständiga namnet.
+- **Docker Compose** startar flera containrar utifrån en fil, med nätverket redan på plats.
 </Callout>
 
 <Check
   items={[
     {
       q: "Vad är skillnaden mellan en image och en container?",
-      a: "Imagen är den färdiga ritningen — oföränderlig och stillastående. Containern är en körande kopia av den. Från en enda image kan du starta hur många containrar du vill, och alla blir identiska.",
+      a: "Imagen är den färdiga ritningen — oföränderlig och stillastående. Containern är en körande kopia av den. Från en enda image kan du starta hur många containrar du vill, och alla blir identiska när de startar.",
+    },
+    {
+      q: "Vad är den avgörande skillnaden mellan en container och en virtuell maskin?",
+      a: "Den virtuella maskinen kör ett eget operativsystem med egen kärna. Containern delar värdens kärna och isolerar bara processer och filsystem. Därför mäts containern i megabyte och startar på sekunder, medan VM:en mäts i gigabyte och startar på minuter.",
+    },
+    {
+      q: "Du kör en container som avslutas direkt. `docker ps` visar ingenting. Är containern borta?",
+      a: "Nej. `docker ps` visar bara containrar som körs just nu. Den stoppade containern finns kvar och syns med `docker ps -a`, tills du tar bort den.",
+    },
+    {
+      q: "Vad betyder de tre delarna i `ghcr.io/mitt-foretag/searchapi:v2`?",
+      a: "`ghcr.io` är registryt — servern som lagrar imagen. `mitt-foretag/searchapi` är repositoryt — samlingen av den imagens versioner. `v2` är taggen — den specifika versionen.",
     },
     {
       q: "Varför löser containers problemet \"det funkar på min dator\"?",
-      a: "För att allt applikationen behöver — kod, bibliotek, versioner och inställningar — ligger paketerat i containern. Den kör därför likadant oavsett vems dator eller vilken server den startas på.",
+      a: "För att allt applikationen behöver — kod, bibliotek, versioner och inställningar — ligger paketerat i imagen. Containern kör därför likadant oavsett vems dator eller vilken server den startas på.",
     },
     {
-      q: "Vad tillför ett registry som en delad mapp inte gör?",
-      a: "Versionshantering och trygghet i utrullningen. Varje image har en tagg, alla versioner finns sparade, och exakt samma image som testades är den som rullas ut i produktion.",
-    },
-    {
-      q: "Varför räcker det inte att starta containrarna för hand med `docker run`?",
-      a: "Du måste själv hålla ordning på startordningen, konfigurationen som får dem att hitta varandra, och flera terminalfönster. Compose beskriver hela miljön i en fil och startar den med ett kommando — likadant varje gång.",
+      q: "Vad tillför Docker Compose som `docker run` inte gör?",
+      a: "Compose beskriver flera containrar i en fil, startar dem tillsammans och sätter upp nätverket åt dig. Uppsättningen blir något du versionshanterar i stället för ett kommando någon måste komma ihåg.",
     },
   ]}
 />
 
-## Sammanfattning
+## Snabb sammanfattning
 
-En container är som en låda med de program och inställningar applikationen behöver. Lådan kan vi enkelt skicka runt eller dela inom teamet, så att alla har likadana program och inställningar.
+- Docker paketerar en applikation med allt den behöver och kör paketet isolerat.
+- En container är en isolerad, körande applikation med eget filsystem och eget nätverksutrymme.
+- En container delar värdens kärna. En virtuell maskin kör en egen — det är hela skillnaden.
+- En image är den oföränderliga ritningen en container startas ur.
+- Imagen ligger still, containern kör. Samma image ger hur många identiska containrar som helst.
+- Images består av skrivskyddade lager som återanvänds mellan images.
+- Ett registry lagrar images. Förhållandet är samma som mellan Git och GitHub.
+- `registry/repository:tagg` — utelämnad tagg blir `latest`, utelämnat registry blir Docker Hub.
+- Docker Compose startar flera containrar utifrån en fil och sätter upp nätverket åt dig.
+- Compose ersätter inte Docker. Det använder Docker.
 
-En container image är som ett recept som specificerar exakt vad som finns i lådan och vad som ska startas när lådan börjar köras.
+## Nästa del
 
-Ett Docker Registry är som ett lager där vi gemensamt förvarar och hämtar våra lådor. Lådorna hålls uppdaterade så att alla får tillgång till samma miljö.
-
-Docker Compose hjälper oss öppna och köra alla containers samtidigt så att de tillsammans får hela applikationen att fungera.
-
-I nästa del skriver Lisa receptet själv: hur en `Dockerfile` byggs rad för rad, och varför ordningen mellan raderna avgör hur snabbt bygget går.
+Hittills har Lisa kört images som någon annan byggt. I nästa del skriver hon receptet själv: hur en
+`Dockerfile` byggs rad för rad, och varför ordningen mellan raderna avgör om bygget tar sekunder
+eller minuter.
