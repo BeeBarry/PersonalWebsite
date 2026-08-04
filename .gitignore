@@ -17,3 +17,22 @@ pnpm-debug.log*
 
 # IDE-specifika filer (eftersom du använder Rider)
 .idea/
+
+# byggoutput (Astro outDir — byggs i CI)
+public/
+
+# astro-cache & dev-loggar
+.astro/
+*.log
+
+# verktygsartefakter
+.claude/
+.playwright-mcp/
+.tmp-preview/
+.vscode/
+
+# screenshots från designsessioner
+/*.png
+
+# macOS
+.DS_Store
