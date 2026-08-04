@@ -10,13 +10,13 @@ import { Icon } from "astro-icon/components";
 ---
 
 <aside
-  class="flex w-full flex-col border-b border-border bg-muted/20 p-5 lg:w-80 lg:shrink-0 lg:border-r lg:border-b-0 lg:p-10"
+  class="flex w-full flex-col border-b border-border bg-muted/20 p-5 lg:w-[15.5rem] lg:shrink-0 lg:border-r lg:border-b-0 lg:p-7"
 >
   <Brand />
 
   <Nav />
 
-  <div class="mt-5 flex items-center justify-between lg:mt-12">
+  <div class="mt-5 flex items-center justify-between lg:mt-8">
     <div class="flex gap-1 lg:gap-3.5">
       {
         site.social.map((item) => (
@@ -27,7 +27,7 @@ import { Icon } from "astro-icon/components";
             target="_blank"
             rel="noopener noreferrer"
           >
-            <Icon name={item.icon} size={19} />
+            <Icon name={item.icon} size={17} />
           </a>
         ))
       }

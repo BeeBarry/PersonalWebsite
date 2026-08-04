@@ -319,10 +319,10 @@
 /* Sidans visuella ankarpunkt — större än kortens titlar, som förut var sidans
    största text. */
 .hr-title {
-  font-size: clamp(30px, 8vw, 40px);
+  font-size: clamp(23px, 4.4vw, 27px);
   font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 1.05;
+  letter-spacing: -0.025em;
+  line-height: 1.12;
   color: var(--c-text);
   margin: 10px 0 0;
   text-wrap: balance;
@@ -336,10 +336,10 @@
   margin: 0;
 }
 .hr-lead {
-  font-size: 14.5px;
+  font-size: 13.5px;
   line-height: 1.6;
   color: var(--c-text-secondary);
-  max-width: 64ch;
+  max-width: 58ch;
   margin: 10px 0 0;
   text-wrap: pretty;
 }
@@ -358,7 +358,7 @@
   border-top: 1px solid var(--c-border);
 }
 @media (min-width: 768px) {
-  .hr-lead { font-size: 15.5px; line-height: 1.65; }
+  .hr-lead { font-size: 14.5px; line-height: 1.62; }
 }
 
 /* Flikpaneler (topbaren växlar dem client-side; utan JS visas de staplat). */
@@ -998,7 +998,7 @@
 
 /* ---- Dokument-layout (fulla kort): artikel + innehållsförteckning --------- */
 .hrd-doc {
-  max-width: 44rem;
+  max-width: 40rem;
   margin: 0 auto;
   padding: clamp(1.5rem, 3.5vw, 2.25rem) clamp(1.5rem, 5vw, 3.25rem)
     clamp(2.5rem, 6vw, 3.5rem);
@@ -1020,7 +1020,7 @@
    som ger sidopanelen sin kolumn. */
 @media (min-width: 1200px) {
   .hrd-doc--toc {
-    max-width: 62rem;
+    max-width: 56rem;
     display: grid;
     grid-template-columns: minmax(0, 1fr) 13rem;
     gap: 2.75rem;
@@ -1043,23 +1043,22 @@
 .hrd__title {
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 24px;
-  line-height: 1.05;
-  letter-spacing: -0.03em;
+  font-size: 21px;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
   color: var(--c-text);
   margin: 0;
 }
 .hrd__lead {
-  font-size: 15.5px;
-  line-height: 1.65;
+  font-size: 14.5px;
+  line-height: 1.62;
   color: var(--c-text);
-  max-width: 64ch;
-  margin: 20px 0 0;
+  margin: 18px 0 0;
   text-wrap: pretty;
 }
 @media (min-width: 768px) {
-  .hrd__title { font-size: 30px; }
-  .hrd__lead { font-size: 16.5px; line-height: 1.66; }
+  .hrd__title { font-size: 25px; }
+  .hrd__lead { font-size: 15px; line-height: 1.62; }
 }
 
 /* Sektionsetikett + block. Accent-streck + full textfärg + generös luft ger
@@ -1094,9 +1093,9 @@
   background: var(--hr-soft);
   border-left: 3px solid var(--c-accent);
   border-radius: 12px;
-  padding: 16px 18px;
-  font-size: 14.5px;
-  line-height: 1.65;
+  padding: 15px 17px;
+  font-size: 13.5px;
+  line-height: 1.62;
   color: var(--c-text);
   margin: 0;
 }
@@ -1106,7 +1105,7 @@
 .hrd-list li {
   position: relative;
   padding-left: 20px;
-  font-size: 14px;
+  font-size: 13.5px;
   line-height: 1.65;
   color: var(--c-text-secondary);
   margin: 0 0 11px;

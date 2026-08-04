@@ -77,7 +77,10 @@ const showFilters = filters.length > 2;
               <h3 class="text-[15px] font-bold text-foreground/90 transition-colors group-hover:text-primary">
                 {c.title}
               </h3>
-              <p class="mt-0.5 truncate text-[13px] text-muted-foreground">
+              {/* line-clamp i stället för truncate: med tre kolumner kapades
+                  nästan varje beskrivning mitt i ett ord. Två rader ryms i
+                  kortets befintliga höjd. */}
+              <p class="mt-0.5 line-clamp-2 text-[13px] leading-snug text-muted-foreground">
                 {c.description}
               </p>
               <p class="mt-1 font-mono text-[10px] tracking-wide text-muted-foreground/60">

@@ -26,7 +26,7 @@ const items = site.navigation.filter(
           class:list={[
             // Under lg: en scrollbar rad (shrink-0 så posterna behåller sin
             // bredd i stället för att wrappa till en ojämn 3+1-layout).
-            "group flex min-w-0 items-center justify-center rounded-2xl border border-transparent px-4 py-3 transition-all max-lg:shrink-0 lg:justify-between lg:py-3.5",
+            "group flex min-w-0 items-center justify-center rounded-xl border border-transparent px-4 py-3 transition-all max-lg:shrink-0 lg:px-3 lg:py-2.5 lg:justify-between",
             isActive
               ? "border-primary/20 bg-primary/10 lg:hover:bg-primary/15"
               : "hover:bg-muted/50",
@@ -35,7 +35,7 @@ const items = site.navigation.filter(
           <div class="flex flex-col">
             <span
               class:list={[
-                "text-sm font-bold",
+                "text-[13px] font-bold leading-tight",
                 isActive
                   ? "text-primary"
                   : "text-muted-foreground group-hover:text-primary",
@@ -45,7 +45,7 @@ const items = site.navigation.filter(
             </span>
             <span
               class:list={[
-                "text-[10px] tracking-widest uppercase max-lg:hidden",
+                "text-[9px] tracking-[0.16em] uppercase max-lg:hidden",
                 isActive ? "text-primary/60" : "text-muted-foreground/50",
               ]}
             >
