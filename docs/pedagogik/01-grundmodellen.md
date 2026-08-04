@@ -255,7 +255,17 @@ uttryckligen lämnade. Sista sektionen ställer frågan nästa del besvarar.
 
 ### Doodlen bär metaforen och anatomin
 
-Markera platsen i MDX med en ritbrief, så syns den i läsvyn tills bilden finns:
+`Flow`/`Stack`/`Split` visar **struktur** — leder till, vilar på, i stället för. Doodlen visar hur
+något **ser ut** och vad det **liknar**. Det är två olika jobb, och det är därför doodlen ska se
+annorlunda ut än kitet.
+
+**1–2 doodles per artikel.** Sju funktioner att välja ur: två vägar till samma mål · indirektion
+över tid · anatomi · tvåvägscykel · fördelning · taxonomi · uppslag före anslutning.
+
+#### Arbetsgången — i den här ordningen
+
+**1. Skriv briefen först**, som en blockquote i MDX. Den renderas synligt tills bilden finns, så
+platsen aldrig glöms bort:
 
 ```markdown
 > **DOODLE** — En vägskylt märkt `api:5000` med heldragen pil in från "Frontend". Från skylten tre
@@ -265,18 +275,65 @@ Markera platsen i MDX med en ritbrief, så syns den i läsvyn tills bilden finns
 
 Briefen ska ange: objekten, pilarnas typ, etiketterna och texten under bilden.
 
-**1–2 doodles per artikel.** Sju funktioner att välja ur: två vägar till samma mål · indirektion
-över tid · anatomi · tvåvägscykel · fördelning · taxonomi · uppslag före anslutning.
+**2. Stäm av mot vad som redan står i sektionen.** Detta steg är inte valfritt — det kostade två
+färdigritade bilder att lära sig. Finns en `Flow` eller `Stack` i samma stycke som redan säger
+samma sak, **rita inte**. Två lådstaplar efter varandra är repetitivt hur väl den andra än är
+ritad, och två bilder om samma sak i samma sektion bryter mot komplementaritetsregeln nedan.
 
-**Formregler:** svartvitt, handritad linje i en tjocklek, skraffering för volym, handskriven
-monofont, **heldragen pil = faktiskt flöde / streckad = härlett eller senare**, etikett under varje
-objekt, max fem objekt, fysiska metaforer, bred bild, generös luft.
+Kontrollera också om poängen hör hemma *inuti* en befintlig komponent i stället — cachelinjen i
+Docker 1.1 hör till `Stack`, inte till en egen bild.
 
-Ritas i Excalidraw eller för hand på iPad. De gamla klarblå illustrationerna i `intro-to-docker`
-ska ersättas — de är inte en stilreferens.
+**3. Rita, som SVG i `src/components/learn/doodles.ts`.** MDX anropar den på namn:
 
-**Komplementär, inte redundant.** Bilden visar *var* och *hur det hänger ihop*; texten säger *vad
-det betyder*. Kan bilden strykas utan förlust ska den strykas.
+```mdx
+<Doodle name="vm-vs-container" caption="Skillnaden är rutan som inte finns." />
+```
+
+`Doodle.astro` slår upp namnet och kastar ett begripligt fel om det inte finns, så en felstavning
+stoppar bygget i stället för att tyst rendera tomt.
+
+#### Varför inlinad SVG och inte en bildfil
+
+En `<img src="…svg">` ärver **inte** `currentColor`. På en mörk läsvy hade en svart-på-vit bild lyst
+som ett fönster, och lösningen hade blivit två filer per bild som ändå inte följer temaväxlaren.
+
+Inlinad SVG ritar med `currentColor` och fungerar i båda lägena med en fil. Verifierat: samma bild
+ger `rgb(242,242,244)` i mörkt läge och `rgb(20,19,13)` i ljust.
+
+#### Formregler
+
+| Regel | Värde |
+|---|---|
+| Färg | ingen — `currentColor`, dämpad till 82 % mot brödtexten |
+| Linje | **en tjocklek, 2.0**, rundade hörn och ändar |
+| Vingling | **1.2** ("stadig hand"). 4.0 = skiss, 0 = linjal |
+| Volym | skraffering, aldrig fyllning |
+| Text | monofont, substantiv plus högst en verbfras |
+| Pilar | **heldragen = faktiskt flöde · streckad = härlett, uteblivet eller senare** |
+| Objekt | max fem, var och en med etikett under sig |
+| Metafor | fysiska föremål — laptop, hylla, vägskylt, fil med vikt hörn |
+| Format | bred bild, generös luft, bildtext under |
+
+**Rundade hörn behålls oavsett vingling.** Det är de, inte vinglingen, som gör att bilden läser som
+en teckning i stället för som ett diagram. Tas de bort landar man i lärkitets formspråk och doodlen
+tappar sin egen röst.
+
+Stilen skruvas i [`scripts/doodles/generate.py`](../../scripts/doodles/generate.py) — parametern
+`J`. Skriptet återskapar exakt de bilder som ligger i `doodles.ts`, så det går att ändra stil på
+hela hubben utan att rita om något för hand.
+
+#### Etiketter ska ha luft
+
+Två av tre omritningar handlade om text som krockade med streck. Regeln som följer: **en etikett
+ska ha minst ett halvt radavstånd fri luft från närmaste linje.** Ligger den närmare läses den som
+en del av linjen, inte som en etikett.
+
+Det gäller särskilt streckade linjer, där ögat redan letar efter mönster.
+
+#### Komplementär, inte redundant
+
+Bilden visar *var* och *hur det hänger ihop*; texten säger *vad det betyder*. **Kan bilden strykas
+utan förlust ska den strykas** — och den prövningen görs i steg 2, innan något ritas.
 
 ---
 
@@ -389,7 +446,8 @@ utan föreslagen formulering.
 - [ ] `kom-ihag`-box **och** speglande snabbsammanfattning — båda
 - [ ] `Check` med 5–6 frågor
 - [ ] *Nästa del* ställer frågan nästa artikel besvarar
-- [ ] 1–2 doodle-briefer
+- [ ] 1–2 doodles — ritade, eller brief om de inte ritats än
+- [ ] Doodlen stämd mot `Flow`/`Stack` i samma sektion: säger de samma sak, rita inte
 - [ ] Inga nedvärderande ord, inget dramatiskt register, inga meningar över 30 ord
 - [ ] Kodrader under 55 tecken — och **ASCII-diagram under 40**, verifierat maskinellt
 

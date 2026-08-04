@@ -6,6 +6,10 @@ jämförelse och stilanalys. **De ska aldrig publiceras på sajten** — de finn
 
 Grundmodellen som destillerats ur analysen: [`01-grundmodellen.md`](01-grundmodellen.md).
 
+> **Det här är analysunderlaget, inte standarden.** Mätvärdena beskriver hubben *före*
+> revideringen 2026-08-04 och står kvar för att visa vad gapet var. Gällande regler finns i
+> grundmodellen — skiljer de sig åt gäller den.
+
 ---
 
 ## 1. Retoriken: nio återkommande drag
@@ -26,7 +30,7 @@ Vår motsvarighet (`terraform-provider-resource-state.mdx`, "Var vi är"):
 > "Förra delen svarade på *varför*: infrastrukturen ska bo i textfiler som går att granska och
 > köra om, och Terraform gör det deklarativt. Nu öppnar vi filen."
 
-**Läge: 17/19 artiklar har `## Var vi är`.** Draget sitter.
+**Läge före revideringen: 17/19.** Numera 19/19.
 
 ### Definitionen — en mening som fungerar fristående i en ordlista
 
@@ -49,7 +53,8 @@ Det starkaste enskilda draget i materialet. Avgränsningen kommer inom ett par m
 definitionen, aldrig långt senare, och den formuleras alltid som en hel mening — inte som en
 parentes.
 
-**Läge: 8/19 artiklar använder ett tydligt "är inte"-drag.** Här finns mest att hämta.
+**Läge före revideringen: 8/19.** Numera har varje artikel minst tre `X vs Y`-sektioner —
+draget blev en egen sektionstyp, se grundmodellen Lager 1.
 
 ### Bilden — en analogi, alltid märkt med sin gräns
 
@@ -82,7 +87,7 @@ Fyra gånger i tre lektioner. Draget gör två saker samtidigt: sänker ångeste
 som faktiskt ska fastna** i samma andetag. Det är alltid formulerat som ett par:
 *du behöver inte X — poängen är Y.*
 
-**Läge: 1/19 artiklar gör detta.** Största retoriska gapet vi har.
+**Läge före revideringen: 1/19 — det största retoriska gapet.** Åtgärdat i samtliga.
 
 ### Dörren — namngiven framåtpekning
 
@@ -205,11 +210,16 @@ Att föregripa förvirringen som övningen själv orsakar är det som gör den o
 
 > "A domain is not the same as a URL. … `www` is not the internet. It is just a common subdomain."
 
-**Läge: 0/19 artiklar har en prova-själv-sektion.** Största strukturella gapet.
+**Läge före revideringen: 0/19 — det största strukturella gapet.** Numera 19/19, och regeln
+att kommandona ska KÖRAS innan utdatan påstås finns i grundmodellen.
 
 ---
 
 ## 5. Doodlarnas formspråk
+
+> Det här avsnittet beskriver **roadmap.sh:s** bilder, som analys. Våra egna regler — komponenten,
+> arbetsgången och formvärdena — står i [`01-grundmodellen.md`](01-grundmodellen.md), Lager 5.
+> Skiljer de sig åt gäller grundmodellen.
 
 Sju bilder analyserade. De faller i sju funktioner — vilket i praktiken är en typologi att
 välja ur, inte en stilövning.
