@@ -15,30 +15,17 @@ Du har skrivit `localhost:3000` i en webbläsare och `db:5432` i en anslutningss
 Kubernetes-serien anropade en pod `http://api:5000`. Varje gång har det bara fungerat, utan att
 någon förklarat vad som egentligen hände.
 
-Den här serien fyller igen det. Inte för att du ska kunna bygga nätverk, utan för att nästan
-varje fel du kommer att felsöka — i Docker, i molnet, i en webbapp — ligger någonstans i kedjan
-vi ritar upp nu.
+Den här delen ritar upp hela kedjan från Enter till första byten av svaret, och ger namn åt varje
+steg. Nästa del zoomar in på det sista steget. Detaljerna om vad som skickas där kommer alltså
+senare — här handlar det om vägen dit.
 
-## Fungerar hos mig
+## Vad som händer när du trycker Enter
 
-Lisa har fått upp e-handelssystemet på en riktig server. Hon testar från sin egen dator: allt
-svarar. Hon ber Maria titta, och Maria får ingenting alls.
-
-*"Vad menar du med ingenting?"* frågar Lisa. Och det är faktiskt rätt fråga — för "ingenting"
-kan betyda fem helt olika saker beroende på var i kedjan det stannade.
-
-## Helheten först
-
-Så här ser vägen ut från Enter till första byten av svaret. Notera hur mycket som hinner hända
-**innan** själva förfrågan ens skickas:
+Mellan Enter och den första bokstaven på skärmen sker fyra saker, i tur och ordning.
 
 <Flow
-  caption="Fyra av fem steg är förarbete. Först i sista steget frågar webbläsaren efter en sida."
+  caption="Tre av fyra steg är förarbete. Först i sista steget frågar webbläsaren efter en sida."
   steps={[
-    {
-      label: "Webbläsaren",
-      note: "Du skriver `shop.example.se` och trycker Enter.",
-    },
     {
       label: "DNS",
       via: "vad har namnet för adress?",
@@ -63,12 +50,12 @@ Så här ser vägen ut från Enter till första byten av svaret. Notera hur myck
   ]}
 />
 
-När Maria säger "ingenting händer" är den användbara frågan alltså: *vilket av de här stegen
-kom du till?*
+Vi tar ett steg i taget nedan. Kedjan är också en felsökningsordning: när någon säger att
+"ingenting händer" är den användbara frågan *vilket av de här stegen kom du till?*
 
-## Adressen, del för del
+## URL:en, del för del
 
-En URL bär flera av stegen ovan, hopskrivna till en rad:
+Adressen du skriver bär flera av stegen, hopskrivna till en rad.
 
 ```text
 https://shop.example.se:443/produkter?sida=2
@@ -81,58 +68,170 @@ https://shop.example.se:443/produkter?sida=2
 - **`/produkter`** — sökvägen. Vad på servern du vill ha.
 - **`?sida=2`** — frågesträngen. Extra parametrar till just den förfrågan.
 
-## IP-adress och port: maskinen och dörren
+> **DOODLE** — Raden `https://shop.example.se:443/produkter?sida=2` uppdelad i fem rutor med
+> streckade skiljelinjer. Pilar ner från varje ruta till etiketterna "protokoll", "värdnamn",
+> "port", "sökväg", "frågesträng". Rutan med värdnamnet är gråmarkerad. Under: "En rad, fem svar."
 
-De två begreppen förväxlas ofta, och en liknelse räcker för att hålla isär dem: **IP-adressen
-är gatuadressen, porten är dörren.**
+## Steg 1: Namnet slås upp
 
-En server har en adress men många dörrar — 65 535 stycken, för att vara exakt. Bakom varje dörr
-kan en tjänst lyssna. Några nummer är konvention:
+Webbläsaren kan inte kontakta `shop.example.se`. Nätverket känner bara till nummer, så namnet
+måste först översättas till en IP-adress.
 
-- **80** — HTTP
-- **443** — HTTPS
-- **22** — SSH, det du använde för att logga in på servern i Linux-serien
-- **5432** — PostgreSQL
-- **3000, 5000, 8080** — vanliga val under utveckling, utan officiell status
+Det är DNS som gör det, och svaret kommer normalt på några millisekunder. Vad DNS är och varför
+svaret ibland är gammalt tar vi längre ner.
 
-Nu går det att läsa `db:5432` från Docker-serien med nya ögon: `db` är namnet som slås upp till
-en adress, `5432` är dörren där Postgres lyssnar. Precis samma två delar som i en URL.
+Misslyckas det här steget kommer du aldrig vidare. Felet heter oftast något med *could not resolve
+host*, och det är det enda felet i kedjan som handlar om ett namn snarare än en anslutning.
 
-<Callout type="varfor" title="Varför localhost alltid är 127.0.0.1">
-`localhost` är ett namn som pekar på `127.0.0.1` — en adress som per definition betyder "den
-här maskinen". Anropet går aldrig ut på nätverket alls; det vänder i nätverkskortet.
+## Steg 2: Anslutningen öppnas
 
-Det är också hela förklaringen till fallgropen i Docker-artikeln. Inuti en container är "den
-här maskinen" containern, så `127.0.0.1` pekar på containern själv, inte på din laptop.
-</Callout>
+Med en IP-adress och ett portnummer kan webbläsaren öppna en **TCP-anslutning**.
 
-## DNS: namn till nummer
+TCP är protokollet som ser till att data kommer fram i rätt ordning och utan att något saknas.
+Innan något innehåll skickas växlar de två parterna tre paket för att komma överens om att
+anslutningen finns — det kallas trevägshandskakning.
 
-Ingen vill komma ihåg `93.184.216.34`. **DNS** är systemet som översätter namn till adresser,
-och det fungerar som en kedja av frågor: din dator frågar en resolver, som frågar vidare uppåt
-tills någon vet svaret.
+Efter det finns en öppen kanal mellan din dator och servern. Ingenting har ännu sagts om vilken
+sida du vill ha.
 
-Två saker om DNS är värda att veta i praktiken.
+## Steg 3: Samtalet säkras
 
-**Svaren cachas.** Varje svar har en livslängd, en TTL. Byter du serverns IP-adress fortsätter
-datorer som redan frågat att använda det gamla svaret tills TTL:en gått ut. Det är därför en
-flytt kan se ut att fungera för dig och vara trasig för någon annan i timmar efteråt.
+Är protokollet `https` följer en **TLS-handskakning** innan något innehåll skickas.
 
-**Din maskin har en genväg.** Filen `/etc/hosts` — samma `/etc` du mötte i Linux-serien —
-läses före DNS. Lägger du in en rad där pekar namnet dit du säger, oavsett vad DNS tycker:
+Servern visar upp sitt certifikat, som bevisar att den verkligen är den maskin namnet pekar ut.
+Klienten kontrollerar certifikatet och de två kommer överens om nycklar för att kryptera resten
+av samtalet.
+
+Det är det här steget bokstaven `s` står för. Utan det skickas allt i klartext genom varje nätverk
+trafiken råkar passera.
+
+## Steg 4: Frågan ställs
+
+Först nu skickar webbläsaren själva förfrågan: `GET /produkter`.
+
+Servern svarar med en statuskod och ett innehåll, och webbläsaren börjar rita upp sidan. Läser den
+in bilder, stilmallar och skript upprepas hela kedjan för var och en av dem — fast anslutningen
+oftast återanvänds.
+
+Vad som exakt står i den förfrågan och vad statuskoden betyder är nästa dels ämne.
+
+## Vad en IP-adress är
+
+En **IP-adress** är numret som identifierar en maskin på ett nätverk.
+
+Adressen är det nätverket faktiskt använder för att skicka data åt rätt håll. Namn som
+`shop.example.se` finns bara för att människor ska slippa memorera nummer.
+
+En maskin kan ha flera adresser samtidigt — en på det lokala nätverket, en publik, kanske en till
+per nätverkskort.
+
+## IPv4 vs IPv6
+
+Två versioner av samma idé, och båda används samtidigt.
+
+**IPv4** skrivs som fyra tal med punkter emellan: `93.184.216.34`. Adressrymden rymmer knappt 4,3
+miljarder adresser, vilket tog slut för länge sedan.
+
+**IPv6** skrivs som grupper av hexadecimala tecken med kolon emellan: `2606:2800:220:1:248:1893::`.
+Adressrymden är i praktiken outtömlig.
+
+De ersätter inte varandra utan samexisterar. Ett namn kan peka på både en IPv4- och en
+IPv6-adress, och klienten väljer. Det är därför ett uppslag ibland ger fler adresser än du väntat
+dig — och varför ett problem ibland försvinner när man tvingar fram den ena eller den andra.
+
+## Vad en port är
+
+En **port** är ett nummer som pekar ut vilken tjänst på maskinen anropet gäller.
+
+En maskin har en adress men 65 535 portar. Bakom varje port kan ett program lyssna. Några nummer
+är konvention:
+
+```text
+80      HTTP
+443     HTTPS
+22      SSH
+5432    PostgreSQL
+3000    vanligt under utveckling, utan officiell status
+```
+
+Nu går det att läsa `db:5432` från Docker-serien med nya ögon: `db` är namnet som slås upp till en
+adress, `5432` är porten där Postgres lyssnar.
+
+## IP-adress vs port
+
+De två förväxlas ofta, och en bild räcker för att hålla isär dem.
+
+**IP-adressen är gatuadressen.** Den pekar ut vilken maskin.
+
+**Porten är dörren.** Den pekar ut vilken tjänst på den maskinen.
+
+Ett anrop behöver alltid båda. Saknas adressen vet nätet inte vart det ska; saknas porten vet
+maskinen inte vem som ska ta emot. Det är därför ett fel kan bero på fel maskin *eller* fel dörr,
+och de två felen ser olika ut — vilket vi tar i avsnittet om refused och timeout.
+
+> **DOODLE** — Ett hus märkt `93.184.216.34` med fyra dörrar i fasaden, märkta `22`, `80`, `443`,
+> `5432`. En pil in mot dörren `443`. Under: "Adressen hittar huset. Porten hittar tjänsten."
+
+## `localhost` och 127.0.0.1
+
+`localhost` är ett namn som pekar på adressen `127.0.0.1`, och den adressen betyder per definition
+"den här maskinen".
+
+Anropet går aldrig ut på nätverket. Det vänder i nätverkskortet och kommer tillbaka till samma
+maskin det startade från.
+
+Det är hela förklaringen till fallgropen i Docker-serien. Inuti en container är "den här maskinen"
+containern, så `127.0.0.1` pekar på containern själv — inte på din laptop.
+
+## Vad DNS är
+
+**DNS** är systemet som översätter namn till IP-adresser.
+
+Din dator frågar en resolver, oftast hos din internetleverantör eller en publik tjänst. Kan den
+inte svara frågar den vidare uppåt i en kedja av servrar tills någon vet.
+
+Resultatet är en adress, och först då kan steg 2 börja.
+
+## DNS-svar cachas
+
+Varje DNS-svar har en livslängd, en **TTL**, och sparas så länge.
+
+Byter du serverns IP-adress fortsätter datorer som redan frågat att använda det gamla svaret tills
+TTL:en gått ut. Det är därför en flytt kan se ut att fungera för dig och vara trasig för någon
+annan i timmar efteråt.
+
+Praktisk följd: sänk TTL:en i god tid *före* en planerad flytt, inte under den.
+
+## `/etc/hosts` går före DNS
+
+Filen `/etc/hosts` — samma `/etc` du mötte i Linux-serien — läses innan DNS frågas.
 
 ```text
 127.0.0.1   shop.local
 ```
 
-Det är ett vanligt sätt att testa en sajt lokalt under sitt riktiga namn. Det är också en
-klassisk källa till förvirring: en gammal rad i `/etc/hosts` kan få *din* dator att bete sig
-helt annorlunda än alla andras.
+Lägger du in en rad där pekar namnet dit du säger, oavsett vad DNS tycker. Det är ett vanligt sätt
+att testa en sajt lokalt under sitt riktiga namn.
 
-## Refused eller timeout — inte samma fel
+Det är också en klassisk källa till förvirring: en gammal rad i `/etc/hosts` kan få *din* dator att
+bete sig helt annorlunda än alla andras, och ingenting i felsökningen pekar dit.
 
-Nu tillbaka till Marias "ingenting". De två vanligaste felen ser lika ut för en användare men
-pekar åt rakt motsatta håll.
+## HTTP vs HTTPS
+
+Samma protokoll, med ett lager emellan.
+
+**HTTP** skickar förfrågan och svar i klartext, normalt på port 80. Vem som helst längs vägen kan
+läsa och ändra innehållet.
+
+**HTTPS** är samma HTTP, men skickat genom en TLS-krypterad kanal, normalt på port 443. Innehållet
+går inte att läsa eller ändra på vägen.
+
+HTTPS döljer däremot inte *att* du anslöt till en viss server. Adressen syns fortfarande, och i de
+flesta fall även värdnamnet. Det som skyddas är innehållet i samtalet.
+
+## Refused vs timeout
+
+De två vanligaste felen ser lika ut för en användare men pekar åt rakt motsatta håll.
 
 <Split
   leftTitle="Connection refused"
@@ -157,35 +256,85 @@ pekar åt rakt motsatta håll.
 
   Ingen svarade över huvud taget — anropet nådde troligen aldrig fram.
 
-  Leta efter: brandvägg, säkerhetsgrupp i molnet, fel IP-adress, eller en maskin som är
-  avstängd.
+  Leta efter: brandvägg, säkerhetsgrupp i molnet, fel IP-adress, eller en maskin som är avstängd.
 
   </div>
 </Split>
 
-<Callout type="sa-gor-du" title="Felsök i kedjans ordning">
-Gå stegen i diagrammet uppifrån och ner, och sluta så fort ett steg fallerar:
-
-- `nslookup shop.example.se` — får du en IP-adress? Nej → DNS-problemet är hittat.
-- `ping 93.184.216.34` — nås maskinen alls? (Vissa servrar svarar inte på ping, så ett nej här
-  är en ledtråd, inte ett bevis.)
-- `curl -v https://shop.example.se` — den mest användbara av alla. Visar uppslagningen, vilken
-  adress och port den ansluter till, certifikatet och till sist svaret.
-
-Nio gånger av tio räcker den sista raden för att peka ut vilket steg som brast.
-</Callout>
+Tiden är alltså ledtråden. Kommer nejet omedelbart hittade du maskinen men inte tjänsten. Tar det
+tiotals sekunder kom du aldrig fram.
 
 <Callout type="fallgrop">
-Applikationen som lyssnar på `127.0.0.1` i stället för `0.0.0.0` ger **connection refused** för
-alla utom den som sitter på maskinen själv.
+Applikationen som lyssnar på `127.0.0.1` i stället för `0.0.0.0` ger **connection refused** för alla
+utom den som sitter på maskinen själv.
 
-Det förklarar exakt Lisas situation: hon testade från servern, där `127.0.0.1` är rätt maskin,
-medan Maria kom utifrån och fick nej. Felet fanns hela tiden — det gick bara inte att se från
-den plats Lisa testade ifrån.
+Det är ett förrädiskt fel, eftersom den som testar från servern får allt att fungera medan alla
+utifrån får nej. Felet finns hela tiden — det går bara inte att se från den plats man testar ifrån.
 
-Samma fel, samma orsak och samma lösning som portmappningen i Docker-artikeln. Det är värt att
-märka: nätverksbegreppen är desamma överallt.
+Samma fel, samma orsak och samma lösning som portmappningen i Docker-serien.
 </Callout>
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att felsöka anslutningar varje vecka: en container som inte når en databas, en app som
+inte når ett API, en kollega som inte når det du just rullat ut.
+
+Det du gör i praktiken är att gå kedjan uppifrån och ner och avgöra var den brast. Skillnaden
+mellan `refused` och `timeout` gör hälften av jobbet, och `curl -v` gör resten.
+
+Routing, subnät och brandväggsregler blir dina den dag du äger en molnmiljö. Paketnivå och
+routingprotokoll rör dig troligen aldrig — det är därför de inte finns med här.
+
+## Vanliga nybörjarförväxlingar
+
+Ett värdnamn är inte en adress. Namnet måste slås upp innan något kan kontaktas.
+
+IP-adressen är inte porten. Adressen pekar ut maskinen, porten pekar ut tjänsten.
+
+`localhost` är inte en plats. Det är "den här maskinen", och vilken maskin det är beror på var du
+står.
+
+HTTPS gör inte anslutningen osynlig. Det krypterar innehållet, inte det faktum att du anslöt.
+
+`refused` och `timeout` är inte samma fel. Det ena är ett snabbt nej, det andra är tystnad.
+
+Att det fungerar från servern betyder inte att det fungerar. Testa alltid utifrån.
+
+## Prova själv
+
+Alla kommandon nedan bara läser, och de fungerar mot vilken publik sajt som helst.
+
+Slå först upp ett namn:
+
+```bash
+dig +short github.com
+```
+
+Du får en eller flera IP-adresser. Anropa sedan servern och läs bara svarshuvudet:
+
+```bash
+curl -I https://github.com
+```
+
+Testa slutligen skillnaden mellan de två felen. Först en stängd port på din egen maskin:
+
+```bash
+nc -vz -w 5 localhost 9999
+```
+
+Svaret kommer omedelbart: *Connection refused*. Prova nu en port som troligen filtreras bort på
+vägen:
+
+```bash
+nc -vz -w 5 github.com 444
+```
+
+Här händer ingenting alls tills `-w 5` avbryter efter fem sekunder. **Väntetiden är hela
+skillnaden** — och det är den du läser av när du felsöker på riktigt.
+
+Tre saker som kan förvirra: `dig` ger olika svar vid olika tillfällen och det är normalt, inte ett
+fel. Saknas `dig` på din maskin fungerar `nslookup github.com` lika bra för det här. Och `curl -I`
+skickar en `HEAD`-förfrågan i stället för `GET`, vilket ett fåtal servrar svarar annorlunda på.
 
 <Callout type="kom-ihag">
 - Fyra steg hinner ske innan förfrågan skickas: DNS, TCP, TLS — och först därefter HTTP.
@@ -199,11 +348,15 @@ märka: nätverksbegreppen är desamma överallt.
   items={[
     {
       q: "Vad är skillnaden mellan `connection refused` och `connection timed out`?",
-      a: "Refused betyder att maskinen nåddes och aktivt svarade nej — det finns ingen tjänst på den porten. Timeout betyder att ingenting svarade alls, vilket pekar på brandvägg, fel adress eller en maskin som inte är igång.",
+      a: "Refused betyder att maskinen nåddes och aktivt svarade nej — det finns ingen tjänst på den porten, och svaret kommer direkt. Timeout betyder att ingenting svarade alls, vilket pekar på brandvägg, fel adress eller en maskin som inte är igång.",
     },
     {
       q: "Varför räcker det inte att skriva `shop.example.se` för att nå en server?",
       a: "Namnet måste först slås upp till en IP-adress via DNS, och därefter måste en TCP-anslutning etableras mot rätt port. Namnet är bara en uppslagning för människors skull; själva nätverket arbetar med adresser och portar.",
+    },
+    {
+      q: "Vad är skillnaden mellan en IP-adress och en port?",
+      a: "IP-adressen pekar ut vilken maskin, porten vilken tjänst på den maskinen. Ett anrop behöver båda — adressen för att hitta huset, porten för att hitta rätt dörr.",
     },
     {
       q: "Din applikation lyssnar på `127.0.0.1:3000`. Du når den från servern men ingen annan gör det. Varför?",
@@ -213,16 +366,30 @@ märka: nätverksbegreppen är desamma överallt.
       q: "Du bytte serverns IP-adress men vissa besökare hamnar fortfarande på den gamla. Vad beror det på?",
       a: "DNS-cache. Svaret har en TTL, och klienter som redan slagit upp namnet fortsätter använda det gamla svaret tills tiden gått ut. Sänk TTL:en i god tid före en flytt.",
     },
+    {
+      q: "Vad skyddar HTTPS, och vad skyddar det inte?",
+      a: "Det krypterar innehållet i samtalet, så att ingen längs vägen kan läsa eller ändra det. Det döljer däremot inte att du anslöt till servern — adressen och i de flesta fall värdnamnet syns fortfarande.",
+    },
   ]}
 />
 
-## Sammanfattning
+## Snabb sammanfattning
 
-Mellan Enter och den första bokstaven på skärmen ligger fyra steg: ett namn slås upp, en
-anslutning öppnas mot en port, ett certifikat kontrolleras — och först därefter ställs frågan.
+- Mellan Enter och första byten sker fyra steg: DNS, TCP, TLS och först därefter HTTP.
+- URL:en bär protokoll, värdnamn, port, sökväg och frågesträng i en rad.
+- Ett värdnamn måste slås upp till en IP-adress innan något kan kontaktas.
+- TCP öppnar en ordnad kanal med tre paket innan något innehåll skickas.
+- TLS låter servern bevisa vem den är och krypterar resten av samtalet. Det är `s` i `https`.
+- IPv4 och IPv6 samexisterar. Ett namn kan peka på båda.
+- IP-adressen pekar ut maskinen, porten pekar ut tjänsten. 80, 443, 22, 5432.
+- `localhost` är `127.0.0.1` och betyder "den här maskinen" — vilken beror på var du står.
+- DNS-svar cachas enligt sin TTL. Sänk den före en flytt, inte under.
+- `/etc/hosts` läses före DNS och gäller bara din maskin.
+- HTTPS krypterar innehållet, inte det faktum att du anslöt.
+- Refused är ett snabbt nej från rätt maskin. Timeout är tystnad — du kom aldrig fram.
 
-De två felen du kommer att se mest talar om var i kedjan det brast. Ett snabbt *refused* betyder
-att du hittade maskinen men inte tjänsten. En *timeout* betyder att du aldrig kom fram.
+## Nästa del
 
-I nästa del öppnar vi det sista steget: vad som faktiskt står i ett HTTP-anrop, vad
-statuskoderna betyder, och varför skillnaden mellan 4xx och 5xx avgör vem som ska felsöka.
+Nu är kanalen öppen och säkrad, och frågan är ställd. I nästa del öppnar vi det sista steget: vad
+som faktiskt står i ett HTTP-anrop, vad statuskoderna betyder, och varför skillnaden mellan 4xx och
+5xx avgör vem som ska felsöka.

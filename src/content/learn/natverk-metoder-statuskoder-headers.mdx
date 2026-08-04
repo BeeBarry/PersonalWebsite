@@ -13,30 +13,32 @@ tags: ['Beginner', 'HTTP', 'API']
 Förra delen tog oss fram till servern: namnet slogs upp, anslutningen öppnades, certifikatet
 kontrollerades. Kvar står det sista steget — själva samtalet.
 
-**HTTP** är förvånansvärt enkelt när man ser det. Det är text, det är läsbart, och det består
-av två meddelanden: en fråga och ett svar.
+Den här delen öppnar det steget och går igenom vad ett HTTP-meddelande består av: metoden,
+statuskoden, headers och kroppen. Det är den mest direkt användbara delen i hela nätverksserien,
+för det är den du läser varje gång något inte fungerar.
 
-## Vems fel är det?
+## Ett HTTP-anrop är text
 
-Lisas nya produktformulär fungerar inte. Frontend-utvecklaren säger att API:et är trasigt.
-Maria, som byggt API:et, säger att frontend skickar fel data. Ingen kan visa vem som har rätt,
-och diskussionen tar en halv dag.
+HTTP är läsbar text, inte ett binärt format.
 
-Den diskussionen behöver aldrig uppstå igen efter det här avsnittet, för svaret står redan i
-anropet.
+Det består av två meddelanden: en förfrågan från klienten och ett svar från servern. Båda har
+samma uppbyggnad, och båda går att läsa med ögonen.
 
-## Helheten först: ett anrop är text
+> **DOODLE** — Ett webbläsarfönster till vänster och ett servertorn till höger. En heldragen pil
+> från fönstret till tornet märkt "förfrågan", och en heldragen pil tillbaka märkt "svar". Under:
+> "Två meddelanden. Ingen magi."
 
-Så här ser en fullständig HTTP-förfrågan ut. Ingenting är dolt — det här är bokstavligen vad
-som skickas över anslutningen:
+## Förfrågan, del för del
+
+Så här ser en fullständig HTTP-förfrågan ut. Ingenting är dolt — det här är bokstavligen vad som
+skickas över anslutningen:
 
 ```http
 POST /api/produkter HTTP/1.1
 Host: shop.example.se
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
 
-{"namn":"Skruvmejsel","pris":149,"lager":12}
+{"namn":"Skruvmejsel","pris":149}
 ```
 
 Fyra delar, alltid i den ordningen:
@@ -44,9 +46,13 @@ Fyra delar, alltid i den ordningen:
 1. **Startraden** — metoden (`POST`), sökvägen (`/api/produkter`) och protokollversionen.
 2. **Headers** — rad efter rad med metadata om anropet.
 3. **En tom rad** — som markerar att headers är slut.
-4. **Body** — själva innehållet. Saknas ofta, till exempel vid `GET`.
+4. **Kroppen** — själva innehållet. Saknas ofta, till exempel vid `GET`.
 
-Svaret har exakt samma form, med en statusrad överst i stället:
+Den tomma raden är inte dekoration. Den är det enda som skiljer metadata från innehåll.
+
+## Svaret, del för del
+
+Svaret har exakt samma form, med en statusrad överst i stället för en startrad:
 
 ```http
 HTTP/1.1 201 Created
@@ -56,69 +62,124 @@ Location: /api/produkter/8842
 {"id":8842,"namn":"Skruvmejsel","pris":149}
 ```
 
-<Callout type="varfor" title="Varför det är värt att se rådatan">
-Så länge HTTP är något ramverket sköter blir felsökning gissningar. Ser du de här två
-meddelandena kan du i stället avgöra saken: skickades rätt `Content-Type`? Fanns
-`Authorization` med? Vad svarade servern, exakt?
+Statusraden bär protokollversionen, koden och en kort text. Texten är för människor; det är koden
+maskiner läser.
 
-`curl -v` visar precis det här, och är därför det snabbaste sättet att avgöra om felet ligger i
-det som skickas eller i det som tas emot.
+<Callout type="varfor" title="Varför det är värt att se rådatan">
+Så länge HTTP är något ramverket sköter blir felsökning gissningar. Ser du de två meddelandena kan
+du i stället avgöra saken: skickades rätt `Content-Type`? Fanns `Authorization` med? Vad svarade
+servern, exakt?
+
+`curl -v` visar precis det här, och är därför det snabbaste sättet att avgöra om felet ligger i det
+som skickas eller i det som tas emot.
 </Callout>
 
-## Metoderna: vad du vill göra
+## Vad en metod är
 
-Sökvägen säger *vad* du pratar om, metoden säger *vad du vill göra med det*.
+**Metoden** säger vad du vill göra med det sökvägen pekar ut.
 
-- **`GET`** — hämta. Ska aldrig ändra något på servern.
-- **`POST`** — skapa något nytt, eller starta en åtgärd.
-- **`PUT`** — ersätt hela resursen med det du skickar.
-- **`PATCH`** — ändra delar av den.
-- **`DELETE`** — ta bort den.
+Sökvägen anger alltså *vad* du pratar om, metoden *vad som ska hända med det*.
 
-Två egenskaper skiljer dem åt, och den ena har du redan mött:
+```text
+GET       hämta
+POST      skapa något nytt, eller starta en åtgärd
+PUT       ersätt hela resursen
+PATCH     ändra delar av den
+DELETE    ta bort den
+```
 
-**Säker** betyder att anropet inte ändrar något. `GET` är säkert. Det är därför en webbläsare
-kan hämta en sida i förväg utan att fråga dig — och därför ett `GET`-anrop aldrig får radera
-något, hur bekvämt det än vore.
+Betydelserna är konventioner. Det är fortfarande serverns kod som avgör vad som faktiskt sker när
+en förfrågan kommer in.
 
-**Idempotent** betyder att fler anrop ger samma slutläge som ett. Exakt samma begrepp som i
-Terraform-serien: beskriv målet, och det spelar ingen roll hur många gånger det körs.
+## GET vs POST
+
+De två du kommer att se överallt, och de skiljer sig på tre sätt.
+
+**`GET`** hämtar. Den har normalt ingen kropp, parametrarna ligger i URL:en, och den ska aldrig
+ändra något på servern.
+
+**`POST`** skickar. Innehållet ligger i kroppen, och anropet är avsett att skapa något eller starta
+en åtgärd.
+
+Följden märks i vardagen: ett `GET` kan bokmärkas, delas och laddas om utan att något händer. Ett
+`POST` som laddas om ger webbläsarens fråga *"vill du skicka om formuläret?"* — just för att det
+kan hända något en gång till.
+
+Att parametrar i ett `GET` ligger i URL:en betyder också att de hamnar i webbläsarhistorik och
+serverloggar. Lösenord och personuppgifter hör därför aldrig hemma i en frågesträng.
+
+## PUT vs PATCH
+
+Båda ändrar en befintlig resurs, men de gör det på olika sätt.
+
+**`PUT`** ersätter hela resursen med det du skickar. Fält du utelämnar tolkas som att de ska
+försvinna.
+
+**`PATCH`** ändrar bara de fält du skickar med. Resten lämnas orörda.
+
+Skickar du `{"pris": 129}` med `PUT` till en produkt riskerar du att namnet och lagersaldot
+nollställs. Samma kropp med `PATCH` ändrar bara priset.
+
+Det är den vanligaste orsaken till att data "försvinner" i ett API utan att någon raderat något.
+
+## Säker vs idempotent
+
+Två egenskaper som låter lika och betyder olika saker.
+
+**Säker** betyder att anropet inte ändrar något. `GET` är säkert. Det är därför en webbläsare kan
+hämta en sida i förväg utan att fråga dig.
+
+**Idempotent** betyder att fler anrop ger samma slutläge som ett. `PUT` och `DELETE` är
+idempotenta — att sätta samma värde två gånger, eller radera något som redan är raderat, ändrar
+ingenting.
+
+Allt som är säkert är också idempotent. Tvärtom gäller inte: `DELETE` ändrar något, men resultatet
+blir detsamma hur många gånger det körs.
+
+Det är exakt samma begrepp som i Terraform-serien: beskriv målet, och det spelar ingen roll hur
+många gånger det körs.
 
 <Callout type="varfor" title="Varför idempotens är mer än teori">
 Nätverk tappar paket. Skickar Lisas app ett `POST` och svaret försvinner på vägen tillbaka vet
 klienten inte om produkten skapades eller inte. Försöker den igen kan resultatet bli **två
 produkter**.
 
-`PUT` och `DELETE` har inte det problemet: att sätta samma värde två gånger, eller radera något
-som redan är raderat, ändrar ingenting. Det är därför automatiska omförsök är ofarliga för dem
+`PUT` och `DELETE` har inte det problemet. Det är därför automatiska omförsök är ofarliga för dem
 och farliga för `POST`.
 </Callout>
 
-## Statuskoderna: den viktigaste siffran är den första
+## Vad en statuskod är
 
-Det finns dussintals koder, men du behöver bara komma ihåg vad **första siffran** betyder:
+**Statuskoden** är ett tresiffrigt tal som sammanfattar vad som hände med förfrågan.
 
-- **2xx — det gick bra.** `200 OK`, `201 Created` (något skapades), `204 No Content` (gick bra,
-  inget att skicka tillbaka).
-- **3xx — leta någon annanstans.** `301` permanent flyttad, `302` tillfälligt, `304` oförändrad
-  sedan sist.
-- **4xx — förfrågan var felaktig.** Klientens sida.
-- **5xx — servern klarade inte av det.** Serverns sida.
+Den står först i svaret och läses av allt längs vägen: webbläsaren, klientbiblioteket,
+lastbalanseraren, övervakningen och loggarna.
 
-Ett `3xx` är enklast att se i praktiken. Nästan varje sajt gör den här kedjan innan sidan ens
-visas:
+Det gör koden till mer än information till utvecklaren. Den är ett besked som infrastruktur agerar
+på.
 
-<Flow
-  layout="row"
-  caption="Två anrop och en omdirigering — det är därför adressfältet byter till https av sig självt."
-  steps={[
-    { label: "GET http://…", note: "Du skrev adressen utan `s`." },
-    { label: "301", via: "svarar", note: "Flyttad permanent, hit i stället." },
-    { label: "GET https://…", via: "nytt anrop", note: "Webbläsaren följer med automatiskt.", accent: true },
-  ]}
-/>
+## Första siffran räcker
 
-Och nu till det som avslutar diskussionen mellan Lisa och Maria:
+Det finns dussintals koder. Du behöver bara komma ihåg vad den första siffran betyder.
+
+```text
+2xx   det gick bra
+3xx   leta någon annanstans
+4xx   förfrågan var felaktig
+5xx   servern klarade inte av det
+```
+
+De vanligaste inom varje grupp: `200 OK`, `201 Created`, `204 No Content` · `301`, `302`, `304` ·
+`400`, `401`, `403`, `404`, `409` · `500`, `502`, `503`, `504`.
+
+> **DOODLE** — Fyra webbläsarfönster på rad. Fönster ett med en bock, märkt `2xx` / "Lyckades".
+> Fönster två med en böjd pil mellan två kartnålar, märkt `3xx` / "Leta annanstans". Fönster tre med
+> en varningstriangel, märkt `4xx` / "Fel fråga". Fönster fyra med ett servertorn med prickar, märkt
+> `5xx` / "Serverns fel".
+
+## 4xx vs 5xx
+
+Den enskilt mest användbara skillnaden i hela avsnittet, eftersom den pekar ut vem som ska titta.
 
 <Split
   leftTitle="4xx — klientens fel"
@@ -151,59 +212,166 @@ Och nu till det som avslutar diskussionen mellan Lisa och Maria:
 Ett `502` eller `504` är för övrigt precis vad en Ingress-controller svarar när ingen frisk pod
 finns bakom Servicen — samma sak du läste om i Kubernetes-serien, sett från utsidan.
 
-<Callout type="fallgrop" title="401 och 403 är inte samma sak">
-De blandas ihop hela tiden, och skillnaden är enkel:
+## 401 vs 403
 
-- **401 Unauthorized** — *jag vet inte vem du är.* Inloggning saknas eller är ogiltig. Lösningen
-  är att autentisera sig.
-- **403 Forbidden** — *jag vet vem du är, och du får inte.* Inloggningen är i sin ordning, men
-  kontot saknar behörighet. Att logga in igen hjälper inte.
+Två koder som blandas ihop hela tiden, och skillnaden är enkel.
 
-Svarar ett API `401` när det borde vara `403` skickas användaren till inloggningssidan i
-onödan — och hamnar i en loop där hen loggar in om och om igen utan att komma vidare.
+**`401 Unauthorized`** betyder *jag vet inte vem du är.* Inloggning saknas eller är ogiltig.
+Lösningen är att autentisera sig.
+
+**`403 Forbidden`** betyder *jag vet vem du är, och du får ändå inte.* Inloggningen är i sin
+ordning, men kontot saknar behörighet. Att logga in igen hjälper inte.
+
+Svarar ett API `401` när det borde vara `403` skickas användaren till inloggningssidan i onödan —
+och hamnar i en loop där hen loggar in om och om igen utan att komma vidare.
+
+Namnet på `401` är för övrigt historiskt fel: den handlar om autentisering, inte om behörighet.
+
+## 301 vs 302
+
+Två omdirigeringar med mycket olika livslängd.
+
+**`301 Moved Permanently`** säger att resursen flyttat för gott. Webbläsare och sökmotorer sparar
+det och slutar fråga efter den gamla adressen.
+
+**`302 Found`** säger att flytten är tillfällig. Den gamla adressen gäller fortfarande, och klienten
+frågar efter den nästa gång också.
+
+<Flow
+  layout="row"
+  caption="Två anrop och en omdirigering — det är därför adressfältet byter till https av sig självt."
+  steps={[
+    { label: "GET http://…", note: "Du skrev adressen utan `s`." },
+    { label: "301", via: "svarar", note: "Flyttad permanent, hit i stället." },
+    { label: "GET https://…", via: "nytt anrop", note: "Webbläsaren följer med automatiskt.", accent: true },
+  ]}
+/>
+
+<Callout type="fallgrop">
+Ett felaktigt `301` är svårt att ta tillbaka. Webbläsaren har sparat det, och den frågar inte igen
+— den går direkt till den nya adressen även efter att du rättat servern.
+
+Symtomet är att det fungerar för alla utom dem som råkade besöka sidan medan felet fanns, och de
+kan inte lösa det utan att rensa sin cache. **Använd `302` medan du är osäker**, och `301` först när
+flytten verkligen är permanent.
+
+Värt att veta: `301` och `302` kan göra om ett `POST` till ett `GET` på vägen. Ska metoden bevaras
+finns `308` och `307`.
 </Callout>
 
-## Headers: allt utom innehållet
+## Vad en header är
 
-Headers bär metadata. Fyra dyker upp överallt:
+En **header** är en rad metadata om meddelandet, skriven som `Namn: värde`.
 
-- **`Content-Type`** — vad body innehåller. `application/json` för API:er,
-  `application/x-www-form-urlencoded` för ett vanligt formulär. Skickar du JSON men uppger fel
-  typ svarar många ramverk `400` utan närmare förklaring.
-- **`Authorization`** — vem du är. Typiskt `Bearer <token>`.
+Headers beskriver meddelandet men är inte innehållet. Fyra dyker upp överallt:
+
+- **`Content-Type`** — vad kroppen innehåller. `application/json` för API:er,
+  `application/x-www-form-urlencoded` för ett vanligt formulär. Skickar du JSON men uppger fel typ
+  svarar många ramverk `400` utan närmare förklaring.
 - **`Accept`** — vad du vill ha tillbaka. Klientens motsvarighet till `Content-Type`.
+- **`Authorization`** — vem du är. Typiskt `Bearer <token>`.
 - **`Cache-Control`** — hur länge svaret får återanvändas.
 
-<Callout type="fallgrop" title="Alltid 200 är ingen vänlighet">
-Ett vanligt mönster i API:er som byggts i hast: svara `200 OK` på allt, och lägga det
-egentliga resultatet i body — `{"success": false, "error": "..."}`.
+## Request-headers vs response-headers
 
-Det förstör allt som bygger på statuskoden. Övervakningen ser en frisk tjänst, lastbalanseraren
-tror att servern mår bra, klientbibliotek kastar inga fel, och loggarna visar hundraprocentig
-framgång under ett pågående avbrott.
+Samma format, olika avsändare och olika syfte.
+
+**Request-headers** beskriver din förfrågan: vem du är, vad du skickar, vad du vill ha tillbaka.
+`Authorization`, `Content-Type`, `Accept`.
+
+**Response-headers** beskriver serverns svar: vad den skickar, hur länge det får sparas, var
+resursen hamnade. `Content-Type`, `Cache-Control`, `Location`.
+
+Några namn förekommer i båda riktningarna, och det är där förvirringen uppstår. `Content-Type` i en
+förfrågan beskriver det du skickar; `Content-Type` i ett svar beskriver det du får.
+
+<Callout type="fallgrop" title="Alltid 200 är ingen vänlighet">
+Ett vanligt mönster i API:er som byggts i hast: svara `200 OK` på allt, och lägga det egentliga
+resultatet i kroppen — `{"success": false, "error": "..."}`.
+
+Det förstör allt som bygger på statuskoden. Övervakningen ser en frisk tjänst, lastbalanseraren tror
+att servern mår bra, klientbibliotek kastar inga fel, och loggarna visar hundraprocentig framgång
+under ett pågående avbrott.
 
 Statuskoden är inte dekoration — den läses av infrastruktur hela vägen ut. Låt den vara sann.
 </Callout>
 
-## Ett anrop minns ingenting
+## HTTP minns ingenting
 
-Sista egenskapen, och den som förklarar mest om hur webben är byggd: HTTP är **statslöst**.
-Varje anrop är fristående, och servern minns ingenting från förra gången.
+HTTP är **statslöst**. Varje anrop är fristående, och servern minns ingenting från förra gången.
 
 Det låter opraktiskt — hur vet en sajt då att du är inloggad? Svaret är att den inte vet det.
 Klienten skickar med beviset **varje gång**, som en cookie eller en token i `Authorization`.
 
-Priset är den extra raden i varje anrop. Vinsten är att vilken server som helst kan svara på
-vilket anrop som helst, eftersom ingen av dem sitter på information de andra saknar. Det är
-just den egenskapen som gör att Kubernetes kan lägga till och ta bort poddar fritt — precis som
-Deployment-artikeln beskrev.
+Priset är den extra raden i varje anrop. Vinsten är att vilken server som helst kan svara på vilket
+anrop som helst, eftersom ingen av dem sitter på information de andra saknar.
+
+Det är just den egenskapen som gör att Kubernetes kan lägga till och ta bort poddar fritt — precis
+som Deployment-delen beskrev.
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att öppna Network-fliken i webbläsarens utvecklingsverktyg flera gånger om dagen, och det
+första du tittar på är metoden och statuskoden. De två avgör om du ska felsöka din egen kod eller
+någon annans.
+
+`401` mot `403` och `4xx` mot `5xx` är de skillnader som oftast avslutar en diskussion om vems fel
+något är. Det är därför de har egna avsnitt här.
+
+Cache-headers, innehållsförhandling och HTTP/2 kan vänta. De blir intressanta när du optimerar, och
+de ändrar ingenting i modellen du just lärt dig — förfrågan och svar ser likadana ut oavsett hur de
+transporteras.
+
+## Vanliga nybörjarförväxlingar
+
+Metoden är inte sökvägen. Sökvägen säger vad, metoden säger vad som ska hända med det.
+
+`PUT` och `PATCH` är inte utbytbara. `PUT` ersätter hela resursen, `PATCH` bara de fält du skickar.
+
+Säker och idempotent betyder inte samma sak. `DELETE` ändrar något men ger samma slutläge varje gång.
+
+`401` handlar om vem du är, `403` om vad du får göra. Att logga in igen hjälper inte mot `403`.
+
+`301` är inte en tillfällig omdirigering. Webbläsaren sparar den och slutar fråga.
+
+Ett `200`-svar med ett fel i kroppen är inte hjälpsamt. Hela infrastrukturen läser statuskoden.
+
+## Prova själv
+
+Titta först på ett helt anrop i rådata:
+
+```bash
+curl -v https://api.github.com
+```
+
+Läs raderna som börjar med `>` — det är vad din dator **skickade**. Raderna med `<` är vad servern
+**svarade**. Där ser du startraden, alla headers, den tomma raden och kroppen, precis i den ordning
+avsnittet beskrev.
+
+Hämta sedan bara statuskoden för en sida som inte finns:
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" \
+  https://github.com/finns-inte-xyz
+```
+
+Du får `404`. Byt ut sökvägen mot `/` och kör igen — nu får du `200`.
+
+Öppna slutligen webbläsarens utvecklingsverktyg, gå till fliken Network och ladda om en sida. Klicka
+på en rad och leta upp metoden, statuskoden, request-headers och response-headers. Det är samma fyra
+delar, i ett annat gränssnitt.
+
+Tre saker som kan förvirra: raderna som börjar med `*` i `curl -v` är curls egna kommentarer, inte
+en del av HTTP. Laddar du om en sida får du ofta `304 Not Modified` med tom kropp, vilket ser ut som
+ett trasigt svar men betyder "du har redan den senaste versionen". Och `curl -I` skickar `HEAD` i
+stället för `GET`, så kroppen uteblir med flit.
 
 <Callout type="kom-ihag">
-- Ett HTTP-meddelande är text: startrad, headers, tom rad, body.
-- `GET` är **säkert** (ändrar inget). `PUT` och `DELETE` är **idempotenta** — samma begrepp som
-  i Terraform, och skälet till att omförsök är ofarliga för dem men inte för `POST`.
-- Första siffran räcker: **4xx = frågan var fel, 5xx = servern klarade det inte.** Den pekar ut
-  vem som felsöker.
+- Ett HTTP-meddelande är text: startrad, headers, tom rad, kropp.
+- `GET` är **säkert** (ändrar inget). `PUT` och `DELETE` är **idempotenta** — därför är omförsök
+  ofarliga för dem men inte för `POST`.
+- `PUT` ersätter hela resursen, `PATCH` bara fälten du skickar.
+- Första siffran räcker: **4xx = frågan var fel, 5xx = servern klarade det inte.**
 - `401` = vi vet inte vem du är. `403` = vi vet, du får ändå inte.
 - Svara aldrig `200` på ett fel — hela infrastrukturen läser statuskoden.
 - HTTP minns ingenting mellan anrop. Därför skickas beviset på vem du är varje gång.
@@ -216,6 +384,10 @@ Deployment-artikeln beskrev.
       a: "Backend. 5xx betyder att servern tog emot frågan men misslyckades med att hantera den — felet ligger på serversidan oavsett hur anropet såg ut. Börja i serverns loggar.",
     },
     {
+      q: "Du skickar `{\"pris\": 129}` med `PUT` till en produkt. Vad riskerar du?",
+      a: "Att övriga fält nollställs. `PUT` ersätter hela resursen med det du skickar, så namn och lagersaldo tolkas som borttagna. `PATCH` hade bara ändrat priset.",
+    },
+    {
       q: "Varför är det farligare att göra automatiska omförsök på `POST` än på `PUT`?",
       a: "`PUT` är idempotent: samma anrop två gånger ger samma slutläge. `POST` skapar något nytt varje gång, så ett omförsök efter ett tappat svar kan ge två poster i databasen.",
     },
@@ -224,21 +396,36 @@ Deployment-artikeln beskrev.
       a: "Statuskoden är rätt men klienten behandlar den fel. `403` betyder att användaren är identifierad men saknar behörighet — inloggning hjälper inte. Det är `401` som ska leda till inloggningssidan.",
     },
     {
-      q: "Vad är problemet med ett API som svarar `200 OK` och lägger felet i body?",
+      q: "Du la ut en felaktig `301` och rättade den efter en timme. Varför fungerar det ändå inte för vissa?",
+      a: "En `301` sparas av webbläsaren, som slutar fråga efter den gamla adressen. De som besökte sidan medan felet fanns går direkt till fel plats tills de rensar sin cache. Använd `302` när du är osäker.",
+    },
+    {
+      q: "Vad är problemet med ett API som svarar `200 OK` och lägger felet i kroppen?",
       a: "Allt utanför applikationen läser statuskoden: övervakning, lastbalanserare, klientbibliotek och loggar. Med enbart 200 ser en pågående incident ut som full framgång, och inget larm går.",
     },
   ]}
 />
 
-## Sammanfattning
+## Snabb sammanfattning
 
-HTTP är två textmeddelanden med samma uppbyggnad: en startrad, några headers, en tom rad och
-eventuellt ett innehåll. Att kunna läsa dem gör skillnad mellan att gissa och att veta.
+- HTTP är läsbar text i två meddelanden: en förfrågan och ett svar.
+- Båda består av en start- eller statusrad, headers, en tom rad och eventuellt en kropp.
+- Metoden säger vad som ska hända med det sökvägen pekar ut. Betydelserna är konventioner.
+- `GET` hämtar och har parametrarna i URL:en. `POST` skickar och har dem i kroppen.
+- `PUT` ersätter hela resursen, `PATCH` bara de fält du skickar.
+- Säker betyder "ändrar inget". Idempotent betyder "samma slutläge hur många gånger som helst".
+- Statuskoden läses av infrastruktur, inte bara av dig.
+- Första siffran räcker: 2xx lyckades, 3xx leta annanstans, 4xx fel fråga, 5xx serverns fel.
+- `401` handlar om vem du är, `403` om vad du får göra.
+- `301` sparas av webbläsaren och är svår att ta tillbaka. `302` är den säkra medan du är osäker.
+- Headers är metadata. Samma namn kan betyda olika saker i förfrågan och i svar.
+- HTTP minns ingenting. Beviset på vem du är skickas med varje anrop.
 
-Metoden säger vad du vill göra, och egenskaperna säker och idempotent avgör vad som är
-ofarligt att göra om. Statuskodens första siffra säger vem som ska felsöka — och det är den
-enskilt mest användbara sak du kan ta med dig härifrån.
+## Nästa del
 
 Med Linux-serien och den här står de två fundamenten som resten vilar på: maskinen och
-kommunikationen. Nästa steg är att bygga ovanpå dem — Git för att hålla ordning på koden, och
-API:er för att låta system prata med varandra på riktigt.
+kommunikationen.
+
+Nästa steg bygger ovanpå dem — Git för att hålla ordning på koden, och API:er för att låta system
+prata med varandra på riktigt. Där återkommer varenda begrepp från det här avsnittet, fast med krav
+på hur de ska användas.
