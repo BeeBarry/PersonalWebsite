@@ -10,42 +10,120 @@ import Library from "../../components/hr/Library.astro";
 import Translate from "../../components/hr/Translate.astro";
 import Faq from "../../components/hr/Faq.astro";
 import Glossary from "../../components/hr/Glossary.astro";
-import { hrMetaLine } from "../../data/hr";
+import site from "../../config/site";
 import "../../styles/hr.css";
+
+// Kontaktvägarna hämtas ur site.social — samma adresser som i sidfoten.
+const linkedin = site.social.find((s) => s.name === "LinkedIn")?.href ?? "#";
+const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
 ---
 
 <AppLayout
   title="För HR · Teknik-guiden · Barry Namdari"
   description="Teknik-guiden — tech-roller, språk och verktyg förklarade för HR och rekryterare. Ingen förkunskap krävs."
+  image="/og-hr.png"
 >
   <div class="hr">
     <HrTabBar active="bib" />
 
     <div class="hr-inner animate-in">
-      <h1 class="hr-sr-title">Teknik-guiden — för HR och rekryterare</h1>
-
       <header>
         <p class="hr-eyebrow">För HR &amp; rekryterare</p>
+        <h1 class="hr-title">Teknik-guiden</h1>
         <p class="hr-lead">
-          Vad orden i annonsen faktiskt betyder, vem som trivs med vad — och
-          vilka frågor du kan ställa utan att kunna koda. Ingen förkunskap
-          krävs.<span class="hr-lead__more"> Skriven för dig som är ny i
-            tech-rekrytering.</span>
+          Slå upp ett ord ur annonsen, se vad det betyder i praktiken och vilka
+          frågor du kan ställa — utan förkunskaper.
         </p>
-        <p class="hr-metaline">{hrMetaLine()}</p>
       </header>
 
-      <section class="hr-panel" data-hr-panel="bib" role="tabpanel">
+      <section
+        class="hr-panel"
+        data-hr-panel="bib"
+        role="region"
+        aria-labelledby="hr-h-bib"
+      >
+        <div class="hr-panel__head">
+          <h2 class="hr-panel__title" id="hr-h-bib">Slå upp ett ord</h2>
+          <p class="hr-panel__intro">
+            Sök på ett ord ur annonsen eller bläddra bland korten — varje kort
+            förklarar en roll, ett språk eller ett verktyg på en minut.
+          </p>
+        </div>
         <Library />
       </section>
-      <section class="hr-panel" data-hr-panel="ovs" role="tabpanel" hidden>
+
+      <section
+        class="hr-panel"
+        data-hr-panel="ovs"
+        role="region"
+        aria-labelledby="hr-h-ovs"
+        hidden
+      >
+        <div class="hr-panel__head">
+          <h2 class="hr-panel__title" id="hr-h-ovs">Annonsen, rad för rad</h2>
+          <p class="hr-panel__intro">
+            Vanliga formuleringar i tech-annonser — vad de faktiskt betyder, vad
+            du ska leta efter och var det brukar gå fel.
+          </p>
+        </div>
         <Translate />
       </section>
-      <section class="hr-panel" data-hr-panel="faq" role="tabpanel" hidden>
+
+      <section
+        class="hr-panel"
+        data-hr-panel="faq"
+        role="region"
+        aria-labelledby="hr-h-faq"
+        hidden
+      >
+        <div class="hr-panel__head">
+          <h2 class="hr-panel__title" id="hr-h-faq">Frågor och svar</h2>
+          <p class="hr-panel__intro">
+            Elva frågor som återkommer i tech-rekrytering, med korta svar och
+            länkar vidare till korten.
+          </p>
+        </div>
         <Faq />
       </section>
-      <section class="hr-panel" data-hr-panel="ord" role="tabpanel" hidden>
+
+      <section
+        class="hr-panel"
+        data-hr-panel="ord"
+        role="region"
+        aria-labelledby="hr-h-ord"
+        hidden
+      >
+        <div class="hr-panel__head">
+          <h2 class="hr-panel__title" id="hr-h-ord">Ordlista</h2>
+          <p class="hr-panel__intro">
+            Sexton begrepp du hör på avstämningar och intervjuer — förklarade
+            med en mening var.
+          </p>
+        </div>
         <Glossary />
+      </section>
+
+      {/* Konverteringssteget — ligger utanför panelerna, så det avslutar
+          guiden oavsett vilken flik besökaren står på. */}
+      <section class="hr-hire" aria-labelledby="hr-h-hire">
+        <p class="hr-hire__eyebrow">Nästa steg</p>
+        <h2 class="hr-hire__title" id="hr-h-hire">Rekryterar du just nu?</h2>
+        <p class="hr-hire__text">
+          Jag heter Barry, är nyexaminerad fullstack- och cloudutvecklare och
+          söker mitt första jobb — junior roll, trainee eller praktik. Hör av
+          dig så berättar jag mer om vad jag byggt.
+        </p>
+        <div class="hr-hire__actions">
+          <a
+            class="hr-btn"
+            href={linkedin}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Kontakta mig på LinkedIn
+          </a>
+          <a class="hr-btn hr-btn--ghost" href={mail}>Skicka ett mejl</a>
+        </div>
       </section>
     </div>
   </div>
@@ -55,15 +133,3 @@ import "../../styles/hr.css";
     initHrGuide();
   </script>
 </AppLayout>
-
-<style>
-  /* Extra ledtext-mening bara på desktop (README: mobil kortare). */
-  .hr-lead__more {
-    display: none;
-  }
-  @media (min-width: 768px) {
-    .hr-lead__more {
-      display: inline;
-    }
-  }
-</style>

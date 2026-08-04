@@ -150,13 +150,19 @@ export interface HrGroup {
 export function groupLibrary(cards: HrCard[] = hrCards): HrGroup[] {
   const groups: HrGroup[] = [];
 
+  // Klara kort först inom varje grupp — annars möts besökaren av utkast i tre
+  // av fyra grupper. `filter` ger en ny array, så sorteringen muterar inte
+  // källdatan (och grupperna behåller sin inbördes ordning).
+  const doneFirst = (list: HrCard[]) =>
+    list.sort((a, b) => Number(isDraft(a)) - Number(isDraft(b)));
+
   const roles = cards.filter((c) => c.typ === "Roll");
   if (roles.length) {
     groups.push({
       key: "roles",
       title: "Roller i ett utvecklingsteam",
       sub: "Själva jobbet — det ni sätter i annonsrubriken",
-      cards: roles,
+      cards: doneFirst(roles),
     });
   }
 
@@ -167,13 +173,17 @@ export function groupLibrary(cards: HrCard[] = hrCards): HrGroup[] {
         key: dom,
         title: dom,
         sub: "Färdigheter och verktyg",
-        cards: inDom,
+        cards: doneFirst(inDom),
       });
     }
   }
 
   return groups;
 }
+
+// Kort som är helt skrivna, i biblioteksordning. Driver både metaraden och
+// utkastsidans "läs de färdiga korten"-rad — så listan aldrig kan bli inaktuell.
+export const doneCards = (): HrCard[] => hrCards.filter((c) => !isDraft(c));
 
 const MONTHS_SV = [
   "januari", "februari", "mars", "april", "maj", "juni",
@@ -187,9 +197,15 @@ export function updatedLabel(): string {
   return `uppdaterad ${month} ${y ?? ""}`.trim();
 }
 
-// Metaraden under ledtexten: "13 kort · 11 frågor · uppdaterad juli 2026".
+// Metaraden i biblioteket: "3 kort klara · 10 på gång · 11 frågor · uppdaterad
+// juli 2026". Räknar klara kort separat — "13 kort" lovade mer än guiden håller.
 export function hrMetaLine(): string {
-  return `${hrCards.length} kort · ${hrFaq.length} frågor · ${updatedLabel()}`;
+  const done = doneCards().length;
+  const pending = hrCards.length - done;
+  const parts = [`${done} kort klara`];
+  if (pending > 0) parts.push(`${pending} på gång`);
+  parts.push(`${hrFaq.length} frågor`, updatedLabel());
+  return parts.join(" · ");
 }
 
 // Typografisk städning av redaktionell copy vid rendering (källan i JSON hålls

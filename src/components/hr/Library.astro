@@ -8,6 +8,7 @@ import site from "../../config/site";
 import {
   hrCards,
   groupLibrary,
+  hrMetaLine,
   isDraft,
   HR_TYPES,
   typo,
@@ -67,13 +68,15 @@ const typeLabels: Record<string, string> = {
     }
   </div>
 
-  <p class="hr-count" data-hr-count>{hrCards.length} träffar</p>
+  <p class="hr-count" data-hr-count aria-live="polite" aria-atomic="true">
+    {hrCards.length} av {hrCards.length} kort visas
+  </p>
 
   <div data-hr-groups>
     {
       groups.map((g) => (
         <section class="hr-group" data-hr-group>
-          <h2 class="hr-group__title">{g.title}</h2>
+          <h3 class="hr-group__title">{g.title}</h3>
           <p class="hr-group__sub">{g.sub}</p>
           <div class="hr-cardgrid">
             {g.cards.map((card) => (
@@ -89,14 +92,14 @@ const typeLabels: Record<string, string> = {
                     {card.typ} · {card.dom}
                   </span>
                   {isDraft(card) ? (
-                    <span class="hrcard__badge">Utkast</span>
+                    <span class="hrcard__badge">Kommer snart</span>
                   ) : (
                     <span class="hrcard__chevron">
                       <Icon name="ChevronRight" size={14} />
                     </span>
                   )}
                 </div>
-                <h3 class="hrcard__title">{card.title}</h3>
+                <h4 class="hrcard__title">{card.title}</h4>
                 <p class="hrcard__one">{typo(card.one)}</p>
               </a>
             ))}
@@ -128,4 +131,8 @@ const typeLabels: Record<string, string> = {
       Föreslå ett kort på LinkedIn
     </a>
   </div>
+
+  {/* Metaraden bor i botten av panelen: den är en fotnot om samlingen, inte en
+      ingress — överst sköt den ner första kortet på mobil. */}
+  <p class="hr-metaline hr-metaline--foot">{hrMetaLine()}</p>
 </div>

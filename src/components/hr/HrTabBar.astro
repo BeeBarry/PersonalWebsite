@@ -5,6 +5,8 @@
 // variant="detail" (kort-sidan): tillbaka-knapp + wordmark + flikar, PLUS en
 //   kort-switcher (sök + typ-chips) som filtrerar en meny av alla kort så
 //   användaren kan byta kort direkt i fullskärm — utan att gå till listan.
+//   Under 768 px är switchern hopfälld bakom en sökknapp (hrGuide.ts togglar
+//   data-switch-open på .hr-topbar) — den åt annars 96 px av skärmen.
 import Icon from "../site/Icon.astro";
 import { hrCards, groupLibrary, isDraft, HR_TYPES, typo } from "../../data/hr";
 
@@ -16,10 +18,12 @@ interface Props {
 }
 const { active, variant = "list", current } = Astro.props;
 
+// Etiketterna är besökarens ord, inte producentens. id och ?flik=-värdena är
+// desamma som förut — de bär djuplänkarna och får inte döpas om.
 const tabs = [
-  { id: "bib", label: "Bibliotek" },
-  { id: "ovs", label: "Översätt" },
-  { id: "faq", label: "FAQ" },
+  { id: "bib", label: "Slå upp" },
+  { id: "ovs", label: "Annonsen" },
+  { id: "faq", label: "Frågor" },
   { id: "ord", label: "Ordlista" },
 ] as const;
 const hrefFor = (id: string) => (id === "bib" ? "/for-hr/" : `/for-hr/?flik=${id}`);
@@ -53,6 +57,20 @@ const searchIndex = (c: (typeof hrCards)[number]) =>
       <span class="hr-topbar__dot" aria-hidden="true"></span>
       Teknik-guiden
     </a>
+
+    {
+      variant === "detail" && (
+        <button
+          class="hr-topbar__searchbtn"
+          type="button"
+          aria-label="Sök och byt kort"
+          aria-expanded="false"
+          data-hr-switch-toggle
+        >
+          <Icon name="Search" size={17} />
+        </button>
+      )
+    }
 
     <nav class="hr-topbar__tabs" data-hr-tablist aria-label="Guidens delar">
       {
@@ -107,7 +125,12 @@ const searchIndex = (c: (typeof hrCards)[number]) =>
         </div>
 
         <div class="hr-switch__panel" data-hr-switch-panel hidden>
-          <p class="hr-switch__count" data-hr-switch-count />
+          <p
+            class="hr-switch__count"
+            data-hr-switch-count
+            aria-live="polite"
+            aria-atomic="true"
+          />
           <div class="hr-switch__list">
             {switcherCards.map((c) => (
               <a
@@ -123,7 +146,9 @@ const searchIndex = (c: (typeof hrCards)[number]) =>
                 </span>
                 <span class="hr-switch__item-title">
                   {c.title}
-                  {isDraft(c) && <span class="hr-switch__item-badge">Utkast</span>}
+                  {isDraft(c) && (
+                    <span class="hr-switch__item-badge">Kommer snart</span>
+                  )}
                 </span>
                 <span class="hr-switch__item-one">{typo(c.one)}</span>
               </a>

@@ -8,7 +8,7 @@ import AppLayout from "../../layouts/AppLayout.astro";
 import HrTabBar from "../../components/hr/HrTabBar.astro";
 import Icon from "../../components/site/Icon.astro";
 import site from "../../config/site";
-import { hrCards, isDraft, faqForCard, typo } from "../../data/hr";
+import { hrCards, isDraft, doneCards, faqForCard, typo } from "../../data/hr";
 import "../../styles/hr.css";
 
 export const prerender = true;
@@ -19,6 +19,10 @@ export function getStaticPaths() {
 const { card } = Astro.props;
 const draft = isDraft(card);
 const faqs = faqForCard(card.id);
+
+// Utkastsidan ska inte vara en återvändsgränd: peka på de kort som faktiskt är
+// skrivna (hämtas dynamiskt, så raden aldrig blir inaktuell).
+const readyCards = doneCards().filter((c) => c.id !== card.id).slice(0, 3);
 
 const linkedin = site.social.find((s) => s.name === "LinkedIn")?.href ?? "#";
 const github = site.social.find((s) => s.name === "GitHub")?.href ?? "#";
@@ -40,14 +44,14 @@ const toc = [
 const showToc = !draft && toc.length >= 3;
 ---
 
-<AppLayout title={pageTitle} description={card.one}>
+<AppLayout title={pageTitle} description={card.one} image="/og-hr.png">
   <div class="hr">
     <HrTabBar variant="detail" current={card.id} />
 
     <div class="site reader">
       {
         draft ? (
-          <main class="article hrd animate-in">
+          <article class="article hrd animate-in">
             <p class="hrd__meta">{card.typ} · {card.dom}</p>
             <h1 class="hrd__title">{card.title}</h1>
             <div class="hrd-draft">
@@ -57,6 +61,19 @@ const showToc = !draft && toc.length >= 3;
                 vill du att jag prioriterar det, hör av dig så taggar jag dig när
                 det ligger uppe.
               </p>
+              {readyCards.length > 0 && (
+                <div class="hrd-draft__ready">
+                  <p class="hrd-draft__readylabel">Läs ett färdigt kort så länge</p>
+                  <div class="hrd-draft__links">
+                    {readyCards.map((c) => (
+                      <a class="hrd-draft__link" href={`/for-hr/${c.id}/`}>
+                        {c.title}
+                        <Icon name="ArrowRight" size={13} />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
             <div class="hrd-actions">
               <a class="hr-btn" href={linkedin} target="_blank" rel="noopener noreferrer">
@@ -67,12 +84,14 @@ const showToc = !draft && toc.length >= 3;
                 <Icon name="Github" size={18} />
               </a>
             </div>
-          </main>
+          </article>
         ) : (
           <div class:list={["hrd-doc animate-in", showToc && "hrd-doc--toc"]}>
-            <main class="hrd-main">
+            <article class="hrd-main">
               <p class="hrd__meta">{card.typ} · {card.dom}</p>
               <h1 class="hrd__title">{card.title}</h1>
+
+              {showToc && <p class="hrd-jump__label">Hoppa till</p>}
 
               {showToc && (
                 <nav class="hrd-jump" data-hr-toc aria-label="Hoppa till avsnitt">
@@ -200,7 +219,7 @@ const showToc = !draft && toc.length >= 3;
                   <Icon name="Github" size={18} />
                 </a>
               </div>
-            </main>
+            </article>
 
             {showToc && (
               <aside class="hrd-toc" aria-label="Innehåll">

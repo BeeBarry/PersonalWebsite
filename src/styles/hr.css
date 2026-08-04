@@ -40,14 +40,20 @@
   gap: 14px;
   padding: 11px 22px;
 }
+/* Enda vägen tillbaka från ett kort, i en sticky bar, för en målgrupp som läser
+   med tummen — träffytan måste vara minst 44 px hög (WCAG 2.2 kräver 24).
+   Negativ marginal håller texten optiskt kvar i vänsterkanten. */
 .hr-topbar__back {
   display: inline-flex;
   align-items: center;
   gap: 5px;
   flex: none;
+  min-height: 44px;
+  padding: 0 8px;
+  margin-left: -8px;
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--c-text-secondary);
   text-decoration: none;
   white-space: nowrap;
@@ -107,8 +113,31 @@
   color: var(--c-accent-contrast);
   font-weight: 700;
 }
+/* Sökknapp som fäller ut kort-switchern på mobil (bara variant="detail"). */
+.hr-topbar__searchbtn {
+  display: none;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--c-border);
+  border-radius: 11px;
+  background: transparent;
+  color: var(--c-text-secondary);
+  cursor: pointer;
+  transition: color 0.18s ease, border-color 0.18s ease;
+}
+.hr-topbar__searchbtn:hover { color: var(--c-text); border-color: var(--c-accent); }
+.hr-topbar[data-switch-open] .hr-topbar__searchbtn {
+  color: var(--c-accent);
+  border-color: var(--c-accent);
+}
 @media (min-width: 768px) {
   .hr-topbar__bar { padding: 12px 40px; }
+}
+@media (max-width: 767px) {
+  .hr-topbar__searchbtn { display: grid; margin-left: auto; }
 }
 @media (max-width: 640px) {
   .hr-topbar__bar {
@@ -218,21 +247,26 @@
   .hr-switch { padding: 0 40px 14px; }
   .hr-switch__panel { left: 40px; right: 40px; }
 }
-
-/* Liten dold rubrik för SEO/skärmläsare (topbarens wordmark är den synliga). */
-.hr-sr-title {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-  border: 0;
+/* Mobil: switchern är hopfälld tills sökknappen i baren öppnar den. Den kostade
+   96 px permanent krom på varje kort — och "Alla kort" leder ändå till
+   biblioteket, som har egen sök. */
+@media (max-width: 767px) {
+  .hr-switch { display: none; }
+  .hr-topbar[data-switch-open] .hr-switch { display: flex; padding-top: 2px; }
 }
 
 /* ---- Header --------------------------------------------------------------- */
+/* Sidans visuella ankarpunkt — större än kortens titlar, som förut var sidans
+   största text. */
+.hr-title {
+  font-size: clamp(30px, 8vw, 40px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: var(--c-text);
+  margin: 10px 0 0;
+  text-wrap: balance;
+}
 .hr-eyebrow {
   font-family: var(--font-mono);
   font-size: 10px;
@@ -256,6 +290,13 @@
   color: var(--c-text-muted);
   margin: 14px 0 0;
 }
+/* Metaraden är en fotnot om samlingen — den står i botten av biblioteket, inte
+   mellan ledtexten och första kortet. */
+.hr-metaline--foot {
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 1px solid var(--c-border);
+}
 @media (min-width: 768px) {
   .hr-lead { font-size: 15.5px; line-height: 1.65; }
 }
@@ -266,6 +307,30 @@
 .hr-panel + .hr-panel { margin-top: 44px; }
 @media (min-width: 768px) {
   .hr-panel + .hr-panel { margin-top: 56px; }
+}
+
+/* Introrad per panel: sidhuvudet står oförändrat på alla fyra flikar, så det är
+   här besökaren får veta vad just den här fliken gör. */
+.hr-panel__head { margin: 0 0 18px; }
+.hr-panel__title {
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: -0.015em;
+  color: var(--c-text);
+  margin: 0;
+}
+.hr-panel__intro {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--c-text-secondary);
+  max-width: 60ch;
+  margin: 6px 0 0;
+  text-wrap: pretty;
+}
+@media (min-width: 768px) {
+  .hr-panel__head { margin-bottom: 22px; }
+  .hr-panel__title { font-size: 20px; }
+  .hr-panel__intro { font-size: 13.5px; }
 }
 
 /* ---- Sökfält -------------------------------------------------------------- */
@@ -288,7 +353,9 @@
   border: 1px solid var(--c-border);
   color: var(--c-text);
   font-family: var(--font-display);
-  font-size: 14px;
+  /* 16 px på mobil är inget stilval: under 16 px zoomar iOS Safari in
+     viewporten vid fokus — och zoomar inte tillbaka. */
+  font-size: 16px;
 }
 .hr-search__input::placeholder { color: var(--c-text-muted); }
 .hr-search__input:focus-visible {
@@ -314,7 +381,7 @@
 .hr-search__clear:hover { color: var(--c-text); }
 .hr-search[data-has-value] .hr-search__clear { display: grid; }
 @media (min-width: 768px) {
-  .hr-search__input { height: 42px; border-radius: 11px; }
+  .hr-search__input { height: 42px; border-radius: 11px; font-size: 14px; }
 }
 
 /* ---- Chips (typ/kategori) ------------------------------------------------- */
@@ -326,6 +393,14 @@
   scrollbar-width: none;
 }
 .hr-chips::-webkit-scrollbar { display: none; }
+/* Bara på mobil: en högerfade visar att raden fortsätter utanför skärmkanten.
+   På desktop wrappar chipsen (regeln nedan) — där hade fadet sett ut som ett
+   renderingsfel. */
+@media (max-width: 767px) {
+  .hr-chips {
+    mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+  }
+}
 @media (min-width: 768px) {
   .hr-chips { flex-wrap: wrap; overflow: visible; }
 }
@@ -409,6 +484,12 @@
 }
 .hrcard[hidden] { display: none; }
 .hrcard:active { transform: scale(0.985); }
+/* Kort som ännu bara är en one-liner ska se ut som det de är — en badge på
+   9,5 px räckte inte när 10 av 13 kort är på gång. */
+.hrcard:has(.hrcard__badge) {
+  opacity: 0.72;
+  border-style: dashed;
+}
 .hrcard__top {
   display: flex;
   align-items: center;
@@ -528,6 +609,51 @@
   border-color: var(--c-border);
 }
 .hr-btn--ghost:hover { border-color: var(--c-accent); filter: none; }
+
+/* ---- Konverteringssteget (botten av guiden, syns på alla fyra flikar) ------ */
+.hr-hire {
+  margin-top: 44px;
+  padding: 22px 20px;
+  border: 1px solid var(--c-border);
+  border-radius: 16px;
+  background: var(--hr-soft);
+}
+.hr-hire__eyebrow {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+  margin: 0;
+}
+.hr-hire__title {
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+  color: var(--c-text);
+  margin: 8px 0 0;
+  text-wrap: balance;
+}
+.hr-hire__text {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--c-text-secondary);
+  max-width: 56ch;
+  margin: 10px 0 0;
+  text-wrap: pretty;
+}
+.hr-hire__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+@media (min-width: 768px) {
+  .hr-hire { margin-top: 56px; padding: 26px 26px 28px; }
+  .hr-hire__title { font-size: 23px; }
+  .hr-hire__text { font-size: 14.5px; }
+}
 
 /* ---- Dragspel (Översätt + FAQ) ------------------------------------------- */
 .hr-acc {
@@ -661,6 +787,17 @@
 
 /* FAQ-specifikt */
 .hr-faq__q { flex: 1; font-weight: 600; font-size: 13.5px; line-height: 1.45; color: var(--c-text); margin: 0; padding-right: 12px; }
+/* Kategorin som etikett per rad — ersätter de borttagna kategori-chipsen. */
+.hr-faq__cat {
+  display: block;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+  margin: 0 0 5px;
+}
 .hr-faq__a {
   font-size: 13px;
   line-height: 1.6;
@@ -795,20 +932,42 @@
 /* Ankar-offset så sektioner inte hamnar under sticky topbaren vid hopp. */
 .hrd__lead[id],
 .hrd-sec[id] { scroll-margin-top: 210px; }
+/* Mobil: baren är låg när switchern är hopfälld (3.2) — 210 px lämnade en halv
+   skärm tom ovanför avsnittet man hoppade till. */
+@media (max-width: 767px) {
+  .hrd__lead[id],
+  .hrd-sec[id] { scroll-margin-top: 120px; }
+}
 
-/* Mobil/tablet: horisontell "hoppa till"-rad under titeln. */
+/* Mobil/tablet: horisontell "hoppa till"-rad under titeln. Etiketten behövs —
+   utan den läses pillerraden som ämnestaggar, och den är enda överblicken av
+   ett 8–9 sektioner långt kort. */
+.hrd-jump__label {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+  margin: 20px 0 8px;
+}
 .hrd-jump {
   display: flex;
   gap: 6px;
   overflow-x: auto;
   scrollbar-width: none;
-  margin: 18px 0 6px;
+  margin: 0 0 6px;
   padding-bottom: 4px;
 }
 .hrd-jump::-webkit-scrollbar { display: none; }
+@media (max-width: 767px) {
+  .hrd-jump {
+    mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+  }
+}
 .hrd-jump__link {
   flex: none;
-  padding: 6px 11px;
+  padding: 9px 12px;
   border-radius: 999px;
   border: 1px solid var(--c-border);
   font-family: var(--font-mono);
@@ -839,7 +998,8 @@
        den sticky innehållsförteckningen har utrymme att sticka längs hela
        kortet. */
   }
-  .hrd-jump { display: none; }
+  .hrd-jump,
+  .hrd-jump__label { display: none; }
   .hrd__lead[id],
   .hrd-sec[id] { scroll-margin-top: 184px; }
   .hrd-toc { display: block; }
@@ -1032,7 +1192,10 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  margin-top: 16px;
+  min-height: 44px;
+  padding: 0 8px;
+  margin-top: 8px;
+  margin-left: -8px;
   font-weight: 600;
   font-size: 13px;
   color: var(--c-text);
@@ -1051,6 +1214,45 @@
 }
 .hrd-draft__title { font-weight: 700; font-size: 15px; color: var(--c-text); margin: 0; }
 .hrd-draft__text { font-size: 13px; line-height: 1.55; color: var(--c-text-muted); margin: 8px auto 0; max-width: 46ch; }
+/* Utkastet får inte bli en återvändsgränd — härifrån går det vidare till de
+   kort som faktiskt är skrivna. */
+.hrd-draft__ready {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--c-border);
+}
+.hrd-draft__readylabel {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+  margin: 0 0 10px;
+}
+.hrd-draft__links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+.hrd-draft__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--c-border);
+  border-radius: 9px;
+  background: var(--c-surface);
+  color: var(--c-text);
+  font-weight: 600;
+  font-size: 12.5px;
+  text-decoration: none;
+  transition: border-color 0.18s ease, color 0.18s ease;
+}
+.hrd-draft__link:hover { border-color: var(--c-accent); color: var(--c-accent); }
+.hrd-draft__link svg { color: var(--c-accent); }
 
 /* Footer-actions */
 .hrd-actions {

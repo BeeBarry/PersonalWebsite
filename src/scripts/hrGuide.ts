@@ -1,15 +1,21 @@
 // Teknik-guidens klientlogik: inre flikar (segmented control + ?flik=-djuplänk),
-// bibliotekssök & typfilter, dragspel (Översätt/FAQ), FAQ-kategorier och
-// ordlistans sök/kategori/sortering med bokstavsavdelare. Rent DOM-arbete på
+// bibliotekssök & typfilter, dragspel (Översätt/FAQ) och ordlistans
+// sök/kategori/sortering med bokstavsavdelare. Rent DOM-arbete på
 // server-renderat innehåll — utan JS visas Bibliotek och allt är läsbart.
 // Idempotent + rebindas på astro:page-load (View Transitions), som sajtens
 // övriga script (domainFilter.ts, stickyBar.ts).
+
+import { DESKTOP_MQ } from "./breakpoints";
 
 const TABS = ["bib", "ovs", "faq", "ord"] as const;
 
 // Modul-scope-guard: kort-switcherns "stäng vid klick utanför"-lyssnare binds
 // bara en gång (överlever View Transitions, letar switchern dynamiskt).
 let switchDismissBound = false;
+// Samma mönster för innehållsförteckningens window-lyssnare och för
+// astro:page-load-bindningen — annars staplas de vid varje navigering.
+let tocWindowBound = false;
+let pageLoadBound = false;
 
 function initTabs(root: HTMLElement) {
   const tabs = Array.from(
@@ -96,7 +102,13 @@ function initLibrary(root: HTMLElement) {
       ).some((c) => !c.hidden);
       g.hidden = !any;
     });
-    if (countEl) countEl.textContent = `${shown} ${shown === 1 ? "träff" : "träffar"}`;
+    // Hel mening: räknaren är aria-live, och "13 träffar → 2 träffar" säger
+    // inget för den som lyssnar. Raden visas bara när den säger något — i
+    // utgångsläget är "13 av 13" bara krom ovanför första kortet.
+    if (countEl) {
+      countEl.textContent = `${shown} av ${cards.length} kort visas`;
+      countEl.hidden = !query && type === "Alla";
+    }
     if (empty) empty.hidden = shown !== 0;
     searchWrap?.toggleAttribute("data-has-value", query.length > 0);
   };
@@ -162,32 +174,6 @@ function initAccordions(root: HTMLElement) {
       }),
     );
   });
-}
-
-function initFaqCats(root: HTMLElement) {
-  const faq = root.querySelector<HTMLElement>("[data-hr-faq]");
-  if (!faq) return;
-
-  const chips = Array.from(
-    faq.querySelectorAll<HTMLButtonElement>("[data-hr-faqcat]"),
-  );
-  const items = Array.from(
-    faq.querySelectorAll<HTMLElement>("[data-hr-faqitem]"),
-  );
-
-  chips.forEach((chip) =>
-    chip.addEventListener("click", () => {
-      const cat = chip.dataset.hrFaqcat;
-      chips.forEach((c) => {
-        const on = c === chip;
-        c.classList.toggle("is-active", on);
-        c.setAttribute("aria-pressed", String(on));
-      });
-      items.forEach((it) => {
-        it.hidden = it.dataset.hrCat !== cat;
-      });
-    }),
-  );
 }
 
 function initGlossary(root: HTMLElement) {
@@ -283,8 +269,23 @@ function initGlossary(root: HTMLElement) {
   render();
 }
 
+// Stänger både kort-menyn och (på mobil) den hopfällda sökraden. Slår upp
+// elementen vid varje anrop, så samma funktionsreferens överlever en swap.
+function closeSwitch() {
+  const panel = document.querySelector<HTMLElement>("[data-hr-switch-panel]");
+  if (panel) panel.hidden = true;
+  document
+    .querySelector<HTMLElement>("[data-hr-topbar]")
+    ?.removeAttribute("data-switch-open");
+  document
+    .querySelector<HTMLButtonElement>("[data-hr-switch-toggle]")
+    ?.setAttribute("aria-expanded", "false");
+}
+
 // Kort-switcher i kort-sidans topbar: sök + typ-chips filtrerar en meny av alla
 // kort. Låter användaren byta kort i fullskärm utan att gå tillbaka till listan.
+// Under 768 px är hela raden hopfälld bakom sökknappen i baren (data-switch-open
+// på topbaren) — den kostade annars 96 px av varje skärm.
 function initSwitcher(root: HTMLElement) {
   const sw = root.querySelector<HTMLElement>("[data-hr-switcher]");
   if (!sw) return;
@@ -301,6 +302,9 @@ function initSwitcher(root: HTMLElement) {
   );
   const count = sw.querySelector<HTMLElement>("[data-hr-switch-count]");
   const empty = sw.querySelector<HTMLElement>("[data-hr-switch-empty]");
+  // Knappen ligger i topbarens övre rad, alltså utanför [data-hr-switcher].
+  const topbar = root.querySelector<HTMLElement>("[data-hr-topbar]");
+  const toggle = root.querySelector<HTMLButtonElement>("[data-hr-switch-toggle]");
   if (!panel) return;
 
   let query = "";
@@ -315,12 +319,23 @@ function initSwitcher(root: HTMLElement) {
       it.hidden = !vis;
       if (vis) shown++;
     });
-    if (count) count.textContent = `${shown} kort`;
+    if (count) count.textContent = `${shown} av ${items.length} kort visas`;
     if (empty) empty.hidden = shown !== 0;
     wrap?.toggleAttribute("data-has-value", query.length > 0);
   };
 
   const open = () => (panel.hidden = false);
+
+  toggle?.addEventListener("click", () => {
+    if (topbar?.hasAttribute("data-switch-open")) {
+      closeSwitch();
+      return;
+    }
+    topbar?.setAttribute("data-switch-open", "");
+    toggle.setAttribute("aria-expanded", "true");
+    open();
+    input?.focus();
+  });
 
   input?.addEventListener("focus", open);
   input?.addEventListener("input", () => {
@@ -358,13 +373,23 @@ function initSwitcher(root: HTMLElement) {
     switchDismissBound = true;
     document.addEventListener("click", (e) => {
       const s = document.querySelector<HTMLElement>("[data-hr-switcher]");
-      const p = s?.querySelector<HTMLElement>("[data-hr-switch-panel]");
-      if (s && p && !s.contains(e.target as Node)) p.hidden = true;
+      const target = e.target as Node | null;
+      if (!s || !target || s.contains(target)) return;
+      // Sökknappen togglar själv — annars stängde bubblan det klicket just öppnat.
+      if (target instanceof Element && target.closest("[data-hr-switch-toggle]"))
+        return;
+      closeSwitch();
     });
     document.addEventListener("keydown", (e) => {
       if (e.key !== "Escape") return;
-      const p = document.querySelector<HTMLElement>("[data-hr-switch-panel]");
-      if (p) p.hidden = true;
+      const wasOpen = !!document.querySelector("[data-hr-topbar][data-switch-open]");
+      closeSwitch();
+      // Tillbaka till knappen som öppnade raden — annars tappas fokus i tomma
+      // luften när sökfältet försvinner.
+      if (wasOpen)
+        document
+          .querySelector<HTMLButtonElement>("[data-hr-switch-toggle]")
+          ?.focus();
     });
   }
 
@@ -373,8 +398,19 @@ function initSwitcher(root: HTMLElement) {
 
 // Innehållsförteckning (kort-detalj): markera aktivt avsnitt vid scroll
 // (scroll-spy) och mjuk-scrolla vid klick. Fungerar för både sidopanelen
-// (desktop) och den horisontella hoppa-till-raden (mobil).
-function initToc(root: HTMLElement) {
+// (desktop) och den horisontella hoppa-till-raden (mobil/surfplatta).
+
+// Offset = sticky topbarens faktiska höjd + luft (mäts dynamiskt).
+function tocOffset(root: HTMLElement) {
+  const topbar = root.querySelector<HTMLElement>(".hr-topbar");
+  return (topbar?.offsetHeight ?? 120) + 20;
+}
+
+// Modul-scope: slår upp elementen vid varje anrop, så samma funktionsreferens
+// fungerar även efter att DOM bytts ut vid en View-Transition-swap.
+function tocUpdate() {
+  const root = document.querySelector<HTMLElement>(".hr");
+  if (!root) return;
   const links = Array.from(
     root.querySelectorAll<HTMLAnchorElement>("[data-hr-toc-link]"),
   );
@@ -386,25 +422,34 @@ function initToc(root: HTMLElement) {
     .filter((el): el is HTMLElement => !!el);
   if (!targets.length) return;
 
+  const refY = tocOffset(root) + 8;
+  let active = targets[0].id;
+  for (const t of targets) {
+    if (t.getBoundingClientRect().top <= refY) active = t.id;
+  }
+  links.forEach((l) =>
+    l.classList.toggle("is-active", l.dataset.hrTocLink === active),
+  );
+}
+
+function initToc(root: HTMLElement) {
+  const links = Array.from(
+    root.querySelectorAll<HTMLAnchorElement>("[data-hr-toc-link]"),
+  );
+  if (!links.length) return;
+
+  const hasTargets = [...new Set(links.map((l) => l.dataset.hrTocLink ?? ""))]
+    .map((id) => document.getElementById(id))
+    .some((el) => !!el);
+  if (!hasTargets) return;
+
   const main = document.querySelector<HTMLElement>("main");
-  const topbar = root.querySelector<HTMLElement>(".hr-topbar");
-  const desktop = window.matchMedia("(min-width: 768px)");
-  // Offset = sticky topbarens faktiska höjd + luft (mäts dynamiskt).
-  const offset = () => (topbar?.offsetHeight ?? 120) + 20;
 
   const setActive = (id: string) => {
     links.forEach((l) => l.classList.toggle("is-active", l.dataset.hrTocLink === id));
   };
 
-  const update = () => {
-    const refY = offset() + 8;
-    let active = targets[0].id;
-    for (const t of targets) {
-      if (t.getBoundingClientRect().top <= refY) active = t.id;
-    }
-    setActive(active);
-  };
-
+  // Element-lokala lyssnare: dör med elementen vid nästa swap.
   links.forEach((l) =>
     l.addEventListener("click", (e) => {
       const id = l.dataset.hrTocLink ?? "";
@@ -413,8 +458,9 @@ function initToc(root: HTMLElement) {
       e.preventDefault();
       // Instant scroll (fungerar överallt); CSS scroll-behavior på containern
       // ger mjuk animation i browsers som stödjer det.
-      const off = offset();
-      if (desktop.matches && main) {
+      const off = tocOffset(root);
+      // Under lg scrollar hela sidan på window — main är ingen scroll-container.
+      if (window.matchMedia(DESKTOP_MQ).matches && main) {
         const top =
           el.getBoundingClientRect().top -
           main.getBoundingClientRect().top +
@@ -430,26 +476,33 @@ function initToc(root: HTMLElement) {
     }),
   );
 
-  main?.addEventListener("scroll", update, { passive: true });
-  window.addEventListener("scroll", update, { passive: true });
-  window.addEventListener("resize", update, { passive: true });
-  update();
+  main?.addEventListener("scroll", tocUpdate, { passive: true });
+  // Window-lyssnarna registreras en gång per sidsession.
+  if (!tocWindowBound) {
+    tocWindowBound = true;
+    window.addEventListener("scroll", tocUpdate, { passive: true });
+    window.addEventListener("resize", tocUpdate, { passive: true });
+  }
+  tocUpdate();
+}
+
+function bindHrGuide() {
+  const root = document.querySelector<HTMLElement>(".hr");
+  if (!root || root.dataset.hrBound === "1") return;
+  root.dataset.hrBound = "1";
+
+  initTabs(root);
+  initLibrary(root);
+  initAccordions(root);
+  initGlossary(root);
+  initSwitcher(root);
+  initToc(root);
 }
 
 export function initHrGuide() {
-  function bind() {
-    const root = document.querySelector<HTMLElement>(".hr");
-    if (!root || root.dataset.hrBound === "1") return;
-    root.dataset.hrBound = "1";
-
-    initTabs(root);
-    initLibrary(root);
-    initAccordions(root);
-    initFaqCats(root);
-    initGlossary(root);
-    initSwitcher(root);
-    initToc(root);
+  bindHrGuide();
+  if (!pageLoadBound) {
+    pageLoadBound = true;
+    document.addEventListener("astro:page-load", bindHrGuide);
   }
-  bind();
-  document.addEventListener("astro:page-load", bind);
 }
