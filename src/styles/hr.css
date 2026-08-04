@@ -1229,9 +1229,11 @@
   .hrd-doc--toc {
     max-width: 64rem;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 12.5rem;
-    /* Samma panelbredd och gap som Learn Hubs .toc-doc--toc — inklusive
-       steget till 10rem från 1360 px (nedan). */
+    /* Identisk uppställning med Learn Hubs .toc-doc--toc: tak på båda
+       kolumnerna, space-between som lägger överskottet i rännan. Se den
+       långa motiveringen i global.css. */
+    grid-template-columns: minmax(0, 34rem) 12.5rem;
+    justify-content: space-between;
     gap: 6.5rem;
     /* Ingen align-items:start — TOC-kolumnen sträcks till artikelns höjd så
        den sticky innehållsförteckningen har utrymme att sticka längs hela
@@ -1239,9 +1241,6 @@
   }
   .hrd__lead[id],
   .hrd-sec[id] { scroll-margin-top: 184px; }
-}
-@media (min-width: 1360px) {
-  .hrd-doc--toc { gap: 10rem; }
 }
 
 .hrd__meta {

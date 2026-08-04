@@ -2349,13 +2349,20 @@ html[data-astro-transition-fallback] * {
         margin: 0 auto;
         padding-inline: clamp(1.75rem, 5vw, 3.25rem);
         display: grid;
-        grid-template-columns: minmax(0, 1fr) 12.5rem;
-        /* Brett gap + smal panel: förteckningen ska läsa som en fristående
-           kolumn ute till höger, inte som en marginalanteckning klistrad
-           intill brödtexten. */
-        gap: 6.5rem;
-        /* Ingen align-items:start — TOC-kolumnen sträcks till artikelns höjd
+        /* Båda kolumnerna har TAK, ingen har en andel (1fr) — och
+           space-between lägger allt överskott i rännan mellan dem. Med 1fr
+           gick extra fönsterbredd till textspalten, som då växte till ~75
+           tecken vid 1280 px medan avståndet till förteckningen stod still.
+           Nu är det tvärtom: måttet ligger fast och det som växer är luften
+           emellan, vilket är vad extra bredd ska användas till.
+           gap är därmed ett GOLV, inte ett mått — vid 1440 px landar rännan
+           på ~176 px. Under ~1310 px finns inget överskott och textspalten
+           krymper i stället, vilket minmax(0, …) tillåter.
+           Ingen align-items:start — TOC-kolumnen sträcks till artikelns höjd
            så den sticky panelen kan följa med hela vägen ner. */
+        grid-template-columns: minmax(0, 34rem) 12.5rem;
+        justify-content: space-between;
+        gap: 6.5rem;
     }
     /* Selektorn måste väga tyngre än `.site.reader .article` (0,3,0) som sätter
        padding-inline för läsvyn — annars behålls den inre indraget och texten
@@ -2464,14 +2471,4 @@ html[data-astro-transition-fallback] * {
     }
 }
 
-/* Andra steget i gapet. Mellan 1200 och 1360 px är <main> för smalt för att
-   både ge textspalten sitt mått och lägga 10rem emellan — där hade ett brett
-   gap ätit av raderna i stället för av tomrummet. Från 1360 px räcker bredden:
-   textspalten landar på ~560 px, gapet på 160 och förteckningen flyttar ut
-   till höger, med lika stor yttermarginal på båda sidor. */
-@media (min-width: 1360px) {
-    .toc-doc--toc {
-        gap: 10rem;
-    }
-}
 
