@@ -7,7 +7,11 @@
 import { TOC_MIN_ITEMS } from "../../scripts/toc";
 
 interface Props {
-  items: { id: string; label: string }[];
+  // `group` sätts på den FÖRSTA posten i ett sektionsblock och renderar en
+  // etikett ovanför den (se components/learn/Del.astro). Bara i panelen —
+  // ”hoppa till”-raden är en vågrät pillerremsa där en rubrik inte har någon
+  // rimlig plats, och blocken syns ändå i brödtexten på de brytpunkterna.
+  items: { id: string; label: string; group?: string }[];
   title?: string;
   // Dokumentlayouter placerar varianterna på olika ställen i DOM (raden inuti
   // artikeln, panelen som egen grid-kolumn) och renderar därför komponenten
@@ -46,9 +50,12 @@ const panel = show && variant !== "jump";
         <p class="toc__title">{title}</p>
         <nav data-toc>
           {items.map((item) => (
-            <a class="toc__link" href={`#${item.id}`} data-toc-link={item.id}>
-              {item.label}
-            </a>
+            <>
+              {item.group && <span class="toc__group">{item.group}</span>}
+              <a class="toc__link" href={`#${item.id}`} data-toc-link={item.id}>
+                {item.label}
+              </a>
+            </>
           ))}
         </nav>
       </div>

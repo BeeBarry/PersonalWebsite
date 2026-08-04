@@ -20,6 +20,8 @@ brandväggen och databasen som allt det där kör på.
 Den här delen ger överblicken över hur den delen görs med kod i stället för med musen. Vad som
 faktiskt står i filerna tar nästa del.
 
+<Del titel="Problemet och idén" />
+
 ## Vad Infrastructure as Code är
 
 **Infrastructure as Code**, förkortat IaC, är idén att servrar, nätverk och databaser ska beskrivas
@@ -130,6 +132,8 @@ hålla reda på om den körts förut.
 
 Begreppet är detsamma som i nätverksserien, där `PUT` och `DELETE` var idempotenta och `POST` inte.
 
+<Del titel="Slingan" />
+
 ## Grundslingan: skriv, planera, genomför
 
 <Flow
@@ -190,6 +194,8 @@ Regeln som följer: när en miljö väl hanteras av Terraform ändras den **bara
 du något akut, ändra i filen och kör — det tar sällan mer än ett par minuter.
 </Callout>
 
+<Del titel="Alternativen" />
+
 ## Vem gör vad, och när
 
 IaC flyttar infrastrukturändringar in i teamets vanliga arbetsflöde:
@@ -242,6 +248,8 @@ En rimlig invändning, särskilt om du är bekväm i terminalen. Tre saker skull
   beroendena själv utifrån hur resurserna refererar till varandra.
 - **Bredden.** Samma språk beskriver AWS, Azure, Kubernetes och DNS genom providers. Ett skript per
   leverantör blir fort ohållbart.
+
+<Del titel="Öva och förstå" />
 
 ## Vad det här betyder i ditt arbete
 

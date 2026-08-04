@@ -17,6 +17,8 @@ går till.
 Det är hålet vi fyller här. Den här delen handlar om vägen utifrån och in: vilka Service-typer som
 finns, vad en Ingress gör, och varför saker ser rätt ut men ändå inte svarar.
 
+<Del titel="Service-typerna" />
+
 ## Varför klustret är stängt utåt
 
 En Service är av typen **ClusterIP** om du inte säger något annat, och en ClusterIP finns bara på
@@ -95,6 +97,8 @@ varje typ innehåller det som ligger under.
 En LoadBalancer har alltså fortfarande en intern adress som andra poddar kan använda. Du behöver inte
 välja bort det interna för att lägga till det externa.
 
+<Del titel="Hur Servicen hittar rätt" />
+
 ## Hur Servicen hittar poddarna
 
 Servicen letar upp poddar med hjälp av **labels** — etiketter du sätter i manifestet.
@@ -143,6 +147,8 @@ du vill att andra ska anropa 5000 sätter du `port: 5000` och `targetPort: 8080`
 > **DOODLE** — En vägskylt märkt `api` med `port: 5000` skriven på skylten. Heldragen pil in från
 > "Frontend". Från skylten tre streckade pilar till tre lådor märkta "pod", var och en med en liten
 > ruta märkt `targetPort: 8080`. Under: "En adress utåt. En port inåt."
+
+<Del titel="Ingress och vägen in" />
 
 ## Vad en Ingress är
 
@@ -281,6 +287,8 @@ Service → pod.
 
 Nio gånger av tio faller felet ut på det tredje kommandot: en label som inte stämmer.
 </Callout>
+
+<Del titel="Öva och förstå" />
 
 ## Vad det här betyder i ditt arbete
 

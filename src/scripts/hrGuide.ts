@@ -190,6 +190,7 @@ function initGlossary(root: HTMLElement) {
   const sortLabel = gloss.querySelector<HTMLElement>("[data-hr-sort-label]");
   const list = gloss.querySelector<HTMLElement>("[data-hr-gloss-list]");
   const empty = gloss.querySelector<HTMLElement>("[data-hr-gloss-empty]");
+  const count = gloss.querySelector<HTMLElement>("[data-hr-gloss-count]");
   const rows = Array.from(
     gloss.querySelectorAll<HTMLElement>("[data-hr-gloss-row]"),
   );
@@ -235,6 +236,13 @@ function initGlossary(root: HTMLElement) {
       list.appendChild(r);
     });
 
+    // Samma regel som bibliotekets räknare: hel mening (raden är aria-live, och
+    // "16 → 4" säger inget för den som lyssnar), och den visas bara när den
+    // säger något. I utgångsläget är "16 av 16" bara krom ovanför första ordet.
+    if (count) {
+      count.textContent = `${visible.length} av ${rows.length} ord visas`;
+      count.hidden = !query && cat === "Alla";
+    }
     if (empty) empty.hidden = visible.length !== 0;
     searchWrap?.toggleAttribute("data-has-value", query.length > 0);
   };

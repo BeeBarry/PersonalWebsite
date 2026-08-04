@@ -17,6 +17,7 @@ import Stack from "../../../components/learn/Stack.astro";
 import Split from "../../../components/learn/Split.astro";
 import Callout from "../../../components/learn/Callout.astro";
 import Check from "../../../components/learn/Check.astro";
+import Del from "../../../components/learn/Del.astro";
 import "../../../styles/learn.css";
 
 export async function getStaticPaths() {
@@ -31,11 +32,39 @@ const { entry } = Astro.props;
 const { Content, headings } = await render(entry);
 const cat = categories.find((c) => c.slug === entry.data.category);
 
+// Sektionsblocken kommer från <Del titel="…" /> i MDX-källan: varje Del hör
+// till h2-rubriken som följer närmast efter den. Källan är alltså brödtexten,
+// inte frontmatter — annars finns samma uppgift på två ställen och de glider
+// isär så fort någon flyttar en rubrik.
+//
+// Matchningen sker på ORDNING, inte på rubriktext: en rubrik som
+// `## \`git add\` vs \`git commit\`` har backticks i källan men inte i
+// headings[].text, och en textjämförelse hade tyst missat just de rubrikerna.
+// Räknaren stegas bara av rader som börjar med "## " — kontrollerat att inget
+// kodblock i hubben innehåller en sådan rad.
+const groupAt = new Map<number, string>();
+{
+  const marker = /^(?:<Del\s+titel="([^"]+)"\s*\/>|## )/gm;
+  let index = 0;
+  let pending: string | null = null;
+  for (const m of (entry.body ?? "").matchAll(marker)) {
+    if (m[1] !== undefined) {
+      pending = m[1];
+      continue;
+    }
+    if (pending !== null) {
+      groupAt.set(index, pending);
+      pending = null;
+    }
+    index += 1;
+  }
+}
+
 // Bara h2 — h3 och nedåt gör förteckningen längre än den är användbar.
 // Astro sätter redan id på rubrikerna, så slug:en duger som ankare.
 const toc = headings
   .filter((h) => h.depth === 2)
-  .map((h) => ({ id: h.slug, label: h.text }));
+  .map((h, i) => ({ id: h.slug, label: h.text, group: groupAt.get(i) }));
 const showToc = toc.length >= TOC_MIN_ITEMS;
 ---
 
@@ -69,7 +98,7 @@ const showToc = toc.length >= TOC_MIN_ITEMS;
             import-rader, och komponenterna kan bytas ut på ett ställe. */}
         <div class="prose">
           <Content
-            components={{ ZoomableImage, Flow, Stack, Split, Callout, Check }}
+            components={{ ZoomableImage, Flow, Stack, Split, Callout, Check, Del }}
           />
         </div>
 

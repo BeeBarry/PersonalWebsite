@@ -23,6 +23,8 @@ bash: ./deploy.sh: Permission denied
 Båda har enkla förklaringar, och tillsammans lär de ut det mesta om rättigheter. Den här delen tar
 dem, plus processer och hur kommandon kopplas ihop.
 
+<Del titel="PATH och rättigheter" />
+
 ## Vad PATH är
 
 **`PATH`** är en lista över kataloger som skalet letar i när du skriver ett kommandonamn.
@@ -138,6 +140,8 @@ Regeln är enkel: använd det när kommandot faktiskt rör systemet, aldrig som 
 felmeddelande att sluta. Ett `Permission denied` på din egen fil betyder att rättigheten är fel — och
 då är `chmod` svaret, inte `sudo`.
 
+<Del titel="Processer" />
+
 ## Vad en process är
 
 En **process** är ett program som körs just nu.
@@ -177,6 +181,8 @@ sina resurser.
 
 Det förklarar en klassiker: `Error: port 3000 is already in use` fast du "stängde ju" servern. Du
 pausade den. `fg` hämtar tillbaka den, `jobs` listar det som ligger pausat.
+
+<Del titel="Utdata och rör" />
 
 ## Vad stdout och stderr är
 
@@ -302,6 +308,8 @@ loggfilen ser misstänkt lyckad ut.
 
 Motsatsen finns också och används lika ofta: `2>/dev/null` kastar bort felutdatan och behåller
 resultatet. Praktiskt när ett kommando klagar på kataloger du ändå inte får läsa.
+
+<Del titel="Öva och förstå" />
 
 ## Vad det här betyder i ditt arbete
 

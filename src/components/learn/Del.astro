@@ -1,0 +1,40 @@
+---
+// Del — avdelare mellan block av sektioner i en artikel.
+//
+// Artiklarna har 15–22 h2-rubriker, och det är avsiktligt: varje rubrik är en
+// sökingång, och innehållsförteckningen ska ensam kunna lära ut ämnets anatomi.
+// Priset är att förteckningen blir en platt lista utan makrostruktur — läsaren
+// ser tjugo jämnstora punkter utan besked om att några hör ihop.
+//
+// Del märker upp var ett block börjar, i BÅDE brödtexten och förteckningen,
+// utan att röra rubriknivåerna. Alla h2 finns alltså kvar som egna poster; det
+// enda som tillkommer är en etikett ovanför den första i varje block.
+//
+// Etiketten är artikelspecifik och hämtas UR sektionerna, aldrig tvärtom. En
+// fast uppsättning etiketter (”Begreppen”, ”Praktiken”) hade varit konsekvent
+// men innehållslös — och det är just en sådan mall som börjar forma innehållet
+// efter sig. Regeln är därför:
+//
+//   Grupperingen beskriver artikeln. Den styr den aldrig.
+//
+// Faller sektionerna inte redan i sammanhängande block ska ingen Del sättas ut.
+// Noll grupper är ett giltigt utfall, och en sektion får ALDRIG flyttas för att
+// en gruppering ska gå ihop.
+//
+// Förteckningen läser samma etiketter direkt ur MDX-källan (se
+// pages/learn-hub/[category]/[article].astro) — inget dubbleras i frontmatter,
+// så de två kan inte glida isär.
+interface Props {
+    /** Blockets namn. Kort substantiv ur ämnet: "Commiten", "Grenen", "Resan". */
+    titel: string;
+}
+
+const { titel } = Astro.props;
+---
+
+{/* div/span, inte p: `.site .prose p` (0,2,1) slår scopade klasser (0,2,0). */}
+<div class="lk-del" role="presentation">
+    <span class="lk-del__rule"></span>
+    <span class="lk-del__label">{titel}</span>
+    <span class="lk-del__rule"></span>
+</div>

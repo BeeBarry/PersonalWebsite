@@ -25,6 +25,7 @@
 //     </div>
 //   </Split>
 import Icon from "../site/Icon.astro";
+import Md from "./Md.astro";
 
 type Tone = "bad" | "good" | "neutral";
 
@@ -72,5 +73,11 @@ const toneIcon: Record<Tone, string | null> = {
             <slot name="right" />
         </div>
     </div>
-    {caption && <figcaption>{caption}</figcaption>}
+    {
+        caption && (
+            <figcaption>
+                <Md text={caption} />
+            </figcaption>
+        )
+    }
 </figure>

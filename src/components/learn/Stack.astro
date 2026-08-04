@@ -47,5 +47,11 @@ const { layers, caption, ground } = Astro.props;
         }
     </div>
     {ground && <div class="lk-stack__ground">{ground}</div>}
-    {caption && <figcaption>{caption}</figcaption>}
+    {
+        caption && (
+            <figcaption>
+                <Md text={caption} />
+            </figcaption>
+        )
+    }
 </figure>

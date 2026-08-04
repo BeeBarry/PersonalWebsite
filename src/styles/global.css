@@ -2345,11 +2345,11 @@ html[data-astro-transition-fallback] * {
        29 px yttermarginal, vilket fick panelen att se utkastad mot högerkanten
        ut. Nu fyller artikeln sin kolumn och gapet är exakt grid-gapet. */
     .toc-doc--toc {
-        max-width: 58rem;
+        max-width: 64rem;
         margin: 0 auto;
         padding-inline: clamp(1.75rem, 5vw, 3.25rem);
         display: grid;
-        grid-template-columns: minmax(0, 1fr) 11rem;
+        grid-template-columns: minmax(0, 1fr) 12.5rem;
         /* Brett gap + smal panel: förteckningen ska läsa som en fristående
            kolumn ute till höger, inte som en marginalanteckning klistrad
            intill brödtexten. */
@@ -2385,6 +2385,16 @@ html[data-astro-transition-fallback] * {
     .toc__inner {
         position: sticky;
         top: 120px;
+        /* Långa artiklar (Linux-delen har 20 rubriker) blev högre än fönstret
+           och kapades i underkant — de sista avsnitten gick då inte att nå.
+           Panelen scrollar i stället i sig själv; toc.ts håller den aktiva
+           posten synlig. Scrollbaren döljs, som i .toc-jump och .hr-chips. */
+        max-height: calc(100vh - 9.5rem);
+        overflow-y: auto;
+        scrollbar-width: none;
+    }
+    .toc__inner::-webkit-scrollbar {
+        display: none;
     }
     .toc__title {
         font-family: var(--font-mono);
@@ -2392,20 +2402,47 @@ html[data-astro-transition-fallback] * {
         letter-spacing: 0.14em;
         text-transform: uppercase;
         color: var(--c-text-muted);
-        margin: 0 0 12px;
+        margin: 0 0 14px;
         padding-left: 14px;
     }
     .toc nav {
         display: grid;
-        gap: 1px;
+        /* 1px gjorde posterna till ett sammanhängande grått block. Med luft
+           mellan raderna läser förteckningen som en lista man kan sikta i. */
+        gap: 3px;
         border-left: 1px solid var(--c-border);
     }
+    /* Blocketikett (Del.astro). Samma typografi som .toc__title, så den läses
+       som en rubrik i panelen och inte som ännu en post man kan klicka på.
+       Vänsterlinjen i .toc nav går bakom den — därför inget negativt
+       margin-left här: etiketten ska ligga innanför linjen, inte bryta den. */
+    .toc__group {
+        font-family: var(--font-mono);
+        font-size: 9px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--c-text-muted);
+        opacity: 0.7;
+        padding-left: 13px;
+        /* Luft ovanför, inte under: etiketten hör ihop med posten som följer.
+           Första blocket får ingen extra topp — det står redan direkt under
+           panelens egen rubrik.
+
+           Snålt tilltaget med flit. Etiketterna växer panelen med ~24px styck,
+           och de längsta artiklarna (5 block, 21 poster) hamnar då precis över
+           max-height och börjar scrolla internt. Panelen klarar det — men det
+           kostar ingenting att hålla sig under gränsen så länge det går. */
+        margin: 10px 0 2px;
+    }
+    .toc__group:first-child {
+        margin-top: 0;
+    }
     .toc__link {
-        padding: 5px 0 5px 13px;
+        padding: 6px 0 6px 13px;
         margin-left: -1px;
         border-left: 2px solid transparent;
-        font-size: 10.5px;
-        line-height: 1.45;
+        font-size: 11px;
+        line-height: 1.5;
         color: var(--c-text-muted);
         text-decoration: none;
         /* Samma mjuka deceleration som sticky-baren. Längre än 0.18s eftersom
@@ -2424,6 +2461,17 @@ html[data-astro-transition-fallback] * {
     .toc__link.is-active {
         color: var(--c-accent);
         border-left-color: var(--c-accent);
+    }
+}
+
+/* Andra steget i gapet. Mellan 1200 och 1360 px är <main> för smalt för att
+   både ge textspalten sitt mått och lägga 10rem emellan — där hade ett brett
+   gap ätit av raderna i stället för av tomrummet. Från 1360 px räcker bredden:
+   textspalten landar på ~560 px, gapet på 160 och förteckningen flyttar ut
+   till höger, med lika stor yttermarginal på båda sidor. */
+@media (min-width: 1360px) {
+    .toc-doc--toc {
+        gap: 10rem;
     }
 }
 

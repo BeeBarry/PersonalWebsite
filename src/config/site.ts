@@ -41,6 +41,10 @@ const site = {
     // Textbaserat varumärke ("barry" + accent-dot), inte logotypbild.
     brand: {
         name: "barry",
+        /** Kort positionering under lettermärket i sidebaren. Medvetet skild
+         *  från meta.description, som är sökmotorernas text och ska vara en
+         *  hel mening. */
+        tagline: "Fullstack · Cloud · Embedded",
     },
 
     // Vänster-nav. Learn Hub behålls devOnly (nåbar via URL, dold i prod-nav).

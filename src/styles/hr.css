@@ -371,9 +371,14 @@
 /* .hr-body ger redan luft under navigeringen — ingen egen toppmarginal här. */
 .hr-panel { margin-top: 0; }
 .hr-panel[hidden] { display: none; }
-.hr-panel + .hr-panel { margin-top: 44px; }
+/* :not([hidden]) på BÅDA leden. `display:none` tar bort panelen ur layouten men
+   inte ur syskonrelationen — utan garden matchade `+` även när föregående panel
+   var dold, och Annonsen/Frågor/Ordlista fick 56 px spökluft under flikraden
+   som Slå upp inte hade. Marginalen behövs fortfarande utan JS, där alla fyra
+   panelerna renderas staplade. */
+.hr-panel:not([hidden]) + .hr-panel:not([hidden]) { margin-top: 44px; }
 @media (min-width: 768px) {
-  .hr-panel + .hr-panel { margin-top: 56px; }
+  .hr-panel:not([hidden]) + .hr-panel:not([hidden]) { margin-top: 56px; }
 }
 
 /* Introrad per panel: sidhuvudet står oförändrat på alla fyra flikar, så det är
@@ -772,37 +777,12 @@
 }
 .hr-acc__item + .hr-acc__item { border-top: 1px solid var(--c-border); }
 
-/* Tvåspaltiga frågor (Faq). Grid, inte CSS-columns: en utfälld fråga får då
-   INTE flyta om posterna mellan spalterna. align-items:start gör att grannen
-   behåller sin höjd när en post fälls ut.
-   Varje post blir ett eget kort — den delade ramen runt hela listan skulle
-   annars rita en rektangel runt två fristående spalter. */
-@media (min-width: 1000px) {
-  .hr-acc--cols {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    align-items: start;
-    gap: 8px;
-    background: transparent;
-    border: 0;
-    border-radius: 0;
-    overflow: visible;
-  }
-  .hr-acc--cols .hr-acc__item {
-    background: var(--c-surface);
-    border: 1px solid var(--c-border);
-    border-radius: 11px;
-    overflow: hidden;
-  }
-  .hr-acc--cols .hr-acc__head { padding: 13px 15px; }
-  .hr-acc--cols .hr-acc__body { padding: 0 15px 13px; }
-}
 .hr-acc__head {
   width: 100%;
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 16px 18px;
+  align-items: center;
+  gap: 14px;
+  padding: 15px 16px;
   background: none;
   border: 0;
   text-align: left;
@@ -811,63 +791,179 @@
   transition: background 0.18s ease;
 }
 .hr-acc__head:hover { background: var(--c-muted); }
+/* Rund knappyta i stället för ett löst +/−-tecken. Tecknet ensamt läste inte
+   som något klickbart, och satt dessutom längst ut i kanten — flera hundra
+   pixlar från raden det hörde till. Cirkeln ger affordansen; att den fylls med
+   accentfärg i öppet läge gör tillståndet läsbart utan att man tolkar glyfen.
+   hrGuide.ts byter fortfarande bara textContent (+ ↔ −), så kontraktet mot
+   scriptet är oförändrat. */
 .hr-acc__sign {
   flex: none;
   margin-left: auto;
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--c-border);
+  border-radius: 50%;
   font-family: var(--font-mono);
-  font-size: 17px;
+  font-size: 15px;
   line-height: 1;
   color: var(--c-text-muted);
-  transition: color 0.18s ease;
+  transition:
+    color 0.18s ease,
+    background 0.18s ease,
+    border-color 0.18s ease;
 }
-.hr-acc__head[aria-expanded="true"] .hr-acc__sign { color: var(--c-accent); }
-.hr-acc__body { padding: 0 18px 18px; }
+.hr-acc__head:hover .hr-acc__sign {
+  border-color: var(--c-accent);
+  color: var(--c-text);
+}
+.hr-acc__head[aria-expanded="true"] .hr-acc__sign {
+  background: var(--c-accent);
+  border-color: var(--c-accent);
+  color: var(--c-accent-contrast);
+}
+.hr-acc__body { padding: 0 16px 16px; }
 .hr-acc__body[hidden] { display: none; }
 @media (min-width: 768px) {
-  .hr-acc__sign { font-size: 18px; }
+  .hr-acc__head { padding: 16px 18px; }
+  .hr-acc__body { padding: 0 18px 18px; }
 }
 
-/* Översätt-specifikt */
-.hr-tr__colhead {
-  display: none;
+/* ---- Annonsen (annons-översättaren) --------------------------------------- */
+/* Kapad bredd: dragspelet sträckte sig över hela panelen (~1130px) medan
+   rubrikens ingress bröt vid ~600. Det läste som en tabell utan ram i stället
+   för som ett innehåll som hör till rubriken ovanför. */
+[data-hr-translate] { max-width: 58rem; }
+
+/* ETT gridmått, tre användare: kolumnrubrikerna, radens huvud och radens
+   utfällda kropp. --tr-cols hålls på ett ställe så de tre aldrig kan glida
+   isär. Tredje kolumnen är +/−-knappen: låg den utanför griddet blev kroppen
+   26+14 px bredare än huvudet och kolumnerna hamnade i otakt. */
+[data-hr-translate] {
+  --tr-cols: minmax(0, 1fr) 26px;
+  --tr-gap: 12px;
 }
-.hr-tr__grid {
-  display: block;
-  flex: 1;
-  min-width: 0;
+
+.hr-tr__colhead { display: none; }
+
+.hr-acc__head--tr {
+  display: grid;
+  grid-template-columns: var(--tr-cols);
+  gap: 5px var(--tr-gap);
+  align-items: center;
 }
+/* Mobil: citatet och betydelsen staplas i kolumn 1, knappen spänner båda
+   raderna i kolumn 2. */
+.hr-tr__said { grid-column: 1; min-width: 0; }
+.hr-tr__means { grid-column: 1; min-width: 0; }
+.hr-acc__head--tr .hr-acc__sign { grid-column: 2; grid-row: 1 / -1; }
+
 .hr-tr__eyebrow {
   display: block;
   font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.1em;
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--c-text-muted);
   margin: 0 0 4px;
 }
+/* Citatet sätts i mono: den typografiska kontrasten mot betydelsens brödtext
+   är det som bär hela mekaniken — vänster är ord ur en annons, höger är vad de
+   betyder. Det gör kolumnrubrikerna till en påminnelse i stället för en
+   förutsättning. */
 .hr-tr__say {
   display: block;
-  font-weight: 700;
-  font-size: 15px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 13.5px;
+  line-height: 1.4;
   color: var(--c-text);
+  text-wrap: pretty;
 }
 .hr-tr__means {
   display: block;
   font-size: 12.5px;
   line-height: 1.5;
   color: var(--c-text-secondary);
-  margin: 6px 0 0;
+  text-wrap: pretty;
 }
-/* Kapad bredd: dragspelet sträckte sig över hela panelen (~1130px) medan
-   rubrikens ingress bröt vid ~600. Det läste som en tabell utan ram i stället
-   för som ett innehåll som hör till rubriken ovanför. */
-[data-hr-translate] { max-width: 54rem; }
+
+/* Kroppen ligger i kolumn 2 — rakt under "Betyder". Förut var den ett block
+   över hela bredden, så radens struktur nollställdes vid varje klick. */
+.hr-acc__body--tr {
+  display: grid;
+  grid-template-columns: var(--tr-cols);
+  gap: var(--tr-gap);
+}
+.hr-tr__detail { grid-column: 1; min-width: 0; }
+
+/* De två råden får varsitt block med egen vänsterkant. Accentstrecket säger
+   "gör så här", det streckade "se upp" — utan att någondera behöver en fylld
+   ruta eller en gråremsa kant-i-kant. */
+.hr-tr__block { padding-left: 13px; border-left: 2px solid var(--c-accent); }
+.hr-tr__block + .hr-tr__block { margin-top: 14px; }
+.hr-tr__block--watch {
+  border-left-style: dashed;
+  border-left-color: var(--c-border);
+}
+.hr-tr__blocklabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+  margin: 0 0 5px;
+}
+.hr-tr__blocklabel svg { flex: none; }
+.hr-tr__blocktext {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--c-text-secondary);
+  margin: 0;
+  text-wrap: pretty;
+}
+/* Textlänk, inte knapp: en fylld/ramad knapp per rad gjorde sju likadana
+   rektanglar av en lista som redan har en tydlig primär åtgärd (fäll ut). */
+.hr-tr__cardlink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  margin-top: 6px;
+  font-weight: 600;
+  font-size: 12.5px;
+  color: var(--c-text);
+  text-decoration: none;
+  transition: color 0.18s ease;
+}
+.hr-tr__cardlink svg { color: var(--c-accent); transition: transform 0.18s ease; }
+.hr-tr__cardlink:hover { color: var(--c-accent); }
+.hr-tr__cardlink:hover svg { transform: translateX(2px); }
 
 @media (min-width: 768px) {
+  [data-hr-translate] {
+    /* Citatkolumnen får ett tak, inte en andel: den mäts av sitt eget innehåll
+       upp till 21rem. Det längsta citatet ("Meriterande: React, Angular eller
+       Vue") är 328 px, så alla sju ryms på EN rad — sex av sju rader är
+       infällda när man kommer hit, och lika höga rader är det som gör listan
+       scanbar. 17rem hade gett betydelsen 64 px till, men brutit två citat på
+       två rader och gjort radhöjderna ojämna. Resten går till betydelsen, som
+       bär både one-linern och hela det utfällda innehållet. */
+    --tr-cols: minmax(0, 21rem) minmax(0, 1fr) 26px;
+    --tr-gap: 28px;
+  }
+  /* Rubrikraden linjerar med huvudets innehåll: 1px ram på .hr-acc + 18px
+     padding i .hr-acc__head. */
   .hr-tr__colhead {
     display: grid;
-    grid-template-columns: 1.15fr 1.35fr;
-    gap: 20px;
+    grid-template-columns: var(--tr-cols);
+    gap: var(--tr-gap);
     padding: 0 19px;
     margin-bottom: 10px;
   }
@@ -878,61 +974,75 @@
     text-transform: uppercase;
     color: var(--c-text-muted);
   }
-  .hr-tr__grid {
-    display: grid;
-    grid-template-columns: 1.15fr 1.35fr;
-    gap: 20px;
-    align-items: baseline;
-  }
+  .hr-acc__head--tr { gap: var(--tr-gap); }
   .hr-tr__eyebrow { display: none; }
-  .hr-tr__means { margin: 0; font-size: 13px; }
-}
-/* Staplad etikett, inte en egen kolumn: en label-kolumn gav en tredje
-   vänsterkant i det utfällda innehållet och gjorde raden svårläst. */
-.hr-tr__row {
-  display: block;
-  margin-top: 10px;
-}
-.hr-tr__label {
-  display: block;
-  font-family: var(--font-mono);
-  font-size: 9.5px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--c-text-muted);
-  margin: 0 0 5px;
-}
-.hr-tr__text { font-size: 13px; line-height: 1.55; color: var(--c-text-secondary); margin: 0; }
-.hr-tr__watch {
-  display: flex;
-  gap: 8px;
-  margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px solid var(--c-border);
-  background: var(--c-muted);
-  margin-left: -18px;
-  margin-right: -18px;
-  padding: 12px 18px 0;
-}
-.hr-tr__watch svg { flex: none; color: var(--c-text-muted); margin-top: 1px; }
-.hr-tr__watch p { font-size: 12px; line-height: 1.5; color: var(--c-text-secondary); margin: 0 0 12px; }
-.hr-tr__open { margin-top: 14px; }
-@media (min-width: 768px) {
-  .hr-tr__watch p { font-size: 12.5px; }
+  .hr-tr__say { font-size: 14px; }
+  .hr-tr__means { grid-column: 2; position: relative; font-size: 13px; }
+  /* Pilen bor i rännan mellan kolumnerna och gör översättningsriktningen
+     explicit. 28px gap ger den plats utan att tränga någon av spalterna. */
+  .hr-tr__means::before {
+    content: "→";
+    position: absolute;
+    left: -19px;
+    top: 0;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: inherit;
+    color: var(--c-text-muted);
+  }
+  .hr-acc__head--tr .hr-acc__sign { grid-column: 3; grid-row: auto; }
+  .hr-tr__detail { grid-column: 2; }
+  .hr-tr__blocktext { font-size: 13px; }
 }
 
-/* FAQ-specifikt */
-.hr-faq__q { flex: 1; font-weight: 600; font-size: 13.5px; line-height: 1.45; color: var(--c-text); margin: 0; padding-right: 12px; }
-/* Kategorin som etikett per rad — ersätter de borttagna kategori-chipsen. */
-.hr-faq__cat {
-  display: block;
+/* ---- FAQ ------------------------------------------------------------------ */
+/* En spalt med ett läsbart mått. Panelen är ~1030 px bred; en fråga som bryter
+   där blir en tabellrad, inte en fråga. 46rem rymmer svarets 68ch utan att
+   lämna en onödigt lång sträcka mellan frågan och dess +/−. */
+[data-hr-faq] { max-width: 46rem; }
+
+.hr-faq__group + .hr-faq__group { margin-top: 28px; }
+/* Grupprubriken bär kategorin EN gång i stället för elva. Linjen ut till
+   kanten binder ihop rubrik och lista utan att kosta en egen ram. */
+.hr-faq__grouptitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-family: var(--font-mono);
   font-weight: 600;
-  font-size: 9.5px;
-  letter-spacing: 0.12em;
+  font-size: 10px;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--c-text-muted);
-  margin: 0 0 5px;
+  margin: 0 0 10px;
+}
+.hr-faq__grouptitle::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--c-border);
+}
+/* Antalet frågor i gruppen — sätter förväntan på hur långt avsnittet är. */
+.hr-faq__groupcount {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 5px;
+  background: var(--c-muted);
+  font-size: 9.5px;
+  letter-spacing: 0.04em;
+  color: var(--c-text-muted);
+}
+.hr-faq__q {
+  flex: 1;
+  font-weight: 600;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--c-text);
+  margin: 0;
+  text-wrap: pretty;
 }
 .hr-faq__a {
   font-size: 13px;
@@ -984,102 +1094,101 @@
 }
 
 /* ---- Ordlista ------------------------------------------------------------- */
-.hr-gloss__controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+/* Kontrollrad: sök + sortering. Båda gäller hela listan, till skillnad från
+   kategori-chipsen på raden under som gäller urvalet. Knappen är lika hög som
+   sökfältet — förut var den 33 px mot fältets 42 och hängde snett. */
+.hr-gloss__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.hr-gloss__bar .hr-search { flex: 1 1 220px; max-width: 340px; }
 .hr-gloss__sort {
+  flex: none;
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 8px 11px;
+  min-height: 46px;
+  padding: 0 14px;
   background: none;
   border: 1px solid var(--c-border);
-  border-radius: 9px;
+  border-radius: 12px;
   color: var(--c-text-secondary);
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: 11px;
+  font-size: 12px;
   cursor: pointer;
   transition: color 0.18s ease, border-color 0.18s ease;
 }
 .hr-gloss__sort:hover { color: var(--c-text); border-color: var(--c-accent); }
-.hr-gloss__list { margin-top: 26px; }
+.hr-gloss__sort svg { color: var(--c-text-muted); }
+@media (min-width: 768px) {
+  .hr-gloss__sort { min-height: 42px; border-radius: 11px; font-size: 11.5px; }
+}
+
+.hr-gloss__list { margin-top: 22px; }
 .hr-gloss__letter {
   font-family: var(--font-mono);
   font-weight: 700;
   font-size: 11px;
   letter-spacing: 0.16em;
   color: var(--c-text-muted);
-  margin: 16px 0 4px;
+  margin: 16px 0 6px;
 }
 .hr-gloss__letter[hidden] { display: none; }
+
+/* Uppslagskort. Samma anatomi som .hrcard i Slå upp — metarad, rubrik,
+   förklaring — så de två flikarna läser som samma familj. */
 .hr-gloss__row {
-  padding: 12px 0;
-  border-bottom: 1px solid var(--c-border);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: 10px;
+  padding: 11px 13px;
 }
 .hr-gloss__row[hidden] { display: none; }
-.hr-gloss__term {
-  font-family: var(--font-mono);
-  font-weight: 600;
-  font-size: 12.5px;
-  color: var(--c-text);
-}
 .hr-gloss__cat {
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 9px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--c-text-muted);
-  margin-top: 2px;
+  margin: 0;
+}
+.hr-gloss__term {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--c-text);
+  margin: 2px 0 0;
 }
 .hr-gloss__def {
-  font-size: 12.5px;
-  line-height: 1.55;
+  font-size: 12px;
+  line-height: 1.5;
   color: var(--c-text-secondary);
   margin: 5px 0 0;
   text-wrap: pretty;
 }
-@media (min-width: 768px) {
-  .hr-gloss__letter { font-size: 12px; margin-top: 18px; }
-  .hr-gloss__row { display: grid; grid-template-columns: 130px 1fr; gap: 18px; align-items: baseline; padding: 14px 0; }
-  .hr-gloss__meta { display: block; }
-  .hr-gloss__def { margin: 0; max-width: 78ch; }
-}
 
-/* Ordlistan i två spalter — en ordlista läses uppslagsvis, inte som löptext.
-   Bokstavsrubrikerna spänner över båda spalterna (de sätts in av hrGuide.ts
-   som syskon till raderna), så varje bokstavsgrupp får en egen ren start. */
-@media (min-width: 1000px) {
-  /* columns, inte grid: med grid + helbred bokstavsrubrik fick varje bokstav en
-     egen rad, och eftersom nästan varje bokstav bara rymmer en term stod
-     högerspalten tom. Flerspaltsflödet fyller spalt 1 uppifrån och ner och
-     fortsätter i spalt 2 — klassisk uppslagsboksättning. */
+/* Rutnät. Grid, inte CSS-columns: ett flerspaltsflöde ger rader som aldrig kan
+   linjera med varandra — varje definition är olika lång, så de sexton
+   underlinjerna hamnade på sexton olika höjder. Griddets rader sträcks i
+   stället till lika höjd, och listan får en rak kant hela vägen ner.
+   Bokstavsavdelarna (hrGuide.ts sätter in dem som syskon till korten) döljs
+   här: de kan inte spänna över spalterna utan att bryta rutnätet, och med
+   sexton termer, sökfält och filter tillför de inget. Under 760 px, där listan
+   är en enda spalt, syns de som förut. */
+@media (min-width: 760px) {
   .hr-gloss__list {
-    columns: 2;
-    column-gap: 44px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
   }
-
-  /* Bokstavsrubrikerna döljs i tvåspaltsläge. Två skäl: (1) de kan inte
-     nollställas för den första posten i spalt 2 — CSS kan bara träffa den
-     första i FLÖDET — vilket gav olika starthöjd i spalterna och läste som
-     ett fel. (2) Med sexton termer, sökfält och kategorifilter tillför de
-     ingenting; ordningen är alfabetisk ändå. Under 1000px, där listan är en
-     enda lång spalt, syns de som förut. */
   .hr-gloss__letter { display: none; }
-
-  /* Termen ÖVER definitionen, inte bredvid. Sida vid sida i en halvbred spalt
-     gav en smal, raggig definitionskolumn med ojämna radlängder. */
-  .hr-gloss__row {
-    break-inside: avoid;
-    display: block;
-    padding: 9px 0;
-  }
-  .hr-gloss__meta {
-    display: flex;
-    align-items: baseline;
-    gap: 9px;
-    margin-bottom: 3px;
-  }
-  .hr-gloss__cat { margin: 0; }
-  .hr-gloss__def { margin: 0; max-width: none; }
+  .hr-gloss__row { padding: 13px 15px; }
+}
+@media (min-width: 1180px) {
+  .hr-gloss__list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 /* ============================================================
@@ -1118,10 +1227,11 @@
    som ger sidopanelen sin kolumn. */
 @media (min-width: 1200px) {
   .hrd-doc--toc {
-    max-width: 58rem;
+    max-width: 64rem;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 11rem;
-    /* Samma smala panel och breda gap som Learn Hubs .toc-doc--toc. */
+    grid-template-columns: minmax(0, 1fr) 12.5rem;
+    /* Samma panelbredd och gap som Learn Hubs .toc-doc--toc — inklusive
+       steget till 10rem från 1360 px (nedan). */
     gap: 6.5rem;
     /* Ingen align-items:start — TOC-kolumnen sträcks till artikelns höjd så
        den sticky innehållsförteckningen har utrymme att sticka längs hela
@@ -1129,6 +1239,9 @@
   }
   .hrd__lead[id],
   .hrd-sec[id] { scroll-margin-top: 184px; }
+}
+@media (min-width: 1360px) {
+  .hrd-doc--toc { gap: 10rem; }
 }
 
 .hrd__meta {

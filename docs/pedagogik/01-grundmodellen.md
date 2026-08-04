@@ -59,6 +59,42 @@ Tidigare inledde artiklarna med ett namngivet scenario. **Det gör de inte läng
 Rollistan (Lisa, Maria, Johan, e-handelssystemet) finns kvar men flyttad: personerna dyker upp
 inuti sektionerna där de behövs, som illustration av ett konkret fall — inte som ingång.
 
+### Sektionsblock — makrostrukturen
+
+15–22 rubriker är rätt antal, men en platt lista av dem över 12 skärmars scroll saknar
+makrostruktur. `<Del titel="…" />` märker upp var ett block börjar, i både brödtexten och
+innehållsförteckningen, **utan att röra rubriknivåerna** — alla h2 finns kvar som egna poster.
+
+```mdx
+<Del titel="Commiten" />
+
+## Vad en commit är
+```
+
+| Regel | Värde |
+|---|---|
+| Block per artikel | **2–4** innehållsblock, plus slutblocket |
+| Sektioner per block | **minst 3** |
+| Slutblockets etikett | alltid **`Öva och förstå`** — de fem sista sektionerna |
+| Etikett | artikelspecifikt substantiv ur ämnet: *Grenen*, *Resan*, *Nycklarna* |
+
+**Etiketterna är per artikel, inte en fast uppsättning.** En generisk vokabulär
+(*Begreppen · Praktiken*) hade varit konsekvent men innehållslös — och en mall att fylla är
+precis det som börjar forma innehållet efter sig. Undantaget är slutblocket, vars fem sektioner
+är ordagrant identiska i alla artiklar.
+
+**Riktningsregeln — den viktigaste:**
+
+> **Grupperingen beskriver artikeln. Den styr den aldrig.**
+>
+> Etiketten hämtas ur sektionerna, aldrig tvärtom: skriv artikeln färdig, läs sedan av vilka block
+> den råkade bli. Faller sektionerna inte redan i sammanhängande följder — gruppera inte. Flytta
+> **aldrig** en sektion för att en gruppering ska gå ihop. **Noll block är ett giltigt utfall.**
+
+Att grupperingen gick att införa i alla 19 artiklar utan att flytta en enda sektion är ingen
+slump: beroendeordningen klustrar redan besläktade begrepp. Blocken gör en befintlig egenskap
+synlig — de lägger inte till ett krav.
+
 ### "X vs Y" är en sektionstyp
 
 Varje förväxlingspar får **egen rubrik**, inte en bisats i löptext. Formen är alltid densamma:
@@ -132,7 +168,22 @@ och vad som ändras om läsaren går mot en **annan roll**.
 Det minsta som fortfarande är äkta. Två rader HTTP slår fyrtio rader realistiskt anrop. Aldrig
 pseudokod där riktig kod ryms, aldrig `foo`/`bar` där ett verkligt namn finns.
 
-Hård gräns i läsvyn: **max 55 tecken monospace**. Verifieras maskinellt före avslut.
+**Två breddgränser, av olika skäl:**
+
+| Innehåll | Gräns | Varför |
+|---|---|---|
+| Kodblock | **55 tecken** | Ryms i läsvyns 512–520 px på desktop utan sidscroll |
+| ASCII-diagram | **40 tecken** | Måste rymmas i mobilens 315 px — se nedan |
+
+Kod som scrollar i sin egen ruta på mobil är **rätt beteende**: sidan scrollar aldrig, och en läsare
+accepterar att dra i ett YAML-block. Ett **diagram** som kräver sidledsdragning motverkar däremot sitt
+eget syfte — poängen med bilden är att den ska gå att uppfatta i ett svep.
+
+Diagramgränsen är alltså inte kosmetisk. Den är skillnaden mellan en bild som fungerar på telefon och
+en som inte gör det.
+
+Uppmätt i webbläsaren 2026-08-04: desktop (1400 px fönster) ger 512–520 px ≈ 66 tecken kodbredd,
+mobil (375 px) ger 315 px ≈ 40 tecken. Verifieras maskinellt före avslut.
 
 ---
 
@@ -200,6 +251,7 @@ uttryckligen lämnade. Sista sektionen ställer frågan nästa del besvarar.
 | `Split` | "i stället för" | Fel bredvid rätt, före bredvid efter |
 | `Callout` | textens funktion | `varfor` · `sa-gor-du` · `fallgrop` · `kom-ihag` |
 | `Check` | återhämtning | Alltid, före snabbsammanfattningen |
+| `Del` | "här börjar ett block" | 2–4 gånger + slutblocket, se Lager 1 |
 
 ### Doodlen bär metaforen och anatomin
 
@@ -267,6 +319,7 @@ utan föreslagen formulering.
 ## Snabbchecklistan
 
 - [ ] 15–22 h2-rubriker; innehållsförteckningen ensam lär ut ämnets anatomi
+- [ ] 2–4 `<Del />`-block om minst 3 sektioner var, plus `Öva och förstå` — eller inga alls
 - [ ] Öppnar med *Var vi är* med deklarerad zoomnivå — inte med ett scenario
 - [ ] Varje begreppssektion öppnar med en ordlistefärdig definition
 - [ ] Minst tre `X vs Y`-sektioner med egen rubrik
@@ -282,5 +335,5 @@ utan föreslagen formulering.
 - [ ] *Nästa del* ställer frågan nästa artikel besvarar
 - [ ] 1–2 doodle-briefer
 - [ ] Inga nedvärderande ord, inget dramatiskt register, inga meningar över 30 ord
-- [ ] Kodrader under 55 tecken, verifierat maskinellt
-- [ ] `pnpm build` + `pnpm astro check`
+- [ ] Kodrader under 55 tecken — och **ASCII-diagram under 40**, verifierat maskinellt
+- [ ] `pnpm build` + `pnpm astro check`, kontrollerat i både 1400 px och 375 px

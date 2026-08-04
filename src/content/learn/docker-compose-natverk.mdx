@@ -17,6 +17,8 @@ sig.
 Den här delen handlar om det som faktiskt är svårt med flera containrar: **hur de hittar varandra**,
 och varför den första anslutningen nästan alltid misslyckas.
 
+<Del titel="Compose och felet" />
+
 ## Vad Docker Compose är
 
 **Docker Compose** startar och kopplar ihop flera containrar utifrån en fil som beskriver dem.
@@ -69,6 +71,8 @@ Lisas app frågar alltså sig själv efter en databas den inte har. Svaret blir 
 Tre olika platser med samma namn — och den enda av dem som aldrig är rätt svar när två containrar
 ska prata är den första gissningen.
 </Callout>
+
+<Del titel="Nätverket" />
 
 ## Nätverket Compose skapar åt dig
 
@@ -141,6 +145,8 @@ Lägg märke till att `db` saknar `ports`. Den är ändå fullt nåbar för `api
 samma nätverk.
 
 Det är inte en glömska utan ett medvetet val, och nästa avsnitt förklarar varför.
+
+<Del titel="Portar och ordning" />
 
 ## Vad `ports` faktiskt gör
 
@@ -257,6 +263,8 @@ services:
 
 `healthcheck` kör kommandot inuti databascontainern med jämna mellanrum. Så länge det misslyckas
 räknas tjänsten som ohälsosam, och `condition: service_healthy` håller kvar API:et i startgroparna.
+
+<Del titel="Öva och förstå" />
 
 ## Vad det här betyder i ditt arbete
 

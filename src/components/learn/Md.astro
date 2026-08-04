@@ -5,24 +5,35 @@
 // som MDX-innehåll — och strängar går inte genom markdown-pipelinen. Utan den
 // här skulle `terraform apply` i en nod renderas med bokstavliga backticks.
 //
-// Stödet är avsiktligt begränsat till `kod`. Behövs mer formatering i ett
-// element är det en signal om att texten hör hemma i brödtexten eller i en
-// slot (Split/Callout tar MDX-innehåll), inte i en etikett.
+// Stödet är avsiktligt begränsat till `kod` och **emfas** — de två som
+// faktiskt behövs i en etikett. Behövs mer formatering är det en signal om att
+// texten hör hemma i brödtexten eller i en slot (Split/Callout tar MDX-
+// innehåll), inte i en nod-etikett.
+//
+// <strong> och <code> stylas av .site .prose, så resultatet matchar brödtexten
+// omkring diagrammet utan egna regler i learn.css.
 interface Props {
     text: string;
 }
 
 const { text } = Astro.props;
 
-// Behåll avgränsarna i resultatet (capture group) så vi kan skilja kod-delar
-// från löptext utan att räkna index.
-const parts = text.split(/(`[^`]+`)/g).filter(Boolean);
+// Behåll avgränsarna i resultatet (capture group) så vi kan skilja de
+// formaterade delarna från löptext utan att räkna index.
+const parts = text.split(/(`[^`]+`|\*\*[^*]+\*\*)/g).filter(Boolean);
+
+const wrapped = (part: string, mark: string) =>
+    part.length > mark.length * 2 &&
+    part.startsWith(mark) &&
+    part.endsWith(mark);
 ---
 
 {
     parts.map((part) =>
-        part.length > 2 && part.startsWith("`") && part.endsWith("`") ? (
+        wrapped(part, "`") ? (
             <code>{part.slice(1, -1)}</code>
+        ) : wrapped(part, "**") ? (
+            <strong>{part.slice(2, -2)}</strong>
         ) : (
             <Fragment>{part}</Fragment>
         ),

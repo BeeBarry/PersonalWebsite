@@ -19,6 +19,8 @@ använder det. Namnen du väljer första veckan lever kvar länge.
 Vi bygger på nätverksserien här. Metoderna, deras egenskaper och statuskodernas grupper är redan
 genomgångna — nu handlar det om vilka man ska välja, och när.
 
+<Del titel="REST" />
+
 ## Vad REST är
 
 **REST** är en uppsättning konventioner för hur ett API över HTTP bör se ut.
@@ -96,6 +98,8 @@ Grundregeln, i praktiken:
 Kopplingen till nätverksserien är direkt. Ett `POST /deleteProduktById` ljuger för alla lager under
 dig: mellanservrar tror att något skapas, och automatiska omförsök blir farliga fast operationen
 egentligen var idempotent.
+
+<Del titel="Sökvägarna" />
 
 ## Samlingar och medlemmar
 
@@ -184,6 +188,8 @@ finns den ersätts den. Anropet är idempotent.
 Använd `POST` när servern äger numreringen, vilket är nästan alltid. `PUT` för att skapa är rimligt
 när klienten redan har ett naturligt id, till exempel ett artikelnummer från ett annat system.
 
+<Del titel="Svaren" />
+
 ## Vilken statuskod till vilket svar
 
 Nätverksserien gick igenom vad grupperna betyder. I API-design handlar det om att välja rätt kod
@@ -233,6 +239,8 @@ Content-Type: application/json
 
 Nu kan klienten hämta, uppdatera eller radera resursen utan att gissa hur adressen är uppbyggd. Det
 kostar en rad och tar bort ett antagande.
+
+<Del titel="Dyrt att ändra" />
 
 ## Sidindelning
 
@@ -303,6 +311,8 @@ diskussionen om vad saker ska heta tas **en gång**, inte vid varje ny endpoint.
 
 Det är samma princip som `plan` i Terraform: se överenskommelsen innan den blir verklighet.
 </Callout>
+
+<Del titel="Öva och förstå" />
 
 ## Vad det här betyder i ditt arbete
 

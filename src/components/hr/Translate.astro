@@ -1,7 +1,15 @@
 ---
-// Översätt — annons-översättaren. Dragspel, en rad öppen i taget (rad 0 öppen
-// från start); hrGuide.ts sköter toggling. Desktop får en kolumnrubrikrad
-// (Annonsen säger / Betyder); på mobil bär varje rad sin egen eyebrow.
+// Annonsen — annons-översättaren. Dragspel, en rad öppen i taget (rad 0 öppen
+// från start); hrGuide.ts sköter toggling.
+//
+// Layouten är ETT grid som delas av tre element: kolumnrubrikerna, varje rads
+// huvud och varje rads utfällda kropp. Förut var huvudet tvåspaltigt men
+// kroppen ett vanligt block — strukturen nollställdes alltså i samma ögonblick
+// man klickade. Nu ligger kroppen i kolumn 2, rakt under "Betyder", så raden
+// håller ihop utfälld som infälld.
+//
+// +/−-tecknet är griddets TREDJE kolumn, inte ett element utanför det. Låg det
+// utanför blev kroppen 40 px bredare än huvudet och kolumnerna gled isär.
 import Icon from "../site/Icon.astro";
 import { hrTranslate, cardById, typo } from "../../data/hr";
 ---
@@ -20,39 +28,43 @@ import { hrTranslate, cardById, typo } from "../../data/hr";
           <div class="hr-acc__item">
             <button
               type="button"
-              class="hr-acc__head"
+              class="hr-acc__head hr-acc__head--tr"
               data-hr-acc-head
               aria-expanded={i === 0 ? "true" : "false"}
             >
-              <span class="hr-tr__grid">
-                <span>
-                  <span class="hr-tr__eyebrow">Annonsen säger</span>
-                  <span class="hr-tr__say">”{typo(row.say)}”</span>
-                </span>
-                <span class="hr-tr__means">{typo(row.means)}</span>
+              <span class="hr-tr__said">
+                <span class="hr-tr__eyebrow">Annonsen säger</span>
+                <span class="hr-tr__say">”{typo(row.say)}”</span>
               </span>
+              <span class="hr-tr__means">{typo(row.means)}</span>
               <span class="hr-acc__sign" aria-hidden="true">{i === 0 ? "−" : "+"}</span>
             </button>
 
             <div class="hr-acc__body hr-acc__body--tr" data-hr-acc-body hidden={i !== 0}>
-              <div class="hr-tr__row">
-                <span class="hr-tr__label">Leta efter</span>
-                <p class="hr-tr__text">{typo(row.look)}</p>
-              </div>
-
-              <div class="hr-tr__watch">
-                <Icon name="Info" size={13} />
-                <p>{typo(row.watch)}</p>
-              </div>
-
-              {card && (
-                <div class="hr-tr__open">
-                  <a class="hr-btn hr-btn--ghost" href={`/for-hr/${card.id}/`}>
-                    Öppna kortet {card.title}
-                    <Icon name="ArrowRight" size={14} />
-                  </a>
+              <div class="hr-tr__detail">
+                {/* Två sorters råd, två tydligt skilda block. Förut låg det
+                    andra i en gråremsa kant-i-kant (byggd på negativa
+                    marginaler) som kapade kortet på mitten. */}
+                <div class="hr-tr__block">
+                  <p class="hr-tr__blocklabel">Leta efter</p>
+                  <p class="hr-tr__blocktext">{typo(row.look)}</p>
                 </div>
-              )}
+
+                <div class="hr-tr__block hr-tr__block--watch">
+                  <p class="hr-tr__blocklabel">
+                    <Icon name="Info" size={12} />
+                    Fallgropen
+                  </p>
+                  <p class="hr-tr__blocktext">{typo(row.watch)}</p>
+                </div>
+
+                {card && (
+                  <a class="hr-tr__cardlink" href={`/for-hr/${card.id}/`}>
+                    Öppna kortet {card.title}
+                    <Icon name="ArrowRight" size={13} />
+                  </a>
+                )}
+              </div>
             </div>
           </div>
         );

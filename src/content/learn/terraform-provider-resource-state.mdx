@@ -16,6 +16,8 @@ och Terraform gör det deklarativt. Slingan är skriv, `plan`, `apply`.
 Den här delen öppnar filen och går igenom vad som faktiskt står i den — och den fil Terraform för
 egna anteckningar i.
 
+<Del titel="Språket" />
+
 ## Vad HCL är
 
 **HCL**, HashiCorp Configuration Language, är språket Terraform-filer skrivs i.
@@ -77,6 +79,8 @@ resource "azurerm_service_plan" "web" {
 ```
 
 Tre sorters block, i den ordning de nästan alltid står. Vi tar dem ett i taget.
+
+<Del titel="Blocken" />
 
 ## `terraform`-blocket
 
@@ -204,6 +208,8 @@ köras.
 Referera alltid i stället för att upprepa. Beroendet blir en bieffekt du får gratis.
 </Callout>
 
+<Del titel="Kommandona och state" />
+
 ## De tre kommandona
 
 Förra delen tog `plan` och `apply`. Här är det tredje, och det som kommer först.
@@ -330,6 +336,8 @@ inklusive pipelinen — får samma. **Alltid i Git.**
 
 Namnen liknar varandra och innehållet är helt olika. Låsfilen har heller ingenting med låset i en
 remote backend att göra; den låser versioner, inte samtidiga körningar.
+
+<Del titel="Öva och förstå" />
 
 ## Vad det här betyder i ditt arbete
 

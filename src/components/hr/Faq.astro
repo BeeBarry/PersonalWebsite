@@ -1,61 +1,89 @@
 ---
-// FAQ — alla frågor i ett dragspel, en öppen i taget (f1 öppen från start).
-// Medvetet utan kategorifilter: med elva frågor kostade filtret mer än det gav
-// (tre av elva syntes vid ankomst). Kategorin står i stället som monoetikett
-// per rad. Varje svar länkar till de kort frågan taggats med (samma tags-array
-// som driver kortens "Vanliga frågor om X"). hrGuide.ts sköter togglingen.
+// FAQ — en spalt, grupperad efter var i rekryteringen frågan dyker upp.
+//
+// Tidigare låg de elva frågorna i ett tvåspaltigt grid. Det fungerar inte för
+// ett dragspel: när en post fälls ut växer bara den ena spalten, och grannen
+// lämnar ett par hundra pixlar hål. `align-items:start` gjorde hålet synligt i
+// stället för att sträcka grannen — men båda utfallen är fel. En spalt läser
+// dessutom som det FAQ är: en fråga i taget.
+//
+// Grupperingen ersätter den kategorietikett som förut stod på var och en av de
+// elva raderna. Samma information, en gång per grupp i stället för elva gånger,
+// och ordningen i faqCategories är HR:s egen väg genom en rekrytering:
+// Vanligast → Annonsen → Screening → CV & nivåer.
+//
+// EN gemensam [data-hr-accordion] runt alla grupper (inte en per grupp) —
+// annars kan fyra frågor stå öppna samtidigt. hrGuide.ts letar heads med
+// querySelectorAll, så nästlingen spelar ingen roll.
+//
+// Varje svar länkar till de kort frågan taggats med (samma tags-array som
+// driver kortens "Vanliga frågor om X").
 import Icon from "../site/Icon.astro";
-import { hrFaq, cardById, typo } from "../../data/hr";
+import { hrFaq, hrFaqCategories, cardById, typo } from "../../data/hr";
+
+// Tomma kategorier utelämnas, så en ny kategori i JSON:en inte kan rita en
+// rubrik utan frågor under.
+const groups = hrFaqCategories
+  .map((cat) => ({ cat, items: hrFaq.filter((f) => f.cat === cat) }))
+  .filter((g) => g.items.length > 0);
 ---
 
 <div data-hr-faq>
-  {/* --cols delar upp frågorna i två spalter från 1000px. Modifieraren behövs
-      för att Annonsen använder samma .hr-acc men har en tvåkolumns-layout
-      INUTI varje rad — den ska förbli en spalt. */}
-  <div class="hr-acc hr-acc--cols" data-hr-accordion>
+  <div class="hr-faq" data-hr-accordion>
     {
-      hrFaq.map((item) => {
-        // flatMap i stället för filter med typpredikat: `(c): c is …` går inte
-        // att parsa i Astros mall-uttryck (astro check ts(1005)), och flatMap
-        // ger samma smala typ utan predikat.
-        const tagCards = item.tags.flatMap((t) => {
-          const c = cardById(t);
-          return c ? [c] : [];
-        });
-        const open = item.id === "f1";
-        return (
-          <div class="hr-acc__item" data-hr-faqitem data-hr-cat={item.cat}>
-            <button
-              type="button"
-              class="hr-acc__head"
-              data-hr-acc-head
-              aria-expanded={open ? "true" : "false"}
-            >
-              <span class="hr-faq__q">
-                <span class="hr-faq__cat">{item.cat}</span>
-                {typo(item.q)}
-              </span>
-              <span class="hr-acc__sign" aria-hidden="true">{open ? "−" : "+"}</span>
-            </button>
-            <div class="hr-acc__body" data-hr-acc-body hidden={!open}>
-              <p class="hr-faq__a">{typo(item.a)}</p>
-              {tagCards.length > 0 && (
-                <>
-                  <p class="hr-faq__cardlabel">Läs kortet</p>
-                  <div class="hr-faq__links">
-                    {tagCards.map((c) => (
-                      <a class="hr-faq__link" href={`/for-hr/${c.id}/`}>
-                        {c.title}
-                        <Icon name="ArrowRight" size={12} />
-                      </a>
-                    ))}
+      groups.map((g) => (
+        <section class="hr-faq__group">
+          <h3 class="hr-faq__grouptitle">
+            <span>{g.cat}</span>
+            <span class="hr-faq__groupcount">{g.items.length}</span>
+          </h3>
+
+          <div class="hr-acc">
+            {g.items.map((item) => {
+              // flatMap i stället för filter med typpredikat: `(c): c is …` går
+              // inte att parsa i Astros mall-uttryck (astro check ts(1005)),
+              // och flatMap ger samma smala typ utan predikat.
+              const tagCards = item.tags.flatMap((t) => {
+                const c = cardById(t);
+                return c ? [c] : [];
+              });
+              const open = item.id === "f1";
+              return (
+                <div class="hr-acc__item">
+                  <button
+                    type="button"
+                    class="hr-acc__head"
+                    data-hr-acc-head
+                    aria-expanded={open ? "true" : "false"}
+                  >
+                    <span class="hr-faq__q">{typo(item.q)}</span>
+                    <span class="hr-acc__sign" aria-hidden="true">
+                      {open ? "−" : "+"}
+                    </span>
+                  </button>
+
+                  <div class="hr-acc__body" data-hr-acc-body hidden={!open}>
+                    <p class="hr-faq__a">{typo(item.a)}</p>
+                    {tagCards.length > 0 && (
+                      <>
+                        <p class="hr-faq__cardlabel">Läs kortet</p>
+                        <div class="hr-faq__links">
+                          {tagCards.map((c) => (
+                            <a class="hr-faq__link" href={`/for-hr/${c.id}/`}>
+                              {c.title}
+                              <Icon name="ArrowRight" size={12} />
+                            </a>
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </div>
-                </>
-              )}
-            </div>
+                </div>
+              );
+            })}
           </div>
-        );
-      })
+        </section>
+      ))
     }
   </div>
 

@@ -17,6 +17,8 @@ Priset är att informationen nu ligger utspridd, och API:et behöver den ihopsat
 handlar om `JOIN` som gör det — och om de två skäl som gör att en fråga plötsligt tar nio sekunder i
 produktion.
 
+<Del titel="JOIN" />
+
 ## Vad en JOIN är
 
 En **JOIN** sätter ihop rader från två tabeller till en gemensam rad i svaret.
@@ -116,6 +118,8 @@ WHERE  k.id IS NULL;
 
 Notera att `WHERE k.id IS NULL` bara är meningsfullt tillsammans med `LEFT JOIN`. Med `INNER JOIN`
 kan villkoret aldrig bli sant, eftersom raderna redan är bortsorterade.
+
+<Del titel="Index och EXPLAIN" />
 
 ## Vad en full table scan är
 
@@ -235,6 +239,8 @@ ger.
 Indexera det du faktiskt söker på — och mät med `EXPLAIN ANALYZE` i stället för att gissa.
 </Callout>
 
+<Del titel="N+1" />
+
 ## Vad N+1 är
 
 **N+1** är mönstret där koden ställer en fråga för listan, plus en fråga per rad i den.
@@ -302,6 +308,8 @@ Det är exakt samma sorts fel som den saknade sidindelningen i API-serien: koden
 skalar bara inte. Den enda tillförlitliga upptäckten är att **logga antalet frågor per anrop** — då
 syns det direkt, långt innan det blir ett problem.
 </Callout>
+
+<Del titel="Öva och förstå" />
 
 ## Vad det här betyder i ditt arbete
 

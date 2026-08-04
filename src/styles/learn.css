@@ -48,6 +48,38 @@
     --lk-warn-soft: rgba(138, 90, 0, 0.07);
 }
 
+/* ============================================================
+   DEL — avdelare mellan sektionsblock (components/learn/Del.astro)
+   Medvetet svagare än allt annat i kitet: den ska ge artikeln en
+   makrostruktur utan att konkurrera med h2-raderna omkring sig.
+   Därför hårstreck och muted text i mono, ingen ram och ingen fyllning.
+   ============================================================ */
+.lk-del {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    /* Stort luftgap ovanför, litet under: avdelaren hör ihop med rubriken
+       som följer, inte med stycket den lämnar. Utan asymmetrin läses den
+       som ett slut i stället för som en början. */
+    margin: 3.5rem 0 0.5rem;
+}
+
+.lk-del__rule {
+    flex: 1;
+    height: 1px;
+    background: var(--lk-line);
+}
+
+.lk-del__label {
+    flex: none;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--c-text-muted);
+    white-space: nowrap;
+}
+
 /* ---- Nod — den delade byggstenen i Flow och Stack ---------- */
 .lk-node {
     display: block;

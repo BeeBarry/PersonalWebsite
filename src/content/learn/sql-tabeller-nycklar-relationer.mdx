@@ -21,6 +21,8 @@ tar nästa del.
 Exemplen är skrivna i PostgreSQL-syntax, som är den vanligaste. Andra databaser skiljer sig i
 detaljer men inte i begreppen.
 
+<Del titel="Tabellen" />
+
 ## Vad en relationsdatabas är
 
 En **relationsdatabas** lagrar data i tabeller som pekar på varandra i stället för att upprepa samma
@@ -110,6 +112,8 @@ CREATE TABLE produkter (
 > flera rader innehåller `4`. Heldragna pilar från varje `4` till den markerade raden. Under:
 > "Namnet står en gång. Alla pekar dit."
 
+<Del titel="Typer och villkor" />
+
 ## Vad en datatyp är
 
 **Datatypen** bestämmer vad som får stå i en kolumn.
@@ -149,6 +153,8 @@ resonemang fortsätter ett steg till: databasen är det sista stället ett fel k
 det enda som alltid gäller.
 
 Du behöver båda. Men bara den ena är ett skyddsnät.
+
+<Del titel="Nycklarna" />
 
 ## Vad en primärnyckel är
 
@@ -220,6 +226,8 @@ recensioner — och farligt för allt annat.
 **`SET NULL`** behåller raden men tömmer pekaren. Kräver att kolumnen tillåter `NULL`.
 
 Valet är ett beslut om vad som ska hända en dag när någon råkar radera fel sak. Ta det medvetet.
+
+<Del titel="Relationer och NULL" />
 
 ## En till många
 
@@ -297,6 +305,8 @@ Blandas de ihop blir summeringar och filter fel på sätt som är svåra att upp
 hoppar över `NULL` men räknar med `0`, vilket ger två helt olika medelvärden ur samma data.
 
 Bestäm vilket av de tre kolumnen faktiskt ska kunna innehålla, och skriv ner det i schemat.
+
+<Del titel="Öva och förstå" />
 
 ## Vad det här betyder i ditt arbete
 

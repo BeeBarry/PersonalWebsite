@@ -125,6 +125,26 @@ function setActive(id: string) {
   tocLinks().forEach((l) => l.classList.toggle("is-active", l.dataset.tocLink === id));
 }
 
+// Sidopanelen scrollar numera i sig själv när artikeln har fler rubriker än
+// fönstret rymmer (global.css: max-height + overflow på .toc__inner). Utan den
+// här nudgen kunde scroll-spyn markera en post som låg utanför panelens EGEN
+// synliga yta — markeringen fanns, men syntes inte.
+//
+// Egen scrollTop, inte scrollIntoView: den senare scrollar även föräldrarna,
+// alltså hela sidan, mitt under användarens scroll. No-op när panelen får plats
+// (det vanliga fallet) och när posten redan syns med marginal.
+function keepActiveVisible(link: HTMLAnchorElement | undefined) {
+  const pane = link?.closest<HTMLElement>(".toc__inner");
+  if (!link || !pane || pane.scrollHeight <= pane.clientHeight) return;
+  const edge = 24;
+  const paneBox = pane.getBoundingClientRect();
+  const linkBox = link.getBoundingClientRect();
+  const below = linkBox.bottom - (paneBox.bottom - edge);
+  const above = paneBox.top + edge - linkBox.top;
+  if (below > 0) pane.scrollTop += below;
+  else if (above > 0) pane.scrollTop -= above;
+}
+
 // Modul-scope: slår upp elementen vid varje anrop, så samma funktionsreferens
 // fungerar även efter att DOM bytts ut vid en View-Transition-swap.
 function tocUpdate() {
@@ -170,6 +190,7 @@ function tocUpdate() {
   if (pendingId) active = pendingId;
 
   links.forEach((l) => l.classList.toggle("is-active", l.dataset.tocLink === active));
+  keepActiveVisible(links.find((l) => l.dataset.tocLink === active));
 }
 
 function onLinkClick(e: MouseEvent) {

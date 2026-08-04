@@ -17,6 +17,8 @@ Den här delen öppnar det steget och går igenom vad ett HTTP-meddelande bestå
 statuskoden, headers och kroppen. Det är den mest direkt användbara delen i hela nätverksserien,
 för det är den du läser varje gång något inte fungerar.
 
+<Del titel="Meddelandet" />
+
 ## Ett HTTP-anrop är text
 
 HTTP är läsbar text, inte ett binärt format.
@@ -73,6 +75,8 @@ servern, exakt?
 `curl -v` visar precis det här, och är därför det snabbaste sättet att avgöra om felet ligger i det
 som skickas eller i det som tas emot.
 </Callout>
+
+<Del titel="Metoderna" />
 
 ## Vad en metod är
 
@@ -147,6 +151,8 @@ produkter**.
 `PUT` och `DELETE` har inte det problemet. Det är därför automatiska omförsök är ofarliga för dem
 och farliga för `POST`.
 </Callout>
+
+<Del titel="Statuskoderna" />
 
 ## Vad en statuskod är
 
@@ -259,6 +265,8 @@ Värt att veta: `301` och `302` kan göra om ett `POST` till ett `GET` på väge
 finns `308` och `307`.
 </Callout>
 
+<Del titel="Headers" />
+
 ## Vad en header är
 
 En **header** är en rad metadata om meddelandet, skriven som `Namn: värde`.
@@ -308,6 +316,8 @@ anrop som helst, eftersom ingen av dem sitter på information de andra saknar.
 
 Det är just den egenskapen som gör att Kubernetes kan lägga till och ta bort poddar fritt — precis
 som Deployment-delen beskrev.
+
+<Del titel="Öva och förstå" />
 
 ## Vad det här betyder i ditt arbete
 

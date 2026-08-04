@@ -3,6 +3,15 @@
 // växel (A–Ö med bokstavsavdelare / Vanligast först = datafil-ordning) sköts av
 // hrGuide.ts. Medvetet ingen A–Ö-rail (för få termer). Renderas A–Ö server-side
 // (graceful utan JS); data-hr-order bär datafil-ordningen för "Vanligast först".
+//
+// Layouten är ett KORTRUTNÄT, inte tvåspaltiga rader. Rader i två CSS-kolumner
+// kan aldrig linjera med varandra — varje definition är olika lång, så
+// underlinjerna hamnade på sexton olika höjder och listan såg trasig ut. Ett
+// grid ger lika höga kort per rad och en rak kant hela vägen ner.
+//
+// Kortets uppbyggnad (kategori → term → definition) speglar .hrcard i Slå
+// upp-fliken med flit: besökaren hoppar mellan flikarna, och då ska ett
+// uppslag se ut som ett uppslag oavsett vilken flik hen står på.
 import Icon from "../site/Icon.astro";
 import { hrGlossary, hrGlossaryCategories, typo } from "../../data/hr";
 
@@ -13,33 +22,23 @@ const firstLetter = (t: string) => t.charAt(0).toLocaleUpperCase("sv");
 ---
 
 <div data-hr-glossary>
-  <div class="hr-search" data-hr-search-wrap>
-    <span class="hr-search__icon"><Icon name="Search" size={15} /></span>
-    <input
-      class="hr-search__input"
-      type="search"
-      placeholder="Sök ett ord du hörde"
-      autocomplete="off"
-      aria-label="Sök i ordlistan"
-      data-hr-gloss-input
-    />
-    <button class="hr-search__clear" type="button" aria-label="Rensa sökningen" data-hr-gloss-clear>
-      <Icon name="X" size={14} />
-    </button>
-  </div>
-
-  <div class="hr-gloss__controls" style="margin-top:14px">
-    <div class="hr-chips" role="group" aria-label="Filtrera ordlistan" data-hr-glosscats>
-      <button class="hr-chip is-active" type="button" data-hr-glosscat="Alla" aria-pressed="true">
-        Alla
+  {/* Sök och sortering är båda kontroller över HELA listan och står därför på
+      samma rad. Sorteringsknappen hängde förut löst till höger om kategori-
+      chipsen, där den läste som ett filter den inte är. */}
+  <div class="hr-gloss__bar">
+    <div class="hr-search" data-hr-search-wrap>
+      <span class="hr-search__icon"><Icon name="Search" size={15} /></span>
+      <input
+        class="hr-search__input"
+        type="search"
+        placeholder="Sök ett ord du hörde"
+        autocomplete="off"
+        aria-label="Sök i ordlistan"
+        data-hr-gloss-input
+      />
+      <button class="hr-search__clear" type="button" aria-label="Rensa sökningen" data-hr-gloss-clear>
+        <Icon name="X" size={14} />
       </button>
-      {
-        hrGlossaryCategories.map((c) => (
-          <button class="hr-chip" type="button" data-hr-glosscat={c} aria-pressed="false">
-            {c}
-          </button>
-        ))
-      }
     </div>
 
     <button class="hr-gloss__sort" type="button" data-hr-gloss-sort aria-label="Byt sortering">
@@ -47,6 +46,25 @@ const firstLetter = (t: string) => t.charAt(0).toLocaleUpperCase("sv");
       <span data-hr-sort-label>A–Ö</span>
     </button>
   </div>
+
+  <div class="hr-chips" role="group" aria-label="Filtrera ordlistan" data-hr-glosscats>
+    <button class="hr-chip is-active" type="button" data-hr-glosscat="Alla" aria-pressed="true">
+      Alla
+    </button>
+    {
+      hrGlossaryCategories.map((c) => (
+        <button class="hr-chip" type="button" data-hr-glosscat={c} aria-pressed="false">
+          {c}
+        </button>
+      ))
+    }
+  </div>
+
+  {/* Samma räknare som biblioteket: visas bara när ett filter eller en sökning
+      faktiskt begränsar listan (hrGuide.ts döljer den i utgångsläget). */}
+  <p class="hr-count" data-hr-gloss-count aria-live="polite" aria-atomic="true" hidden>
+    {hrGlossary.length} av {hrGlossary.length} ord visas
+  </p>
 
   <div class="hr-gloss__list" data-hr-gloss-list>
     {
@@ -60,10 +78,8 @@ const firstLetter = (t: string) => t.charAt(0).toLocaleUpperCase("sv");
           data-hr-letter={firstLetter(g.t)}
           data-hr-search={`${g.t} ${g.d}`.toLowerCase()}
         >
-          <div class="hr-gloss__meta">
-            <span class="hr-gloss__term">{g.t}</span>
-            <div class="hr-gloss__cat">{g.cat}</div>
-          </div>
+          <p class="hr-gloss__cat">{g.cat}</p>
+          <p class="hr-gloss__term">{g.t}</p>
           <p class="hr-gloss__def">{typo(g.d)}</p>
         </div>
       ))

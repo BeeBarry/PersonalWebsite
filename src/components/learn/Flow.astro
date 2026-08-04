@@ -63,5 +63,11 @@ const { steps, caption, layout = "column" } = Astro.props;
             ))
         }
     </div>
-    {caption && <figcaption>{caption}</figcaption>}
+    {
+        caption && (
+            <figcaption>
+                <Md text={caption} />
+            </figcaption>
+        )
+    }
 </figure>

@@ -17,6 +17,8 @@ någon annan byggt, och lärde sig att imagen är ritningen och containern den k
 Nu paketerar hon sin **egen** applikation. Den här delen handlar om filen som beskriver bygget, och
 om varför ordningen mellan raderna avgör hur lång tid det tar.
 
+<Del titel="Receptet" />
+
 ## Vad en Dockerfile är
 
 En **Dockerfile** är en textfil med instruktioner för hur en image ska byggas.
@@ -76,6 +78,8 @@ CMD ["node", "server.js"]
 Vi tar dem en i taget nedan. Instruktionerna skrivs versalt av tradition — Docker bryr sig inte,
 men alla andra Dockerfiles ser ut så.
 
+<Del titel="Instruktionerna" />
+
 ## `FROM` — utgångsläget
 
 `FROM` väljer imagen du bygger vidare på.
@@ -128,6 +132,8 @@ Kontrollfrågan när du är osäker: *ska det här ha hänt innan imagen är fä
 
 Det finns en tredje, `ENTRYPOINT`, som också rör starten men beter sig annorlunda när man skickar
 med argument. Den behöver du inte nu — `CMD` räcker för allt i den här serien.
+
+<Del titel="Lagren och bygget" />
 
 ## Varje instruktion blir ett lager
 
@@ -283,6 +289,8 @@ som fungerade i går slutar fungera i dag utan att du ändrat en rad kod.
 Sätt en version du valt medvetet: `node:22-alpine`. Då är bygget **reproducerbart** — samma recept
 ger samma resultat, oavsett när det körs.
 </Callout>
+
+<Del titel="Öva och förstå" />
 
 ## Vad det här betyder i ditt arbete
 
