@@ -22,13 +22,12 @@ När Lisa, en ny utvecklare, börjar i teamet förväntar hon sig att det kommer
 
 **Eftersom allt är paketerat i en container**, behöver Lisa bara köra ett enda kommando för att få exakt samma utvecklingsmiljö som sina teammedlemmar.
 
-📍 **Vad löser containers?**
-
+<Callout type="varfor" title="Vad containers löser">
 - **Alla utvecklare i teamet arbetar i en identisk miljö,** vilket minskar ”det funkar ju inte på min dator”-problem.
 - Nya utvecklare kan starta upp sin miljö **på några minuter istället för timmar.**
 - Alla använder **exakt samma versioner** av t.ex. C#, Node, databaser och andra beroenden.
 - **Lisas utvecklingsmiljö påverkar inte andra projekt på hennes dator** – hon kan arbeta med flera projekt utan att behöva installera om eller ändra inställningar varje gång.
-
+</Callout>
 
 <ZoomableImage
     src="/intro-to-docker-pic1.svg"
@@ -48,17 +47,28 @@ Med container images kan teamet hantera olika versioner av sin applikation:
 
 **En utvecklingsversion med de senaste funktionerna** – utvecklare kan experimentera utan att riskera att påverka den stabila versionen.
 
-📍 **Varför är container images viktiga?**
-
+<Callout type="varfor" title="Varför container images är viktiga">
 - **Enklare versionshantering** – Lisa kan snabbt växla mellan olika versioner av appen utan att installera om något.
 - **Reproducerbara miljöer** – Vid testning testar teamet exakt samma version som kommer att rullas ut i produktion.
 - **Snabb återställning vid fel** – om en ny version skapar problem kan teamet enkelt rulla tillbaka till en tidigare fungerande image.
 - **Delning och samarbete** – utvecklare kan skapa en image, dela den med teamet och vara säkra på att alla jobbar i samma miljö.
+</Callout>
 
 <ZoomableImage
     src="/intro-to-docker-pic2.svg"
     alt="Docker image"
     caption="Vi skapar en image och lägger den i lådan för att specificera innehållet"
+/>
+
+Skillnaden mellan de två begreppen är värd att fästa direkt, för den återkommer i varje senare del:
+
+<Flow
+  layout="row"
+  caption="Imagen är receptet, containern är portionen. Från samma image kan du starta hur många containrar du vill."
+  steps={[
+    { label: "Image", note: "En färdig, oföränderlig ritning. Ligger still." },
+    { label: "Container", via: "docker run", note: "En körande kopia av ritningen.", accent: true },
+  ]}
 />
 
 ## Docker Registry
@@ -71,20 +81,35 @@ Nu när personerna i teamet sitter och utvecklar olika delar av applikationen ä
 - **Johan har optimerat databasen** för att snabba upp laddningstider.
 - **Rufus och Kurt behöver testa båda ändringarna tillsammans (API:et och databasen)** innan de går vidare till produktionsversionen.
 
-**Utan ett registry:** varje utvecklare skulle behöva bygga och hantera sina egna versioner av applikationen manuellt, vilket kan leda till förvirring och kompatibilitetsproblem.
+<Split
+  leftTitle="Utan registry"
+  rightTitle="Med registry"
+  caption="Skillnaden är inte bekvämlighet — det är om teamet kan lita på att de testar samma sak."
+>
+  <div slot="left">
 
-**Med ett registry:** Teamet kan enkelt ladda upp, versionera och dela sina containers.
+  Varje utvecklare bygger och hanterar sina egna versioner av applikationen manuellt.
 
-📍 **Ett typiskt arbetsflöde med registry:**
+  Ingen kan vara säker på att de testar exakt samma bygge, och kompatibilitetsproblem dyker upp
+  först när något går sönder.
 
+  </div>
+  <div slot="right">
+
+  Teamet laddar upp, versionerar och delar sina containers på ett ställe.
+
+  Alla hämtar samma image, och den som testar en ändring testar precis det som senare rullas ut.
+
+  </div>
+</Split>
+
+<Callout type="sa-gor-du" title="Ett typiskt arbetsflöde med registry">
 1. Lisa utvecklar en ny sökfunktion lokalt och testar funktionen i sin utvecklingscontainer.
 2. När allt fungerar bygger hon **en ny image**: `docker build -t searchapi:v2 .` och laddar upp den till teamets registry.
 3. Hela teamet **har nu tillgång** och kan testa den nya sökfunktionen och verifiera den innan ändringarna går live.
 
-Detta förenklar särskilt:
-- **Kodgranskning** (andra kan enkelt testa ändringarna)
-- **Versionshantering** (alla versioner finns sparade)
-- **Utrullning** (samma image används i alla miljöer)
+Det förenklar särskilt **kodgranskning** (andra kan enkelt testa ändringarna), **versionshantering** (alla versioner finns sparade) och **utrullning** (samma image används i alla miljöer).
+</Callout>
 
 <ZoomableImage
     src="/8.png"
@@ -102,26 +127,34 @@ När Lisa ska starta applikationen som teamet jobbar med (ett e-handelssystem) m
 - **Ett backend API**, som hanterar orderprocesser och affärslogik.
 - **En SQL-databas**, som lagrar produktinformation och kundorder.
 
-Lisa försöker starta systemet manuellt, men stöter på flera problem:
+<Split
+  leftTitle="Starta för hand"
+  rightTitle="docker compose up"
+  caption="Samma system, samma tjänster — men bara det ena sättet går att upprepa utan att tänka."
+>
+  <div slot="left">
 
-❌ Hon måste starta varje del **separat och i rätt ordning.**
+  Varje del måste startas **separat och i rätt ordning**.
 
-❌ Backend försöker starta **innan databasen är redo,** vilket leder till fel.
+  Backend försöker starta **innan databasen är redo**, vilket leder till fel.
 
-❌ Varje tjänst behöver rätt konfiguration **för att hitta varandra.**
+  Varje tjänst behöver rätt konfiguration **för att hitta varandra**.
 
-❌ Hon behöver hålla reda på flera terminalfönster för att **köra allt samtidigt.**
+  Flera terminalfönster måste hållas öppna för att **köra allt samtidigt**.
 
-Teamet visar Lisa en **Docker Compose-fil**, som beskriver hela applikationen och hur de olika tjänsterna ska samverka. Med ett enda kommando (`docker compose up`) kan hon starta allt:
+  </div>
+  <div slot="right">
 
+  Alla containers startar **automatiskt i rätt ordning**.
 
-✅ Alla containers startar **automatiskt i rätt ordning.**
+  Backend väntar tills **databasen är redo** innan den startar.
 
-✅ Backend väntar tills **databasen är redo** innan den startar.
+  Tjänsterna är redan **konfigurerade att prata med varandra**.
 
-✅ Tjänsterna är redan **konfigurerade att prata med varandra.**
+  Lisa kan **fokusera på att skriva kod** i stället för att hantera miljöproblem.
 
-✅ Lisa kan **fokusera på att skriva kod** istället för att hantera miljöproblem.
+  </div>
+</Split>
 
 <ZoomableImage
     src="/6.png"
@@ -129,10 +162,8 @@ Teamet visar Lisa en **Docker Compose-fil**, som beskriver hela applikationen oc
     caption="Vi använder Docker compose för att med ett kommando få alla containers att samverka"
 />
 
-
-📍 **Docker Compose binder ihop allt:**
-
 Vi definierar hela vår miljö och hur Docker Compose ska starta alla delarna i en **YAML-fil**. Den kan se ut så här:
+
 ```yaml
 services:
   webshop:
@@ -164,11 +195,35 @@ volumes:
   db_data:
 ```
 
-Nu kan hela teamet:
+Nu kan hela teamet starta miljön med ett kommando – `docker compose up` – och vara säkra på att alla delar är korrekt konfigurerade.
 
-- Starta hela miljön med ett kommando: `docker compose up`
-- Vara säkra på att alla delar är korrekt konfigurerade.
+<Callout type="kom-ihag">
+- En **container** är en låda med programmen och inställningarna applikationen behöver.
+- En **image** är ritningen över lådans innehåll. Samma image kan starta många containrar.
+- Ett **registry** är det gemensamma lagret där images förvaras och hämtas.
+- **Docker Compose** startar flera containers samtidigt och kopplar ihop dem.
+</Callout>
 
+<Check
+  items={[
+    {
+      q: "Vad är skillnaden mellan en image och en container?",
+      a: "Imagen är den färdiga ritningen — oföränderlig och stillastående. Containern är en körande kopia av den. Från en enda image kan du starta hur många containrar du vill, och alla blir identiska.",
+    },
+    {
+      q: "Varför löser containers problemet \"det funkar på min dator\"?",
+      a: "För att allt applikationen behöver — kod, bibliotek, versioner och inställningar — ligger paketerat i containern. Den kör därför likadant oavsett vems dator eller vilken server den startas på.",
+    },
+    {
+      q: "Vad tillför ett registry som en delad mapp inte gör?",
+      a: "Versionshantering och trygghet i utrullningen. Varje image har en tagg, alla versioner finns sparade, och exakt samma image som testades är den som rullas ut i produktion.",
+    },
+    {
+      q: "Varför räcker det inte att starta containrarna för hand med `docker run`?",
+      a: "Du måste själv hålla ordning på startordningen, konfigurationen som får dem att hitta varandra, och flera terminalfönster. Compose beskriver hela miljön i en fil och startar den med ett kommando — likadant varje gång.",
+    },
+  ]}
+/>
 
 ## Sammanfattning
 
@@ -179,3 +234,5 @@ En container image är som ett recept som specificerar exakt vad som finns i lå
 Ett Docker Registry är som ett lager där vi gemensamt förvarar och hämtar våra lådor. Lådorna hålls uppdaterade så att alla får tillgång till samma miljö.
 
 Docker Compose hjälper oss öppna och köra alla containers samtidigt så att de tillsammans får hela applikationen att fungera.
+
+I nästa del skriver Lisa receptet själv: hur en `Dockerfile` byggs rad för rad, och varför ordningen mellan raderna avgör hur snabbt bygget går.
