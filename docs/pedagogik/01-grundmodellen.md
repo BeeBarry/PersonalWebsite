@@ -297,6 +297,52 @@ slängbart läge (Docker Desktops kluster, `sqlite3 :memory:`) och säg att det 
 Ibland **är felmeddelandet övningen** — `kubectl get pods` utan kluster bevisar att kubectl är en
 klient. Använd det medvetet.
 
+### Kör kommandona innan du påstår vad de ger
+
+**Detta är regeln som fångar flest fel, och den går inte att ersätta med noggrann läsning.**
+
+Ett `Prova själv` som beskriver fel utdata är värre än inget alls: läsaren drar slutsatsen att
+*de* gjort fel. Varje kommando ska köras, och den faktiska utdatan ska styra texten.
+
+Fyra påståenden som såg helt rimliga ut och var fel — samtliga upptäckta först vid körning:
+
+| Påstod | Verkligheten |
+|---|---|
+| sqlite3 svarar `SEARCH … USING INDEX` | den svarar `USING COVERING INDEX` |
+| insättning av 200 000 rader "tar några sekunder" | den tar 65 ms |
+| en lång HCL-rad kan brytas efter `=` | `fmt` accepterar det, `validate` underkänner det |
+| `terraform plan` faller utan inloggning | den lyckades — men bara för att maskinen var inloggad |
+
+Det sista är det farligaste: **testet såg ut att bekräfta något och gjorde det inte.** Kontrollera
+alltid *varför* något lyckades, inte bara *att* det gjorde det. Går det inte att avgöra — skriv
+inget påstående om det.
+
+### Kontrollera överlapp mot redan skrivna serier
+
+Innan en artikel skrivs: läs igenom vilka begrepp de färdiga serierna redan äger.
+
+Ett begrepp definieras **en gång i hubben**. Senare artiklar ankrar bakåt i en mening och går
+vidare. Nätverksserien äger `GET vs POST`, `PUT vs PATCH` och idempotens — API-serien upprepar dem
+alltså inte, utan kan i stället ägna utrymmet åt *design*.
+
+Kontrollen är inte formalia. Den ändrade vad API 1.1 handlar om, och frigjorde plats för sex
+sektioner som annars aldrig hade fått rum.
+
+### Kör sveptestet efter varje ändring
+
+Räknebara kriterier hittar avdrift som omläsning missar — inklusive i artiklar som redan är
+godkända. Sveptestet fann att Git 1.0 bara hade två vs-sektioner sex serier efter att den
+förklarats klar, och en 63-teckensrad som skrivits in samma dag.
+
+Kontrollera per artikel: **h2 15–22 · vs ≥3 · kodrader ≤55 · ASCII-diagram ≤40 · alla sju
+obligatoriska sektionerna · `Del`-block 2–4 om minst 3 sektioner · etiketten upprepar inte
+rubriken under sig.**
+
+I webbläsaren räcker ett anrop: `fetch` kategorisidorna, extrahera artikellänkarna, `fetch` +
+`DOMParser` varje artikel, och mät kodrader med canvas `measureText` och typsnittet hämtat ur en
+verklig `.prose pre`. Panelen måste ha riktig bredd först — annars rapporterar den `innerWidth: 0`
+och varje breddmätning blir skräp.
+
 ---
 
 ## Revideringsprotokollet
@@ -318,8 +364,18 @@ utan föreslagen formulering.
 
 ## Snabbchecklistan
 
+**Innan du skriver:**
+
+- [ ] Läst minst en färdig artikel i serien som facit — inte bara den här modellen
+- [ ] Läst föregående och följande del, så bryggan ställer rätt fråga
+- [ ] Kontrollerat vilka begrepp redan skrivna serier äger, så inget definieras två gånger
+
+**Artikeln:**
+
 - [ ] 15–22 h2-rubriker; innehållsförteckningen ensam lär ut ämnets anatomi
 - [ ] 2–4 `<Del />`-block om minst 3 sektioner var, plus `Öva och förstå` — eller inga alls
+- [ ] Ingen `Del`-etikett upprepar rubriken under sig. En bar term över *Vad X är* är rätt;
+      en upprepad fras är fel
 - [ ] Öppnar med *Var vi är* med deklarerad zoomnivå — inte med ett scenario
 - [ ] Varje begreppssektion öppnar med en ordlistefärdig definition
 - [ ] Minst tre `X vs Y`-sektioner med egen rubrik
@@ -336,4 +392,10 @@ utan föreslagen formulering.
 - [ ] 1–2 doodle-briefer
 - [ ] Inga nedvärderande ord, inget dramatiskt register, inga meningar över 30 ord
 - [ ] Kodrader under 55 tecken — och **ASCII-diagram under 40**, verifierat maskinellt
+
+**Innan du säger att den är klar:**
+
+- [ ] **Varje kommando i *Prova själv* är kört**, och texten beskriver den faktiska utdatan
+- [ ] Kontrollerat *varför* ett kommando lyckades, inte bara att det gjorde det
+- [ ] Sveptestet kört över **hela hubben**, inte bara den nya artikeln
 - [ ] `pnpm build` + `pnpm astro check`, kontrollerat i både 1400 px och 375 px
