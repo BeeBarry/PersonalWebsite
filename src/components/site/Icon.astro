@@ -5,7 +5,8 @@ interface Props {
     name: string;
     size?: number;
     class?: string;
-    "aria-hidden"?: boolean | string;
+    // Smal typ (inte `string`) så att spreaden matchar SVGAttributes.
+    "aria-hidden"?: boolean | "true" | "false";
 }
 const { name, size = 18, class: className = "", ...rest } = Astro.props;
 const common = {
@@ -15,8 +16,10 @@ const common = {
     fill: "none",
     stroke: "currentColor",
     "stroke-width": 2,
-    "stroke-linecap": "round",
-    "stroke-linejoin": "round",
+    // `as const` behövs: utan den vidgas värdet till `string` och matchar inte
+    // SVGAttributes literaltyper (astro check ts(2322) på varje <svg {...common}>).
+    "stroke-linecap": "round" as const,
+    "stroke-linejoin": "round" as const,
     "aria-hidden": rest["aria-hidden"] ?? "true",
     class: className,
 };

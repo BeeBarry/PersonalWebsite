@@ -10,7 +10,12 @@ const { src, alt, caption } = Astro.props;
 ---
 
 <div class="image-container">
-    <img src={src} alt={alt} class="zoomable-image" loading="lazy" />
+    <!-- Länken pekar på en bildfil, inte ett dokument: låt webbläsaren navigera
+         direkt i stället för att ClientRouter först hämtar den med fetch och
+         sedan gör om navigeringen (dubbel nedladdning). -->
+    <a class="image-link" href={src} data-astro-reload data-astro-prefetch="false">
+        <img src={src} alt={alt} class="zoomable-image" loading="lazy" />
+    </a>
     {caption && <p class="image-caption">{caption}</p>}
 </div>
 
@@ -18,6 +23,13 @@ const { src, alt, caption } = Astro.props;
     .image-container {
         margin: 2rem 0;
         text-align: center;
+    }
+
+    /* Hög specificitet: i .prose får ankare understrykning från global.css. */
+    .image-container .image-link {
+        display: block;
+        text-decoration: none;
+        color: inherit;
     }
 
     .zoomable-image {
@@ -31,15 +43,17 @@ const { src, alt, caption } = Astro.props;
         opacity: 0;
     }
 
-    @media (max-width: 600px) {
+    /* Under md är lightboxen avstängd — bilden är en vanlig länk till
+       originalfilen, så markören ska visa just det. */
+    @media (max-width: 767.98px) {
         .zoomable-image {
-            cursor: default;
+            cursor: pointer;
         }
     }
 
     .image-caption {
         font-size: 0.9rem;
-        color: #666;
+        color: var(--c-text-muted);
         margin-top: 0.5rem;
         font-style: italic;
     }
@@ -153,14 +167,22 @@ const { src, alt, caption } = Astro.props;
         if (listenersAttached) return;
         listenersAttached = true;
 
-        const isMobile = () => window.innerWidth <= 600;
+        // Under md (768 px) är lightboxen avstängd — då får .image-link
+        // navigera till originalfilen som en vanlig länk i stället.
+        const isMobile = () => window.innerWidth < 768;
 
         document.addEventListener('click', (e) => {
             if (isMobile()) return;
             const target = e.target as Element;
 
-            // Klick på en zoombar bild → öppna
-            const img = target.closest('.zoomable-image') as HTMLImageElement | null;
+            // På desktop äger lightboxen bilden — länken får inte navigera.
+            const link = target.closest('.image-link');
+            if (link) e.preventDefault();
+
+            // Klick (eller Enter på länken) på en zoombar bild → öppna
+            const img = (target.closest('.zoomable-image') ??
+                link?.querySelector('.zoomable-image') ??
+                null) as HTMLImageElement | null;
             if (img && !document.querySelector('.zoomed-clone')) {
                 e.stopPropagation();
                 openZoom(img);
