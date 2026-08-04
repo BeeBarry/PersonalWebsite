@@ -1,6 +1,5 @@
 ---
 title: 'Introduktion till Docker'
-draft: true
 description: 'Lär dig grunderna i Docker och containers'
 category: 'docker'
 image:
@@ -13,19 +12,19 @@ tags: ['Beginner', 'Overview']
 
 ## Containers
 
-En **container** är som en liten låda som innehåller allt din applikation behöver för att fungera: programkod, bibliotek och konfigurationer. Grundtanken med containers är att säkerställa att **applikationen fungerar på exakt samma sätt oavsett var den körs**—på din laptop, en kollegas dator eller i molnet.
+En **container** är som en liten låda som innehåller allt din applikation behöver för att fungera: programkod, bibliotek och konfigurationer. Grundtanken med containers är att säkerställa att **applikationen fungerar på exakt samma sätt oavsett var den körs** – på din laptop, en kollegas dator eller i molnet.
 
 När Lisa, en ny utvecklare, börjar i teamet förväntar hon sig att det kommer ta **flera timmar, kanske en hel dag**, att installera alla verktyg och konfigurera sin utvecklingsmiljö. Men det kanske finns en bättre lösning?
 
-*"Det finns ett smidigare sätt,"* säger en kollega och visar hur teamet använder containers.
+*”Det finns ett smidigare sätt”*, säger en kollega och visar hur teamet använder containers.
 
 **Eftersom allt är paketerat i en container**, behöver Lisa bara köra ett enda kommando för att få exakt samma utvecklingsmiljö som sina teammedlemmar.
 
 📍 **Vad löser containers?**
 
-- **Alla utvecklare i teamet arbetar i en identisk miljö,** vilket minskar " det funkar ju inte på min dator"-problem.
+- **Alla utvecklare i teamet arbetar i en identisk miljö,** vilket minskar ”det funkar ju inte på min dator”-problem.
 - Nya utvecklare kan starta upp sin miljö **på några minuter istället för timmar.**
-- Alla använder **exakt samma versioner** av  tex. C#, Node, databaser och andra beroenden.
+- Alla använder **exakt samma versioner** av t.ex. C#, Node, databaser och andra beroenden.
 - **Lisas utvecklingsmiljö påverkar inte andra projekt på hennes dator** – hon kan arbeta med flera projekt utan att behöva installera om eller ändra inställningar varje gång.
 
 
@@ -57,28 +56,28 @@ Med container images kan teamet hantera olika versioner av sin applikation:
 <ZoomableImage
     src="/intro-to-docker-pic2.svg"
     alt="Docker image"
-    caption="Vi skapar en image och lägger den i lådan för att specifiera innehållet"
+    caption="Vi skapar en image och lägger den i lådan för att specificera innehållet"
 />
 
 ## Docker Registry
 
 När vi har byggt en container image vill vi kunna dela den med resten av teamet eller distribuera den till servrar. Det gör vi via en **Docker Registry**, som fungerar som ett gemensamt bibliotek där teamet lagrar och hämtar images.
 
-Nu när personerna i teamet sitter och utvecklar olika delar av applikationen är det viktigt att alla snabbt och enkelt kan dela sina ändringar
+Nu när personerna i teamet sitter och utvecklar olika delar av applikationen är det viktigt att alla snabbt och enkelt kan dela sina ändringar:
 
 - **Maria har uppdaterat API:et med nya funktioner** som gör det möjligt att filtrera produkter.
 - **Johan har optimerat databasen** för att snabba upp laddningstider.
-- **Rufus och Kurt behöver testa båda ändringarna tillsammans(API:t och databasen)** innan ändringarna går vidare till produktion-versionen.
+- **Rufus och Kurt behöver testa båda ändringarna tillsammans (API:et och databasen)** innan de går vidare till produktionsversionen.
 
-**Utan ett registry:** Skulle behöva bygga och hantera sina egna versioner av applikationen manuellt, vilket kan leda till förvirring och kompatibilitetsproblem.
+**Utan ett registry:** varje utvecklare skulle behöva bygga och hantera sina egna versioner av applikationen manuellt, vilket kan leda till förvirring och kompatibilitetsproblem.
 
 **Med ett registry:** Teamet kan enkelt ladda upp, versionera och dela sina containers.
 
 📍 **Ett typiskt arbetsflöde med registry:**
 
 1. Lisa utvecklar en ny sökfunktion lokalt och testar funktionen i sin utvecklingscontainer.
-2. När allt fungerar bygger hon **en ny image**: `docker build -t searchapi:v2` och laddar upp den till teamets registry.
-3. Hela teamet **har nu tillgång** och kan nu testa den nya sökfunktionen och sedan verifiera den innan ändringarna går live.
+2. När allt fungerar bygger hon **en ny image**: `docker build -t searchapi:v2 .` och laddar upp den till teamets registry.
+3. Hela teamet **har nu tillgång** och kan testa den nya sökfunktionen och verifiera den innan ändringarna går live.
 
 Detta förenklar särskilt:
 - **Kodgranskning** (andra kan enkelt testa ändringarna)
@@ -88,14 +87,14 @@ Detta förenklar särskilt:
 <ZoomableImage
     src="/8.png"
     alt="Docker Registry"
-    caption="Vi förvarar våra images i ett Registry så andra behöriga lätt kan komma åt de"
+    caption="Vi förvarar våra images i ett registry så andra behöriga lätt kan komma åt dem"
 />
 
 ## Docker Compose
 
-Många moderna applikationer består av flera tjänster som behöver samverka – en backend, en frontend och en databas. Att manuellt starta och koppla ihop alla dessa containers kan vara krångligt, och här kommer **Docker Compose** till användning.
+Många moderna applikationer består av flera tjänster som behöver samverka – en backend, en frontend och en databas. Att manuellt starta och koppla ihop alla dessa containers kan vara krångligt, och det är här **Docker Compose** kommer in.
 
-När Lisa skall starta applikationen teamet jobbar med (e-handelssystem) så märker hon att systemet består av flera delar:
+När Lisa ska starta applikationen som teamet jobbar med (ett e-handelssystem) märker hon att systemet består av flera delar:
 
 - **En webbserver för frontend**, där kunder kan bläddra bland produkter och lägga beställningar.
 - **Ett backend API**, som hanterar orderprocesser och affärslogik.
@@ -111,7 +110,7 @@ Lisa försöker starta systemet manuellt, men stöter på flera problem:
 
 ❌ Hon behöver hålla reda på flera terminalfönster för att **köra allt samtidigt.**
 
-Teamet visar Lisa en **Docker Compose-fil**, som beskriver hela applikationen och hur de olika tjänsterna ska samverka. Med ett enda kommando ( *docker-compose up* ) kan hon starta allt:
+Teamet visar Lisa en **Docker Compose-fil**, som beskriver hela applikationen och hur de olika tjänsterna ska samverka. Med ett enda kommando (`docker compose up`) kan hon starta allt:
 
 
 ✅ Alla containers startar **automatiskt i rätt ordning.**
@@ -131,9 +130,8 @@ Teamet visar Lisa en **Docker Compose-fil**, som beskriver hela applikationen oc
 
 📍 **Docker Compose binder ihop allt:**
 
-Vi definierar hela vår miljö och hur Docker Compose skall initiera alla delarna i en **YAML-fil**, den kan se ut såhär:
+Vi definierar hela vår miljö och hur Docker Compose ska starta alla delarna i en **YAML-fil**. Den kan se ut så här:
 ```yaml
-version: '3.8'
 services:
   webshop:
     build: ./frontend
@@ -166,16 +164,16 @@ volumes:
 
 Nu kan hela teamet:
 
-- Starta hela miljön med ett kommando: `docker-compose up`
+- Starta hela miljön med ett kommando: `docker compose up`
 - Vara säkra på att alla delar är korrekt konfigurerade.
 
 
-## Sammanfattning:
+## Sammanfattning
 
-En Container är som en låda med viktiga specifikationer av program och inställningar. Lådan kan vi enkelt skicka runt eller dela inom teamet så att alla sitter på likadana program och inställningar.
+En container är som en låda med de program och inställningar applikationen behöver. Lådan kan vi enkelt skicka runt eller dela inom teamet, så att alla har likadana program och inställningar.
 
-Container Image är som ett recept som specifierar exakt vad som finns i lådan och skall initieras när lådan börjar köras.
+En container image är som ett recept som specificerar exakt vad som finns i lådan och vad som ska startas när lådan börjar köras.
 
-Docker Registry är som ett lager där vi gemensamt förvarar och hämtar våra lådor. Lådorna hålls uppdaterade så att att alla får tillgång till samma miljö.
+Ett Docker Registry är som ett lager där vi gemensamt förvarar och hämtar våra lådor. Lådorna hålls uppdaterade så att alla får tillgång till samma miljö.
 
 Docker Compose hjälper oss öppna och köra alla containers samtidigt så att de tillsammans får hela applikationen att fungera.

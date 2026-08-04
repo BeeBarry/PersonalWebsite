@@ -8,12 +8,15 @@ import DomainChips from "../../components/site/DomainChips.astro";
 import StickyBar from "../../components/site/StickyBar.astro";
 
 const allArticles = await getCollection("learn", showEntry);
+// Kategorier utan publicerade artiklar listas inte — [category]/index.astro
+// genererar ingen sida för dem, så ett kort hade blivit en död länk.
 const withCounts = categories
   .filter((c) => c.isVisible)
   .map((c) => ({
     ...c,
     count: allArticles.filter((a) => a.data.category === c.slug).length,
-  }));
+  }))
+  .filter((c) => c.count > 0);
 
 const has = (slug: string) => withCounts.filter((c) => c.domain === slug).length;
 const filters = [
@@ -22,6 +25,9 @@ const filters = [
     .filter((d) => has(d.slug) > 0)
     .map((d) => ({ label: d.short, value: d.slug, count: has(d.slug) })),
 ];
+// Med bara en domän kvar blir chipsraden "Alla / Cloud" — ett filter utan val.
+// Visa den först när det finns minst två domäner att växla mellan.
+const showFilters = filters.length > 2;
 ---
 
 <AppLayout
@@ -29,14 +35,14 @@ const filters = [
   description="Områden jag lär mig om och förklarar enkelt."
 >
   {
-    filters.length > 1 && (
+    showFilters && (
       <StickyBar title="Learn Hub">
         <DomainChips filters={filters} compact />
       </StickyBar>
     )
   }
 
-  <div class="animate-in p-6 md:p-8">
+  <div class="animate-in p-6 lg:p-8">
     <header class="mb-6">
       <h2
         class="mb-2 font-mono text-[10px] tracking-[0.22em] text-muted-foreground/50 uppercase"
@@ -51,7 +57,7 @@ const filters = [
       </p>
     </header>
 
-    {filters.length > 1 && <DomainChips filters={filters} />}
+    {showFilters && <DomainChips filters={filters} />}
 
     <div data-sticky-anchor aria-hidden="true"></div>
     <div class="grid gap-3 sm:grid-cols-2" data-filter-target>

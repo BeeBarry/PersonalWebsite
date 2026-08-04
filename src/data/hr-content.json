@@ -107,15 +107,139 @@
       "junior": "Har kört Kubernetes i egna projekt eller labbmiljö och förstår begreppen. Ovanligt men finns — ofta hos självlärda.",
       "senior": "Ansvarar för produktionsmiljöer med riktiga användare: kostnad, säkerhet, återställning och jour."
     },
-    { "id": "hr-fe", "title": "Frontendutvecklare", "typ": "Roll", "dom": "Frontend", "draft": true, "one": "Bygger det användaren ser och klickar på — nära design, långt från servern." },
-    { "id": "hr-devops", "title": "DevOps-ingenjör", "typ": "Roll", "dom": "Cloud & DevOps", "draft": true, "one": "Bygger vägen från skriven kod till körande system — och håller den vägen öppen." },
+    {
+      "id": "hr-fe",
+      "title": "Frontendutvecklare",
+      "typ": "Roll",
+      "dom": "Frontend",
+      "one": "Bygger det användaren ser och klickar på — nära design, långt från servern.",
+      "what": "En frontendutvecklare bygger den del av produkten som användaren faktiskt ser och rör vid: sidor, knappar, formulär och tabeller i webbläsaren. Arbetet handlar lika mycket om hur något känns — att det laddar snabbt, fungerar på mobilen och går att använda med tangentbord — som om hur det ser ut. Personen sitter nära designers och produktägare och hämtar sin data från backendens API:er. Nästan allt frontendarbete sker idag i JavaScript eller TypeScript, oftast med ett ramverk som React, Angular eller Vue.",
+      "analogy": "Tänk på en bil. Frontend är ratten, pedalerna och instrumentpanelen — det föraren använder. Backend är motorn under huven. En bil med perfekt motor och trasig ratt går varken att köra eller sälja.",
+      "tasks": [
+        "Omsätter en design, oftast från Figma, till fungerande sidor i webbläsaren.",
+        "Kopplar gränssnittet mot backendens API:er och hanterar väntan, tomma vyer och felmeddelanden.",
+        "Ser till att det fungerar på mobil, i olika webbläsare och för den som använder skärmläsare.",
+        "Sitter i avstämningar med design och produkt — mycket av jobbet är att fråga \"vad ska hända om användaren gör så här?\"."
+      ],
+      "fits": [
+        "Ser detaljer andra missar och stör sig på att något sitter snett.",
+        "Vill ha snabb återkoppling — resultatet syns på skärmen samma dag.",
+        "Tycker om att sätta sig i användarens stol och fråga sig vad personen förväntar sig härnäst."
+      ],
+      "confuse": [
+        { "a": "Frontendutvecklare ≠ webbdesigner", "b": "Designern bestämmer hur det ska se ut, utvecklaren bygger det. Vissa gör båda, men det är två yrken — och egentligen två annonser." },
+        { "a": "Frontend ≠ bara HTML och CSS", "b": "Det är grunden. Ovanpå ligger programmering, datahantering, tester och prestanda. En modern frontend är ett program, inte en sida." },
+        { "a": "Frontend ≠ React", "b": "React är ett av flera verktyg för samma jobb. Söker ni en frontendutvecklare, skriv rollen i rubriken och lista ramverket som färdighet." }
+      ],
+      "cv": ["JavaScript", "TypeScript", "React", "HTML", "CSS", "Figma", "Next.js", "responsiv design", "tillgänglighet", "Git"],
+      "ask": [
+        { "q": "Visa något du byggt och berätta vem det var till för.", "good": "Pratar om användaren och problemet som löstes, inte bara om vilka tekniker som användes. Att kunna namnge vem något är till för är ovanligare än man tror." },
+        { "q": "Vad gör ni när designern vill ha en sak och det visar sig bli dyrt att bygga?", "good": "Beskriver en dialog: förklarar kostnaden, föreslår ett alternativ. Den som svarar \"jag bygger det som står i designen\" har sällan jobbat i ett team." }
+      ],
+      "junior": "Bygger enskilda sidor och komponenter efter färdig design och tydlig uppgift, med kodgranskning av en senior. Ofta 0–2 år.",
+      "senior": "Sätter strukturen för hela gränssnittet — designsystem, prestanda och tillgänglighet — och säger nej till lösningar som blir dyra att leva med. 5+ år."
+    },
+    {
+      "id": "hr-devops",
+      "title": "DevOps-ingenjör",
+      "typ": "Roll",
+      "dom": "Cloud & DevOps",
+      "one": "Bygger vägen från skriven kod till körande system — och håller den vägen öppen.",
+      "what": "En DevOps-ingenjör bygger och sköter vägen från att en utvecklare skrivit kod till att den körs hos riktiga användare. Kärnan är automatik: att bygga, testa och släppa ska ske med ett knapptryck istället för en manuell checklista som någon ändå glömmer. Personen ansvarar också för att systemet går att övervaka — att man ser när något är fel och kan ta sig tillbaka. Namnet kommer från development och operations, och tanken är att utveckling och drift ska vara samma lag istället för två avdelningar som skickar problem mellan sig.",
+      "analogy": "Tänk på ett bageri. Bagarna är utvecklarna som bakar bröden. DevOps-ingenjören bygger transportbandet, ugnstermometern och larmet som ringer när ugnen slocknar — så att bagarna kan baka oftare utan att något bränns vid.",
+      "tasks": [
+        "Bygger och underhåller pipelines: automatiken som testar koden och släpper den i drift.",
+        "Beskriver servrar och molnmiljöer i kod, så att en miljö kan återskapas exakt likadan.",
+        "Sätter upp övervakning och larm — och är ofta den som blir uppringd när något ligger nere.",
+        "Hjälper utvecklingsteamen att bli självgående istället för att göra driftjobbet åt dem."
+      ],
+      "fits": [
+        "Vill ha ordning och automatik: det som görs manuellt tre gånger ska skriptas.",
+        "Är lugn när det brinner — rollen innebär ofta jour och skarpa incidenter.",
+        "Tycker om att göra andra snabbare, och tar inte illa upp av att arbetet syns mest när det inte fungerar."
+      ],
+      "confuse": [
+        { "a": "DevOps-ingenjör ≠ en person som gör allt", "b": "DevOps är ett arbetssätt för ett helt team. Anställer ni en person som ska sköta all drift åt alla har ni byggt en flaskhals, inte en kultur." },
+        { "a": "DevOps ≠ systemadministratör", "b": "De överlappar, men en DevOps-ingenjör programmerar sin infrastruktur istället för att klicka fram den. Fråga vad personen automatiserat senast." },
+        { "a": "DevOps ≠ ett verktyg", "b": "Det finns ingenting att installera som heter DevOps. Docker, Kubernetes, Terraform och GitHub Actions är medlen — inte definitionen." }
+      ],
+      "cv": ["CI/CD", "Docker", "Kubernetes", "Terraform", "AWS", "Azure", "Linux", "GitHub Actions", "Prometheus", "IaC", "jour"],
+      "ask": [
+        { "q": "Vad händer hos er från att en utvecklare är klar tills koden är ute hos användarna?", "good": "Ett konkret steg-för-steg-svar från förra jobbet, gärna med en tidsangivelse: \"det tog tjugo minuter\". Vaga svar tyder på att personen sett processen men inte byggt den." },
+        { "q": "Berätta om en natt då något gick sönder.", "good": "Beskriver hur felet upptäcktes, vad som gjordes för att stoppa blödningen och vad som ändrades efteråt. Bra kandidater pratar om systemet, inte om vems fel det var." }
+      ],
+      "junior": "Har byggt pipelines och molnmiljöer i egna projekt eller under handledning, men ännu inte burit driftansvaret själv. Ofta 0–2 år, ibland via en tidigare supportroll.",
+      "senior": "Äger produktionsmiljöer med riktiga användare — kostnad, säkerhet, återställning och jourorganisation — och sätter arbetssättet för flera team."
+    },
     { "id": "hr-data", "title": "Data engineer", "typ": "Roll", "dom": "Data & AI", "draft": true, "one": "Bygger rören som flyttar data dit den behövs. Grunden som all AI vilar på." },
     { "id": "hr-ts", "title": "TypeScript", "typ": "Språk", "dom": "Frontend", "draft": true, "one": "JavaScript med säkerhetsbälte — fångar fel innan koden ens körs." },
     { "id": "hr-py", "title": "Python", "typ": "Språk", "dom": "Data & AI", "draft": true, "one": "Lättläst språk som dominerar data, AI och automatisering." },
     { "id": "hr-cs", "title": "C# / .NET", "typ": "Språk", "dom": "Backend", "draft": true, "one": "Microsofts arbetshäst — vanligast i svensk offentlig sektor och hos storbolag." },
-    { "id": "hr-docker", "title": "Docker", "typ": "Verktyg", "dom": "Cloud & DevOps", "draft": true, "one": "Packar ett program med allt det behöver, så det kör likadant överallt." },
+    {
+      "id": "hr-docker",
+      "title": "Docker",
+      "typ": "Verktyg",
+      "dom": "Cloud & DevOps",
+      "one": "Packar ett program med allt det behöver, så det kör likadant överallt.",
+      "what": "Docker är ett verktyg som packar ett program tillsammans med allt det behöver för att fungera — kod, inställningar och de hjälpprogram det förlitar sig på — i ett paket som kallas container. Poängen är att paketet beter sig likadant på utvecklarens laptop, i testmiljön och i skarp drift. Det avskaffar den klassiska konflikten \"men det funkar hos mig\". Docker är sällan någons enda kompetens; det är en baskunskap hos backendutvecklare och DevOps-ingenjörer, och allt oftare även hos frontendutvecklare.",
+      "analogy": "Tänk på flyttlådor. Istället för att bära lös möbel efter lös möbel packar du allt som hör ihop i en standardiserad låda med etikett. Lådan ser likadan ut oavsett om den ska till en villa eller en lägenhet — och den som tar emot behöver inte veta vad som ligger i den.",
+      "tasks": [
+        "Skriver receptet för hur programmet ska packas: vad som ska med och hur det startas.",
+        "Kör hela systemet på sin egen dator med ett kommando — appen, databasen och testdata samtidigt.",
+        "Ser till att exakt samma paket används hela vägen från test till drift, så inget skiljer mellan miljöerna.",
+        "Håller paketen små och uppdaterade — stora eller gamla containers kostar både tid och säkerhet."
+      ],
+      "fits": [
+        "Gillar att saker ska gå att upprepa: samma indata, samma resultat, varje gång.",
+        "Blir irriterad på långa installationsinstruktioner och skriver hellre ner dem som kod.",
+        "Tänker ett steg längre — hur ska det här fungera för nästa person som kommer in i projektet?"
+      ],
+      "confuse": [
+        { "a": "Docker ≠ virtuell maskin", "b": "En virtuell maskin är en hel dator inuti datorn och tar minuter att starta. En container delar operativsystem med värddatorn och startar på sekunder — därför kan man köra hundratals." },
+        { "a": "Docker ≠ Kubernetes", "b": "Docker packar och kör enstaka containers. Kubernetes styr många containers över många servrar. De hör ihop, men löser olika problem — och Kubernetes utan Docker-vana är ovanligt." },
+        { "a": "Docker ≠ molnet", "b": "Containers kör lika gärna i ett eget serverrum. \"Vi kör Docker\" säger ingenting om huruvida ni ligger i AWS, i Azure eller i källaren." }
+      ],
+      "cv": ["container", "Dockerfile", "Docker Compose", "image", "registry", "Kubernetes", "Linux", "CI/CD", "microservices", "GitHub Actions"],
+      "ask": [
+        { "q": "Vad blir enklare för ett team som börjar använda Docker?", "good": "Svarar i vardagsnytta: nya utvecklare kommer igång på en timme istället för en vecka, och testmiljön beter sig som produktion. En ren teknikuppräkning är ett svagare svar." },
+        { "q": "Har du kört det du paketerat i skarp drift, eller bara på din egen dator?", "good": "Ärligheten väger tyngst. Den som säger \"bara lokalt, men jag vet vad som skiljer\" är oftare rätt person än den som svävar på målet." }
+      ],
+      "junior": "Kan starta färdiga containers och har paketerat sina egna projekt. Vanligt redan efter en utbildning eller ett år i yrket — 0–2 år.",
+      "senior": "Bestämmer hur hela organisationens paketering ska se ut: säkerhet, storlek, bygghastighet och vem som får släppa vad."
+    },
     { "id": "hr-next", "title": "Next.js", "typ": "Ramverk", "dom": "Frontend", "draft": true, "one": "React med extra allt — det vanligaste sättet att bygga React-sajter idag." },
-    { "id": "hr-cicd", "title": "CI/CD", "typ": "Arbetssätt", "dom": "Tvärs över teamet", "draft": true, "one": "Automatiken som testar och släpper ny kod flera gånger om dagen." },
+    {
+      "id": "hr-cicd",
+      "title": "CI/CD",
+      "typ": "Arbetssätt",
+      "dom": "Tvärs över teamet",
+      "one": "Automatiken som testar och släpper ny kod flera gånger om dagen.",
+      "what": "CI/CD står för continuous integration och continuous delivery — kontinuerlig integration och kontinuerlig leverans. Det är arbetssättet där varje kodändring automatiskt byggs, testas och görs redo att släppas, istället för att teamet samlar ihop månader av arbete till en stor och nervös release. I praktiken märks det genom att ny funktionalitet kan gå ut flera gånger i veckan i små, ofarliga steg. För dig som rekryterar är det en av de tydligaste signalerna på hur modernt ett team faktiskt arbetar.",
+      "analogy": "Tänk på en bilfabrik. Istället för att bygga hela bilen och provköra den först på slutet kontrolleras varje del direkt när den monteras. Hittas ett fel har det bara hunnit påverka en detalj — inte hela bilen.",
+      "tasks": [
+        "Skriver de automatiska stegen som körs varje gång någon ändrar i koden: bygg, test och säkerhetskontroll.",
+        "Håller automatiken snabb — tar den fyrtio minuter slutar folk vänta på den och börjar gena.",
+        "Utreder när ett test slår larm och avgör om det är koden eller testet som är trasigt.",
+        "Bygger in möjligheten att backa: en dålig release ska kunna rullas tillbaka på minuter."
+      ],
+      "fits": [
+        "Har låg tolerans för manuella rutiner och checklistor som någon ändå glömmer.",
+        "Tycker om att göra andras vardag mindre plottrig, även när ingen märker det.",
+        "Är tålmodig — en del av jobbet är att jaga fel som bara uppstår ibland."
+      ],
+      "confuse": [
+        { "a": "CI/CD ≠ ett verktyg", "b": "Det är ett arbetssätt. Verktygen som utför det heter GitHub Actions, GitLab CI, Jenkins eller Azure DevOps — kräv inte ett visst namn i annonsen när ni egentligen menar arbetssättet." },
+        { "a": "CI ≠ CD", "b": "CI är att koden hela tiden byggs och testas ihop med andras. CD är att den också går hela vägen ut till användarna. Många team har det första men inte det andra." },
+        { "a": "CI/CD ≠ mindre testning", "b": "Tvärtom. Automatiken bygger på att det finns tester att lita på. Ett team som släpper ofta utan tester har inte CI/CD, de har tur." }
+      ],
+      "cv": ["GitHub Actions", "GitLab CI", "Jenkins", "Azure DevOps", "pipeline", "automatiska tester", "deploy", "release", "Docker", "Git"],
+      "ask": [
+        { "q": "Hur ofta släppte ni ny kod på ditt förra jobb?", "good": "Ett rakt svar med en siffra — varje dag, varje vecka, varje kvartal — och en förklaring till varför det såg ut så. Den som inte vet har sällan varit nära leveransen." },
+        { "q": "Vad gjorde ni när en release gick fel?", "good": "Beskriver en plan: hur de märkte det, hur de backade och vad de ändrade efteråt. \"Det har aldrig hänt\" betyder oftast att personen släppt väldigt sällan." }
+      ],
+      "junior": "Kan använda en befintlig automatik och förstår varför bygget stannade. Ofta 0–2 år.",
+      "senior": "Designar hur hela organisationen bygger och släpper kod — inklusive säkerhetskrav, godkännanden och hur man snabbt tar sig ur en dålig release."
+    },
     { "id": "hr-scrum", "title": "Scrum & agilt", "typ": "Arbetssätt", "dom": "Tvärs över teamet", "draft": true, "one": "Arbetssättet bakom orden sprint, standup och backlog." }
   ],
 

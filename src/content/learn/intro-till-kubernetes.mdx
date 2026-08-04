@@ -1,0 +1,120 @@
+---
+title: 'Introduktion till Kubernetes'
+description: 'Vad Kubernetes löser när containrarna blir fler än en dator klarar'
+category: 'kubernetes'
+order: 1
+date: '2026-08-04'
+tags: ['Beginner', 'Overview']
+---
+
+## När containrarna blir för många
+
+I Docker-artikeln lämnade vi Lisa och teamet med ett e-handelssystem som startar med ett enda kommando: `docker compose up`. Frontend, API och databas ligger i varsin container, och alla i teamet får exakt samma miljö.
+
+Det fungerar utmärkt – på en dator.
+
+Sedan går applikationen live. Kunderna blir fler, en container räcker inte längre för API:et, och systemet måste spridas ut över flera servrar. Nu dyker en ny sorts frågor upp, och ingen av dem handlar längre om hur en container byggs.
+
+📍 **Vad går sönder när vi skalar upp?**
+
+- Vem startar om containern som kraschar **klockan tre på natten**?
+- Vilken av servrarna ska nästa container köras på – den som **har mest minne ledigt**?
+- Hur vet frontend vilken av **fem API-containrar** den ska prata med?
+- Hur byter vi till en ny version **utan att sajten ligger nere** under tiden?
+
+**Kubernetes** (ofta förkortat **K8s**) är svaret på precis de frågorna. Det är en *orkestrerare*: ett system som håller ihop ett antal servrar till ett **kluster** och ser till att rätt containrar körs på rätt maskin, i rätt antal, hela tiden.
+
+Grundidén är enkel och värd att fästa direkt: **du beskriver hur det ska se ut, Kubernetes ser till att det blir så.** Du säger alltså inte *”starta tre kopior av API:et på server två”*. Du säger *”det ska alltid finnas tre kopior av API:et”* – och sedan är det Kubernetes jobb att hålla det sant, även när en server dör mitt i natten.
+
+## Pods
+
+Den minsta enheten i Kubernetes är inte en container, utan en **pod**. En pod är ett litet skal runt en eller några containrar som hör så tätt ihop att de alltid måste köras på samma maskin.
+
+I praktiken innehåller de flesta poddar **exakt en container** – vårt API, till exempel. Men eftersom containrarna i en pod delar nätverk och lagring kan man lägga till en hjälpcontainer bredvid huvudcontainern, exempelvis en som samlar in loggar.
+
+Det viktigaste att förstå med poddar är att de är **tillfälliga**. En pod startas, körs en stund och försvinner. Kraschar den skapas inte samma pod igen – en **ny** pod skapas i dess ställe, med ett nytt namn och en ny IP-adress.
+
+Det låter opraktiskt, men är själva poängen: när ingen enskild pod är viktig kan systemet flytta runt, byta ut och skapa fler av dem helt fritt. Poddarna är utbytbara, och det är det som gör resten möjligt.
+
+## Deployments
+
+Om poddar är tillfälliga behöver vi något som beskriver vad som **alltid** ska finnas. Det är en **Deployment**: en beskrivning av vilken image som ska köras och i hur många kopior.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+        - name: api
+          image: registry.example.com/searchapi:v2
+          ports:
+            - containerPort: 5000
+```
+
+Lisa läser filen och känner igen sig: det är samma image från teamets registry som i Docker-artikeln, men nu med ett tillägg som Docker Compose aldrig hade – `replicas: 3`.
+
+När hon kör `kubectl apply -f api.yaml` startar Kubernetes tre poddar och **fortsätter sedan att bevaka dem**. Raderar någon en pod av misstag skapas en ny inom sekunder, eftersom verkligheten då skiljer sig från beskrivningen.
+
+Samma mekanism ger utrullning utan driftstopp. Byter Lisa `searchapi:v2` mot `searchapi:v3` byter Kubernetes ut poddarna **en i taget**: en ny pod startas, den kontrolleras, först därefter tas en gammal bort. Under hela bytet finns det fungerande poddar som svarar på trafik – och skulle den nya versionen vara trasig rullar teamet tillbaka med ett kommando.
+
+## Services
+
+Kvar finns ett problem: om poddar hela tiden byter IP-adress, hur hittar frontend fram till API:et?
+
+Lösningen heter **Service** och är ungefär en fast adress med inbyggd växel. En Service får ett namn – `api` – som aldrig ändras, håller reda på vilka poddar som just nu är friska, och fördelar anropen mellan dem.
+
+📍 **Vad en Service ger oss:**
+
+- Frontend anropar **`http://api:5000`** och behöver aldrig veta hur många poddar som finns bakom.
+- Trafiken **fördelas automatiskt** mellan poddarna – enkel lastbalansering utan extra konfiguration.
+- En pod som startas eller tas bort **läggs till och plockas bort** ur växeln på egen hand.
+- Databasen kan ligga bakom en Service som bara är nåbar **inifrån klustret**, medan frontend exponeras utåt.
+
+Här går det att se hela mönstret: Docker Compose kopplade ihop containrar på **en** maskin, en Service kopplar ihop poddar över **hela klustret**.
+
+## Självläkning och skalning
+
+Två saker gör att teamet sover bättre om natten.
+
+✅ **Självläkning.** Kubernetes frågar löpande varje pod om den mår bra – en så kallad *health probe*. Svarar den inte startas den om automatiskt. Går en hel server sönder flyttas dess poddar över till de servrar som är kvar. Ingen behöver bli väckt.
+
+✅ **Skalning.** Inför rean höjer Lisa `replicas` från 3 till 10, och tio minuter senare är kapaciteten på plats. Det går också att göra automatiskt: en regel som säger *”kör fler poddar när processorlasten går över 70 procent”* låter systemet skala upp under toppen och ner igen efteråt, utan att någon behöver titta på grafer.
+
+Det är samma princip om och om igen. Teamet beskriver ett önskat läge, och Kubernetes arbetar oavbrutet för att verkligheten ska matcha det.
+
+## När du inte behöver Kubernetes
+
+Det här är den del som ofta hoppas över, och den är viktigast av alla: **Kubernetes är inte gratis.**
+
+Ett kluster innebär nätverk, ingress-regler, behörigheter, certifikat, övervakning och uppgraderingar som någon måste förstå och underhålla. Den komplexiteten betalar sig när du faktiskt har problemet den löser – men bara då.
+
+❌ **En applikation på en server med jämn trafik** – Docker Compose räcker gott, och du slipper ett helt lager att lära dig.
+
+❌ **Ett hobbyprojekt eller en tidig produkt** – en hanterad tjänst som Azure Container Apps eller App Service ger dig utrullning och skalning utan att du driftar ett kluster.
+
+❌ **Ett litet team utan driftserfarenhet** – ett kluster ingen riktigt förstår blir en risk, inte en trygghet.
+
+✅ **Många tjänster, flera servrar, krav på tillgänglighet och skalning** – då är Kubernetes rätt verktyg, och då är det svårt att bygga något bättre själv.
+
+En rimlig tumregel: börja med Docker och Docker Compose. Gå vidare till Kubernetes den dag du märker att du håller på att **bygga det själv** – när du skriver skript som startar om kraschade containrar, fördelar trafik och håller reda på vilken server som har plats. Då finns problemet på riktigt, och då är verktyget värt sin komplexitet.
+
+## Sammanfattning
+
+En **pod** är det minsta Kubernetes hanterar: ett skal runt en eller ett par containrar. Poddar är tillfälliga och utbytbara, och det är just därför systemet kan flytta runt dem fritt.
+
+En **Deployment** beskriver vad som alltid ska finnas – vilken image och hur många kopior. Kubernetes jämför beskrivningen med verkligheten och rättar till skillnaden, vilket ger både självläkning och utrullning utan driftstopp.
+
+En **Service** ger poddarna en fast adress och fördelar trafiken mellan dem, så att resten av systemet slipper veta var de råkar köra just nu.
+
+Och den sista poängen är lika viktig som de andra: Kubernetes löser problemet *många containrar på många servrar*. Har du inte det problemet ännu, är Docker Compose fortfarande rätt svar.

@@ -6,11 +6,17 @@ import { showEntry } from "../../../utils/content";
 import ContentRow from "../../../components/site/ContentRow.astro";
 import { Icon } from "astro-icon/components";
 
+// Bara kategorier som faktiskt har minst en publicerad artikel får en sida —
+// tomma kategorier blev annars återvändsgränder. Samma showEntry-filter som
+// listningen i learn-hub/index.astro, så inga döda länkar kan uppstå.
 export async function getStaticPaths() {
-  return categories.map(({ slug, title }) => ({
-    params: { category: slug },
-    props: { categoryTitle: title },
-  }));
+  const published = await getCollection("learn", showEntry);
+  return categories
+    .filter(({ slug }) => published.some((a) => a.data.category === slug))
+    .map(({ slug, title }) => ({
+      params: { category: slug },
+      props: { categoryTitle: title },
+    }));
 }
 
 const { category } = Astro.params;
@@ -28,7 +34,7 @@ const articles = (
   title={`${categoryTitle} · Learn Hub`}
   description={`Artiklar om ${categoryTitle}.`}
 >
-  <div class="animate-in mx-auto max-w-2xl p-6 md:p-10">
+  <div class="animate-in mx-auto max-w-2xl p-6 lg:p-10">
     <a
       href="/learn-hub/"
       class="group inline-flex items-center gap-1.5 font-mono text-[12px] tracking-wide text-muted-foreground transition-colors hover:text-primary"
@@ -50,20 +56,16 @@ const articles = (
       </h1>
     </header>
 
-    {
-      articles.length > 0 ? (
-        <div>
-          {articles.map((a) => (
-            <ContentRow
-              href={`/learn-hub/${category}/${a.id}/`}
-              title={a.data.title}
-              description={a.data.description}
-            />
-          ))}
-        </div>
-      ) : (
-        <p class="text-muted-foreground">Inga artiklar här ännu.</p>
-      )
-    }
+    <div>
+      {
+        articles.map((a) => (
+          <ContentRow
+            href={`/learn-hub/${category}/${a.id}/`}
+            title={a.data.title}
+            description={a.data.description}
+          />
+        ))
+      }
+    </div>
   </div>
 </AppLayout>

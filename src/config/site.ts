@@ -24,9 +24,18 @@ const site = {
     meta: {
         title: "Barry Namdari",
         description:
-            "Fullstack- & cloud-utvecklare med intresse för IoT och embedded.",
+            "Fullstack- & cloudutvecklare med intresse för IoT och embedded.",
         author: "barrynamdari",
         lang: "sv",
+    },
+
+    // Cookielös statistik. Tom sträng = inget spårningsskript renderas alls.
+    // Aktivera: skapa ett konto på goatcounter.com och skriv in kodnamnet här
+    // (t.ex. "barrynamdari" om adressen blir barrynamdari.goatcounter.com).
+    // BaseLayout hakar då på astro:page-load, så View Transitions räknas rätt.
+    analytics: {
+        // `as string` (inte literaltypen "") så villkoret i BaseLayout typar rätt.
+        goatcounter: "" as string,
     },
 
     // Textbaserat varumärke ("barry" + accent-dot), inte logotypbild.
@@ -64,18 +73,15 @@ const site = {
         "Fokus ligger på molnnativ utveckling och skalbar infrastruktur, med ett genuint intresse för IoT och embedded. Jag gillar DevOps-tänk, tydlig arkitektur — och att förklara det jag lär mig, därav Learn Hub.",
     ],
 
-    // Certifikat. Lägg badge-bilderna i static/certs/ och peka ut dem med
-    // `badge` — annars visas `icon` (AWS-loggan) som platshållare.
+    // Certifikat. Renderas i index.astro som Iconify-ikon (`icon`) + namn.
     certs: [
         {
             name: "AWS Certified Cloud Practitioner",
-            badge: "/certs/aws-cloud-practitioner.png",
             icon: "logos:aws",
         },
         {
-            name: "AWS 900",
-            badge: "/certs/aws-900.png",
-            icon: "logos:aws",
+            name: "Microsoft Certified: Azure Fundamentals (AZ-900)",
+            icon: "logos:microsoft-azure",
         },
     ],
 
