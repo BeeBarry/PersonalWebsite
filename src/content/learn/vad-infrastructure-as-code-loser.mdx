@@ -11,46 +11,129 @@ tags: ['Beginner', 'Overview']
 
 ## Var vi är
 
-Docker-serien slutade med att Lisas team kunde starta hela e-handelssystemet med ett
-kommando: `docker compose up`. Kubernetes-artikeln tog nästa steg och lät ett kluster hålla
-containrarna vid liv.
+Docker-serien slutade med att Lisas team kunde starta hela e-handelssystemet med ett kommando.
+Kubernetes-serien tog nästa steg och lät ett kluster hålla containrarna vid liv.
 
-Men båda hoppade över en fråga: **vem skapade klustret?** Någon måste ha satt upp servrarna,
-nätverket, brandväggen och databasen som allt det där körs på. Den delen handlar den här
-serien om.
+Båda hoppade över en fråga: **vem skapade klustret?** Någon måste ha satt upp servrarna, nätverket,
+brandväggen och databasen som allt det där kör på.
 
-## Servern som ingen vågar röra
+Den här delen ger överblicken över hur den delen görs med kod i stället för med musen. Vad som
+faktiskt står i filerna tar nästa del.
 
-Johan satte upp teamets molnmiljö en fredag i mars. Han loggade in i webbkonsolen, klickade
-sig fram i ungefär tre timmar och fick till slut igång alltihop. Det fungerar. Det har
-fungerat i ett halvår.
+## Vad Infrastructure as Code är
+
+**Infrastructure as Code**, förkortat IaC, är idén att servrar, nätverk och databaser ska beskrivas
+i textfiler i stället för att klickas fram.
+
+Filerna ligger i samma repo som applikationen. De granskas i merge requests, versionshanteras i Git
+och körs av en pipeline — precis som all annan kod.
+
+IaC är inte ett verktyg. Det är ett arbetssätt, och Terraform är ett av flera sätt att göra det.
+
+## IaC vs att klicka i konsolen
+
+Johan satte upp teamets molnmiljö en fredag i mars. Han loggade in i webbkonsolen, klickade sig fram
+i tre timmar och fick igång alltihop. Det har fungerat i ett halvår.
 
 Sedan händer tre saker:
 
-- Teamet vill ha en **testmiljö som är likadan** som produktion. Ingen vet exakt vad Johan
-  klickade på, så Maria bygger något som *nästan* stämmer.
-- Johan är på **semester** när en brandväggsregel behöver ändras. Ingen vet varför den finns,
-  så ingen vågar röra den.
-- En inställning har **ändrats** sedan i mars. Ingen vet av vem, när eller varför — konsolen
-  visar bara hur det ser ut nu.
+- Teamet vill ha en **testmiljö som är likadan** som produktion. Ingen vet exakt vad Johan klickade
+  på, så Maria bygger något som *nästan* stämmer.
+- Johan är på **semester** när en brandväggsregel behöver ändras. Ingen vet varför den finns, så
+  ingen vågar röra den.
+- En inställning har **ändrats** sedan i mars. Ingen vet av vem, när eller varför — konsolen visar
+  bara hur det ser ut nu.
 
-Problemet är inte att Johan gjorde fel. Problemet är att resultatet av hans arbete bara finns
-på två ställen: i molnkonsolen och i hans huvud. Ingetdera går att granska, versionshantera
-eller köra om.
+Problemet är inte att Johan gjorde fel. Problemet är att resultatet bara finns på två ställen: i
+molnkonsolen och i hans huvud.
 
-<Callout type="varfor">
-Kod löser exakt det här för applikationer — den är läsbar, granskningsbar och har en historik
-i Git. **Infrastructure as Code** (IaC) är idén att infrastrukturen ska ha samma egenskaper:
-servrar, nätverk och databaser beskrivs i textfiler som ligger i samma repo som applikationen.
-</Callout>
+<Split
+  leftTitle="Klickat i konsolen"
+  rightTitle="Beskrivet i kod"
+  leftTone="bad"
+  rightTone="good"
+  caption="Samma miljö. Bara den ena går att läsa, granska och göra om."
+>
+  <div slot="left">
 
-## Helheten först
+  Resultatet syns, men inte hur man kom dit.
 
-Innan detaljerna, hela kedjan. Så här ser arbetsgången ut varje gång någon ändrar
-infrastrukturen med **Terraform** — verktyget vi använder i den här serien:
+  Ingen historik: vem ändrade vad, när och varför?
+
+  En likadan testmiljö måste byggas från minnet.
+
+  </div>
+  <div slot="right">
+
+  Filen *är* beskrivningen. Den går att läsa uppifrån och ner.
+
+  Git-historiken svarar på vem, när och varför.
+
+  Samma fil ger samma miljö, hur många gånger som helst.
+
+  </div>
+</Split>
+
+> **DOODLE** — Vänster: en molnkonsol-ruta med en muspekare och tre streckade pilar ut till tre lådor
+> som ligger lite snett i förhållande till varandra, märkta "test", "stage", "prod". Höger: en
+> fil-ikon märkt `main.tf` med tre heldragna pilar till tre identiska, prydligt uppradade lådor med
+> samma märkning. Under: "Ur minnet, eller ur filen."
+
+## Vad Terraform är
+
+**Terraform** är ett verktyg som läser en beskrivning av infrastruktur och gör verkligheten likadan.
+
+Det talar med molnleverantörernas API:er genom insticksprogram som kallas *providers*, vilket gör
+att samma språk beskriver Azure, AWS, Google Cloud, Kubernetes, DNS och en del annat.
+
+Sedan en licensändring 2023 finns även **OpenTofu**, en öppen avgrening som läser samma filer och
+använder samma kommandon. Väljer ditt team den fungerar allt i den här serien likadant.
+
+## Deklarativt vs imperativt
+
+Kubernetes-serien gick igenom skillnaden. Här är den igen, kort, för den avgör hur Terraform beter
+sig.
+
+**Imperativt** betyder att du anger stegen som ska utföras.
+
+**Deklarativt** betyder att du anger läget som ska råda, och verktyget räknar ut stegen.
+
+Samma avsikt — "det ska finnas en webbserver" — uttryckt i de två stilarna:
+
+```bash
+# Imperativt: ett steg som utförs
+az vm create --name webb-01 --resource-group rg-shop
+```
+
+```hcl
+# Deklarativt: ett tillstånd som ska råda
+resource "azurerm_linux_virtual_machine" "webb" {
+  name                = "webb-01"
+  resource_group_name = "rg-shop"
+}
+```
+
+Raderna gör intryck av att vara samma sak. Skillnaden märks först vid andra körningen.
+
+Skillnaden mot Kubernetes är *när* jämförelsen sker: Kubernetes jämför oavbrutet, Terraform jämför
+när du kör den.
+
+## Vad idempotens betyder
+
+**Idempotens** betyder att samma beskrivning ger samma slutläge oavsett hur många gånger den körs.
+
+Det imperativa kommandot ovan skapar en server varje gång det körs — eller misslyckas för att namnet
+är upptaget. Den deklarativa beskrivningen ger en server, oavsett om du kör den en gång eller hundra.
+
+Det är den egenskapen som gör att en Terraform-fil kan köras i en pipeline utan att någon behöver
+hålla reda på om den körts förut.
+
+Begreppet är detsamma som i nätverksserien, där `PUT` och `DELETE` var idempotenta och `POST` inte.
+
+## Grundslingan: skriv, planera, genomför
 
 <Flow
-  caption="Grundslingan i Terraform. Notera att förhandsbeskedet kommer före verkligheten ändras."
+  caption="Grundslingan i Terraform. Notera att förhandsbeskedet kommer innan verkligheten ändras."
   steps={[
     {
       label: "main.tf",
@@ -70,119 +153,188 @@ infrastrukturen med **Terraform** — verktyget vi använder i den här serien:
   ]}
 />
 
-Poängen med mellansteget är värd att fästa direkt: **du får se vad som kommer att hända innan
-det händer.** Det är skillnaden mellan att ändra i produktion och att godkänna en ändring i
-produktion.
+## Vad `plan` gör
 
-## Du beskriver målet, inte vägen dit
+`terraform plan` jämför din beskrivning med verkligheten och listar skillnaden.
 
-Det här är seriens viktigaste begrepp, så det är värt att ta långsamt.
+Den ändrar ingenting. Det gör den ofarlig att köra hur ofta som helst — även automatiskt, i varje
+merge request.
 
-Ett vanligt skript är **imperativt** — det är en lista med steg som utförs i tur och ordning.
-Terraform är **deklarativt**: du beskriver vilket läge du vill ha, och verktyget räknar
-själv ut vilka steg som krävs för att komma dit.
+Utskriften är en lista: så här många ska skapas, ändras och tas bort. Det är den listan som gör en
+infrastrukturändring granskningsbar.
 
-Samma avsikt — "det ska finnas en webbserver" — uttryckt i de två stilarna:
+## Vad `apply` gör
 
-```bash
-# Imperativt: ett steg som utförs
-az vm create --name webb-01 --resource-group rg-shop
-```
+`terraform apply` visar samma lista igen och frågar om du är säker. Först efter ett `yes` ändras
+något på riktigt.
 
-```hcl
-# Deklarativt: ett tillstånd som ska råda
-resource "azurerm_linux_virtual_machine" "webb" {
-  name                = "webb-01"
-  resource_group_name = "rg-shop"
-}
-```
+Poängen med mellansteget är värd att fästa: **du får se vad som kommer att hända innan det händer.**
+Det är skillnaden mellan att ändra i produktion och att godkänna en ändring i produktion.
 
-Raderna gör intryck av att vara samma sak. Skillnaden märks först när du kör dem två gånger.
+I en pipeline körs `apply` med en flagga som hoppar över frågan — men då har `plan` redan granskats
+av en människa i merge requesten.
 
-<Split
-  leftTitle="Imperativt skript"
-  rightTitle="Deklarativ beskrivning"
-  caption="Samma avsikt, helt olika beteende vid andra körningen."
->
-  <div slot="left">
+## Vad drift är
 
-  Körs en gång: **en server.**
+**Drift** är när verkligheten avviker från beskrivningen.
 
-  Körs två gånger: **två servrar** — eller ett fel, om namnet redan är upptaget.
+Det uppstår när någon ändrar direkt i konsolen på en miljö Terraform hanterar. Beskrivningen säger
+en sak, molnet en annan, och nästa körning kommer att göra något åt saken.
 
-  Skriptet vet inget om vad som redan finns. All logik för "finns den redan?" måste du
-  skriva själv.
+<Callout type="fallgrop">
+Johan går in i konsolen och höjer serverns minne "bara snabbt, det är akut". Nästa gång pipelinen
+kör `terraform apply` ser Terraform att verkligheten avviker från beskrivningen — och **sänker
+tillbaka minnet**. Ur Terraforms perspektiv var det en korrigering.
 
-  </div>
-  <div slot="right">
-
-  Körs en gång: **en server.**
-
-  Körs hundra gånger: **fortfarande en server.**
-
-  Terraform jämför beskrivningen med verkligheten och gör bara det som saknas.
-
-  </div>
-</Split>
-
-Egenskapen har ett namn: **idempotens**. Samma beskrivning ger samma slutläge oavsett hur
-många gånger den körs. Det är det som gör att en Terraform-fil kan köras i en pipeline utan
-att någon behöver hålla reda på om den körts förut.
+Regeln som följer: när en miljö väl hanteras av Terraform ändras den **bara** via Terraform. Behöver
+du något akut, ändra i filen och kör — det tar sällan mer än ett par minuter.
+</Callout>
 
 ## Vem gör vad, och när
 
-IaC är inte bara ett verktyg — det flyttar infrastrukturändringar in i teamets vanliga
-arbetsflöde. Så här ser det ut hos Lisas team när det är på plats:
+IaC flyttar infrastrukturändringar in i teamets vanliga arbetsflöde:
 
-1. **Lisa** behöver en ny databas för sökfunktionen. Hon skriver tio rader i `main.tf` och
-   öppnar en merge request — precis som för vilken kodändring som helst.
-2. **Pipelinen** kör `terraform plan` automatiskt och klistrar in förhandsbeskedet som en
-   kommentar i merge requesten: *1 att skapa, 0 att ändra, 0 att ta bort.*
-3. **Maria** granskar. Hon läser inte bara Lisas kod, utan också exakt vad som kommer att
-   hända i molnet. Hon ser att databasen saknar backup och ber Lisa lägga till det.
-4. **Vid merge till main** kör pipelinen `terraform apply`. Ingen har loggat in i konsolen,
-   och ändringen finns i Git-historiken med författare, datum och motivering.
+1. **Lisa** behöver en ny databas för sökfunktionen. Hon skriver tio rader i `main.tf` och öppnar en
+   merge request — precis som för vilken kodändring som helst.
+2. **Pipelinen** kör `terraform plan` automatiskt och klistrar in förhandsbeskedet som en kommentar:
+   *1 att skapa, 0 att ändra, 0 att ta bort.*
+3. **Maria** granskar. Hon läser inte bara Lisas kod, utan också exakt vad som kommer att hända i
+   molnet. Hon ser att databasen saknar backup och ber Lisa lägga till det.
+4. **Vid merge till main** kör pipelinen `terraform apply`. Ingen har loggat in i konsolen, och
+   ändringen finns i Git-historiken med författare, datum och motivering.
 
-<Callout type="varfor" title="Varför det här är mer än bekvämlighet">
-Steg 3 är hela poängen. Innan IaC granskades infrastrukturändringar av *ingen* — någon
-klickade, och det var det. Nu passerar de samma kontroll som applikationskoden: en andra
-person läser, kommenterar och godkänner innan det når produktion.
-</Callout>
+Steg 3 är hela poängen. Innan IaC granskades infrastrukturändringar av *ingen* — någon klickade, och
+det var det.
 
-## Fallgropen: att klicka efter att man börjat
+## Terraform vs Ansible
 
-För att kunna räkna ut skillnaden mellan önskat och faktiskt läge måste Terraform ha en bild
-av vad den skapat. Går någon in i webbkonsolen och ändrar för hand stämmer inte den bilden
-längre. Det kallas **drift**.
+Två verktyg som ofta nämns tillsammans och löser olika problem.
 
-<Callout type="fallgrop">
-Johan går in i konsolen och höjer serverns minne "bara snabbt, det är akut". Nästa gång
-pipelinen kör `terraform apply` ser Terraform att verkligheten avviker från beskrivningen —
-och **sänker tillbaka minnet**. Ur Terraforms perspektiv var det en korrigering.
+**Terraform** skapar resurser: servrar, nätverk, databaser. Det håller reda på vad som finns och
+räknar ut skillnaden mot din beskrivning.
 
-Regeln som följer: när en miljö väl hanteras av Terraform ändras den **bara** via Terraform.
-Behöver du något akut, ändra i filen och kör — det tar sällan mer än ett par minuter.
-</Callout>
+**Ansible** konfigurerar det som redan finns: installerar paket, lägger ut filer, startar tjänster
+inuti en server.
+
+De konkurrerar sällan. Ett vanligt upplägg är att Terraform skapar den virtuella maskinen och Ansible
+installerar det som ska köra på den.
+
+## Terraform vs Bicep och ARM
+
+Om ni bara kör Azure finns ett alternativ som är värt att känna till.
+
+**Bicep** och **ARM-mallar** är Microsofts egna. ARM är JSON, Bicep är ett trevligare språk som
+kompileras till ARM. De stödjer nya Azure-funktioner från dag ett och kräver ingen state-fil.
+
+**Terraform** beskriver flera leverantörer med samma språk, men håller en egen state-fil som någon
+måste förvalta.
+
+Tumregel: bara Azure och inget behov av annat — Bicep är enklare. Flera leverantörer, eller sådant
+som DNS och SaaS-tjänster i samma beskrivning — Terraform.
 
 ## Varför inte bara ett bash-skript
 
-En rimlig invändning, särskilt om du redan är bekväm i terminalen. Tre saker skulle du behöva
-bygga själv:
+En rimlig invändning, särskilt om du är bekväm i terminalen. Tre saker skulle du behöva bygga själv:
 
-- **Koll på vad som finns.** Terraform håller reda på vad den skapat, så den kan räkna ut
-  skillnaden. Ditt skript skulle behöva fråga molnet om varje resurs varje gång.
-- **Ordningen.** Databasen måste finnas innan servern som ansluter till den. Terraform listar
-  ut beroendena själv utifrån hur resurserna refererar till varandra.
-- **Bredden.** Samma språk beskriver AWS, Azure, Kubernetes, DNS och GitHub-behörigheter,
-  genom moduler som kallas *providers*. Ett skript per leverantör blir fort ohållbart.
+- **Koll på vad som finns.** Terraform håller reda på vad den skapat och kan räkna ut skillnaden.
+  Ditt skript skulle behöva fråga molnet om varje resurs varje gång.
+- **Ordningen.** Databasen måste finnas innan servern som ansluter till den. Terraform listar ut
+  beroendena själv utifrån hur resurserna refererar till varandra.
+- **Bredden.** Samma språk beskriver AWS, Azure, Kubernetes och DNS genom providers. Ett skript per
+  leverantör blir fort ohållbart.
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att läsa och granska `.tf`-filer i merge requests långt innan du äger en miljö själv. Det
+du gör då är att läsa en `plan`-utskrift och avgöra om raderna som börjar med `-` verkligen ska
+försvinna.
+
+Att skriva en ny resurs är ofta tio rader kopierade från en befintlig. Det svåra är sällan syntaxen —
+det är att veta vad ändringen får för konsekvens, och det är precis vad förhandsbeskedet visar.
+
+Moduler, workspaces och state-migrering kan vänta. De blir aktuella när du förvaltar flera miljöer,
+och de bygger alla på slingan i det här avsnittet.
+
+## Vanliga nybörjarförväxlingar
+
+IaC är inte ett verktyg. Det är ett arbetssätt, och Terraform är ett av flera sätt.
+
+Terraform ersätter inte molnkonsolen som informationskälla. Den ersätter den som *ändringsverktyg*.
+
+`plan` ändrar ingenting. Det är därför den kan köras automatiskt i varje merge request.
+
+Att köra samma fil två gånger skapar inte två av allt. Det är vad deklarativt betyder.
+
+En snabb ändring i konsolen är inte snabb. Den försvinner vid nästa `apply`.
+
+Terraform och Ansible konkurrerar inte. Det ena skapar resursen, det andra konfigurerar den.
+
+## Prova själv
+
+Du behöver Terraform installerat, men **inget molnkonto** — övningen stannar innan något skapas.
+
+```bash
+terraform version
+```
+
+Skapa en mapp och lägg en fil `main.tf` i den, med avsiktligt slarvig indentering:
+
+```hcl
+terraform {
+required_providers {
+azurerm = {
+source = "hashicorp/azurerm"
+version = "~> 4.0"
+}
+}
+}
+```
+
+Låt Terraform formatera den åt dig:
+
+```bash
+terraform fmt
+```
+
+Kommandot skriver ut `main.tf` — namnet på filen den ändrade — och öppnar du filen är den nu
+indenterad och likhetstecknen uppradade. Kör du `fmt` igen skrivs ingenting ut, eftersom det inte
+fanns något att rätta.
+
+Be nu Terraform kontrollera filen:
+
+```bash
+terraform validate
+```
+
+Du får `Error: Missing required provider` och ett tips om att köra `terraform init`. Gör det:
+
+```bash
+terraform init
+```
+
+Terraform hämtar hem providern och skapar två saker i mappen: katalogen `.terraform/` och filen
+`.terraform.lock.hcl`. Kör `validate` igen:
+
+```bash
+terraform validate
+```
+
+Nu står det `Success! The configuration is valid.`
+
+Tre saker som kan förvirra: `terraform fmt` skriver bara ut namnen på filer den *ändrade*, så tystnad
+betyder att allt redan var formaterat. `init` hämtar providern över nätet och tar därför några
+sekunder första gången. Och nästa steg, `terraform plan`, behöver kontakt med en leverantör — det
+ligger utanför den här övningen.
 
 <Callout type="kom-ihag">
-- Infrastruktur som klickas fram finns bara i konsolen och i någons huvud — den går inte att
-  granska, versionshantera eller köra om.
+- Infrastruktur som klickas fram finns bara i konsolen och i någons huvud — den går inte att granska,
+  versionshantera eller köra om.
 - Terraform är **deklarativt**: du beskriver måltillståndet, inte stegen dit.
-- `plan` visar vad som kommer att hända, `apply` genomför det. Förhandsbeskedet är det som
-  gör ändringen granskningsbar.
-- När en miljö hanteras av Terraform ändras den bara via Terraform — annars uppstår drift.
+- **Idempotens** betyder att hundra körningar ger samma resultat som en.
+- `plan` visar vad som kommer att hända, `apply` genomför det. Förhandsbeskedet är det som gör
+  ändringen granskningsbar.
+- **Drift** uppstår när någon ändrar utanför Terraform. Nästa `apply` återställer.
+- Terraform skapar resurser, Ansible konfigurerar dem. De konkurrerar inte.
 </Callout>
 
 <Check
@@ -193,20 +345,42 @@ bygga själv:
     },
     {
       q: "Varför är `terraform plan` viktigare än det låter?",
-      a: "Det gör infrastrukturändringen granskningsbar. En kollega kan läsa exakt vad som kommer att skapas, ändras och tas bort innan något händer — samma kontroll som kodgranskning ger applikationskoden.",
+      a: "Det gör infrastrukturändringen granskningsbar. En kollega kan läsa exakt vad som kommer att skapas, ändras och tas bort innan något händer — samma kontroll som kodgranskning ger applikationskoden. Och eftersom `plan` inte ändrar något kan den köras automatiskt i varje merge request.",
     },
     {
       q: "En kollega ändrar en inställning direkt i molnkonsolen på en miljö som Terraform hanterar. Vad är risken?",
       a: "Drift: verkligheten avviker från beskrivningen. Nästa `apply` upptäcker skillnaden och återställer till det som står i filen — kollegans ändring försvinner utan förvarning.",
     },
+    {
+      q: "Vad är skillnaden mellan Terraform och Ansible?",
+      a: "Terraform skapar resurser — servrar, nätverk, databaser — och håller reda på vad som finns. Ansible konfigurerar det som redan finns, till exempel installerar paket inuti en server. Ett vanligt upplägg använder båda.",
+    },
+    {
+      q: "Ni kör uteslutande Azure. Varför kan Bicep vara ett bättre val än Terraform?",
+      a: "Bicep är Microsofts eget, stödjer nya Azure-funktioner från dag ett och kräver ingen state-fil att förvalta. Terraforms fördel — samma språk för flera leverantörer — spelar ingen roll om ni bara har en.",
+    },
   ]}
 />
 
-## Sammanfattning
+## Snabb sammanfattning
 
-Infrastructure as Code flyttar servrar, nätverk och databaser från molnkonsolen till textfiler
-i ditt repo. Terraform gör det deklarativt: du beskriver hur miljön ska se ut, verktyget räknar
-ut vad som behöver göras, och `plan` visar dig förslaget innan något genomförs.
+- Infrastructure as Code beskriver servrar, nätverk och databaser i textfiler i stället för i en
+  konsol.
+- IaC är ett arbetssätt. Terraform är ett av flera verktyg som gör det.
+- Klickad infrastruktur går inte att granska, versionshantera eller göra om.
+- Terraform talar med leverantörernas API:er genom providers. OpenTofu är en kompatibel avgrening.
+- Deklarativt: du anger läget, verktyget räknar ut stegen. Kubernetes jämför oavbrutet, Terraform när
+  du kör den.
+- Idempotens betyder att hundra körningar ger samma slutläge som en.
+- `plan` jämför och listar skillnaden utan att ändra något.
+- `apply` visar listan igen och genomför den efter godkännande.
+- Drift uppstår när någon ändrar utanför Terraform. Nästa `apply` återställer.
+- Terraform skapar, Ansible konfigurerar. Bicep är enklare om ni bara kör Azure.
+- Ett bash-skript skulle behöva egen koll på vad som finns, egen ordning och en variant per
+  leverantör.
 
-I nästa del öppnar vi en riktig fil och går igenom vad som faktiskt står i den — provider,
-resource och den där filen som håller reda på verkligheten.
+## Nästa del
+
+Nu vet du varför infrastrukturen ska bo i filer och hur slingan ser ut. I nästa del öppnar vi en
+riktig fil och går igenom vad som faktiskt står i den — provider, resource, och den fil som håller
+reda på verkligheten.
