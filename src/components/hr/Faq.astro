@@ -1,22 +1,23 @@
 ---
-// FAQ — rutnät av frågor, grupperade efter var i rekryteringen de dyker upp.
+// FAQ — en spalt, grupperad efter var i rekryteringen frågan dyker upp.
 //
-// Varför inte ett dragspel i flera spalter: svaret bor då INNE i sin spalt, så
-// en utfälld fråga river ett par hundra pixlar hål bredvid sig. Det går inte
-// att lösa med CSS — det är själva uppställningen som är fel.
-//
-// Här är bläddrandet skilt från läsandet. Rutnätet innehåller bara frågorna
-// (2–3 spalter, alla lika höga) och rör sig aldrig. Svaret öppnas i EN yta
-// direkt under sin egen grupp, alltid på samma plats. Man kan alltså skumma
-// elva frågor på en skärm och bara klicka upp de man bryr sig om.
+// Tidigare låg de elva frågorna i ett tvåspaltigt grid. Det fungerar inte för
+// ett dragspel: när en post fälls ut växer bara den ena spalten, och grannen
+// lämnar ett par hundra pixlar hål. `align-items:start` gjorde hålet synligt i
+// stället för att sträcka grannen — men båda utfallen är fel. En spalt läser
+// dessutom som det FAQ är: en fråga i taget.
 //
 // Grupperingen ersätter den kategorietikett som förut stod på var och en av de
-// elva raderna, och ordningen i faqCategories är HR:s väg genom en rekrytering:
+// elva raderna. Samma information, en gång per grupp i stället för elva gånger,
+// och ordningen i faqCategories är HR:s egen väg genom en rekrytering:
 // Vanligast → Annonsen → Screening → CV & nivåer.
 //
-// Svaren renderas server-side med `hidden` på alla utom f1 — precis som
-// panelerna i for-hr/index.astro. Fliken är ändå JS-gated (utan JS visas bara
-// Slå upp), så inget går förlorat. hrGuide.ts (initFaq) sköter växlingen.
+// EN gemensam [data-hr-accordion] runt alla grupper (inte en per grupp) —
+// annars kan fyra frågor stå öppna samtidigt. hrGuide.ts letar heads med
+// querySelectorAll, så nästlingen spelar ingen roll.
+//
+// Varje svar länkar till de kort frågan taggats med (samma tags-array som
+// driver kortens "Vanliga frågor om X").
 import Icon from "../site/Icon.astro";
 import { hrFaq, hrFaqCategories, cardById, typo } from "../../data/hr";
 
@@ -28,76 +29,63 @@ const groups = hrFaqCategories
 ---
 
 <div data-hr-faq>
-  {
-    groups.map((g) => (
-      <section class="hr-faq__group">
-        <h3 class="hr-faq__grouptitle">
-          <span>{g.cat}</span>
-          <span class="hr-faq__groupcount">{g.items.length}</span>
-        </h3>
+  <div class="hr-faq" data-hr-accordion>
+    {
+      groups.map((g) => (
+        <section class="hr-faq__group">
+          <h3 class="hr-faq__grouptitle">
+            <span>{g.cat}</span>
+            <span class="hr-faq__groupcount">{g.items.length}</span>
+          </h3>
 
-        <div class="hr-faq__grid">
-          {g.items.map((item) => (
-            <button
-              type="button"
-              id={`hr-q-${item.id}`}
-              class:list={["hr-faq__q", item.id === "f1" && "is-open"]}
-              data-hr-q={item.id}
-              aria-expanded={item.id === "f1" ? "true" : "false"}
-              aria-controls={`hr-a-${item.id}`}
-            >
-              <span class="hr-faq__qtext">{typo(item.q)}</span>
-              <span class="hr-faq__qmark" aria-hidden="true">
-                <Icon name="ChevronDown" size={14} />
-              </span>
-            </button>
-          ))}
-        </div>
+          <div class="hr-acc">
+            {g.items.map((item) => {
+              // flatMap i stället för filter med typpredikat: `(c): c is …` går
+              // inte att parsa i Astros mall-uttryck (astro check ts(1005)),
+              // och flatMap ger samma smala typ utan predikat.
+              const tagCards = item.tags.flatMap((t) => {
+                const c = cardById(t);
+                return c ? [c] : [];
+              });
+              const open = item.id === "f1";
+              return (
+                <div class="hr-acc__item">
+                  <button
+                    type="button"
+                    class="hr-acc__head"
+                    data-hr-acc-head
+                    aria-expanded={open ? "true" : "false"}
+                  >
+                    <span class="hr-faq__q">{typo(item.q)}</span>
+                    <span class="hr-acc__sign" aria-hidden="true">
+                      {open ? "−" : "+"}
+                    </span>
+                  </button>
 
-        {/* Svarsytorna hör till gruppen, inte till hela fliken: klickar man i
-            "Vanligast" ska svaret inte dyka upp under "CV & nivåer". Marginalen
-            sitter på svaret självt, så en grupp utan öppet svar inte lämnar
-            luft efter sig. */}
-        {g.items.map((item) => {
-          // flatMap i stället för filter med typpredikat: `(c): c is …` går
-          // inte att parsa i Astros mall-uttryck (astro check ts(1005)).
-          const tagCards = item.tags.flatMap((t) => {
-            const c = cardById(t);
-            return c ? [c] : [];
-          });
-          return (
-            <div
-              class="hr-faq__answer"
-              id={`hr-a-${item.id}`}
-              data-hr-a={item.id}
-              role="region"
-              aria-labelledby={`hr-q-${item.id}`}
-              hidden={item.id !== "f1"}
-            >
-              {/* Frågan upprepas: svarsytan ligger under ett rutnät med upp
-                  till tre frågor, och utan rubrik går det inte att se vilken
-                  av dem man öppnade. */}
-              <p class="hr-faq__atitle">{typo(item.q)}</p>
-              <p class="hr-faq__a">{typo(item.a)}</p>
-              {tagCards.length > 0 && (
-                <>
-                  <p class="hr-faq__cardlabel">Läs kortet</p>
-                  <div class="hr-faq__links">
-                    {tagCards.map((c) => (
-                      <a class="hr-faq__link" href={`/for-hr/${c.id}/`}>
-                        {c.title}
-                        <Icon name="ArrowRight" size={12} />
-                      </a>
-                    ))}
+                  <div class="hr-acc__body" data-hr-acc-body hidden={!open}>
+                    <p class="hr-faq__a">{typo(item.a)}</p>
+                    {tagCards.length > 0 && (
+                      <>
+                        <p class="hr-faq__cardlabel">Läs kortet</p>
+                        <div class="hr-faq__links">
+                          {tagCards.map((c) => (
+                            <a class="hr-faq__link" href={`/for-hr/${c.id}/`}>
+                              {c.title}
+                              <Icon name="ArrowRight" size={12} />
+                            </a>
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </div>
-                </>
-              )}
-            </div>
-          );
-        })}
-      </section>
-    ))
-  }
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      ))
+    }
+  </div>
 
   <p class="hr-faq__note">
     Har du en fråga som inte står här? Den blir troligen nästa post — skicka den.

@@ -26,11 +26,11 @@
      dubbelt: raden blir svår att läsa, OCH mängden rader ser större ut än den
      är. Två mått, och vilket som gäller avgörs av vad man gör i fliken:
 
-       grid  Ordlistan, Frågor   korta uppslag i två–tre spalter. Måttet gäller
-                                 BLOCKET, inte kortet — bredare block betyder
-                                 fler kort per rad, inte bredare kort.
-       read  Annonsen            en spalt som läses uppifrån och ner. Här är
-                                 måttet raden, och den ska hålla sig kort.
+       grid  Ordlistan          korta uppslag i två–tre spalter. Måttet gäller
+                                BLOCKET, inte kortet — bredare block betyder
+                                fler kort per rad, inte bredare kort.
+       read  Annonsen, Frågor   en spalt som läses uppifrån och ner. Här är
+                                måttet raden, och den ska hålla sig kort.
 
      Ändra här, inte på enskilda selektorer, så förhållandet dem emellan
      hålls ihop. */
@@ -930,15 +930,14 @@
 }
 
 /* ---- FAQ ------------------------------------------------------------------ */
-/* Rutnätet får rutnätsmåttet: frågorna är korta och ska kunna skummas i två
-   eller tre spalter, precis som ordlistans uppslag. Svarsytan under dem har
-   eget mått på brödtexten (68ch), så bredden här styr bara hur många frågor
-   som ryms per rad. */
-[data-hr-faq] { max-width: var(--hr-w-grid); }
+/* En spalt med ett läsbart mått. Panelen är ~1030 px bred; en fråga som bryter
+   där blir en tabellrad, inte en fråga. 40rem rymmer svarets 68ch och håller
+   samtidigt sträckan mellan frågan och dess +/− kort. */
+[data-hr-faq] { max-width: var(--hr-w-read); }
 
-.hr-faq__group + .hr-faq__group { margin-top: 26px; }
+.hr-faq__group + .hr-faq__group { margin-top: 28px; }
 /* Grupprubriken bär kategorin EN gång i stället för elva. Linjen ut till
-   kanten binder ihop rubrik och rutnät utan att kosta en egen ram. */
+   kanten binder ihop rubrik och lista utan att kosta en egen ram. */
 .hr-faq__grouptitle {
   display: flex;
   align-items: center;
@@ -970,87 +969,13 @@
   letter-spacing: 0.04em;
   color: var(--c-text-muted);
 }
-
-/* Fasta spaltantal, inte auto-fit: en grupp med två frågor ska ha samma
-   kortbredd som en med tre. Med auto-fit hade Screenings två frågor blivit
-   halvbreda och gruppen sett ut som en annan sorts innehåll. */
-.hr-faq__grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 8px;
-}
-@media (min-width: 700px) {
-  .hr-faq__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-@media (min-width: 1080px) {
-  .hr-faq__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-}
-
 .hr-faq__q {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  width: 100%;
-  height: 100%;
-  padding: 12px 13px;
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
-  border-radius: 11px;
-  color: var(--c-text);
-  font-family: var(--font-display);
+  flex: 1;
   font-weight: 600;
-  font-size: 12.5px;
-  line-height: 1.45;
-  text-align: left;
-  cursor: pointer;
-  transition:
-    background 0.18s ease,
-    border-color 0.18s ease,
-    transform 0.18s ease;
-}
-.hr-faq__q:hover { border-color: var(--c-accent); }
-.hr-faq__q:active { transform: scale(0.99); }
-/* Vald fråga bär samma accenttoning som svarsytan under den — det är det som
-   binder ihop kortet i rutnätet med rutan längre ner. */
-.hr-faq__q.is-open {
-  background: var(--hr-soft);
-  border-color: var(--hr-soft-line);
-}
-.hr-faq__qtext { flex: 1; min-width: 0; text-wrap: pretty; }
-.hr-faq__qmark {
-  flex: none;
-  display: inline-flex;
-  margin-top: 1px;
-  color: var(--c-text-muted);
-  transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), color 0.18s ease;
-}
-.hr-faq__q.is-open .hr-faq__qmark {
-  color: var(--c-accent);
-  transform: rotate(180deg);
-}
-
-/* Svarsytan. Accentkanten till vänster är samma signal som den valda frågans
-   toning, så det syns att de hör ihop trots att de är två skilda block. */
-.hr-faq__answer {
-  /* Smalare än rutnätet ovanför, med flit. Rutnätets bredd bestäms av hur
-     många frågor som ska rymmas per rad; svarsytans av hur långt ett svar ska
-     vara att läsa. Sträckte den sig över hela rutnätet blev det ~290 px tom
-     panel till höger om varje svar, eftersom brödtexten ändå kapas vid 68ch. */
-  max-width: 44rem;
-  margin-top: 10px;
-  padding: 15px 17px;
-  background: var(--c-muted);
-  border: 1px solid var(--c-border);
-  border-left: 2px solid var(--c-accent);
-  border-radius: 12px;
-}
-.hr-faq__answer[hidden] { display: none; }
-.hr-faq__atitle {
-  font-weight: 700;
   font-size: 13.5px;
   line-height: 1.45;
   color: var(--c-text);
-  margin: 0 0 8px;
+  margin: 0;
   text-wrap: pretty;
 }
 .hr-faq__a {
@@ -1067,7 +992,7 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--c-text-muted);
-  margin: 14px 0 8px;
+  margin: 16px 0 8px;
 }
 .hr-faq__links { display: flex; flex-wrap: wrap; gap: 8px; }
 .hr-faq__link {
@@ -1077,7 +1002,7 @@
   padding: 7px 10px;
   border: 1px solid var(--c-border);
   border-radius: 8px;
-  background: var(--c-card);
+  background: var(--c-muted);
   color: var(--c-text);
   font-weight: 600;
   font-size: 11px;
@@ -1096,8 +1021,7 @@
   color: var(--c-text-muted);
 }
 @media (min-width: 768px) {
-  .hr-faq__q { font-size: 13px; padding: 13px 14px; }
-  .hr-faq__atitle { font-size: 14px; }
+  .hr-faq__q { font-size: 15px; }
   .hr-faq__a { font-size: 13.5px; }
   .hr-faq__link { font-size: 11.5px; padding: 7px 11px; }
   .hr-faq__note { display: none; }
