@@ -1,0 +1,118 @@
+---
+title: 'Skriv din första Dockerfile'
+description: 'Från kommandon till en image som går att lita på'
+category: 'docker'
+part: 1
+partTitle: 'Grunderna'
+order: 2
+date: '2026-08-04'
+tags: ['Beginner', 'Dockerfile']
+---
+
+## Receptet, inte maten
+
+I förra delen körde Lisa en färdig image som någon annan hade byggt. Nu ska hon paketera sin
+egen applikation — och då räcker det inte att veta vad en container är. Hon behöver skriva
+ner **hur** den byggs.
+
+Det är precis vad en `Dockerfile` är: ett recept. En textfil med instruktioner som beskriver
+vad som ska finnas i imagen och hur applikationen startas. Kör du `docker build` läser Docker
+receptet uppifrån och ner och lagar maten — resultatet blir en image.
+
+Skillnaden mot att installera saker för hand är att receptet går att läsa, granska och köra
+om. Ingen behöver minnas vilka kommandon som kördes en fredagseftermiddag för ett halvår sedan.
+
+## En Dockerfile rad för rad
+
+Här är en minimal Dockerfile för en Node-applikation. Fem rader, och varje rad gör en sak:
+
+```dockerfile
+FROM node:22-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --omit=dev
+COPY . .
+CMD ["node", "server.js"]
+```
+
+- **`FROM`** väljer utgångsläget. Du börjar aldrig från ingenting, utan från en befintlig
+  image — här en Node-installation ovanpå Alpine Linux. `alpine` är en avskalad
+  Linux-distribution, vilket gör imagen betydligt mindre.
+- **`WORKDIR`** sätter arbetskatalogen inuti containern. Allt som följer sker där.
+- **`COPY`** flyttar in filer från din dator till imagen.
+- **`RUN`** kör ett kommando **när imagen byggs** — här installationen av beroenden.
+- **`CMD`** anger vad som ska köras **när containern startar**. Den körs alltså inte vid bygget.
+
+Skillnaden mellan `RUN` och `CMD` är den som oftast förvirrar i början: `RUN` hör till bygget,
+`CMD` hör till körningen.
+
+## Varför ordningen spelar roll
+
+Titta på raderna igen. Varför kopieras `package.json` för sig, innan resten av koden?
+
+Svaret är **lager**. Varje instruktion i en Dockerfile skapar ett nytt lager i imagen, och
+Docker sparar dem. Bygger du om och ingenting har ändrats i ett lager återanvänds det direkt
+i stället för att köras om — det kallas cache.
+
+Beroendena i `package.json` ändras sällan. Källkoden ändras hela tiden. Genom att kopiera in
+`package.json` och installera beroendena **innan** koden kopieras, får `npm ci` behålla sin
+cache så länge du inte lagt till ett nytt paket.
+
+Vänder du på ordningen — kopierar in allt först och installerar sedan — invalideras cachen
+varje gång du ändrar en enda bokstav i koden. Bygget går då från några sekunder till någon
+minut, varje gång.
+
+**Tumregel:** lägg det som ändras sällan högt upp i filen, och det som ändras ofta längst ner.
+
+## Ta inte med mer än du behöver
+
+`COPY . .` kopierar in allt i katalogen — inklusive `node_modules`, `.git`, lokala
+loggfiler och den där `.env`-filen med hemligheter. Det gör imagen onödigt stor, och i värsta
+fall läcker du något du inte tänkt.
+
+Lösningen är en `.dockerignore`, som fungerar precis som en `.gitignore`:
+
+```
+node_modules
+.git
+.env
+*.log
+```
+
+Den här filen är lätt att glömma och märks inte förrän någon frågar varför imagen är 900 MB.
+
+## Bygg och kör
+
+```bash
+docker build -t min-app:1.0 .
+docker run -p 3000:3000 min-app:1.0
+```
+
+`-t` sätter ett namn och en tagg (`min-app:1.0`), så du kan referera till imagen efteråt.
+Punkten på slutet är **byggkontexten** — katalogen vars innehåll skickas till Docker. Den
+glöms ofta bort, men det är den som avgör vad `COPY` faktiskt kan komma åt.
+
+`-p 3000:3000` kopplar port 3000 på din dator till port 3000 inuti containern. Utan den
+snurrar applikationen på i containern utan att någon kan nå den.
+
+## En vanlig fälla: `latest` är inget löfte
+
+Det är frestande att skriva `FROM node:latest`. Problemet är att `latest` inte betyder
+"senaste stabila" — det är bara en tagg som pekar på vad ägaren senast råkade publicera.
+
+Bygger du om samma Dockerfile om tre månader kan du få en helt annan Node-version, och
+applikationen som fungerade i går slutar fungera i dag, utan att du ändrat en rad kod.
+
+Sätt en version du valt medvetet: `node:22-alpine`. Då är bygget **reproducerbart** — samma
+recept ger samma resultat, oavsett när det körs.
+
+## Sammanfattning
+
+- En `Dockerfile` är ett recept: instruktioner för hur en image byggs.
+- `RUN` körs vid bygget, `CMD` när containern startar.
+- Varje instruktion blir ett lager som cachas. Lägg det som ändras sällan överst.
+- `.dockerignore` håller imagen liten och hemligheterna kvar på din dator.
+- Lås versionen i `FROM` — `latest` gör bygget oförutsägbart.
+
+I nästa del tittar vi på vad som händer när applikationen behöver mer än en container: en
+databas bredvid, och hur de hittar varandra.

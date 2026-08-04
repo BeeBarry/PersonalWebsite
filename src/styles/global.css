@@ -127,6 +127,14 @@ html {
     -webkit-text-size-adjust: 100%;
 }
 
+/* OBS: här satt tidigare `scroll-behavior: smooth` på html och main, med tanken
+   att låta browsern sköta den mjuka scrollen. Det backades ut — i minst en
+   motor scrollar då varken scrollTo() eller `scrollTop = n` ÖVER HUVUD TAGET
+   (uppmätt: 0 px efter 1,2 s, medan `scroll-behavior: auto` inline gav 800 px).
+   Ett klick i innehållsförteckningen hade alltså kunnat sluta göra någonting
+   alls. Animationen görs i stället i scripts/toc.ts, där utfallet går att
+   verifiera och prefers-reduced-motion hanteras explicit. */
+
 body {
     margin: 0;
     width: 100%;
@@ -2316,23 +2324,32 @@ html[data-astro-transition-fallback] * {
 }
 
 @media (min-width: 1200px) {
+    /* Paddingen ligger på WRAPPERN, inte på artikeln — samma uppställning som
+       HR-kortets .hrd-doc. Låg den kvar på .article trycktes texten in 52 px
+       INUTI sin kolumn, ovanpå att artikeln kapades till 68ch i en bredare
+       kolumn. Resultatet blev ett 171 px hål mellan text och panel och bara
+       29 px yttermarginal, vilket fick panelen att se utkastad mot högerkanten
+       ut. Nu fyller artikeln sin kolumn och gapet är exakt grid-gapet. */
     .toc-doc--toc {
-        max-width: 62rem;
+        max-width: 56rem;
         margin: 0 auto;
+        padding-inline: clamp(1.75rem, 5vw, 3.25rem);
         display: grid;
         grid-template-columns: minmax(0, 1fr) 13rem;
         gap: 2.75rem;
         /* Ingen align-items:start — TOC-kolumnen sträcks till artikelns höjd
            så den sticky panelen kan följa med hela vägen ner. */
     }
-    .toc-doc--toc > .article {
+    /* Selektorn måste väga tyngre än `.site.reader .article` (0,3,0) som sätter
+       padding-inline för läsvyn — annars behålls den inre indraget och texten
+       trycks in en gång till inuti sin kolumn. */
+    .site.reader .toc-doc--toc > .article {
         min-width: 0;
-        /* .article har `margin: 0 auto` för att centreras i läsvyn. Auto-
-           marginaler stänger av grid-itemets stretch — artikeln sattes då efter
-           sitt eget innehåll (632 px) i stället för kolumnen (574 px vid 1200 px)
-           och lade sig delvis över TOC-kolumnen. Nollade marginaler → artikeln
-           följer kolumnbredden. */
+        /* Kolumnen bestämmer måttet (~75 tecken vid 1440 px). Auto-marginaler
+           stänger dessutom av grid-itemets stretch, därför nollas de. */
+        max-width: none;
         margin-inline: 0;
+        padding-inline: 0;
     }
     .toc-jump,
     .toc-jump__label {
