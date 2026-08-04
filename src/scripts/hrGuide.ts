@@ -145,7 +145,8 @@ function initLibrary(root: HTMLElement) {
   apply();
 }
 
-// Dragspel (Översätt + FAQ): en öppen i taget per accordion.
+// Dragspel (Annonsen): en öppen i taget per accordion. Frågor använde tidigare
+// samma mekanik men har egen logik nu, se initFaq.
 function initAccordions(root: HTMLElement) {
   const accordions = Array.from(
     root.querySelectorAll<HTMLElement>("[data-hr-accordion]"),
@@ -174,6 +175,61 @@ function initAccordions(root: HTMLElement) {
       }),
     );
   });
+}
+
+// Frågor: rutnät av frågor + en svarsyta per grupp. Ett dragspel i flera
+// spalter går inte — svaret bor då inne i sin spalt och river ett hål bredvid
+// sig när det fälls ut. Här är bläddrandet (rutnätet, som aldrig rör sig) skilt
+// från läsandet (svarsytan, alltid på samma plats under sin grupp).
+//
+// En öppen i taget, över alla grupper. Klick på en redan öppen fråga stänger
+// den — då står rutnätet ensamt, vilket är det bästa läget för att skumma.
+function initFaq(root: HTMLElement) {
+  const faq = root.querySelector<HTMLElement>("[data-hr-faq]");
+  if (!faq) return;
+
+  const questions = Array.from(
+    faq.querySelectorAll<HTMLButtonElement>("[data-hr-q]"),
+  );
+  const answers = Array.from(faq.querySelectorAll<HTMLElement>("[data-hr-a]"));
+  if (!questions.length || !answers.length) return;
+
+  const show = (id: string | null) => {
+    questions.forEach((q) => {
+      const on = q.dataset.hrQ === id;
+      q.classList.toggle("is-open", on);
+      q.setAttribute("aria-expanded", String(on));
+    });
+    answers.forEach((a) => {
+      a.hidden = a.dataset.hrA !== id;
+    });
+  };
+
+  questions.forEach((q) =>
+    q.addEventListener("click", () => {
+      const open = q.getAttribute("aria-expanded") === "true";
+      const id = open ? null : (q.dataset.hrQ ?? null);
+      show(id);
+      if (!id) return;
+
+      // Svarsytan ligger under HELA gruppen, inte under den klickade frågan.
+      // På desktop, där gruppen är en rad, spelar det ingen roll — men i en
+      // spalt (mobil) kan svaret hamna två kort längre ner än fingret.
+      // block:"nearest" scrollar bara när det verkligen behövs, så ett svar
+      // som redan syns står stilla.
+      const answer = answers.find((a) => a.dataset.hrA === id);
+      answer?.scrollIntoView({
+        block: "nearest",
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "auto"
+          : "smooth",
+      });
+    }),
+  );
+
+  // Inget anrop till show() här: server-renderingen har redan f1 öppen och
+  // resten hidden. Ett anrop hade bara kunnat orsaka ett hopp innan scriptet
+  // hunnit köra.
 }
 
 function initGlossary(root: HTMLElement) {
@@ -412,6 +468,7 @@ function bindHrGuide() {
   initTabs(root);
   initLibrary(root);
   initAccordions(root);
+  initFaq(root);
   initGlossary(root);
   initSwitcher(root);
 }

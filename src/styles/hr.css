@@ -24,20 +24,17 @@
      Panelen är ~1030 px bred på desktop, men ingen av flikarna ska använda
      hela den bredden. En rad som är bredare än blicken orkar svepa kostar
      dubbelt: raden blir svår att läsa, OCH mängden rader ser större ut än den
-     är. Tre olika värden, men inte godtyckliga — bredden följer hur många
-     kolumner innehållet har:
+     är. Två mått, och vilket som gäller avgörs av vad man gör i fliken:
 
-       grid  Ordlistan   sexton kort i tre spalter; måttet gäller kortet,
-                         inte raden, så blocket tål mest bredd
-       split Annonsen    citat + betydelse sida vid sida; två spalter som
-                         båda måste vara läsbara
-       read  Frågor      en spalt löptext — det som behöver minst bredd och
-                         som blir svårast att läsa av för mycket
+       grid  Ordlistan, Frågor   korta uppslag i två–tre spalter. Måttet gäller
+                                 BLOCKET, inte kortet — bredare block betyder
+                                 fler kort per rad, inte bredare kort.
+       read  Annonsen            en spalt som läses uppifrån och ner. Här är
+                                 måttet raden, och den ska hålla sig kort.
 
      Ändra här, inte på enskilda selektorer, så förhållandet dem emellan
      hålls ihop. */
   --hr-w-grid: 58rem;
-  --hr-w-split: 52rem;
   --hr-w-read: 40rem;
 }
 /* Innehållet under topbaren (startsidan + kort-sidan delar denna padding). */
@@ -852,47 +849,16 @@
 }
 
 /* ---- Annonsen (annons-översättaren) --------------------------------------- */
-/* Kapad bredd: dragspelet sträckte sig över hela panelen (~1130px) medan
-   rubrikens ingress bröt vid ~600. Det läste som en tabell utan ram i stället
-   för som ett innehåll som hör till rubriken ovanför. */
-[data-hr-translate] { max-width: var(--hr-w-split); }
+/* EN spalt. Citatet i mono med citattecken, betydelsen i brödtext direkt under.
+   Den typografiska kontrasten bär relationen "det här betyder det här" — samma
+   grepp som en ordlista använder mellan term och definition.
 
-/* ETT gridmått, tre användare: kolumnrubrikerna, radens huvud och radens
-   utfällda kropp. --tr-cols hålls på ett ställe så de tre aldrig kan glida
-   isär. Tredje kolumnen är +/−-knappen: låg den utanför griddet blev kroppen
-   26+14 px bredare än huvudet och kolumnerna hamnade i otakt. */
-[data-hr-translate] {
-  --tr-cols: minmax(0, 1fr) 26px;
-  --tr-gap: 12px;
-}
+   Tidigare stod de sida vid sida i ett grid som fyra regler måste hålla synkat
+   (kolumnrubriker, radhuvud, utfälld kropp, pil i rännan) och som lämnade en
+   tom vänsterhalva så fort en rad fälldes ut. Ingen av dem behövs nu. */
+[data-hr-translate] { max-width: var(--hr-w-read); }
 
-.hr-tr__colhead { display: none; }
-
-.hr-acc__head--tr {
-  display: grid;
-  grid-template-columns: var(--tr-cols);
-  gap: 5px var(--tr-gap);
-  align-items: center;
-}
-/* Mobil: citatet och betydelsen staplas i kolumn 1, knappen spänner båda
-   raderna i kolumn 2. */
-.hr-tr__said { grid-column: 1; min-width: 0; }
-.hr-tr__means { grid-column: 1; min-width: 0; }
-.hr-acc__head--tr .hr-acc__sign { grid-column: 2; grid-row: 1 / -1; }
-
-.hr-tr__eyebrow {
-  display: block;
-  font-family: var(--font-mono);
-  font-size: 9.5px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--c-text-muted);
-  margin: 0 0 4px;
-}
-/* Citatet sätts i mono: den typografiska kontrasten mot betydelsens brödtext
-   är det som bär hela mekaniken — vänster är ord ur en annons, höger är vad de
-   betyder. Det gör kolumnrubrikerna till en påminnelse i stället för en
-   förutsättning. */
+.hr-tr__said { flex: 1; min-width: 0; }
 .hr-tr__say {
   display: block;
   font-family: var(--font-mono);
@@ -907,21 +873,12 @@
   font-size: 12.5px;
   line-height: 1.5;
   color: var(--c-text-secondary);
+  margin-top: 5px;
   text-wrap: pretty;
 }
 
-/* Kroppen ligger i kolumn 2 — rakt under "Betyder". Förut var den ett block
-   över hela bredden, så radens struktur nollställdes vid varje klick. */
-.hr-acc__body--tr {
-  display: grid;
-  grid-template-columns: var(--tr-cols);
-  gap: var(--tr-gap);
-}
-.hr-tr__detail { grid-column: 1; min-width: 0; }
-
-/* De två råden får varsitt block med egen vänsterkant. Accentstrecket säger
-   "gör så här", det streckade "se upp" — utan att någondera behöver en fylld
-   ruta eller en gråremsa kant-i-kant. */
+/* De två råden har samma uppbyggnad — bara etiketten och vänsterkanten skiljer
+   dem åt. Accentstrecket säger "gör så här", det streckade "se upp". */
 .hr-tr__block { padding-left: 13px; border-left: 2px solid var(--c-accent); }
 .hr-tr__block + .hr-tr__block { margin-top: 14px; }
 .hr-tr__block--watch {
@@ -967,65 +924,21 @@
 .hr-tr__cardlink:hover svg { transform: translateX(2px); }
 
 @media (min-width: 768px) {
-  [data-hr-translate] {
-    /* Citatkolumnen får ett tak, inte en andel: den mäts av sitt eget innehåll
-       upp till 20rem. Det längsta citatet ("Meriterande: React, Angular eller
-       Vue") är 316 px vid 13,5 px mono, så alla sju ryms på EN rad — sex av sju
-       rader är infällda när man kommer hit, och lika höga rader är det som gör
-       listan scanbar. Resten går till betydelsen, som bär både one-linern och
-       hela det utfällda innehållet. */
-    --tr-cols: minmax(0, 20rem) minmax(0, 1fr) 26px;
-    /* 26, inte 24: pilen bor i rännan, och vid 24 px hamnade den 9 px från
-       slutet av det längsta citatet (316 px i en 320 px-kolumn). */
-    --tr-gap: 26px;
-  }
-  /* Rubrikraden linjerar med huvudets innehåll: 1px ram på .hr-acc + 18px
-     padding i .hr-acc__head. */
-  .hr-tr__colhead {
-    display: grid;
-    grid-template-columns: var(--tr-cols);
-    gap: var(--tr-gap);
-    padding: 0 19px;
-    margin-bottom: 10px;
-  }
-  .hr-tr__colhead span {
-    font-family: var(--font-mono);
-    font-size: 9.5px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--c-text-muted);
-  }
-  .hr-acc__head--tr { gap: var(--tr-gap); }
-  .hr-tr__eyebrow { display: none; }
-  /* 13,5 i stället för 14: citatkolumnen krymper då från 336 till 320 px och de
-     16 pixlarna går till betydelsen — utan att något citat bryter på två rader. */
-  .hr-tr__say { font-size: 13.5px; }
-  .hr-tr__means { grid-column: 2; position: relative; font-size: 13px; }
-  /* Pilen bor i rännan mellan kolumnerna och gör översättningsriktningen
-     explicit. 28px gap ger den plats utan att tränga någon av spalterna. */
-  .hr-tr__means::before {
-    content: "→";
-    position: absolute;
-    left: -19px;
-    top: 0;
-    font-family: var(--font-mono);
-    font-size: 12px;
-    line-height: inherit;
-    color: var(--c-text-muted);
-  }
-  .hr-acc__head--tr .hr-acc__sign { grid-column: 3; grid-row: auto; }
-  .hr-tr__detail { grid-column: 2; }
+  .hr-tr__say { font-size: 14px; }
+  .hr-tr__means { font-size: 13px; }
+  .hr-tr__blocktext { font-size: 13px; }
 }
 
 /* ---- FAQ ------------------------------------------------------------------ */
-/* En spalt med ett läsbart mått. Panelen är ~1030 px bred; en fråga som bryter
-   där blir en tabellrad, inte en fråga. 40rem rymmer svarets 68ch och håller
-   samtidigt sträckan mellan frågan och dess +/− kort. */
-[data-hr-faq] { max-width: var(--hr-w-read); }
+/* Rutnätet får rutnätsmåttet: frågorna är korta och ska kunna skummas i två
+   eller tre spalter, precis som ordlistans uppslag. Svarsytan under dem har
+   eget mått på brödtexten (68ch), så bredden här styr bara hur många frågor
+   som ryms per rad. */
+[data-hr-faq] { max-width: var(--hr-w-grid); }
 
-.hr-faq__group + .hr-faq__group { margin-top: 28px; }
+.hr-faq__group + .hr-faq__group { margin-top: 26px; }
 /* Grupprubriken bär kategorin EN gång i stället för elva. Linjen ut till
-   kanten binder ihop rubrik och lista utan att kosta en egen ram. */
+   kanten binder ihop rubrik och rutnät utan att kosta en egen ram. */
 .hr-faq__grouptitle {
   display: flex;
   align-items: center;
@@ -1057,13 +970,87 @@
   letter-spacing: 0.04em;
   color: var(--c-text-muted);
 }
+
+/* Fasta spaltantal, inte auto-fit: en grupp med två frågor ska ha samma
+   kortbredd som en med tre. Med auto-fit hade Screenings två frågor blivit
+   halvbreda och gruppen sett ut som en annan sorts innehåll. */
+.hr-faq__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+@media (min-width: 700px) {
+  .hr-faq__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 1080px) {
+  .hr-faq__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
 .hr-faq__q {
-  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  height: 100%;
+  padding: 12px 13px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: 11px;
+  color: var(--c-text);
+  font-family: var(--font-display);
   font-weight: 600;
+  font-size: 12.5px;
+  line-height: 1.45;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.18s ease;
+}
+.hr-faq__q:hover { border-color: var(--c-accent); }
+.hr-faq__q:active { transform: scale(0.99); }
+/* Vald fråga bär samma accenttoning som svarsytan under den — det är det som
+   binder ihop kortet i rutnätet med rutan längre ner. */
+.hr-faq__q.is-open {
+  background: var(--hr-soft);
+  border-color: var(--hr-soft-line);
+}
+.hr-faq__qtext { flex: 1; min-width: 0; text-wrap: pretty; }
+.hr-faq__qmark {
+  flex: none;
+  display: inline-flex;
+  margin-top: 1px;
+  color: var(--c-text-muted);
+  transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), color 0.18s ease;
+}
+.hr-faq__q.is-open .hr-faq__qmark {
+  color: var(--c-accent);
+  transform: rotate(180deg);
+}
+
+/* Svarsytan. Accentkanten till vänster är samma signal som den valda frågans
+   toning, så det syns att de hör ihop trots att de är två skilda block. */
+.hr-faq__answer {
+  /* Smalare än rutnätet ovanför, med flit. Rutnätets bredd bestäms av hur
+     många frågor som ska rymmas per rad; svarsytans av hur långt ett svar ska
+     vara att läsa. Sträckte den sig över hela rutnätet blev det ~290 px tom
+     panel till höger om varje svar, eftersom brödtexten ändå kapas vid 68ch. */
+  max-width: 44rem;
+  margin-top: 10px;
+  padding: 15px 17px;
+  background: var(--c-muted);
+  border: 1px solid var(--c-border);
+  border-left: 2px solid var(--c-accent);
+  border-radius: 12px;
+}
+.hr-faq__answer[hidden] { display: none; }
+.hr-faq__atitle {
+  font-weight: 700;
   font-size: 13.5px;
   line-height: 1.45;
   color: var(--c-text);
-  margin: 0;
+  margin: 0 0 8px;
   text-wrap: pretty;
 }
 .hr-faq__a {
@@ -1080,7 +1067,7 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--c-text-muted);
-  margin: 16px 0 8px;
+  margin: 14px 0 8px;
 }
 .hr-faq__links { display: flex; flex-wrap: wrap; gap: 8px; }
 .hr-faq__link {
@@ -1090,7 +1077,7 @@
   padding: 7px 10px;
   border: 1px solid var(--c-border);
   border-radius: 8px;
-  background: var(--c-muted);
+  background: var(--c-card);
   color: var(--c-text);
   font-weight: 600;
   font-size: 11px;
@@ -1109,7 +1096,8 @@
   color: var(--c-text-muted);
 }
 @media (min-width: 768px) {
-  .hr-faq__q { font-size: 15px; }
+  .hr-faq__q { font-size: 13px; padding: 13px 14px; }
+  .hr-faq__atitle { font-size: 14px; }
   .hr-faq__a { font-size: 13.5px; }
   .hr-faq__link { font-size: 11.5px; padding: 7px 11px; }
   .hr-faq__note { display: none; }
