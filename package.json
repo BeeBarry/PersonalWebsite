@@ -24,6 +24,6 @@
     "@iconify-json/logos": "^1.2.11",
     "@iconify-json/mdi": "^1.2.3",
     "@iconify-json/simple-icons": "^1.2.90",
-    "typescript": "^7.0.2"
+    "typescript": "^6.0.3"
   }
 }
