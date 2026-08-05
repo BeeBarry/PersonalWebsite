@@ -64,34 +64,29 @@ const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
            Indraget till hero-textens vänsterkant (bildens 4rem + gap 1rem) och
            hållen smal, så den läser som en sidoingång och inte som ett block i
            huvudflödet. -->
-      {/* ml-24, inte ml-20: indraget ska landa exakt på hero-textens vänsterkant,
-          alltså bildens bredd (5rem) + gap (1rem). Med den större bilden hade
-          det gamla måttet lämnat kortet 1rem för långt till vänster.
-          Skalan är samtidigt sänkt ett steg — kortet är en sidoingång och ska
-          ligga UNDER hero:t i hierarkin, inte konkurrera med det. */}
-      <div class="mt-5 sm:ml-24">
+      {/* Högerställd och nedskalad till en enda rad. Som kort på 21rem under
+          hero:t låg den mitt i läsvägen och tog blicken före certifikaten —
+          fast den är en sidoingång för en av flera besökartyper, inte sidans
+          budskap. Högerkanten är den lugnaste platsen på en vänsterläst sida:
+          den syns, men först efter rubrik och meriter. */}
+      <div class="mt-4 flex justify-end">
         <a
           href="/for-hr/"
-          class="group flex items-center gap-2.5 rounded-xl border border-border bg-muted/10 p-3 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-muted/20 sm:w-[21rem]"
+          class="group inline-flex items-center gap-2 rounded-full border border-border bg-muted/10 py-1.5 pr-2.5 pl-3 transition-colors hover:border-primary/40 hover:bg-muted/20"
         >
-          <span
-            class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary/12 text-primary"
-          >
-            <Icon name="mdi:account-group-outline" class="h-4 w-4" />
-          </span>
-          <span class="min-w-0 flex-1">
-            <span class="block text-[12.5px] font-bold text-foreground"
-              >Rekryterar du inom tech?</span
-            >
-            <span class="mt-0.5 block text-[11.5px] leading-relaxed text-muted-foreground"
-              >Teknik-guiden är skriven för HR — ingen förkunskap krävs.</span
+          <Icon
+            name="mdi:account-group-outline"
+            class="h-[15px] w-[15px] shrink-0 text-primary"
+          />
+          <span class="text-[11.5px] text-muted-foreground">
+            Rekryterar du inom tech? <span class="font-semibold text-foreground"
+              >Läs Teknik-guiden</span
             >
           </span>
-          <span
-            class="shrink-0 text-primary transition-transform group-hover:translate-x-0.5"
-          >
-            <Icon name="mdi:arrow-right" class="h-4 w-4" />
-          </span>
+          <Icon
+            name="mdi:arrow-right"
+            class="h-[14px] w-[14px] shrink-0 text-primary transition-transform group-hover:translate-x-0.5"
+          />
         </a>
       </div>
     </section>
@@ -103,25 +98,25 @@ const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
       >
         Inriktningar
       </h2>
-      {/* INGEN ram, ingen bakgrund, ingen rundning. Kortchromet var identiskt
-          med ”Rekryterar du inom tech?”-kortet ovanför, som ÄR en länk — tre
-          statiska textblock lovade alltså ett klick som inte finns. Utan lådan
-          bär i stället accentlinjen överst strukturen: tre parallella streck
-          läser som tre jämbördiga spår, och ingenting av det ser tryckbart ut.
-          Ikonen och rubriken får bära blicken i stället för ramen. */}
+      {/* Ingen ram, ingen bakgrund, ingen rundning — kortchromet var identiskt
+          med den länk som låg ovanför, så tre statiska textblock lovade ett
+          klick som inte finns. Ikonen och den feta rubriken bär strukturen i
+          stället. Kolumnerna hålls isär av gapet allena. */}
       <div class="grid gap-x-7 gap-y-8 sm:grid-cols-3">
         {
           domains.map((d) => (
-            <div class="border-t-2 border-primary/30 pt-3.5">
-              {/* Ikonrutan är 20px för alla tre och centreras mot rubriken.
-                  translate-y kompenserar att mdi-glyferna sitter systematiskt
-                  ~2 av 24 enheter högt i sin viewBox — utan den läser ikonen
-                  som lyft en aning över texten den hör till. */}
+            <div>
+              {/* -2,5px är uppmätt, inte gissat. items-center linjerar ikonens
+                  och rubrikens RUTOR, men ögat linjerar mot versalhöjden — och
+                  textrutan bär nedhängsutrymme som versalerna inte fyller.
+                  Mätt låg ikonens bläckmitt 3,9–4,2 px UNDER rubrikens
+                  versalmitt på alla tre kolumnerna. -2,5px nollar det (tidigare
+                  +1,5 gick åt fel håll). Byter du ikon: mät om, se domains.ts. */}
               <div class="flex items-center gap-2">
                 {d.icon && (
                   <Icon
                     name={d.icon}
-                    class="h-5 w-5 shrink-0 translate-y-[1.5px] text-primary"
+                    class="h-5 w-5 shrink-0 -translate-y-[2.5px] text-primary"
                   />
                 )}
                 <h3 class="text-[15px] leading-tight font-extrabold tracking-tight text-foreground">
@@ -186,12 +181,23 @@ const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
         {
           site.stackGroups.map((group) => (
             <div>
-              <h3 class="mb-3 text-[11.5px] font-semibold tracking-wide text-foreground/75">
+              {/* Gruppnamnet är en ETIKETT, inte innehåll — det körs därför i
+                  sajtens etikettidiom (mono, versaler, dämpad), samma som
+                  ”Verktyg & tekniker” en nivå upp. Förut låg det på
+                  foreground/75 halvfet och posterna på muted: knappt någon
+                  skillnad, så rubrik och innehåll flöt ihop till ett block.
+                  Nu skiljer de sig på fyra sätt samtidigt — familj, storlek,
+                  versalgemen och ljushet. */}
+              <h3 class="mb-3 font-mono text-[9.5px] tracking-[0.14em] text-muted-foreground/70 uppercase">
                 {group.title}
               </h3>
+              {/* foreground/90: posterna är innehållet och ska vara ljusast i
+                  sektionen. Det lyfter dessutom de enfärgade ikonerna, som
+                  ärver currentColor — nRF, Zephyr, SQL och protokollen var
+                  tidigare lika dämpade som brödtext. */}
               <ul class="space-y-2.5">
                 {group.items.map((t) => (
-                  <li class="flex items-center gap-2 text-[12.5px] text-muted-foreground">
+                  <li class="flex items-center gap-2 text-[12.5px] text-foreground/90">
                     <Icon name={t.icon} class="h-[18px] w-[18px] shrink-0" />
                     <span class="truncate">{t.name}</span>
                   </li>
@@ -203,35 +209,9 @@ const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
       </div>
     </section>
 
-    <!-- Utforska -->
-    <nav class="border-t border-border pt-6">
-      <div class="flex flex-wrap gap-x-6 gap-y-2 text-[13px]">
-        <a
-          href="/works/"
-          class="group inline-flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-primary"
-          >Arbete <Icon
-            name="mdi:arrow-right"
-            class="transition-transform group-hover:translate-x-0.5"
-          /></a
-        >
-        <a
-          href="/posts/"
-          class="group inline-flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-primary"
-          >Fältnoteringar <Icon
-            name="mdi:arrow-right"
-            class="transition-transform group-hover:translate-x-0.5"
-          /></a
-        >
-        <a
-          href="/learn-hub/"
-          class="group inline-flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-primary"
-          >Learn Hub <Icon
-            name="mdi:arrow-right"
-            class="transition-transform group-hover:translate-x-0.5"
-          /></a
-        >
-      </div>
-    </nav>
+    {/* ”Utforska”-raden borttagen: Arbete, Fältnoteringar och Learn Hub finns
+        redan i vänsternavigeringen, som står kvar hela tiden. Raden var en
+        andra uppsättning av samma vägar. */}
 
     <!-- Kontakt: sidans avslut. Adresserna kommer ur site.social.
          Ingen ram — den gröna tonplattan räcker för att skilja blocket från
@@ -245,13 +225,15 @@ const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
       >
         Kontakt
       </h2>
+      {/* Rubriken följer med texten: ”Rekryterar du just nu?” handlade om
+          anställning, och stod kvar hade den motsagt stycket under. */}
       <p class="mt-2 text-[14px] leading-snug font-bold text-foreground">
-        Rekryterar du just nu?
+        Har ni ett uppdrag på gång?
       </p>
-      <p class="mt-1.5 max-w-[52ch] text-[12.5px] leading-relaxed text-muted-foreground">
-        Jag är nyexaminerad fullstack- och cloudutvecklare och söker mitt
-        första jobb — junior roll, trainee eller praktik. Hör av dig så
-        berättar jag mer.
+      <p class="mt-1.5 max-w-[56ch] text-[12.5px] leading-relaxed text-muted-foreground">
+        Jag är tillgänglig för uppdrag som utvecklare, projektledare eller
+        utbildare. Hör av dig så tar vi ett samtal om var det skaver i er
+        organisation — och vad som skulle kunna lösa det.
       </p>
       {/* 40 px hög träffyta i stället för 44: med den mindre skalan blev 44 px
           höga knappar oproportionerligt tunga. WCAG 2.2 SC 2.5.8 kräver 24. */}
@@ -273,12 +255,11 @@ const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
       </div>
     </section>
 
-    <!-- Footer -->
+    <!-- Footer. Bara copyright kvar — "byggd med astro" borttaget. -->
     <footer
-      class="mt-8 flex items-center justify-between border-t border-border pt-6 font-mono text-[10px] tracking-widest text-muted-foreground/40 uppercase"
+      class="mt-8 border-t border-border pt-6 font-mono text-[10px] tracking-widest text-muted-foreground/40 uppercase"
     >
       <span>{site.footer.copyright}</span>
-      <span>{site.footer.builtWith}</span>
     </footer>
   </div>
 </AppLayout>

@@ -142,7 +142,11 @@ export const hrCardIcon: Record<string, string> = {
   "hr-py": "logos:python",
   "hr-cs": "logos:c-sharp",
   "hr-docker": "logos:docker-icon",
-  "hr-next": "logos:nextjs-icon",
+  // Enfärgad, inte logos:nextjs-icon: den senare är en svart cirkel med vit N
+  // och tappar sin form mot det mörka kortet. Enfärgade märken ärver
+  // currentColor och fungerar därför i båda temana — se ikonregeln i
+  // config/site.ts.
+  "hr-next": "simple-icons:nextdotjs",
 
   // Roller och arbetssätt — valda för att vara begripliga utan förklaring:
   // servern bakom appen, skärmen framför den, DevOps-loopen, dataflödet,

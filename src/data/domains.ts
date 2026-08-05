@@ -42,8 +42,8 @@ export const domains: Domain[] = [
         description: "Fullstack-appar, sajter och utvecklarverktyg.",
         icon: "mdi:layers-outline",
         bullets: [
-            "Astro, React och Blazor i frontend",
-            "API:er i C#/.NET och Node mot SQL",
+            "Astro, React och Next.js i frontend",
+            "API:er i C#/.NET och Node mot ORM",
             "Komponentbibliotek och designsystem",
         ],
     },
@@ -54,9 +54,9 @@ export const domains: Domain[] = [
         description: "Skalbar infrastruktur, containrar, pipelines och drift.",
         icon: "mdi:cloud-outline",
         bullets: [
-            "Docker och Kubernetes i drift",
-            "Infrastruktur som kod med Terraform",
-            "CI/CD som bygger, testar och släpper",
+            "Docker och Kubernetes i Azure och self-hosted",
+            "Infrastruktur som kod med Terraform, GitOps via ArgoCD",
+            "CI/CD i GitLab och Jenkins som bygger, testar och släpper",
         ],
     },
     {
@@ -66,9 +66,9 @@ export const domains: Domain[] = [
         description: "Hårdvarunära kod, CoAP/LTE-M och enheter ute i fält.",
         icon: "mdi:developer-board",
         bullets: [
-            "CoAP och MQTT över LTE-M",
+            "CoAP och MQTT över LTE-M och WiFi",
             "Sensordata från fält till moln",
-            "C nära hårdvaran",
+            "Förvaltat embedded firmware i Zephyr och nRF",
         ],
     },
 ];

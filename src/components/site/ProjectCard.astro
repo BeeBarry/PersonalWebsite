@@ -32,10 +32,12 @@ const { href, title, description, stack, image, live, tags } = Astro.props;
       </div>
     )
   }
-  <div class="flex flex-1 flex-col p-3">
+  <div class="flex flex-1 flex-col p-3.5">
     <div class="flex items-center gap-2">
+      {/* mb-0 nollar h3:ns basmarginal (8px) från @layer base — den lade sig
+          ovanpå beskrivningens mt och gav ett gap som inte gick att styra. */}
       <h3
-        class="text-[13.5px] font-bold text-foreground/90 transition-colors group-hover:text-primary"
+        class="mb-0 text-[13.5px] font-bold text-foreground/90 transition-colors group-hover:text-primary"
       >
         {title}
       </h3>
@@ -49,14 +51,14 @@ const { href, title, description, stack, image, live, tags } = Astro.props;
     </div>
     {
       description && (
-        <p class="mt-1 line-clamp-2 text-[12px] leading-snug text-muted-foreground">
+        <p class="mt-1.5 mb-0 line-clamp-2 text-[12.5px] leading-relaxed text-muted-foreground">
           {description}
         </p>
       )
     }
     {
       stack && (
-        <p class="mt-auto pt-2 font-mono text-[9.5px] tracking-wide text-muted-foreground/60">
+        <p class="mt-auto mb-0 pt-2.5 font-mono text-[9.5px] tracking-wide text-muted-foreground/60">
           {stack}
         </p>
       )

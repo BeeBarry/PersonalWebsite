@@ -52,10 +52,11 @@ const isLive = (p: (typeof allProjects)[number]) =>
     {filters.length > 1 && <DomainChips filters={filters} />}
 
     <div data-sticky-anchor aria-hidden="true"></div>
-{/* Taket (24rem) är poängen: med 1fr sträcktes två kort till 460px — samma
-          bredd som före komprimeringen. Nu ligger de på 384px, mellan de smala
-          302px och de gamla 460. Ett tredje projekt fyller raden. */}
-    <div class="grid gap-3.5 grid-cols-[repeat(auto-fill,minmax(min(100%,20rem),24rem))]" data-filter-target>
+    {/* Taket höjt 24 → 29rem. Vid 24rem låg korten på 384px och beskrivningen
+        bröt vid ~58 tecken, medan ~280px av spalten stod oanvänd. Nu är kortet
+        464px och raden 67 tecken (uppmätt) — mer luft utan att kortet börjar
+        läsa som en artikel. Golvet (20rem) styr när raden bryter och är orört. */}
+    <div class="grid gap-3.5 grid-cols-[repeat(auto-fill,minmax(min(100%,20rem),29rem))]" data-filter-target>
       {
         allProjects.map((p) => (
           <ProjectCard

@@ -81,8 +81,13 @@ const showFilters = filters.length > 2;
                   kostade den ~16px höjd på varje kort medan ytan bredvid
                   rubriken stod tom — nu bär samma rad båda och kortet blir
                   lägre. */}
+              {/* mb-0 på BÅDA: h3 ärver 8px och p 16px bottenmarginal från
+                  @layer base, och de nollades aldrig här. Tillsammans 24px som
+                  inte gjorde något — de 16 på sista stycket låg som ren dödyta
+                  i kortets underkant. Uppmätt: kortet gick från 104 till 80px.
+                  Gapet mellan rubrik och text bärs nu av mt-1.5 allena. */}
               <div class="flex items-start justify-between gap-2">
-                <h3 class="text-[13.5px] leading-snug font-bold text-foreground/90 transition-colors group-hover:text-primary">
+                <h3 class="mb-0 text-[13.5px] leading-snug font-bold text-foreground/90 transition-colors group-hover:text-primary">
                   {c.title}
                 </h3>
                 <span class="shrink-0 pt-px font-mono text-[9px] whitespace-nowrap text-muted-foreground/60">
@@ -91,7 +96,7 @@ const showFilters = filters.length > 2;
               </div>
               {/* line-clamp i stället för truncate: med tre kolumner kapades
                   nästan varje beskrivning mitt i ett ord. */}
-              <p class="mt-1 line-clamp-2 text-[11.5px] leading-snug text-muted-foreground">
+              <p class="mt-1.5 mb-0 line-clamp-2 text-[11.5px] leading-snug text-muted-foreground">
                 {c.description}
               </p>
             </div>

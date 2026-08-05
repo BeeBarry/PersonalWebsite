@@ -73,7 +73,7 @@ const site = {
 
     // "Om mig"-text på startsidan (redigera fritt — detta är dina egna ord).
     about: [
-        "Jag började i projektledning och rörde mig mot koden. Idag bygger jag helst i skärningspunkten mellan applikation och infrastruktur, där helheten avgör om något faktiskt håller i produktion.",
+        "Jag började i projektledning och rörde mig mot koden. Idag arbetar jag helst där applikationen och infrastrukturen möts — det är där jag lär mig mest, och där jag har lättast att se vad som faktiskt håller när det väl körs skarpt.",
         "Fokus ligger på molnnativ utveckling och skalbar infrastruktur, med ett genuint intresse för IoT och embedded. Jag gillar DevOps-tänk, tydlig arkitektur — och att förklara det jag lär mig, därav Learn Hub.",
     ],
 
@@ -81,7 +81,7 @@ const site = {
     certs: [
         {
             name: "AWS Certified Cloud Practitioner",
-            icon: "logos:aws",
+            icon: "simple-icons:amazonwebservices",
         },
         {
             name: "Microsoft Certified: Azure Fundamentals (AZ-900)",
@@ -89,14 +89,24 @@ const site = {
         },
     ],
 
-    // Verktyg & tekniker, grupperade. Färgade loggor (@iconify-json/logos);
-    // SQL/protokoll saknar färgloggor → neutrala mdi-ikoner.
+    // Verktyg & tekniker, grupperade.
+    //
+    // IKONREGEL: färgad logga (@iconify-json/logos) när den syns mot MÖRK
+    // bakgrund — annars enfärgad (simple-icons/mdi), som ärver textfärgen och
+    // därför fungerar i båda temana. Mörkt är sajtens default, så mörkt vinner.
+    //
+    // Uppmätt mot kortytan #17171b: AWS ordmärke #252f3e ger 1,31:1 — i
+    // praktiken osynligt, bara den orange bågen syntes. Astros #17191e är
+    // bakgrunden själv. Next.js-ordmärket ritas i currentColor men är brett och
+    // krympte till en liten remsa i den kvadratiska ikonrutan. Alla tre bytta
+    // mot enfärgade märken. Azure, React, Python m.fl. har god kontrast och
+    // behåller sina färger.
     stackGroups: [
         {
             title: "Språk",
             items: [
                 { name: "C#", icon: "logos:c-sharp" },
-                { name: "C", icon: "logos:c" },
+                { name: "C", icon: "simple-icons:c" },
                 { name: "JavaScript", icon: "logos:javascript" },
                 { name: "SQL", icon: "mdi:database" },
                 { name: "Python", icon: "logos:python" },
@@ -106,9 +116,9 @@ const site = {
             title: "Frameworks & Libraries",
             items: [
                 { name: "React", icon: "logos:react" },
-                { name: "Next.js", icon: "logos:nextjs" },
+                { name: "Next.js", icon: "simple-icons:nextdotjs" },
                 { name: "Tailwind", icon: "logos:tailwindcss-icon" },
-                { name: "Astro", icon: "logos:astro-icon" },
+                { name: "Astro", icon: "simple-icons:astro" },
                 { name: "TypeScript", icon: "logos:typescript-icon" },
             ],
         },
@@ -116,7 +126,7 @@ const site = {
             title: "Cloud & DevOps",
             items: [
                 { name: "Azure", icon: "logos:microsoft-azure" },
-                { name: "AWS", icon: "logos:aws" },
+                { name: "AWS", icon: "simple-icons:amazonwebservices" },
                 { name: "Terraform", icon: "logos:terraform-icon" },
                 { name: "Kubernetes", icon: "logos:kubernetes" },
                 { name: "Docker", icon: "logos:docker-icon" },
@@ -154,7 +164,6 @@ const site = {
 
     footer: {
         copyright: `© ${new Date().getFullYear()} barry`,
-        builtWith: "byggd med astro",
     },
 } as const;
 
