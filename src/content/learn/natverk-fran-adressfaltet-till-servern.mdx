@@ -23,7 +23,7 @@ senare — här handlar det om vägen dit.
 
 ## Vad som händer när du trycker Enter
 
-Mellan Enter och den första bokstaven på skärmen sker fyra saker, i tur och ordning.
+För de flesta HTTPS-anrop sker fyra saker mellan Enter och den första bokstaven på skärmen.
 
 <Flow
   caption="Tre av fyra steg är förarbete. Först i sista steget frågar webbläsaren efter en sida."
@@ -52,6 +52,9 @@ Mellan Enter och den första bokstaven på skärmen sker fyra saker, i tur och o
   ]}
 />
 
+HTTP/3 använder i stället QUIC under huven. Du behöver inte kunna QUIC nu — poängen är att namnet
+slås upp och en säker transport etableras före HTTP-anropet.
+
 Vi tar ett steg i taget nedan. Kedjan är också en felsökningsordning: när någon säger att
 "ingenting händer" är den användbara frågan *vilket av de här stegen kom du till?*
 
@@ -70,9 +73,7 @@ https://shop.example.se:443/produkter?sida=2
 - **`/produkter`** — sökvägen. Vad på servern du vill ha.
 - **`?sida=2`** — frågesträngen. Extra parametrar till just den förfrågan.
 
-> **DOODLE** — Raden `https://shop.example.se:443/produkter?sida=2` uppdelad i fem rutor med
-> streckade skiljelinjer. Pilar ner från varje ruta till etiketterna "protokoll", "värdnamn",
-> "port", "sökväg", "frågesträng". Rutan med värdnamnet är gråmarkerad. Under: "En rad, fem svar."
+<Doodle name="url-raden" caption="Den skrafferade rutan är den enda biten DNS slår upp." />
 
 ## Steg 1: Namnet slås upp
 
@@ -100,9 +101,11 @@ sida du vill ha.
 
 Är protokollet `https` följer en **TLS-handskakning** innan något innehåll skickas.
 
-Servern visar upp sitt certifikat, som bevisar att den verkligen är den maskin namnet pekar ut.
-Klienten kontrollerar certifikatet och de två kommer överens om nycklar för att kryptera resten
-av samtalet.
+Servern visar upp sitt certifikat och bevisar att den kontrollerar nyckeln för det begärda namnet.
+Certifikatet identifierar ett namn, inte en fysisk maskin. Flera servrar kan svara för samma namn.
+
+Klienten kontrollerar certifikatet och de två kommer överens om nycklar för att kryptera resten av
+samtalet.
 
 Det är det här steget bokstaven `s` står för. Utan det skickas allt i klartext genom varje nätverk
 trafiken råkar passera.
@@ -173,13 +176,14 @@ Ett anrop behöver alltid båda. Saknas adressen vet nätet inte vart det ska; s
 maskinen inte vem som ska ta emot. Det är därför ett fel kan bero på fel maskin *eller* fel dörr,
 och de två felen ser olika ut — vilket vi tar i avsnittet om refused och timeout.
 
-> **DOODLE** — Ett hus märkt `93.184.216.34` med fyra dörrar i fasaden, märkta `22`, `80`, `443`,
-> `5432`. En pil in mot dörren `443`. Under: "Adressen hittar huset. Porten hittar tjänsten."
+<Doodle name="porten-ar-dorren" caption="En adress på huset, fyra dörrar i fasaden. Pilen väljer dörr, inte hus." />
 
 ## `localhost` och 127.0.0.1
 
-`localhost` är ett namn som pekar på adressen `127.0.0.1`, och den adressen betyder per definition
-"den här maskinen".
+`localhost` är ett namn för den här maskinens loopback-adresser. Det pekar ofta på `127.0.0.1` för
+IPv4 och `::1` för IPv6.
+
+Vilken adress som används beror på systemets namnuppslagning. Båda betyder "den här maskinen".
 
 Anropet går aldrig ut på nätverket. Det vänder i nätverkskortet och kommer tillbaka till samma
 maskin det startade från.
@@ -210,7 +214,8 @@ Praktisk följd: sänk TTL:en i god tid *före* en planerad flytt, inte under de
 
 ## `/etc/hosts` går före DNS
 
-Filen `/etc/hosts` — samma `/etc` du mötte i Linux-serien — läses innan DNS frågas.
+Många Linux-system läser filen `/etc/hosts` — samma `/etc` du mötte i Linux-serien — innan DNS
+frågas. Ordningen styrs av systemets namnuppslagningskonfiguration och kan ändras.
 
 ```text
 127.0.0.1   shop.local
@@ -250,7 +255,7 @@ De två vanligaste felen ser lika ut för en användare men pekar åt rakt motsa
 
   Svaret kommer **direkt**.
 
-  Maskinen finns och svarade — men ingen tjänst lyssnar på den porten.
+  Någon på vägen avvisade anslutningen aktivt — ofta för att ingen tjänst lyssnar på porten.
 
   Leta efter: applikationen har inte startat, kraschade vid uppstart, eller lyssnar på fel port
   eller bara på `127.0.0.1`.
@@ -260,15 +265,16 @@ De två vanligaste felen ser lika ut för en användare men pekar åt rakt motsa
 
   Ingenting händer, och efter en stund ger klienten upp.
 
-  Ingen svarade över huvud taget — anropet nådde troligen aldrig fram.
+  Klienten fick inget svar i tid. Brandvägg, fel adress och en otillgänglig tjänst är möjliga
+  förklaringar.
 
   Leta efter: brandvägg, säkerhetsgrupp i molnet, fel IP-adress, eller en maskin som är avstängd.
 
   </div>
 </Split>
 
-Tiden är alltså ledtråden. Kommer nejet omedelbart hittade du maskinen men inte tjänsten. Tar det
-tiotals sekunder kom du aldrig fram.
+Tiden är alltså en ledtråd. Kommer nejet omedelbart avvisade någon anslutningen. Tar det tiotals
+sekunder fick klienten inget svar i tid. Symptomet ger en hypotes, inte hela beviset.
 
 <Callout type="fallgrop">
 Applikationen som lyssnar på `127.0.0.1` i stället för `0.0.0.0` ger **connection refused** för alla
@@ -330,33 +336,29 @@ Testa slutligen skillnaden mellan de två felen. Först en stängd port på din 
 nc -vz -w 5 localhost 9999
 ```
 
-Svaret kommer omedelbart: *Connection refused*. Prova nu en port som troligen filtreras bort på
-vägen:
+Svaret kommer ofta omedelbart: *Connection refused*. Det är ett säkert lokalt exempel på ett
+avvisat anslutningsförsök.
 
-```bash
-nc -vz -w 5 github.com 444
-```
-
-Här händer ingenting alls tills `-w 5` avbryter efter fem sekunder. **Väntetiden är hela
-skillnaden** — och det är den du läser av när du felsöker på riktigt.
+En timeout beror på reglerna i just ditt nät och går inte att demonstrera pålitligt med ett offentligt
+värdnamn. Här lär du dig hur symptomen skiljer sig, inte ett bestämt utfall från GitHub.
 
 Tre saker som kan förvirra: `dig` ger olika svar vid olika tillfällen och det är normalt, inte ett
 fel. Saknas `dig` på din maskin fungerar `nslookup github.com` lika bra för det här. Och `curl -I`
 skickar en `HEAD`-förfrågan i stället för `GET`, vilket ett fåtal servrar svarar annorlunda på.
 
 <Callout type="kom-ihag">
-- Fyra steg hinner ske innan förfrågan skickas: DNS, TCP, TLS — och först därefter HTTP.
+- För de flesta HTTPS-anrop sker DNS, TCP, TLS och först därefter HTTP. HTTP/3 använder QUIC.
 - IP-adressen är maskinen, porten är tjänsten. 80 = HTTP, 443 = HTTPS, 22 = SSH.
-- `localhost` = `127.0.0.1` = "den här maskinen" — vilken maskin det är beror på var du står.
-- DNS-svar cachas enligt sin TTL. `/etc/hosts` går före DNS och gäller bara din maskin.
-- **Refused** = maskinen nåddes, ingen lyssnade. **Timeout** = ingen kontakt alls.
+- `localhost` betyder "den här maskinen" och pekar ofta på `127.0.0.1` eller `::1`.
+- DNS-svar cachas enligt sin TTL. `/etc/hosts` går ofta före DNS och gäller bara din maskin.
+- **Refused** är ett snabbt nej. **Timeout** betyder att klienten inte fick svar i tid.
 </Callout>
 
 <Check
   items={[
     {
       q: "Vad är skillnaden mellan `connection refused` och `connection timed out`?",
-      a: "Refused betyder att maskinen nåddes och aktivt svarade nej — det finns ingen tjänst på den porten, och svaret kommer direkt. Timeout betyder att ingenting svarade alls, vilket pekar på brandvägg, fel adress eller en maskin som inte är igång.",
+      a: "Refused betyder att någon på vägen aktivt avvisade anslutningen, ofta för att ingen tjänst lyssnar på porten. Timeout betyder att klienten inte fick svar i tid. Brandvägg, fel adress och en otillgänglig tjänst är möjliga förklaringar.",
     },
     {
       q: "Varför räcker det inte att skriva `shop.example.se` för att nå en server?",
@@ -383,18 +385,18 @@ skickar en `HEAD`-förfrågan i stället för `GET`, vilket ett fåtal servrar s
 
 ## Snabb sammanfattning
 
-- Mellan Enter och första byten sker fyra steg: DNS, TCP, TLS och först därefter HTTP.
+- För de flesta HTTPS-anrop sker DNS, TCP, TLS och först därefter HTTP. HTTP/3 använder QUIC.
 - URL:en bär protokoll, värdnamn, port, sökväg och frågesträng i en rad.
 - Ett värdnamn måste slås upp till en IP-adress innan något kan kontaktas.
 - TCP öppnar en ordnad kanal med tre paket innan något innehåll skickas.
 - TLS låter servern bevisa vem den är och krypterar resten av samtalet. Det är `s` i `https`.
 - IPv4 och IPv6 samexisterar. Ett namn kan peka på båda.
 - IP-adressen pekar ut maskinen, porten pekar ut tjänsten. 80, 443, 22, 5432.
-- `localhost` är `127.0.0.1` och betyder "den här maskinen" — vilken beror på var du står.
+- `localhost` betyder "den här maskinen" och pekar ofta på `127.0.0.1` eller `::1`.
 - DNS-svar cachas enligt sin TTL. Sänk den före en flytt, inte under.
-- `/etc/hosts` läses före DNS och gäller bara din maskin.
+- `/etc/hosts` läses ofta före DNS och gäller bara din maskin.
 - HTTPS krypterar innehållet, inte det faktum att du anslöt.
-- Refused är ett snabbt nej från rätt maskin. Timeout är tystnad — du kom aldrig fram.
+- Refused är ett snabbt nej. Timeout betyder att klienten inte fick svar i tid.
 
 ## Nästa del
 

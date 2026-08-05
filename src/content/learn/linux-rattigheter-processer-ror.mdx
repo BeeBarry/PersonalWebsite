@@ -35,7 +35,8 @@ några till — och kör den första fil med det namnet som den hittar.
 Katalogerna står efter varandra med kolon emellan, och listan är en helt vanlig miljövariabel du kan
 titta på.
 
-Din **nuvarande katalog ingår inte** i `PATH`. Det är förklaringen till det första felmeddelandet.
+Din **nuvarande katalog ingår normalt inte** i `PATH`. Skalets konfiguration kan ändra det, men du
+ska inte förutsätta det.
 
 ## Varför `./` behövs
 
@@ -46,8 +47,8 @@ Utan `./` letar skalet bara i `PATH`, hittar ingenting, och svarar `command not 
 alltså inte om rättigheter alls.
 
 <Callout type="varfor" title="Varför är det så, egentligen?">
-Det är ett säkerhetsval. Låg din katalog i `PATH` skulle en fil som råkade heta `ls` i en nedladdad
-mapp köras i stället för det riktiga `ls` — bara för att du stod där.
+Det är ett säkerhetsval i vanliga skal. Låg din katalog i `PATH` skulle en fil som råkade heta `ls`
+i en nedladdad mapp köras i stället för det riktiga `ls` — bara för att du stod där.
 
 Genom att kräva `./` blir det ett aktivt beslut att köra just den filen på just den platsen.
 </Callout>
@@ -104,12 +105,14 @@ till den, trots att alla andra kan.
 `chmod` ändrar rättigheterna på en fil.
 
 ```bash
-chmod +x deploy.sh    # ge körrättighet
+chmod u+x deploy.sh  # ge ägaren körrättighet
 ls -l deploy.sh       # kontrollera att det tog
 ```
 
-Lisas `deploy.sh` saknade `x`, alltså vägrade systemet köra den. `chmod +x` lägger till just den
-rättigheten och rör inget annat.
+Lisas `deploy.sh` saknade `x`, alltså vägrade systemet köra den. `chmod u+x` lägger till
+körrättigheten för ägaren och rör inget annat.
+
+`chmod +x` använder en bredare standard och kan påverka fler rättighetsklasser beroende på umask.
 
 Det finns också en sifferform: `chmod 600 hemlig.txt` betyder att ägaren får läsa och skriva medan
 ingen annan får något alls. Sifferformen är kompakt men lätt att slarva med, vilket nästa avsnitt
@@ -176,8 +179,10 @@ Två tangentgrepp som ser likvärdiga ut och gör helt olika saker.
 **Ctrl+C** avbryter det som körs. Processen avslutas och är borta. Det är det du vill ha nästan
 alltid.
 
-**Ctrl+Z** *pausar* processen och lämnar den liggande i bakgrunden. Den finns kvar, med sitt PID och
-sina resurser.
+**Ctrl+Z** *pausar* processen. Den blir ett stoppat jobb; den kör inte vidare i bakgrunden förrän du
+använder `bg`.
+
+Processen finns kvar, med sitt PID och sina resurser.
 
 Det förklarar en klassiker: `Error: port 3000 is already in use` fast du "stängde ju" servern. Du
 pausade den. `fg` hämtar tillbaka den, `jobs` listar det som ligger pausat.
@@ -208,9 +213,7 @@ tydligt ser på skärmen, och en loggfil som är misstänkt tyst när något gå
 
 Kanalerna har nummer: stdout är `1`, stderr är `2`. De numren är hur man styr dem.
 
-> **DOODLE** — En låda märkt `ls` med två rör ut. Det övre, märkt `1 · stdout`, går vidare in i en
-> andra låda märkt `grep`. Det nedre, märkt `2 · stderr`, böjer av förbi `grep` och slutar i en
-> skärm-ikon. Under: "Röret tar bara det övre. Felet går utanför."
+<Doodle name="rorets-ovre-kanal" caption="Följ det nedre röret: det går utanför grep och landar på skärmen." />
 
 ## Vad ett rör är
 
@@ -381,20 +384,21 @@ ls /finns-inte 2>/dev/null
 Nu är det tyst. Och slutligen, ta med felet i röret:
 
 ```bash
-ls /finns-inte 2>&1 | grep -c "No such"
+ls /finns-inte 2>&1 | grep -c .
 ```
 
-Svaret är `1`. Nu fångade `grep` felmeddelandet, eftersom `2>&1` flyttade det till samma kanal.
+Nu fångade `grep` felraden, eftersom `2>&1` flyttade den till samma kanal. Exemplet beror därmed
+inte på vilket språk systemets felmeddelande använder.
 
 Tre saker som kan förvirra, alla på macOS: `/etc` är en länk och raden börjar därför med `l`, inte
 `d`. Ett `@` efter rättigheterna betyder utökade attribut och finns inte på Linux. Och gruppen heter
 `wheel` där de flesta Linux-system säger `root`.
 
 <Callout type="kom-ihag">
-- `./` behövs för att köra en fil i nuvarande katalog — den ligger inte i `PATH`, av säkerhetsskäl.
+- `./` behövs för att köra en fil i nuvarande katalog när den inte ligger i `PATH`.
 - `rwx` för ägare, grupp och övriga. Bara den första matchande uppsättningen gäller.
 - Första tecknet i `ls -l` är filens typ: `-` fil, `d` katalog, `l` länk.
-- `chmod +x` ger körrättighet. `chmod 777` ger bort allt och döljer problemet.
+- `chmod u+x` ger ägaren körrättighet. `chmod 777` ger bort allt och döljer problemet.
 - Ctrl+C avbryter, **Ctrl+Z pausar**. Det senare förklarar oväntat upptagna portar.
 - Ett program ligger på disken, en process är en körning av det.
 - `|` och `>` tar bara **stdout**. Felen går förbi — `2>&1` tar med dem.
@@ -404,11 +408,11 @@ Tre saker som kan förvirra, alla på macOS: `/etc` är en länk och raden börj
   items={[
     {
       q: "Varför fungerar `./deploy.sh` men inte `deploy.sh`?",
-      a: "Utan `./` letar skalet bara i katalogerna som står i `PATH`, och din nuvarande katalog ingår inte där. Det är ett säkerhetsval: en fil som råkar heta som ett systemkommando ska inte kunna köras av misstag bara för att du står i mappen.",
+      a: "Utan `./` letar skalet bara i katalogerna som står i `PATH`. Den nuvarande katalogen ingår normalt inte där. Det är ett säkerhetsval: en fil som råkar heta som ett systemkommando ska inte kunna köras av misstag bara för att du står i mappen.",
     },
     {
       q: "Filen visar `-rw-r--r--` och du får `Permission denied` när du kör den. Vad saknas?",
-      a: "Körrättigheten `x`. Ägaren har `rw-`, alltså läsa och skriva men inte köra. `chmod +x filen` löser det — och notera att det räcker, `chmod 777` ger dessutom bort skrivrättighet till alla.",
+      a: "Körrättigheten `x`. Ägaren har `rw-`, alltså läsa och skriva men inte köra. `chmod u+x filen` löser det för ägaren. `chmod 777` ger dessutom bort skrivrättighet till alla.",
     },
     {
       q: "Du äger en fil med rättigheterna `-r--rwxrwx`. Kan du skriva till den?",
@@ -416,7 +420,7 @@ Tre saker som kan förvirra, alla på macOS: `/etc` är en länk och raden börj
     },
     {
       q: "Du stängde servern men får ändå \"port 3000 is already in use\". Vad hände troligen?",
-      a: "Du tryckte Ctrl+Z i stället för Ctrl+C. Ctrl+Z pausar processen och lämnar den kvar i bakgrunden med porten upptagen. `fg` hämtar tillbaka den, eller så avslutas den med `kill`.",
+      a: "Du tryckte Ctrl+Z i stället för Ctrl+C. Ctrl+Z pausar processen som ett stoppat jobb. `bg` startar den i bakgrunden, `fg` hämtar tillbaka den, och processen kan hålla porten upptagen tills den avslutas.",
     },
     {
       q: "Du kör `nagot-kommando | grep fel` men grep hittar ingenting, trots att felet syns på skärmen. Varför?",
@@ -431,15 +435,15 @@ Tre saker som kan förvirra, alla på macOS: `/etc` är en länk och raden börj
 
 ## Snabb sammanfattning
 
-- `PATH` är listan över kataloger skalet letar i. Din egen katalog ingår inte.
+- `PATH` är listan över kataloger skalet letar i. Din egen katalog ingår normalt inte.
 - `./` betyder "filen som ligger här" och är därför nödvändigt för egna skript.
 - Rättigheter avgör vem som får läsa, skriva och köra. `r`, `w`, `x`.
 - Tio tecken i `ls -l`: en typ plus tre uppsättningar om tre.
 - Ägare, grupp, övriga — bara den första matchande uppsättningen gäller.
-- `chmod +x` ger den rättighet som saknas. `chmod 777` ger bort allt.
+- `chmod u+x` ger ägaren den rättighet som saknas. `chmod 777` ger bort allt.
 - `sudo` är för sådant som rör systemet, inte för att tysta ett felmeddelande.
 - En process är en körning av ett program, och har ett PID.
-- Ctrl+C avbryter. Ctrl+Z pausar och lämnar porten upptagen.
+- Ctrl+C avbryter. Ctrl+Z pausar; processen kan fortfarande hålla porten upptagen.
 - Kommandon skriver på två kanaler: stdout (1) och stderr (2).
 - `|` och `>` tar bara stdout. `2>&1` tar med felen, `2>/dev/null` kastar dem.
 - `>` skriver över, `>>` lägger till. `>` tömmer målet innan kommandot körts.

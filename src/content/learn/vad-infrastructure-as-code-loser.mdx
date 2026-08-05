@@ -71,15 +71,15 @@ molnkonsolen och i hans huvud.
 
   Git-historiken svarar på vem, när och varför.
 
-  Samma fil ger samma miljö, hur många gånger som helst.
+  Samma konfiguration kan granskas, versionshanteras och användas för att återskapa en miljö.
 
   </div>
 </Split>
 
-> **DOODLE** — Vänster: en molnkonsol-ruta med en muspekare och tre streckade pilar ut till tre lådor
-> som ligger lite snett i förhållande till varandra, märkta "test", "stage", "prod". Höger: en
-> fil-ikon märkt `main.tf` med tre heldragna pilar till tre identiska, prydligt uppradade lådor med
-> samma märkning. Under: "Ur minnet, eller ur filen."
+{/* DOODLE bortvald i steg 2: `Split`-komponenten direkt ovanför är samma bild i
+    text — två spalter, klickat mot beskrivet, och vänsterspalten säger redan
+    "byggas från minnet". Bilden hade ritat om rubrikerna, inget mer. Poängen om
+    att miljöerna glider isär hör hemma i `Split`-spalten, inte i en egen bild. */}
 
 ## Vad Terraform är
 
@@ -88,8 +88,9 @@ molnkonsolen och i hans huvud.
 Det talar med molnleverantörernas API:er genom insticksprogram som kallas *providers*, vilket gör
 att samma språk beskriver Azure, AWS, Google Cloud, Kubernetes, DNS och en del annat.
 
-Sedan en licensändring 2023 finns även **OpenTofu**, en öppen avgrening som läser samma filer och
-använder samma kommandon. Väljer ditt team den fungerar allt i den här serien likadant.
+Sedan en licensändring 2023 finns även **OpenTofu**, en öppen avgrening med ett språk och kommandon
+som till stor del överlappar Terraform. Kontrollera alltid versions- och providerkompatibiliteten i
+det projekt som ska köras.
 
 ## Deklarativt vs imperativt
 
@@ -124,8 +125,9 @@ när du kör den.
 
 **Idempotens** betyder att samma beskrivning ger samma slutläge oavsett hur många gånger den körs.
 
-Det imperativa kommandot ovan skapar en server varje gång det körs — eller misslyckas för att namnet
-är upptaget. Den deklarativa beskrivningen ger en server, oavsett om du kör den en gång eller hundra.
+Det imperativa kommandot ovan kan skapa en server, eller misslyckas om en server med samma namn redan
+finns. Den deklarativa beskrivningen låter Terraform jämföra konfigurationen med resurserna den
+hanterar och föreslå de ändringar som krävs för önskat läge.
 
 Det är den egenskapen som gör att en Terraform-fil kan köras i en pipeline utan att någon behöver
 hålla reda på om den körts förut.
@@ -175,8 +177,9 @@ något på riktigt.
 Poängen med mellansteget är värd att fästa: **du får se vad som kommer att hända innan det händer.**
 Det är skillnaden mellan att ändra i produktion och att godkänna en ändring i produktion.
 
-I en pipeline körs `apply` med en flagga som hoppar över frågan — men då har `plan` redan granskats
-av en människa i merge requesten.
+I en pipeline körs `apply` ofta med en flagga som hoppar över frågan. Vill teamet genomföra exakt den
+granskade planen sparar pipelinen planen med `terraform plan -out=...` och skickar den sparade planen
+till `terraform apply`; annars skapar `apply` en ny plan vid körningen.
 
 ## Vad drift är
 
@@ -187,11 +190,11 @@ en sak, molnet en annan, och nästa körning kommer att göra något åt saken.
 
 <Callout type="fallgrop">
 Johan går in i konsolen och höjer serverns minne "bara snabbt, det är akut". Nästa gång pipelinen
-kör `terraform apply` ser Terraform att verkligheten avviker från beskrivningen — och **sänker
-tillbaka minnet**. Ur Terraforms perspektiv var det en korrigering.
+kör `terraform plan` ser Terraform att verkligheten avviker från beskrivningen. Planen visar sedan
+om nästa `apply` kan ändra resursen på plats eller behöver ersätta den.
 
-Regeln som följer: när en miljö väl hanteras av Terraform ändras den **bara** via Terraform. Behöver
-du något akut, ändra i filen och kör — det tar sällan mer än ett par minuter.
+Undvik direkta ändringar i en miljö som Terraform hanterar. Behöver du något akut, dokumentera
+ändringen i konfigurationen och kontrollera planen innan du genomför den.
 </Callout>
 
 <Del titel="Alternativen" />
@@ -229,8 +232,9 @@ installerar det som ska köra på den.
 
 Om ni bara kör Azure finns ett alternativ som är värt att känna till.
 
-**Bicep** och **ARM-mallar** är Microsofts egna. ARM är JSON, Bicep är ett trevligare språk som
-kompileras till ARM. De stödjer nya Azure-funktioner från dag ett och kräver ingen state-fil.
+**Bicep** och **ARM-mallar** är Microsofts egna. ARM är JSON, Bicep är ett språk som kompileras till
+ARM. De använder Azures deployments i stället för en separat state-fil som teamet förvaltar. Stöd för
+en Azure-funktion beror på resursproviderns API-version och verktygets version.
 
 **Terraform** beskriver flera leverantörer med samma språk, men håller en egen state-fil som någon
 måste förvalta.
@@ -242,7 +246,8 @@ som DNS och SaaS-tjänster i samma beskrivning — Terraform.
 
 En rimlig invändning, särskilt om du är bekväm i terminalen. Tre saker skulle du behöva bygga själv:
 
-- **Koll på vad som finns.** Terraform håller reda på vad den skapat och kan räkna ut skillnaden.
+- **Koll på vad som finns.** Terraform håller reda på resurser den hanterar och kan räkna ut
+  skillnaden.
   Ditt skript skulle behöva fråga molnet om varje resurs varje gång.
 - **Ordningen.** Databasen måste finnas innan servern som ansluter till den. Terraform listar ut
   beroendena själv utifrån hur resurserna refererar till varandra.
@@ -271,9 +276,11 @@ Terraform ersätter inte molnkonsolen som informationskälla. Den ersätter den 
 
 `plan` ändrar ingenting. Det är därför den kan köras automatiskt i varje merge request.
 
-Att köra samma fil två gånger skapar inte två av allt. Det är vad deklarativt betyder.
+När Terraform har rätt state och åtkomst till resurserna innebär en oförändrad konfiguration normalt
+att nästa plan inte föreslår några ändringar.
 
-En snabb ändring i konsolen är inte snabb. Den försvinner vid nästa `apply`.
+En direkt ändring i konsolen skapar drift. Kontrollera nästa plan så att teamet ser hur Terraform
+föreslår att drift ska hanteras.
 
 Terraform och Ansible konkurrerar inte. Det ena skapar resursen, det andra konfigurerar den.
 
@@ -338,10 +345,10 @@ ligger utanför den här övningen.
 - Infrastruktur som klickas fram finns bara i konsolen och i någons huvud — den går inte att granska,
   versionshantera eller köra om.
 - Terraform är **deklarativt**: du beskriver måltillståndet, inte stegen dit.
-- **Idempotens** betyder att hundra körningar ger samma resultat som en.
+- **Idempotens** betyder att en oförändrad beskrivning kan ge samma slutläge vid upprepade körningar.
 - `plan` visar vad som kommer att hända, `apply` genomför det. Förhandsbeskedet är det som gör
   ändringen granskningsbar.
-- **Drift** uppstår när någon ändrar utanför Terraform. Nästa `apply` återställer.
+- **Drift** uppstår när någon ändrar utanför Terraform. Nästa plan visar avvikelsen.
 - Terraform skapar resurser, Ansible konfigurerar dem. De konkurrerar inte.
 </Callout>
 
@@ -349,7 +356,7 @@ ligger utanför den här övningen.
   items={[
     {
       q: "Vad händer om du kör samma Terraform-beskrivning tre gånger i rad?",
-      a: "Ingenting utöver första gången. Terraform jämför beskrivningen med verkligheten och gör bara det som saknas — det är idempotens. Ett imperativt skript hade i stället skapat tre av allt.",
+      a: "När state och åtkomst stämmer jämför Terraform beskrivningen med de resurser den hanterar. En oförändrad konfiguration ger då normalt inga föreslagna ändringar. Ett imperativt skript kan i stället behöva egen logik för att avgöra vad som redan finns.",
     },
     {
       q: "Varför är `terraform plan` viktigare än det låter?",
@@ -357,7 +364,7 @@ ligger utanför den här övningen.
     },
     {
       q: "En kollega ändrar en inställning direkt i molnkonsolen på en miljö som Terraform hanterar. Vad är risken?",
-      a: "Drift: verkligheten avviker från beskrivningen. Nästa `apply` upptäcker skillnaden och återställer till det som står i filen — kollegans ändring försvinner utan förvarning.",
+      a: "Drift: verkligheten avviker från beskrivningen. Nästa plan visar skillnaden, och teamet kan se om en `apply` ändrar resursen på plats eller behöver ersätta den.",
     },
     {
       q: "Vad är skillnaden mellan Terraform och Ansible?",
@@ -365,7 +372,7 @@ ligger utanför den här övningen.
     },
     {
       q: "Ni kör uteslutande Azure. Varför kan Bicep vara ett bättre val än Terraform?",
-      a: "Bicep är Microsofts eget, stödjer nya Azure-funktioner från dag ett och kräver ingen state-fil att förvalta. Terraforms fördel — samma språk för flera leverantörer — spelar ingen roll om ni bara har en.",
+      a: "Bicep kompileras till ARM och använder Azures deployments i stället för en separat state-fil som teamet förvaltar. Det kan vara ett enklare val när allt är Azure, men kontrollera att rätt resursprovider och API-version stöder den funktion ni behöver.",
     },
   ]}
 />
@@ -376,13 +383,14 @@ ligger utanför den här övningen.
   konsol.
 - IaC är ett arbetssätt. Terraform är ett av flera verktyg som gör det.
 - Klickad infrastruktur går inte att granska, versionshantera eller göra om.
-- Terraform talar med leverantörernas API:er genom providers. OpenTofu är en kompatibel avgrening.
+- Terraform talar med leverantörernas API:er genom providers. OpenTofu överlappar Terraform, men
+  kompatibiliteten beror på version och provider.
 - Deklarativt: du anger läget, verktyget räknar ut stegen. Kubernetes jämför oavbrutet, Terraform när
   du kör den.
-- Idempotens betyder att hundra körningar ger samma slutläge som en.
+- Idempotens betyder att en oförändrad beskrivning kan ge samma slutläge vid upprepade körningar.
 - `plan` jämför och listar skillnaden utan att ändra något.
-- `apply` visar listan igen och genomför den efter godkännande.
-- Drift uppstår när någon ändrar utanför Terraform. Nästa `apply` återställer.
+- `apply` skapar en ny plan om du inte ger den en sparad plan, och genomför den efter godkännande.
+- Drift uppstår när någon ändrar utanför Terraform. Nästa plan visar avvikelsen.
 - Terraform skapar, Ansible konfigurerar. Bicep är enklare om ni bara kör Azure.
 - Ett bash-skript skulle behöva egen koll på vad som finns, egen ordning och en variant per
   leverantör.

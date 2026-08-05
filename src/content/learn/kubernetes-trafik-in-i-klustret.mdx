@@ -34,8 +34,11 @@ hon försöker nå samma adress från sin egen dator. Det är inte ett fel. Det 
 
 **Typen** avgör hur långt utanför klustret en Service är nåbar.
 
-Fältet heter `type` och har tre värden du kommer att möta: `ClusterIP`, `NodePort` och
-`LoadBalancer`. Utelämnar du fältet blir det `ClusterIP`.
+Tre värden är viktigast för trafik till dina poddar: `ClusterIP`, `NodePort` och `LoadBalancer`.
+Utelämnar du fältet blir det `ClusterIP`.
+
+Det finns också `ExternalName`, som är ett DNS-alias till något utanför klustret. Den exponerar inte
+poddar och ligger utanför den här artikelns resa in i klustret.
 
 Typen ändrar inte vad Servicen gör — den hittar fortfarande poddar och fördelar trafik. Den ändrar
 bara vem som kan nå den.
@@ -51,7 +54,8 @@ verkligt system är de allra flesta Services ClusterIP.
 
 ## NodePort
 
-**NodePort** öppnar samma port på **varje** nod i klustret, i intervallet 30000–32767.
+**NodePort** öppnar samma port på **varje** nod i klustret. Standardintervallet är 30000–32767,
+men klustrets administratör kan konfigurera ett annat intervall.
 
 Kan du nå en nods IP-adress kan du nå tjänsten. Det gör NodePort användbart i test och i lokala
 kluster.
@@ -75,7 +79,7 @@ Det är lätt att tro att typerna är tre alternativ att välja mellan. De är s
 varje typ innehåller det som ligger under.
 
 <Stack
-  caption="Väljer du LoadBalancer får du automatiskt NodePort och ClusterIP på köpet — de försvinner inte."
+  caption="LoadBalancer skapar normalt NodePort och ClusterIP på köpet — de försvinner inte."
   ground="Poddarna, som Servicen hittar via sina labels"
   layers={[
     {
@@ -84,7 +88,7 @@ varje typ innehåller det som ligger under.
     },
     {
       label: "type: NodePort",
-      note: "Öppnar samma port på **varje** nod, i intervallet 30000–32767. Användbart i test, klumpigt i drift.",
+      note: "Öppnar samma port på varje nod. Standardintervallet kan ändras av klustrets administratör.",
     },
     {
       label: "type: ClusterIP",
@@ -94,8 +98,10 @@ varje typ innehåller det som ligger under.
   ]}
 />
 
-En LoadBalancer har alltså fortfarande en intern adress som andra poddar kan använda. Du behöver inte
-välja bort det interna för att lägga till det externa.
+En LoadBalancer har alltså fortfarande en intern adress som andra poddar kan använda. Den skapar
+normalt även NodePort, men NodePort-allokeringen kan stängas av i vissa kluster.
+
+Du behöver inte välja bort det interna för att lägga till det externa.
 
 <Del titel="Labels och portar" />
 
@@ -144,9 +150,10 @@ Två portnummer i samma block, och de betyder olika saker.
 De sätts ofta till samma nummer, vilket gör skillnaden lätt att missa. Lyssnar din app på 8080 men
 du vill att andra ska anropa 5000 sätter du `port: 5000` och `targetPort: 8080`.
 
-> **DOODLE** — En vägskylt märkt `api` med `port: 5000` skriven på skylten. Heldragen pil in från
-> "Frontend". Från skylten tre streckade pilar till tre lådor märkta "pod", var och en med en liten
-> ruta märkt `targetPort: 8080`. Under: "En adress utåt. En port inåt."
+{/* DOODLE bortvald i steg 2: vägskylten framför tre poddar är redan ritad två
+    delar tidigare, som `service-vagskylten` i intro-till-kubernetes. Samma bild
+    igen läser som en upprepning oavsett att portnumren skiljer, och `port` vs
+    `targetPort` bärs redan av vs-sektionen och YAML-blocket ovanför. */}
 
 <Del titel="Ingress och vägen in" />
 
@@ -199,9 +206,12 @@ Den här skillnaden är den enskilt vanligaste anledningen till att en Ingress "
 **Ingress-controllern** är programmet som läser beskrivningen och faktiskt dirigerar trafiken.
 Exempel: ingress-nginx eller Traefik.
 
-Klustret levereras utan controller. Skapar du bara objektet accepteras det utan invändning, `kubectl
-get ingress` listar din regel, och ingenting händer — `ADDRESS`-kolumnen förblir tom. Klustret har
-tagit emot en beskrivning som ingen åtagit sig att förverkliga.
+Kubernetes-API:t innehåller ingen Ingress-controller. Många lokala och hanterade kluster installerar
+däremot en controller som tillägg.
+
+Skapar du bara objektet utan en controller accepteras det utan invändning, `kubectl get ingress`
+listar din regel, och ingenting händer — `ADDRESS`-kolumnen förblir tom. Kontrollera därför vad just
+ditt kluster har.
 
 Fältet `ingressClassName` är kopplingen dem emellan. Stavar du fel där ignoreras hela objektet, tyst.
 
@@ -236,11 +246,12 @@ spec:
 
 Reglerna matchas efter hur specifika de är, inte efter ordningen i filen: `/api` matchar före `/`.
 
-`pathType: Prefix` betyder att allt som börjar med sökvägen matchar, så `/api/produkter` hamnar också
-hos API:et.
+`pathType: Prefix` matchar hela sökvägselement. `/api` matchar `/api`, `/api/` och
+`/api/produkter`, men inte `/apibutik`.
 
-Lägg märke till att en Ingress pekar på **Services**, inte på poddar. Kedjan är alltid Ingress →
-Service → pod.
+Exemplet pekar på **Services**, inte på poddar. Ingress-specifikationen kan också peka på en annan
+resurstyp genom en resource-backend, men den fördjupningen behövs inte här. Kedjan i den här artikeln
+är Ingress → Service → pod.
 
 ## Hela vägen in
 
@@ -307,8 +318,8 @@ blir aktuella när du själv äger klustrets ingång.
 
 En Service är inte publik som standard. Utan `type` blir den ClusterIP och syns bara inifrån.
 
-Servicen hittar inte poddar via Deploymenten. Den matchar labels, och en felstavad label ger tyst
-tystnad.
+Servicen hittar inte poddar via Deploymenten. Den matchar labels, och en felstavad label ger ett
+tyst fel: Servicen hittar inga poddar utan eget felmeddelande.
 
 `port` och `targetPort` är inte samma sak. Den ena är utåt, den andra in i containern.
 
@@ -357,11 +368,11 @@ molnleverantör finns, och i nyare Kubernetes-versioner har `endpoints` ersatts 
 
 <Callout type="kom-ihag">
 - En Service är **ClusterIP** som standard — intern, osynlig utifrån. Det är avsiktligt.
-- Typerna bygger på varandra: LoadBalancer innehåller NodePort, som innehåller ClusterIP.
+- LoadBalancer skapar normalt NodePort, som bygger på ClusterIP. NodePort kan stängas av i vissa kluster.
 - Servicen hittar poddar via **labels**, inte via Deployment-namnet.
 - `port` är adressen utåt, `targetPort` är porten i containern.
 - Ingress ger en ingång för många tjänster, med regler på värdnamn och sökväg.
-- Ett Ingress-objekt utan Ingress-controller gör ingenting alls, utan felmeddelande.
+- Ett Ingress-objekt utan Ingress-controller gör ingenting alls, utan eget felmeddelande.
 </Callout>
 
 <Check
@@ -384,7 +395,7 @@ molnleverantör finns, och i nyare Kubernetes-versioner har `endpoints` ersatts 
     },
     {
       q: "Vad är den praktiska nackdelen med `type: LoadBalancer` på varje tjänst?",
-      a: "Varje Service får en egen lastbalanserare med egen publik IP — alltså egen DNS-post, eget certifikat och egen kostnad. Dessutom går det inte att dirigera på sökväg. En Ingress löser alla fyra med en enda ingång.",
+      a: "Varje Service får ofta en egen lastbalanserare med egen publik IP — alltså egen DNS-post, eget certifikat och egen kostnad. En Ingress samlar vanliga HTTP-regler på en ingång och kan dirigera på sökväg.",
     },
     {
       q: "Du byter namn på Deploymenten men inte på labels. Vad händer med trafiken?",
@@ -397,10 +408,10 @@ molnleverantör finns, och i nyare Kubernetes-versioner har `endpoints` ersatts 
 
 - Allt i ett kluster är stängt utåt tills du öppnar det. Standardtypen ClusterIP är intern.
 - Service-typen avgör hur långt utanför klustret tjänsten är nåbar, inte vad den gör.
-- NodePort öppnar en hög port på varje nod. Användbart i test, klumpigt i drift.
+- NodePort öppnar en hög port på varje nod. Standardintervallet kan ändras av klustrets administratör.
 - LoadBalancer ber molnet om en publik IP. En per Service, och den kostar pengar.
-- Typerna är lager: LoadBalancer innehåller NodePort, som innehåller ClusterIP.
-- Servicen hittar poddar via labels. En felstavad label ger tyst tystnad, inte ett felmeddelande.
+- Typerna är ofta lager: LoadBalancer skapar normalt NodePort, som bygger på ClusterIP.
+- Servicen hittar poddar via labels. En felstavad label ger ett tyst fel, inte ett eget felmeddelande.
 - `port` är adressen utåt, `targetPort` porten i containern.
 - En Ingress fördelar trafik till flera tjänster utifrån värdnamn och sökväg — en ingång i stället
   för tio.

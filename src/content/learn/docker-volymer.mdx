@@ -52,8 +52,8 @@ koden är kvar — men allt Postgres hunnit skriva är borta.
 
 <Callout type="varfor" title="Varför är det designat så?">
 Det är samma egenskap som gör containrar användbara. En container ska vara **utbytbar**: går den
-sönder kastar du den och startar en ny från samma image, och den nya är garanterat identisk med den
-gamla.
+sönder kastar du den och startar en ny från samma image. Med samma konfiguration, omgivning och
+externa beroenden kan den nya containern utföra samma uppgift som den gamla.
 
 Den garantin håller bara om containern inte bär på något unikt. Data som ska överleva måste därför
 bo någon annanstans.
@@ -179,7 +179,10 @@ Skriver du bara ett mål utan källa — `- /app/node_modules` — skapar Docker
 ett slumpat namn.
 
 Vissa images gör samma sak åt dig. `postgres` deklarerar själv en volym för sin datakatalog, vilket
-gör att data kan överleva även utan att du bett om det — fast i en volym du inte kan hitta igen.
+gör att data kan överleva även utan att du bett om det — i en volym med ett genererat namn.
+
+En ny container kopplas inte automatiskt till den volymen. Du kan hitta den med `docker volume ls`,
+men en named volume är tydligare när data ska återanvändas medvetet.
 
 Det är därför `docker volume ls` visar poster med långa hash-namn som du aldrig skapat.
 
@@ -212,9 +215,10 @@ volumes:
 
 ## En volym är inte en säkerhetskopia
 
-Volymen ligger på samma disk som allt annat.
+En lokal Docker-volym ligger där Docker Engine lagrar data. Det är ofta samma maskin, men
+lagringsdrivrutinen kan använda annan lagring.
 
-Den skyddar mot att containern tas bort. Den skyddar inte mot diskhaveri, felaktig radering eller
+Volymen skyddar mot att containern tas bort. Den skyddar inte mot diskhaveri, felaktig radering eller
 data som blivit trasig — och `down -v` raderar den utan papperskorg.
 
 Ska databasen kunna återställas behöver du en riktig dump, `pg_dump` för Postgres, som lagras någon
@@ -245,9 +249,9 @@ En volym är inte en del av imagen. Imagen delas; volymen stannar där den skapa
 
 En bind mount lägger sig ovanpå målkatalogen och kan dölja filer som byggdes in i imagen.
 
-En volym är ingen säkerhetskopia. Den ligger på samma disk som allt annat.
+En volym är ingen säkerhetskopia. Den skyddar inte mot förlust av lagringen.
 
-Volymer du aldrig skapat är oftast anonyma volymer som imagen själv deklarerat.
+Volymer du aldrig skapat är ofta anonyma volymer som imagen själv deklarerat.
 
 ## Prova själv
 
@@ -321,7 +325,7 @@ länge någon container använder volymen, vilket är avsiktligt.
     },
     {
       q: "Räcker en volym som säkerhetskopia av databasen?",
-      a: "Nej. Volymen ligger på samma disk och skyddar bara mot att containern tas bort — inte mot diskhaveri, radering eller trasig data. En riktig säkerhetskopia är en dump som lagras någon annanstans.",
+      a: "Nej. Volymen skyddar bara mot att containern tas bort — inte mot diskhaveri, radering eller trasig data. En riktig säkerhetskopia är en dump som lagras någon annanstans.",
     },
   ]}
 />
@@ -339,7 +343,7 @@ länge någon container använder volymen, vilket är avsiktligt.
 - Anonyma volymer skapas av mål utan källa — och av images som `postgres` på egen hand.
 - `down` behåller volymerna. `down -v` raderar dem utan att fråga.
 - En bind mount lägger sig ovanpå målkatalogen och kan dölja inbyggda filer.
-- En volym är ingen säkerhetskopia. Den ligger på samma disk.
+- En volym är ingen säkerhetskopia. Den skyddar inte mot förlust av lagringen.
 
 ## Nästa del
 

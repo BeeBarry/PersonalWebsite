@@ -59,11 +59,13 @@ Tecknet sist markerar var din inmatning börjar. Ett `$` betyder vanlig använda
 att du är root — och den skillnaden är värd att lägga märke till varje gång.
 
 <Callout type="varfor" title="Varför en server ser ut så här">
-En server har inget grafiskt gränssnitt installerat, och det är avsiktligt. Allt som körs tar minne
-och utgör en möjlig säkerhetslucka.
+Många serverinstallationer saknar grafiskt gränssnitt, och det är ofta avsiktligt. Allt som körs tar
+minne och utgör en möjlig säkerhetslucka.
 
 En maskin vars enda jobb är att köra din applikation ska inte lägga resurser på att rita fönster
 ingen tittar på.
+
+En server kan också ha ett grafiskt gränssnitt. Det är bara mindre vanligt i drift.
 </Callout>
 
 <Del titel="Trädet" />
@@ -116,9 +118,7 @@ skrivrättighet.
 `cd /` tar dig till maskinens topp. `cd ~` — eller bara `cd` — tar dig hem. Att blanda ihop dem är
 den vanligaste orsaken till att någon står i `/` och undrar var alla filer tog vägen.
 
-> **DOODLE** — Ett upp-och-nervänt träd som växer nedåt från en rotnod märkt `/`. Grenar till
-> `etc`, `usr`, `var`, `home`. Under `home` en gren till `lisa`, inringad och märkt `~` med texten
-> "här hamnar du". Under: "En rot. Allt annat hänger under."
+<Doodle name="filsystemstradet" caption="Trädet växer nedåt. Ringen sitter långt ner i en gren — inte i toppen." />
 
 <Del titel="Sökvägarna" />
 
@@ -247,7 +247,7 @@ Du behöver inte kunna hela trädet, men fem platser dyker upp om och om igen.
 /etc       systemets konfiguration, i textfiler
 /var/log   loggarna
 /usr/bin   programmen
-/tmp       tillfälliga filer, töms vid omstart
+/tmp       tillfälliga filer, kan tömmas vid omstart eller städning
 ```
 
 `/etc/hosts` från nätverksserien ligger alltså precis där man kan vänta sig. `/var/log` är första
@@ -259,10 +259,11 @@ På macOS ligger användarnas kataloger i `/Users`, inte i `/home` — vilket vi
 ## Allting är en fil
 
 Att `/usr/bin` bara är en katalog med filer är värt att stanna vid, för det illustrerar den bärande
-idén: **allting är en fil.**
+idén: **allting är en fil.** Det är en användbar tumregel, inte en bokstavlig beskrivning.
 
-Program är filer. Konfiguration är textfiler. Loggar är textfiler. Även hårdvara nås som filer under
-`/dev`.
+Linux låter många saker nås genom fil-liknande gränssnitt: vanliga filer, kataloger och många
+enheter. Processer och nätverk är inte vanliga filer, även om du ofta kan observera dem genom filer
+i exempelvis `/proc`.
 
 Det är därför samma handfull kommandon räcker för att inspektera nästan vad som helst på maskinen —
 och varför nästa del, som handlar om rättigheter *på filer*, i praktiken handlar om rättigheter på
@@ -403,7 +404,7 @@ båda.
 - `pwd`, `ls`, `cd`, `cat` räcker för att orientera sig. Tabb kompletterar och verifierar.
 - Filer som börjar med punkt är dolda. En tom katalog behöver inte vara tom.
 - `/etc` är konfiguration, `/var/log` loggar, `/usr/bin` program, `/tmp` tillfälligt.
-- Allting är en fil — program, konfiguration, loggar och hårdvara.
+- "Allting är en fil" är en tumregel för många fil-liknande gränssnitt, inte en bokstavlig regel.
 - Relativa sökvägar i skript är den vanligaste orsaken till fel i schemalagda jobb.
 
 ## Nästa del

@@ -52,9 +52,7 @@ Står `HEAD` direkt på en commit i stället för på en gren är du i *detached
 hänger arbetet löst utan gren som håller i det. Det ordnas med att skapa en gren på plats, men det
 är också anledningen till att Git varnar tydligt när det händer.
 
-> **DOODLE** — Tre commit-cirklar på en linje märkta A, B, C. En liten flagga märkt `main` som pekar
-> på C, och ovanför den en mindre flagga märkt `HEAD` med pil ner på `main`-flaggan. Under bilden:
-> "Grenen pekar på en commit. HEAD pekar på grenen."
+<Doodle name="grenen-och-head" caption="Flaggan står på commiten. Den mindre flaggan pekar på flaggan, inte på commiten." />
 
 ## Hur en gren ser ut i historiken
 
@@ -137,8 +135,10 @@ Git väljer själv mellan två sätt, och skillnaden syns i historiken.
 Git flyttar bara `main`-pekaren framåt till grenens sista commit. Historiken blir en rak linje.
 
 **Merge-commit** sker när målgrenen fått nya commits under tiden. Då finns två utvecklingslinjer som
-måste förenas, och Git skapar en ny commit — `M` i bilden ovan. Den är den enda sortens commit med
-**två föräldrar**.
+måste förenas, och Git skapar en ny commit — `M` i bilden ovan. En vanlig merge-commit har **två
+föräldrar**.
+
+Git kan också skapa merges med fler än två föräldrar. Den fördjupningen behöver du inte nu.
 
 I båda fallen räknar Git ut resultatet. Nästan alltid går det av sig självt, även när båda ändrat
 samma fil — så länge de inte rört samma rader.
@@ -160,8 +160,11 @@ någon annan redan hämtat. Vi tar det i en egen del. Kan du merge klarar du dig
 
 ## Vad en konflikt är
 
-En **konflikt** uppstår när samma rader har ändrats i båda grenarna och Git inte kan avgöra vilken
-version som ska gälla.
+En **konflikt** uppstår när Git inte kan kombinera ändringar automatiskt. Det händer ofta när samma
+eller överlappande rader ändrats i båda grenarna.
+
+Det kan också hända när den ena grenen ändrar en fil som den andra tar bort. Git visar var den
+behöver ditt beslut.
 
 <Split
   leftTitle="Vanlig reaktion"
@@ -181,7 +184,7 @@ version som ska gälla.
   </div>
   <div slot="right">
 
-  **Två personer ändrade samma rader.**
+  **Git kan inte kombinera ändringarna automatiskt.**
 
   Git kan inte veta vilken version som är rätt — och vägrar gissa, i stället för att tyst välja fel.
 
@@ -190,8 +193,8 @@ version som ska gälla.
   </div>
 </Split>
 
-En konflikt kan bara uppstå i en merge. Under tiden du arbetar på din gren finns ingen att ha
-konflikt med.
+En konflikt uppstår ofta i en merge, men kan också uppstå i rebase, cherry-pick och revert. Under
+tiden du arbetar på din gren finns ingen annans ändring att kombinera med din.
 
 ## Konfliktmarkörerna
 
@@ -228,7 +231,9 @@ Ofta är svaret varken den ena eller den andra versionen, utan en tredje som tar
 Att momsen ska beräknas per land *och* att den gamla satsen fortfarande gäller för Sverige, till
 exempel.
 
-Ångrar du dig mitt i: `git merge --abort` tar dig tillbaka till läget före sammanslagningen.
+Ångrar du dig mitt i försöker `git merge --abort` återställa läget före sammanslagningen. Börja
+därför en merge med en ren arbetskatalog. Ocommittade ändringar kan annars vara svåra att återskapa
+exakt.
 
 ## Fallgropen: långlivade grenar
 
@@ -272,7 +277,7 @@ En gren är inte en kopia av projektet. Den är en fil med en commit-hash i.
 
 Att radera en gren raderar inte commitarna. Pekaren försvinner; historiken finns kvar.
 
-En konflikt är inte ett fel i Git. Det är Git som vägrar gissa mellan två versioner av samma rader.
+En konflikt är inte ett fel i Git. Git vägrar gissa när ändringar inte går att kombinera automatiskt.
 
 `git merge` körs på grenen som ska **ta emot**, inte på den som ska in.
 
@@ -290,15 +295,17 @@ Titta först på vad `HEAD` faktiskt innehåller:
 cat .git/HEAD
 ```
 
-Du får en rad: `ref: refs/heads/main`. `HEAD` pekar alltså inte på en commit utan på en gren.
+På en vanlig gren får du en rad som `ref: refs/heads/main`. `HEAD` pekar då inte på en commit utan
+på en gren. Namnet kan vara något annat än `main`.
 
-Titta sedan på vad grenen innehåller:
+Titta sedan på vilken gren du står på och vilken commit `HEAD` pekar på:
 
 ```bash
-git rev-parse main
+git branch --show-current
+git rev-parse --verify HEAD
 ```
 
-En hash. Det är hela grenen — en fil med fyrtio tecken i, precis som avsnittet påstod.
+Första raden är grennamnet. Den andra är hashen för commiten den aktuella grenen pekar på.
 
 Se slutligen formen på historiken:
 
@@ -309,17 +316,15 @@ git log --graph --oneline --all | head -20
 Linjerna till vänster visar var grenar delat sig och slagits ihop igen. En commit med två streck som
 går ihop är en merge-commit.
 
-Två saker som kan förvirra: du kan försöka `cat .git/refs/heads/main` och få *No such file or
-directory* — det betyder inte att grenen saknas, utan att Git packat ihop sina referenser i
-`.git/packed-refs` för att spara plats. Använd `git rev-parse` i stället. Och `git log` öppnas i en
-bläddrare som avslutas med `q`.
+Två saker kan förvirra. Du kan försöka `cat .git/refs/heads/main` och få *No such file or
+directory* — det betyder inte att grenen saknas, utan att Git kan ha packat ihop sina referenser.
+Använd `git rev-parse` i stället. Och `git log` öppnas i en bläddrare som avslutas med `q`.
 
 <Callout type="kom-ihag">
 - En gren är **en fil med en commit-hash i**. Därför är den gratis och omedelbar.
 - `HEAD` pekar på grenen du står på. Att byta gren flyttar `HEAD` och skriver om filerna på disken.
-- **Fast-forward** när målgrenen stått stilla, **merge-commit** (två föräldrar) när den inte gjort det.
-- En konflikt betyder att samma rader ändrats på båda hållen. Git vägrar gissa — det är en
-  funktion, inte ett fel.
+- **Fast-forward** när målgrenen stått stilla, **merge-commit** med normalt två föräldrar när den inte gjort det.
+- En konflikt betyder att Git inte kan kombinera ändringar automatiskt. Det är en funktion, inte ett fel.
 - Håll grenar korta. `--force-with-lease` i stället för `--force`.
 </Callout>
 
@@ -335,11 +340,11 @@ bläddrare som avslutas med `q`.
     },
     {
       q: "När blir en merge en fast-forward, och när skapas en merge-commit?",
-      a: "Fast-forward när målgrenen inte fått några nya commits sedan grenen skapades — då räcker det att flytta pekaren framåt. Har målgrenen utvecklats parallellt måste linjerna förenas, och då skapas en merge-commit med två föräldrar.",
+      a: "Fast-forward när målgrenen inte fått några nya commits sedan grenen skapades — då räcker det att flytta pekaren framåt. Har målgrenen utvecklats parallellt måste linjerna förenas, och då skapas normalt en merge-commit med två föräldrar.",
     },
     {
       q: "Du får en konflikt. Vad är det Git säger till dig?",
-      a: "Att samma rader ändrats i båda grenarna, och att den inte kan avgöra vilken version som är rätt. Den markerar raderna i filen och lämnar beslutet till dig i stället för att gissa fel i tysthet.",
+      a: "Att den inte kan kombinera ändringarna automatiskt. Ofta har samma eller överlappande rader ändrats, men en ändrad fil som tagits bort i den andra grenen kan också ge konflikt. Git markerar var du behöver fatta beslutet.",
     },
     {
       q: "Du raderar grenen `sok` efter att ha slagit ihop den. Är arbetet borta?",
@@ -358,9 +363,9 @@ bläddrare som avslutas med `q`.
 - `HEAD` pekar ut vilken gren du står på. Byte av gren skriver om filerna på disken.
 - Att radera en gren tar bort pekaren, inte commitarna.
 - En merge körs på grenen som ska ta emot och pekar ut den som ska in.
-- Fast-forward flyttar bara pekaren. En merge-commit har två föräldrar.
+- Fast-forward flyttar bara pekaren. En vanlig merge-commit har två föräldrar.
 - Rebase skriver om historien till en rak linje och ger commitarna nya hashar. Det tas i egen del.
-- En konflikt uppstår bara i en merge, och bara när samma rader ändrats på båda hållen.
+- En konflikt uppstår när Git inte kan kombinera ändringar automatiskt, ofta i en merge.
 - Konfliktmarkörerna är vanlig text i filen. De ska redigeras bort innan du `git add`.
 - Korta grenar ger få konflikter. Långlivade grenar ger många på en gång.
 - `--force-with-lease` i stället för `--force` på allt någon annan kan tänkas arbeta mot.

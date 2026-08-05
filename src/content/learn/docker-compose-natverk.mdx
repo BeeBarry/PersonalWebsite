@@ -15,7 +15,7 @@ och den svarar — men den gör ingenting användbart, för e-handelssystemet be
 sig.
 
 Den här delen handlar om det som faktiskt är svårt med flera containrar: **hur de hittar varandra**,
-och varför den första anslutningen nästan alltid misslyckas.
+och varför den första anslutningen lätt kan misslyckas.
 
 <Del titel="Compose och felet" />
 
@@ -78,8 +78,11 @@ ska prata är den första gissningen.
 
 Compose sätter alla tjänster i projektet på ett gemensamt nätverk, utan att du ber om det.
 
-Startar du projektet i mappen `shop` får du ett nätverk som heter `shop_default`, och varje tjänst
-kopplas in på det. Du behöver inget `networks`-block i filen.
+Compose härleder normalt projektnamnet från mappen. Startar du projektet i `shop` blir nätverket
+därför ofta `shop_default`, och varje tjänst kopplas in på det.
+
+Namnet kan sättas uttryckligen. Kontrollera därför alltid det faktiska namnet med
+`docker network ls`. Du behöver inget `networks`-block i filen.
 
 På det nätverket finns en inbyggd namnuppslagning, och det är den som gör nästa avsnitt möjligt.
 
@@ -174,9 +177,12 @@ att göra.
   ]}
 />
 
-Att databasen saknar `ports` betyder alltså att den är nåbar för API:et men **inte** från din dator
-eller ditt nätverk. Vill du felsöka med ett databasverktyg lägger du tillfälligt till
-`ports: ["5432:5432"]` — och tar bort det efteråt.
+Att databasen saknar `ports` betyder alltså att Docker inte publicerar porten på din dator. I den
+här Compose-filen är databasen nåbar för API:et på det gemensamma nätverket.
+
+Andra vägar, som en proxy eller en annan nätverkskonfiguration, kan finnas i andra miljöer. Vill du
+felsöka med ett databasverktyg lägger du tillfälligt till `ports: ["5432:5432"]` — och tar bort det
+efteråt.
 
 ## Värdens port vs containerns port
 
@@ -269,13 +275,13 @@ räknas tjänsten som ohälsosam, och `condition: service_healthy` håller kvar 
 
 ## Vad det här betyder i ditt arbete
 
-Du kommer att köra `docker compose up` varje morgon och läsa `docker compose logs` varje gång något
-inte startar. Anslutningsfel mellan tjänster är det vanligaste felet i hela serien, och nio gånger
-av tio är orsaken en av tre: fel värdnamn, saknad `ports`, eller `depends_on` utan hälsotest.
+Du kommer att köra `docker compose up` och läsa `docker compose logs` när något inte startar.
+Anslutningsfel mellan tjänster kan bero på fel värdnamn, en saknad portmappning när anslutningen
+kommer från din dator, eller `depends_on` utan hälsotest.
 
-Compose-filen är också den du översätter när systemet ska till Kubernetes. Tjänsterna blir
-Deployments, portmappningen blir en Service, och hälsotestet blir en probe. Lär du dig filen här
-känner du igen dig där.
+Compose-filen har begrepp du känner igen när systemet ska till Kubernetes. En långlivad tjänst blir
+ofta en Deployment och en Service, och ett hälsotest kan motsvara en probe. Exakt översättning beror
+på hur trafiken och driften ska fungera.
 
 Egna nätverk, profiler och `docker compose watch` kan vänta. Standardnätverket räcker för i stort
 sett allt du gör i utveckling.
@@ -311,19 +317,22 @@ sedan på nätverket Compose skapade åt dig:
 docker network ls
 ```
 
-Där ligger `shop_default` — namnet på mappen plus `_default`. Kontrollera slutligen att
-namnuppslagningen fungerar inifrån API-containern:
+Där ligger nätverket Compose skapade. Namnet är ofta projektets namn plus `_default`, men
+kontrollera utskriften innan du använder det. Försök sedan kontrollera namnuppslagningen inifrån
+API-containern:
 
 ```bash
 docker compose exec api getent hosts db
 ```
 
-Du får en IP-adress och namnet `db`. Det är Composes DNS som svarar, och det är hela förklaringen
-till varför `db:5432` fungerar.
+Om imagen innehåller `getent` får du en IP-adress och namnet `db`. Det är Composes DNS som svarar,
+och det förklarar varför `db:5432` fungerar.
 
-Tre saker som kan förvirra: många slimmade images saknar nätverksverktyg helt, och då svarar
-kommandot `executable file not found`. Kör i så fall en tillfällig container på samma nätverk i
-stället:
+Tre saker kan förvirra. Många slimmade images saknar nätverksverktyg helt. Svarar kommandot
+`executable file not found` saknas verktyget i imagen; det säger ingenting om Composes DNS.
+
+Kör i så fall en tillfällig container på samma nätverk i stället. Byt `shop_default` mot namnet
+som `docker network ls` visade:
 
 ```bash
 docker run --rm --network shop_default \
@@ -336,7 +345,7 @@ avsluta med Ctrl+C.
 
 <Callout type="kom-ihag">
 - `localhost` inuti en container är containern själv — aldrig din dator, aldrig grannen.
-- Compose skapar ett nätverk automatiskt och gör **tjänstnamnet till värdnamn**.
+- Compose skapar normalt ett nätverk och gör **tjänstnamnet till värdnamn**.
 - `ports` öppnar en dörr från din dator. Containrar emellan behövs det inte.
 - Vänster tal är värdens port, höger är containerns.
 - Applikationen måste lyssna på `0.0.0.0` för att portmappningen ska fungera.
@@ -352,7 +361,7 @@ avsluta med Ctrl+C.
     },
     {
       q: "Databastjänsten saknar `ports`. Är det ett fel?",
-      a: "Nej, det är önskvärt. Containrar på samma Compose-nätverk når varandra utan portmappning. Utan `ports` är databasen nåbar för API:et men inte från din dator — vilket är precis vad man vill.",
+      a: "Nej, det är önskvärt. Containrar på samma Compose-nätverk når varandra utan portmappning. Utan `ports` publicerar Docker inte databasen på din dator, medan API:et når den på det gemensamma nätverket.",
     },
     {
       q: "Vad betyder vänster respektive höger tal i `ports: \"8080:5000\"`?",
@@ -379,7 +388,7 @@ avsluta med Ctrl+C.
 - Compose ersätter inte Docker. Det använder Docker, men utifrån en fil i stället för ur minnet.
 - `localhost` inuti en container är containern själv. Det är därför den första anslutningen
   misslyckas.
-- Compose skapar ett nätverk åt dig, döpt efter projektmappen plus `_default`.
+- Compose skapar normalt ett nätverk åt dig, ofta döpt efter projektet plus `_default`.
 - Tjänstnamnet i filen är också värdnamnet på nätverket. Ingen IP-adress skrivs någonstans.
 - `ports` öppnar en väg från din dator in i containern — inte mellan containrar.
 - Vänster tal är värdens port, höger är containerns. De behöver inte vara samma.

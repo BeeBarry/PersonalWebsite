@@ -87,7 +87,10 @@ men alla andra Dockerfiles ser ut så.
 Du börjar aldrig från ingenting. `node:22-alpine` är en färdig image med Node 22 installerat ovanpå
 Alpine Linux, en avskalad distribution som gör resultatet betydligt mindre.
 
-`FROM` måste vara första instruktionen i filen. Allt som följer sker ovanpå den image du valt här.
+`FROM` startar första byggsteget och är normalt första instruktionen i filen. Ett globalt `ARG` kan
+stå före när taggen hämtas från en byggvariabel.
+
+Du behöver inte använda det nu — poängen är att `FROM` väljer imagen allt som följer byggs ovanpå.
 
 ## `WORKDIR` och `COPY`
 
@@ -106,10 +109,10 @@ Två instruktioner som ser utbytbara ut. De är det inte.
 
 **`COPY`** kopierar filer och kataloger. Det är allt den gör, och det är därför den är förutsägbar.
 
-**`ADD`** kan dessutom hämta filer från en URL och packa upp tar-arkiv automatiskt.
+**`ADD`** kan dessutom hämta filer från en URL och packa upp lokala tar-arkiv automatiskt.
 
-Just den automatiken är problemet: `ADD app.tar.gz /app` packar upp arkivet, medan
-`ADD app.zip /app` inte gör det. Beteendet beror på filändelsen, vilket är svårt att läsa sig till.
+Just den automatiken är problemet: Docker avgör om ett lokalt tar-arkiv packas upp från arkivets
+innehåll, inte från filändelsen. Beteendet blir därför svårt att läsa sig till i Dockerfilen.
 
 **Använd `COPY`.** Behöver du hämta något från nätet, gör det med ett synligt `RUN`-kommando i
 stället, så syns det i filen.
@@ -233,7 +236,7 @@ paket.
 
 **Byggkontexten** är den katalog vars innehåll skickas till Docker när bygget startar.
 
-Det är punkten i `docker build -t min-app:1.0 .` — den lilla teckenet på slutet som är lätt att
+Det är punkten i `docker build -t min-app:1.0 .` — det lilla tecknet på slutet som är lätt att
 missa. Allt i den katalogen packas ihop och skickas iväg innan första instruktionen körs.
 
 Kontexten avgör vad `COPY` kan komma åt. Ligger en fil utanför kontexten går den inte att kopiera
@@ -274,8 +277,10 @@ docker run -p 3000:3000 min-app:1.0
 `-t` sätter namn och tagg, så du kan referera till imagen efteråt. Utan den får imagen bara ett
 hash-id och dyker upp som `<none>` i `docker images`.
 
-`-p 3000:3000` kopplar port 3000 på din dator till port 3000 inuti containern. Utan den snurrar
-applikationen på utan att någon kan nå den. Portar tar vi ordentligt i nästa del.
+`-p 3000:3000` kopplar port 3000 på din dator till port 3000 inuti containern. Utan den publicerar
+Docker inte porten på din dator. Containrar på samma Docker-nätverk kan fortfarande nå applikationen.
+
+Portar tar vi ordentligt i nästa del.
 
 ## Fallgropen: `latest` är inget löfte
 
@@ -286,8 +291,8 @@ stabila" — det är bara en tagg som pekar på vad ägaren senast råkade publi
 Bygger du om samma Dockerfile om tre månader kan du få en helt annan Node-version, och applikationen
 som fungerade i går slutar fungera i dag utan att du ändrat en rad kod.
 
-Sätt en version du valt medvetet: `node:22-alpine`. Då är bygget **reproducerbart** — samma recept
-ger samma resultat, oavsett när det körs.
+Välj en specifik tagg: `node:22-alpine`. Det gör versionsvalet synligt, men en tagg kan fortfarande
+flyttas. När ett bygge måste använda exakt samma basimage låser du den med en digest.
 </Callout>
 
 <Del titel="Öva och förstå" />
@@ -355,7 +360,7 @@ tidsjämförelsen blir rättvis först från andra bygget.
 - Varje instruktion blir ett lager som cachas. **Lägg det som ändras sällan överst.**
 - Cachen faller vid första ändrade lagret, och allt ovanför byggs om.
 - `.dockerignore` håller imagen liten och hemligheterna kvar på din dator.
-- Lås versionen i `FROM` — `latest` gör bygget oförutsägbart.
+- Välj en specifik tagg i `FROM` — `latest` gör bygget oförutsägbart. En digest låser exakt image.
 </Callout>
 
 <Check
@@ -374,7 +379,7 @@ tidsjämförelsen blir rättvis först från andra bygget.
     },
     {
       q: "Varför ska du välja `COPY` framför `ADD`?",
-      a: "`COPY` gör bara en sak: kopierar filer. `ADD` packar dessutom upp tar-arkiv och kan hämta från URL:er, och beteendet beror på filändelsen — vilket är svårt att läsa sig till i filen.",
+      a: "`COPY` gör bara en sak: kopierar filer. `ADD` kan dessutom packa upp lokala tar-arkiv och hämta från URL:er. Uppackningen avgörs av arkivets innehåll, vilket gör beteendet svårare att läsa i filen.",
     },
     {
       q: "Du lägger till `.env` i `.dockerignore` efter att ha byggt imagen en gång. Är hemligheten borta?",
@@ -382,7 +387,7 @@ tidsjämförelsen blir rättvis först från andra bygget.
     },
     {
       q: "Vad är problemet med `FROM node:latest`?",
-      a: "`latest` är bara en tagg som pekar på det senast publicerade, inte på en version du valt. Samma Dockerfile kan därför ge olika resultat vid olika tillfällen, och bygget slutar vara reproducerbart.",
+      a: "`latest` är bara en tagg som pekar på det senast publicerade, inte på en version du valt. En specifik tagg gör valet synligt, men kan flyttas. När du måste låsa exakt basimage använder du dess digest.",
     },
   ]}
 />
@@ -391,16 +396,16 @@ tidsjämförelsen blir rättvis först från andra bygget.
 
 - En Dockerfile är en textfil med instruktioner för hur en image byggs.
 - Dockerfile → image → container, via `docker build` och `docker run`.
-- `FROM` väljer utgångsläget och måste stå först.
+- `FROM` väljer utgångsläget och startar normalt första byggsteget.
 - `WORKDIR` sätter arbetskatalogen; `COPY` flyttar in filer från byggkontexten.
-- Använd `COPY`, inte `ADD`. `ADD` har automatik som beror på filändelsen.
+- Använd `COPY`, inte `ADD`. `ADD` har extra automatik för lokala tar-arkiv.
 - `RUN` körs vid bygget, `CMD` när containern startar.
 - Varje instruktion blir ett skrivskyddat lager, och lagren cachas.
 - Cachen faller vid första ändrade lagret. Allt ovanför byggs om.
 - Sällanändrat högst upp, ofta ändrat längst ner. Därför kopieras `package.json` för sig.
 - Byggkontexten är punkten i `docker build .` och avgör vad `COPY` kan nå.
 - `.dockerignore` krymper kontexten och imagen — och den ska finnas före första bygget.
-- Lås versionen i `FROM`. `latest` är en tagg, inte ett löfte.
+- Välj en specifik tagg i `FROM`. `latest` är en tagg, inte ett löfte.
 
 ## Nästa del
 

@@ -175,8 +175,9 @@ resursen från andra block. Det syns aldrig i Azure.
 **Argumentet `name`** är vad resursen faktiskt heter hos leverantören.
 
 Att skilja på de två sista är värt en extra sekund: `name = "rg-shop-prod"` är vad resursen heter
-**i Azure**. `"rg"` är vad den heter **i din fil**. Du kan byta det senare fritt utan att något i
-molnet påverkas.
+**i Azure**. `"rg"` är adressen Terraform använder **i din fil och i state**. När du byter den ska
+du tala om flytten med ett `moved`-block eller `terraform state mv`, så att Terraform behåller
+kopplingen till samma resurs.
 
 ## Vad en referens är
 
@@ -219,7 +220,7 @@ Förra delen tog `plan` och `apply`. Här är det tredje, och det som kommer fö
   steps={[
     {
       label: "terraform init",
-      note: "Hämtar providern till `.terraform/`. Körs en gång per projekt — och igen när du lägger till eller uppgraderar en provider.",
+      note: "Förbereder backend, moduler och providers i `.terraform/`. Körs när projektets initieringskonfiguration ändras, till exempel när du lägger till eller uppgraderar en provider.",
     },
     {
       label: "terraform plan",
@@ -235,26 +236,25 @@ Förra delen tog `plan` och `apply`. Här är det tredje, och det som kommer fö
   ]}
 />
 
-`init` är alltså inte valfritt. Providern hämtas inte automatiskt, och utan den vet Terraform
-ingenting om `azurerm_resource_group`.
+`init` är alltså inte valfritt. Det installerar de providers och moduler konfigurationen behöver och
+initierar den valda backenden. Utan providern vet Terraform ingenting om
+`azurerm_resource_group`.
 
 Det finns ett fjärde: `terraform destroy` river allt som beskrivningen äger. Det låter dramatiskt men
 är precis det man vill ha i en testmiljö som bara ska leva över en demonstration.
 
 ## Vad state är
 
-**State** är Terraforms anteckning om vad den redan har skapat.
+**State** är Terraforms anteckning om de resurser den hanterar.
 
 När `apply` skapat resursgruppen skriver Terraform ner vad den gjorde i en fil som heter
-`terraform.tfstate`: vilka resurser som finns, vilka id:n de fick hos leverantören och vilka
-inställningar de hade.
+`terraform.tfstate`: vilka resurser som finns, vilka id:n de har hos leverantören och de värden
+Terraform behöver för att jämföra dem med konfigurationen.
 
-Filen skapas av Terraform, läses av Terraform, och du ska normalt aldrig redigera den för hand.
+En befintlig resurs kan också tas in i state med import. Filen skapas och läses av Terraform, och du
+ska normalt aldrig redigera den för hand.
 
-> **DOODLE** — Tre lådor i en triangel. Överst `main.tf` märkt "önskat läge". Nere till vänster
-> `terraform.tfstate` märkt "vad jag gjorde". Nere till höger ett moln märkt "verkligheten".
-> Heldragna pilar från `main.tf` till båda de nedre, och en streckad pil mellan de två nedre märkt
-> "jämförs". Under: "Plan läser alla tre."
+<Doodle name="state-triangeln" caption="Två heldragna pilar ut från filen, en streckad mellan de två nedre." />
 
 ## State vs konfigurationsfilen
 
@@ -278,8 +278,8 @@ Utan state kan Terraform inte skilja *ändra* från *skapa*:
 
   Du byter `sku_name` från `B1` till `B2` och kör `apply`.
 
-  Terraform ser en beskrivning av en app-plan, men vet inte att den redan skapat en. Den försöker
-  **skapa en till** — eller kraschar på att namnet är upptaget.
+  Terraform ser en beskrivning av en app-plan, men har ingen koppling till den befintliga resursen.
+  Den planerar därför en ny resurs, som kan misslyckas om namnet redan är upptaget.
 
   </div>
   <div slot="right">
@@ -299,8 +299,9 @@ Var filen ligger avgör om fler än en person kan arbeta i projektet.
 **Lokal state** ligger som `terraform.tfstate` i din projektmapp. Det fungerar så länge du övar
 ensam.
 
-**En remote backend** lägger state på en delad lagringsplats som alla kör mot, med ett **lås** som
-gör att bara en `apply` i taget kan pågå.
+**En remote backend** lägger state på en delad lagringsplats som alla kör mot. Många backender kan
+också låsa state så att samtidiga ändringar inte krockar; kontrollera hur den valda backenden
+konfigurerar låsning.
 
 <Callout type="fallgrop">
 Ligger state lokalt hos dig har **Maria en egen kopia** — eller ingen alls. Hennes Terraform tror att
@@ -347,8 +348,8 @@ kopierade från ett block som redan finns.
 Det du behöver kunna på riktigt är att läsa ett `plan`-utfall och veta vilket block varje rad hör
 till — och att aldrig hårdkoda något du kan referera.
 
-State blir ditt problem den dag du är fler än en. Då är remote backend det första som ska på plats,
-före moduler och allt annat.
+När fler än en person eller pipeline arbetar mot samma miljö behöver teamet en delad state-lösning
+med lämplig åtkomst och, när backenden stöder det, låsning.
 
 Moduler, variabler, `for_each` och workspaces kan vänta. De är sätt att slippa upprepa block, och de
 bygger alla på de tre blocktyperna i den här delen.
@@ -359,7 +360,7 @@ Resurstypen är inte resursnamnet. Typen kommer från providern, namnet väljer 
 
 Resursnamnet är inte `name`. Det ena syns bara i din fil, det andra hos leverantören.
 
-Terraform hämtar inte providern automatiskt. Det är därför `init` finns.
+Terraform hämtar inte providern automatiskt. `init` förbereder providers, moduler och backend.
 
 Blockens ordning i filen styr ingenting. Referenserna gör det.
 
@@ -414,24 +415,27 @@ poängen: `validate` kontrollerar syntax och att argumenten finns, inte att prov
 Sätt tillbaka blocket när du är klar. Kommer du längre än så beror på om du har inloggning mot Azure,
 vilket ligger utanför den här övningen.
 
-Två saker som kan förvirra: `init` hämtar providern över nätet och tar några sekunder första gången.
-Och `.terraform/` kan bli hundratals megabyte stor — den hör därför hemma i `.gitignore`, inte i
-repot.
+Två saker som kan förvirra: `init` hämtar providers och moduler över nätet och tar därför längre tid
+första gången. Och `.terraform/` kan bli stor beroende på providers och moduler — den hör därför
+hemma i `.gitignore`, inte i repot.
 
 <Callout type="kom-ihag">
 - HCL består av block. Tre räcker för att komma igång: `terraform`, `provider`, `resource`.
-- Providern är översättaren mellan Terraform och leverantörens API. `terraform init` hämtar den.
-- I `resource "typ" "namn"` är namnet ditt internt — resursens riktiga namn står i `name`.
+- Providern är översättaren mellan Terraform och leverantörens API. `terraform init` förbereder den.
+- I `resource "typ" "namn"` är namnet Terraforms adress i koden och state — resursens riktiga namn
+  står i `name`.
 - Referenser mellan resurser skapar beroendegrafen. Hårdkodade strängar gör det inte.
-- State är Terraforms anteckning om vad den skapat. Utan den kan den inte skilja *ändra* från *skapa*.
-- State i delad backend, aldrig i Git. `.terraform.lock.hcl` i Git, alltid.
+- State är Terraforms anteckning om resurser den hanterar. Import kan koppla en befintlig resurs till
+  state.
+- State i delad backend, aldrig i Git. Använd låsning när den valda backenden stöder det.
+  `.terraform.lock.hcl` i Git, alltid.
 </Callout>
 
 <Check
   items={[
     {
       q: "I `resource \"azurerm_service_plan\" \"web\"` — var syns egentligen `web`?",
-      a: "Bara i din egen kod, som handtag när andra block ska referera till resursen. Namnet som Azure ser står i argumentet `name`, alltså `asp-shop-prod`.",
+      a: "I din egen kod och i state, som adress när andra block ska referera till resursen. Namnet som Azure ser står i argumentet `name`, alltså `asp-shop-prod`. Byter du resursnamnet behöver du också flytta adressen i state med ett `moved`-block eller `terraform state mv`.",
     },
     {
       q: "Du flyttar app-plansblocket överst i filen, före resursgruppen. Vad händer?",
@@ -467,10 +471,10 @@ repot.
 - Ett `resource`-block beskriver en sak som ska existera.
 - Typen kommer från providern, resursnamnet är ditt handtag, `name` är namnet hos leverantören.
 - Referenser i formen `typ.namn.attribut` bygger beroendegrafen. Hårdkodade strängar gör det inte.
-- `init` hämtar, `plan` visar, `apply` genomför. `destroy` river.
-- State är Terraforms anteckning om vad som redan finns — utan den kan den inte skilja ändra från
-  skapa.
-- State i delad backend med lås, aldrig i Git. Låsfilen alltid i Git.
+- `init` förbereder backend, moduler och providers. `plan` visar, `apply` genomför. `destroy` river.
+- State är Terraforms anteckning om resurser den hanterar. Import kopplar en befintlig resurs till
+  state.
+- State i delad backend, aldrig i Git. Använd låsning när backenden stöder det. Låsfilen alltid i Git.
 - `validate` kontrollerar inte provider-konfiguration. Det gör `plan`.
 
 ## Nästa del

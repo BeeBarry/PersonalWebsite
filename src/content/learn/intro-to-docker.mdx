@@ -26,10 +26,13 @@ egna filer än — det gör vi i nästa del.
 ## Vad Docker är
 
 Docker är ett verktyg som paketerar en applikation med allt den behöver för att köra, och startar
-paketet isolerat från resten av datorn.
+paketet i en container med isolerade processer, filsystem och nätverk.
 
 Allt applikationen är beroende av — programkod, bibliotek, körtid, inställningar — följer med i
-paketet. Därför beter den sig likadant på din laptop, på en kollegas dator och på en server.
+paketet. Teamet kör därmed samma paketerade beroenden och grundinställningar.
+
+Värdsystem, processorarkitektur, externa tjänster och körparametrar kan fortfarande skilja sig.
+Poängen är att de viktiga skillnaderna blir synliga och kan testas.
 
 Docker är inte ett operativsystem och inte ett programmeringsspråk. Det är ett paketerings- och
 körverktyg, och det ligger ovanpå det operativsystem du redan har.
@@ -39,16 +42,17 @@ körverktyg, och det ligger ovanpå det operativsystem du redan har.
 En **container** är en körande applikation som är isolerad från resten av systemet.
 
 Isolerad betyder att containern har sitt eget filsystem, sina egna processer och sitt eget
-nätverksutrymme. Den ser inte dina andra program, och de ser inte den.
+nätverksutrymme. Isoleringen skiljer körmiljöer åt, men är inte ensam en fullständig
+säkerhetsgräns.
 
 När Lisa börjar i teamet räknar hon med en dag av installationer innan hon kan köra
 e-handelssystemet. I stället kör hon ett kommando och har samma miljö som alla andra — samma
 Node-version, samma databas, samma inställningar.
 
 <Callout type="varfor" title="Vad containers faktiskt löser">
-- Alla i teamet arbetar i en **identisk** miljö, vilket tar bort "det funkar på min dator".
+- Alla i teamet arbetar med samma paketerade beroenden, vilket minskar "det funkar på min dator".
 - En ny utvecklare är igång på minuter i stället för timmar.
-- Alla använder **exakt samma versioner** av språk, databaser och beroenden.
+- Imagen gör versionsvalen synliga och möjliga att granska.
 - Projekten stör inte varandra. Två projekt kan använda olika Node-versioner på samma dator.
 </Callout>
 
@@ -57,10 +61,11 @@ Node-version, samma databas, samma inställningar.
 Den här jämförelsen är den som får containrar att klicka, och den är värd att ta ordentligt.
 
 **En virtuell maskin** härmar en hel dator. Den kör ett eget operativsystem ovanpå ditt, med egen
-kärna, egna drivrutiner och egen systemstart. Den mäts i gigabyte och startar på minuter.
+kärna, egna drivrutiner och egen systemstart. Den är därför ofta större och långsammare att starta
+än en container.
 
 **En container** delar operativsystemets kärna med din dator och isolerar bara processerna och
-filsystemet. Den mäts i megabyte och startar på sekunder.
+filsystemet. Den startar därför ofta snabbare, men storlek och starttid beror på imagen och miljön.
 
 Priset för skillnaden är att containrar inte kan köra vilket operativsystem som helst — de delar
 ju kärnan. En Linux-container behöver en Linux-kärna, och det är därför Docker Desktop på macOS och
@@ -90,9 +95,8 @@ De två blandas ihop hela tiden, och skillnaden återkommer i varje senare del.
 
 **Containern** är en körande kopia av ritningen. Den startas, stoppas och kastas.
 
-Från en enda image kan du starta hur många containrar du vill, och alla blir identiska när de
-startar. Det är samma förhållande som mellan en klass och ett objekt, eller mellan ett recept och
-en portion.
+Från en enda image kan du starta hur många containrar du vill, och alla startar från samma image.
+Det är samma förhållande som mellan en klass och ett objekt, eller mellan ett recept och en portion.
 
 <Flow
   layout="row"
@@ -105,7 +109,8 @@ en portion.
 
 ## Images består av lager
 
-En image byggs inte i ett stycke utan i **lager**, ett per instruktion i bygget.
+En image byggs inte i ett stycke utan i **lager**. När Docker bygger imagen skapar de flesta
+Dockerfile-instruktioner ett lager.
 
 Lagren är skrivskyddade och återanvänds mellan images. Har du tio images som alla utgår från
 `node:22-alpine` lagras det lagret en gång, inte tio.
@@ -259,7 +264,8 @@ den dag du äger utrullningen — och då är det ändå samma fyra begrepp, bar
 
 ## Vanliga nybörjarförväxlingar
 
-En container är inte en virtuell maskin. Den delar operativsystemets kärna och startar på sekunder.
+En container är inte en virtuell maskin. Den delar operativsystemets kärna och startar ofta
+snabbare.
 
 En image är inte en container. Imagen ligger still; containern är den körande kopian.
 
@@ -306,7 +312,7 @@ går den på en bråkdel av tiden.
 
 <Callout type="kom-ihag">
 - En **container** är en isolerad, körande applikation. Den delar värdens kärna — den är ingen VM.
-- En **image** är den oföränderliga ritningen. Samma image kan starta hur många containrar som helst.
+- En **image** är den oföränderliga ritningen. Samma image startar containrar från samma grund.
 - Images består av **lager** som återanvänds mellan images.
 - Ett **registry** lagrar images. `registry/repository:tagg` är det fullständiga namnet.
 - **Docker Compose** startar flera containrar utifrån en fil, med nätverket redan på plats.
@@ -316,11 +322,11 @@ går den på en bråkdel av tiden.
   items={[
     {
       q: "Vad är skillnaden mellan en image och en container?",
-      a: "Imagen är den färdiga ritningen — oföränderlig och stillastående. Containern är en körande kopia av den. Från en enda image kan du starta hur många containrar du vill, och alla blir identiska när de startar.",
+      a: "Imagen är den färdiga ritningen — oföränderlig och stillastående. Containern är en körande kopia av den. Från en image kan du starta hur många containrar du vill, och de börjar från samma grund.",
     },
     {
       q: "Vad är den avgörande skillnaden mellan en container och en virtuell maskin?",
-      a: "Den virtuella maskinen kör ett eget operativsystem med egen kärna. Containern delar värdens kärna och isolerar bara processer och filsystem. Därför mäts containern i megabyte och startar på sekunder, medan VM:en mäts i gigabyte och startar på minuter.",
+      a: "Den virtuella maskinen kör ett eget operativsystem med egen kärna. Containern delar värdens kärna och isolerar processer och filsystem. Containern startar ofta snabbare och blir ofta mindre, men storlek och starttid beror på imagen och miljön.",
     },
     {
       q: "Du kör en container som avslutas direkt. `docker ps` visar ingenting. Är containern borta?",
@@ -332,7 +338,7 @@ går den på en bråkdel av tiden.
     },
     {
       q: "Varför löser containers problemet \"det funkar på min dator\"?",
-      a: "För att allt applikationen behöver — kod, bibliotek, versioner och inställningar — ligger paketerat i imagen. Containern kör därför likadant oavsett vems dator eller vilken server den startas på.",
+      a: "För att kod, bibliotek, versioner och grundinställningar ligger paketerat i imagen. Teamet börjar från samma grund i stället för att varje dator byggs för hand. Värdsystem och externa tjänster kan fortfarande skilja sig.",
     },
     {
       q: "Vad tillför Docker Compose som `docker run` inte gör?",
@@ -343,11 +349,11 @@ går den på en bråkdel av tiden.
 
 ## Snabb sammanfattning
 
-- Docker paketerar en applikation med allt den behöver och kör paketet isolerat.
+- Docker paketerar en applikation med allt den behöver och kör paketet i en isolerad miljö.
 - En container är en isolerad, körande applikation med eget filsystem och eget nätverksutrymme.
-- En container delar värdens kärna. En virtuell maskin kör en egen — det är hela skillnaden.
+- En container delar värdens kärna. En virtuell maskin kör en egen — det är den viktiga skillnaden.
 - En image är den oföränderliga ritningen en container startas ur.
-- Imagen ligger still, containern kör. Samma image ger hur många identiska containrar som helst.
+- Imagen ligger still, containern kör. Samma image ger containrar med samma grund.
 - Images består av skrivskyddade lager som återanvänds mellan images.
 - Ett registry lagrar images. Förhållandet är samma som mellan Git och GitHub.
 - `registry/repository:tagg` — utelämnad tagg blir `latest`, utelämnat registry blir Docker Hub.

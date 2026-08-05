@@ -95,9 +95,10 @@ Grundregeln, i praktiken:
   </div>
 </Split>
 
-Kopplingen till nätverksserien är direkt. Ett `POST /deleteProduktById` ljuger för alla lager under
-dig: mellanservrar tror att något skapas, och automatiska omförsök blir farliga fast operationen
-egentligen var idempotent.
+Kopplingen till nätverksserien är direkt. `POST /deleteProduktById` gör avsikten svår att läsa.
+POST har bred semantik, medan DELETE redan säger att resursen ska tas bort.
+
+Använd därför `DELETE /produkter/8842` när operationen tar bort en produkt.
 
 <Del titel="Sökvägarna" />
 
@@ -113,9 +114,7 @@ Metoden betyder olika saker beroende på vilken du riktar dig mot. `GET /produkt
 /produkter/8842` hämtar en. `POST /produkter` skapar en ny i samlingen; `DELETE /produkter/8842` tar
 bort en medlem.
 
-> **DOODLE** — En hylla märkt `/produkter` med fem lådor. En av lådorna utdragen och märkt
-> `/produkter/8842`. Heldragen pil till hyllan märkt "GET → lista", heldragen pil till den utdragna
-> lådan märkt "GET → en". Under: "Samlingen och medlemmen. Samma metod, olika svar."
+<Doodle name="hyllan-och-ladan" caption="Den utlyfta lådan har en egen adress. Platsen den kom från står kvar i hyllan." />
 
 ## De sex operationerna
 
@@ -182,11 +181,12 @@ Båda kan skapa något, och valet beror på vem som bestämmer id:t.
 **`POST /produkter`** skickar resursen till samlingen och låter **servern** hitta på id:t. Det är det
 vanliga fallet, och det är inte idempotent — två anrop ger två produkter.
 
-**`PUT /produkter/8842`** skickar resursen till en adress **du** valt. Finns den inte skapas den;
-finns den ersätts den. Anropet är idempotent.
+**`PUT /produkter/8842`** skickar resursen till en adress **du** valt. Servern kan ersätta en
+resurs där, eller skapa den om API:ets kontrakt tillåter det. Anropet är idempotent.
 
-Använd `POST` när servern äger numreringen, vilket är nästan alltid. `PUT` för att skapa är rimligt
-när klienten redan har ett naturligt id, till exempel ett artikelnummer från ett annat system.
+Använd `POST` när servern äger numreringen. `PUT` för att skapa är rimligt när klienten redan har
+ett naturligt id och kontraktet uttryckligen tillåter det, till exempel ett artikelnummer från ett
+annat system.
 
 <Del titel="Svaren" />
 
@@ -259,7 +259,8 @@ GET /produkter              → 50 första
 GET /produkter?sida=2       → nästa 50
 ```
 
-Det kostar ingenting i början och går inte att lägga till senare utan att bryta kontraktet.
+Det kostar lite i början, men skyddar kontraktet när listan växer. Paginering går att lägga till
+senare, men den ändrar ett etablerat svarskontrakt.
 </Callout>
 
 Sidnummer är den enkla varianten och räcker långt. Det finns en robustare som heter cursor-baserad
@@ -294,10 +295,12 @@ den dag ditt API får externa klienter.
 
 ## Versionering
 
-Lägg en version i sökvägen från början: `/v1/produkter`.
+Versionering är en strategi, inte ett krav på en viss URL-form. `/v1/produkter` är en vanlig
+modell; andra API:er använder headers eller media types.
 
-Det är fult, och alternativen är värre. Den dagen ett fältnamn måste ändras kan du köra `/v2`
-parallellt medan gamla klienter fortsätter mot `/v1` — i stället för att bryta dem alla en tisdag.
+Välj en modell teamet kan dokumentera och hålla konsekvent när en brytande ändring behöver hanteras.
+Den dagen ett fältnamn måste ändras kan `/v2` köras parallellt medan gamla klienter fortsätter mot
+`/v1`.
 
 Vad som räknas som brytande gick förra delen igenom: att ta bort ett fält, byta namn på det eller
 ändra dess typ. Att lägga till ett är normalt ofarligt och kräver ingen ny version.
@@ -320,8 +323,8 @@ Du kommer att lägga till endpoints i ett befintligt API oftare än du designar 
 du gör då är att **följa mönstret som redan finns**, även när du hade valt annorlunda själv —
 konsekvens är värd mer än att varje enskild adress är optimal.
 
-Designar du från början är tre beslut svåra att ändra i efterhand och värda att ta direkt: version i
-sökvägen, sidindelning med rimlig standard, och ett felformat klienten kan agera på.
+Designar du från början är tre beslut värda att ta direkt: en dokumenterad versionsstrategi,
+sidindelning med rimlig standard, och ett felformat klienten kan agera på.
 
 OpenAPI-generering, HATEOAS och GraphQL kan vänta. Det första är ett verktyg, det andra sällan
 använt, och det tredje ett annat sätt att lösa samma problem — inget av dem ändrar konventionerna
@@ -339,8 +342,8 @@ Verbet hör inte hemma i sökvägen. `DELETE /produkter/8842`, inte `POST /delet
 
 `204` betyder inte att inget hände. Det betyder att det lyckades och att det inte finns någon kropp.
 
-Att en listendpoint fungerar i test betyder inte att den håller. Utan sidindelning slutar den
-fungera av sig själv.
+Att en listendpoint fungerar i test betyder inte att den håller. Sidindelning går att lägga till
+senare, men ändrar då ett kontrakt som klienter redan använder.
 
 ## Prova själv
 
@@ -389,7 +392,7 @@ svarar sedan `403` med ett meddelande om rate limit. Och ett `304`-svar har tom 
   resurs.
 - `POST` till samlingen när servern äger id:t, `PUT` till en adress när klienten gör det.
 - `201` när något skapas, med `Location`. `204` när det lyckades och kroppen är tom med flit.
-- Version i sökvägen och sidindelning med rimlig standard — båda från början.
+- En dokumenterad versionsstrategi och sidindelning med rimlig standard från början.
 - Felsvar ska gå att agera på, i samma form varje gång, och aldrig avslöja interna detaljer.
 </Callout>
 
@@ -397,7 +400,7 @@ svarar sedan `403` med ett meddelande om rate limit. Och ett `304`-svar har tom 
   items={[
     {
       q: "Varför är `POST /deleteProduktById` sämre än `DELETE /produkter/8842`?",
-      a: "Metoden slutar bära någon betydelse. `DELETE` är idempotent, vilket gör omförsök ofarliga, medan `POST` signalerar att något skapas. Allt under dig — mellanservrar, klientbibliotek, omförsökslogik — läser metoden och blir vilselett.",
+      a: "`POST /deleteProduktById` gör avsikten svår att läsa. POST har bred semantik, medan `DELETE` redan säger att resursen ska tas bort. Därför är `DELETE /produkter/8842` den tydligare endpointen.",
     },
     {
       q: "Ska \"aktiva produkter\" vara `/produkter/aktiva` eller `/produkter?status=aktiv`?",
@@ -405,7 +408,7 @@ svarar sedan `403` med ett meddelande om rate limit. Och ett `304`-svar har tom 
     },
     {
       q: "När är `PUT` rimligare än `POST` för att skapa något?",
-      a: "När klienten redan har ett naturligt id, till exempel ett artikelnummer från ett annat system. Då kan resursen läggas på en adress du valt, och anropet blir idempotent. Äger servern numreringen är `POST` till samlingen rätt.",
+      a: "När klienten redan har ett naturligt id och kontraktet uttryckligen tillåter skapandet, till exempel ett artikelnummer från ett annat system. Då kan resursen läggas på en adress du valt. Äger servern numreringen är `POST` till samlingen rätt.",
     },
     {
       q: "Vad är skillnaden mellan att svara `200` och `204`?",
@@ -413,7 +416,7 @@ svarar sedan `403` med ett meddelande om rate limit. Och ett `304`-svar har tom 
     },
     {
       q: "En endpoint som fungerat i ett år slutar plötsligt fungera, utan att koden ändrats. Vad är en trolig orsak?",
-      a: "Sidindelning saknas. Listan har vuxit tills databasläsningen, svarets storlek eller renderingen inte längre går. Därför ska en listendpoint ha en rimlig standardgräns redan från början — den går inte att lägga till senare utan att bryta kontraktet.",
+      a: "Sidindelning kan saknas. Listan har vuxit tills databasläsningen, svarets storlek eller renderingen inte längre går. Lägg därför gärna in en rimlig standardgräns från början. Paginering går att lägga till senare, men ändrar då ett etablerat svarskontrakt.",
     },
     {
       q: "Varför räcker det inte att svara `400 Bad Request` när valideringen misslyckas?",
@@ -433,9 +436,9 @@ svarar sedan `403` med ett meddelande om rate limit. Och ett `304`-svar har tom 
 - `POST` till samlingen när servern äger id:t. `PUT` till en adress när klienten gör det.
 - `200` med resultat, `201` när något skapats, `204` när kroppen är tom med flit.
 - `Location` efter `201` talar om var resursen hamnade.
-- Sidindelning med rimlig standard från början — den går inte att lägga till utan att bryta.
+- Sidindelning med rimlig standard från början. Senare tillägg ändrar ett etablerat kontrakt.
 - Felsvar i samma form varje gång, utan interna detaljer.
-- Version i sökvägen från början. Att lägga till ett fält kräver ingen ny version.
+- Välj och dokumentera en versionsstrategi. Att lägga till ett fält kräver normalt ingen ny version.
 
 ## Nästa del
 

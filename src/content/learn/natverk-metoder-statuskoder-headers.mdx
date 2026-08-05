@@ -21,19 +21,17 @@ för det är den du läser varje gång något inte fungerar.
 
 ## Ett HTTP-anrop är text
 
-HTTP är läsbar text, inte ett binärt format.
+HTTP/1.1 skickar startlinje, headers och kropp som läsbar text. HTTP/2 och HTTP/3 kodar samma slags
+information i binära ramar.
 
-Det består av två meddelanden: en förfrågan från klienten och ett svar från servern. Båda har
-samma uppbyggnad, och båda går att läsa med ögonen.
+Du behöver inte kunna ramarna nu — metoder, headers och kropp betyder samma sak på nybörjarnivå.
 
-> **DOODLE** — Ett webbläsarfönster till vänster och ett servertorn till höger. En heldragen pil
-> från fönstret till tornet märkt "förfrågan", och en heldragen pil tillbaka märkt "svar". Under:
-> "Två meddelanden. Ingen magi."
+<Doodle name="forfragan-och-svar" caption="Två pilar åt var sitt håll. Fler meddelanden än så är det inte." />
 
 ## Förfrågan, del för del
 
-Så här ser en fullständig HTTP-förfrågan ut. Ingenting är dolt — det här är bokstavligen vad som
-skickas över anslutningen:
+Så här ser en fullständig HTTP/1.1-förfrågan ut. Det är det textformat som skickas över
+anslutningen i HTTP/1.1:
 
 ```http
 POST /api/produkter HTTP/1.1
@@ -43,7 +41,7 @@ Content-Type: application/json
 {"namn":"Skruvmejsel","pris":149}
 ```
 
-Fyra delar, alltid i den ordningen:
+Fyra delar i HTTP/1.1:
 
 1. **Startraden** — metoden (`POST`), sökvägen (`/api/produkter`) och protokollversionen.
 2. **Headers** — rad efter rad med metadata om anropet.
@@ -54,7 +52,7 @@ Den tomma raden är inte dekoration. Den är det enda som skiljer metadata från
 
 ## Svaret, del för del
 
-Svaret har exakt samma form, med en statusrad överst i stället för en startrad:
+HTTP/1.1-svaret har samma form, med en statusrad överst i stället för en startrad:
 
 ```http
 HTTP/1.1 201 Created
@@ -116,13 +114,13 @@ serverloggar. Lösenord och personuppgifter hör därför aldrig hemma i en frå
 
 Båda ändrar en befintlig resurs, men de gör det på olika sätt.
 
-**`PUT`** ersätter hela resursen med det du skickar. Fält du utelämnar tolkas som att de ska
-försvinna.
+**`PUT`** skickar en representation för målresursen. API:ets kontrakt avgör om utelämnade fält
+rensas, behålls eller gör anropet ogiltigt.
 
 **`PATCH`** ändrar bara de fält du skickar med. Resten lämnas orörda.
 
-Skickar du `{"pris": 129}` med `PUT` till en produkt riskerar du att namnet och lagersaldot
-nollställs. Samma kropp med `PATCH` ändrar bara priset.
+Skickar du `{"pris": 129}` med `PUT` måste du läsa endpointens schema. Använd `PATCH` när
+kontraktet erbjuder en uttrycklig partiell uppdatering.
 
 Det är den vanligaste orsaken till att data "försvinner" i ett API utan att någon raderat något.
 
@@ -148,8 +146,10 @@ Nätverk tappar paket. Skickar Lisas app ett `POST` och svaret försvinner på v
 klienten inte om produkten skapades eller inte. Försöker den igen kan resultatet bli **två
 produkter**.
 
-`PUT` och `DELETE` har inte det problemet. Det är därför automatiska omförsök är ofarliga för dem
-och farliga för `POST`.
+Idempotens gör omförsök säkrare, inte riskfria. Ett tappat svar kan komma efter att servern hunnit
+göra ändringen, och kringeffekter kan finnas.
+
+Gör automatiska omförsök först när API:ets kontrakt tillåter det.
 </Callout>
 
 <Del titel="Statuskoderna" />
@@ -178,10 +178,7 @@ Det finns dussintals koder. Du behöver bara komma ihåg vad den första siffran
 De vanligaste inom varje grupp: `200 OK`, `201 Created`, `204 No Content` · `301`, `302`, `304` ·
 `400`, `401`, `403`, `404`, `409` · `500`, `502`, `503`, `504`.
 
-> **DOODLE** — Fyra webbläsarfönster på rad. Fönster ett med en bock, märkt `2xx` / "Lyckades".
-> Fönster två med en böjd pil mellan två kartnålar, märkt `3xx` / "Leta annanstans". Fönster tre med
-> en varningstriangel, märkt `4xx` / "Fel fråga". Fönster fyra med ett servertorn med prickar, märkt
-> `5xx` / "Serverns fel".
+<Doodle name="statuskodernas-fyra" caption="Fyra fönster, fyra symboler. Det är första siffran som bär betydelsen." />
 
 ## 4xx vs 5xx
 
@@ -201,7 +198,7 @@ Den enskilt mest användbara skillnaden i hela avsnittet, eftersom den pekar ut 
   `400` felaktig data · `401` inte inloggad · `403` inte behörig · `404` finns inte ·
   `409` konflikt
 
-  **Frontend felsöker.** Något i det som skickas är fel — fält, format eller behörighet.
+  **Börja hos klienten.** Något i förfrågan, inloggningen eller hur API:et används kan vara fel.
 
   </div>
   <div slot="right">
@@ -215,8 +212,10 @@ Den enskilt mest användbara skillnaden i hela avsnittet, eftersom den pekar ut 
   </div>
 </Split>
 
-Ett `502` eller `504` är för övrigt precis vad en Ingress-controller svarar när ingen frisk pod
-finns bakom Servicen — samma sak du läste om i Kubernetes-serien, sett från utsidan.
+När en Service saknar redo endpoints svarar många Ingress-controllers med `503`. `502` och `504`
+kan uppstå vid andra fel mot upstreamen.
+
+Exakt kod beror på controller och konfiguration. Kontrollera först Service och endpoints.
 
 ## 401 vs 403
 
@@ -237,11 +236,11 @@ Namnet på `401` är för övrigt historiskt fel: den handlar om autentisering, 
 
 Två omdirigeringar med mycket olika livslängd.
 
-**`301 Moved Permanently`** säger att resursen flyttat för gott. Webbläsare och sökmotorer sparar
-det och slutar fråga efter den gamla adressen.
+**`301 Moved Permanently`** säger att resursen flyttat för gott. Klienter och sökmotorer kan
+cachelagra svaret.
 
-**`302 Found`** säger att flytten är tillfällig. Den gamla adressen gäller fortfarande, och klienten
-frågar efter den nästa gång också.
+**`302 Found`** säger att flytten är tillfällig. Även den kan cachelagras, beroende på cache-regler
+och klient.
 
 <Flow
   layout="row"
@@ -254,12 +253,12 @@ frågar efter den nästa gång också.
 />
 
 <Callout type="fallgrop">
-Ett felaktigt `301` är svårt att ta tillbaka. Webbläsaren har sparat det, och den frågar inte igen
-— den går direkt till den nya adressen även efter att du rättat servern.
+Ett felaktigt `301` kan vara svårt att ta tillbaka. En klient kan ha sparat svaret och går då direkt
+till den nya adressen även efter att du rättat servern.
 
-Symtomet är att det fungerar för alla utom dem som råkade besöka sidan medan felet fanns, och de
-kan inte lösa det utan att rensa sin cache. **Använd `302` medan du är osäker**, och `301` först när
-flytten verkligen är permanent.
+Symtomet kan vara att det fungerar för vissa men inte för dem som sparat den gamla omdirigeringen.
+**Använd `302` medan du är osäker**, och `301` först när flytten verkligen är permanent. Sätt tydliga
+cache-headers när flytten är viktig.
 
 Värt att veta: `301` och `302` kan göra om ett `POST` till ett `GET` på vägen. Ska metoden bevaras
 finns `308` och `307`.
@@ -306,13 +305,13 @@ Statuskoden är inte dekoration — den läses av infrastruktur hela vägen ut. 
 
 ## HTTP minns ingenting
 
-HTTP är **statslöst**. Varje anrop är fristående, och servern minns ingenting från förra gången.
+HTTP är **statslöst**. Protokollet knyter inte automatiskt ihop två anrop.
 
-Det låter opraktiskt — hur vet en sajt då att du är inloggad? Svaret är att den inte vet det.
-Klienten skickar med beviset **varje gång**, som en cookie eller en token i `Authorization`.
+En webbapplikation kan ändå komma ihåg en session på serversidan. Klienten skickar då exempelvis
+en cookie eller token så att servern kan koppla anropet till rätt session.
 
-Priset är den extra raden i varje anrop. Vinsten är att vilken server som helst kan svara på vilket
-anrop som helst, eftersom ingen av dem sitter på information de andra saknar.
+Priset är den extra uppgiften i varje anrop. Om sessionsdata ligger i en delad eller extern lagring
+kan vilken server som helst svara på anropet; annars behöver systemet till exempel sessionsaffinitet.
 
 Det är just den egenskapen som gör att Kubernetes kan lägga till och ta bort poddar fritt — precis
 som Deployment-delen beskrev.
@@ -321,9 +320,9 @@ som Deployment-delen beskrev.
 
 ## Vad det här betyder i ditt arbete
 
-Du kommer att öppna Network-fliken i webbläsarens utvecklingsverktyg flera gånger om dagen, och det
-första du tittar på är metoden och statuskoden. De två avgör om du ska felsöka din egen kod eller
-någon annans.
+Du kommer att öppna Network-fliken i webbläsarens utvecklingsverktyg, och det första du tittar på är
+metoden och statuskoden. De ger en startpunkt för om felet ligger i förfrågan, behörigheten eller på
+serversidan.
 
 `401` mot `403` och `4xx` mot `5xx` är de skillnader som oftast avslutar en diskussion om vems fel
 något är. Det är därför de har egna avsnitt här.
@@ -336,13 +335,14 @@ transporteras.
 
 Metoden är inte sökvägen. Sökvägen säger vad, metoden säger vad som ska hända med det.
 
-`PUT` och `PATCH` är inte utbytbara. `PUT` ersätter hela resursen, `PATCH` bara de fält du skickar.
+`PUT` och `PATCH` är inte utbytbara. API:ets kontrakt avgör hur PUT hanterar utelämnade fält;
+PATCH är en uttrycklig partiell uppdatering.
 
 Säker och idempotent betyder inte samma sak. `DELETE` ändrar något men ger samma slutläge varje gång.
 
 `401` handlar om vem du är, `403` om vad du får göra. Att logga in igen hjälper inte mot `403`.
 
-`301` är inte en tillfällig omdirigering. Webbläsaren sparar den och slutar fråga.
+`301` är inte en tillfällig omdirigering. Klienter kan cachelagra den, så den är svår att ta tillbaka.
 
 Ett `200`-svar med ett fel i kroppen är inte hjälpsamt. Hela infrastrukturen läser statuskoden.
 
@@ -377,29 +377,28 @@ ett trasigt svar men betyder "du har redan den senaste versionen". Och `curl -I`
 stället för `GET`, så kroppen uteblir med flit.
 
 <Callout type="kom-ihag">
-- Ett HTTP-meddelande är text: startrad, headers, tom rad, kropp.
-- `GET` är **säkert** (ändrar inget). `PUT` och `DELETE` är **idempotenta** — därför är omförsök
-  ofarliga för dem men inte för `POST`.
-- `PUT` ersätter hela resursen, `PATCH` bara fälten du skickar.
-- Första siffran räcker: **4xx = frågan var fel, 5xx = servern klarade det inte.**
+- HTTP/1.1 skickar text: startrad, headers, tom rad, kropp. HTTP/2 och HTTP/3 kodar informationen annorlunda.
+- `GET` är **säkert** (ändrar inget). `PUT` och `DELETE` är **idempotenta**, vilket gör omförsök säkrare.
+- API:ets kontrakt avgör hur PUT hanterar utelämnade fält. PATCH är en uttrycklig partiell uppdatering.
+- Första siffran räcker: **4xx = förfrågan kan inte fullföljas, 5xx = servern klarade det inte.**
 - `401` = vi vet inte vem du är. `403` = vi vet, du får ändå inte.
 - Svara aldrig `200` på ett fel — hela infrastrukturen läser statuskoden.
-- HTTP minns ingenting mellan anrop. Därför skickas beviset på vem du är varje gång.
+- HTTP knyter inte automatiskt ihop anrop. Cookie eller token kopplar sessionen till rätt anrop.
 </Callout>
 
 <Check
   items={[
     {
       q: "API:et svarar `500`. Vem bör titta först, och varför?",
-      a: "Backend. 5xx betyder att servern tog emot frågan men misslyckades med att hantera den — felet ligger på serversidan oavsett hur anropet såg ut. Börja i serverns loggar.",
+      a: "Börja på serversidan. 5xx betyder att servern eller en gateway inte kunde fullfölja anropet. Granska serverns och eventuella beroendens loggar, men behåll förfrågan som felsökningsunderlag.",
     },
     {
       q: "Du skickar `{\"pris\": 129}` med `PUT` till en produkt. Vad riskerar du?",
-      a: "Att övriga fält nollställs. `PUT` ersätter hela resursen med det du skickar, så namn och lagersaldo tolkas som borttagna. `PATCH` hade bara ändrat priset.",
+      a: "Att API:et kan behandla anropet på ett sätt du inte väntat dig. Kontraktet avgör om utelämnade fält rensas, behålls eller gör anropet ogiltigt. Läs endpointens schema. PATCH är en uttrycklig partiell uppdatering.",
     },
     {
       q: "Varför är det farligare att göra automatiska omförsök på `POST` än på `PUT`?",
-      a: "`PUT` är idempotent: samma anrop två gånger ger samma slutläge. `POST` skapar något nytt varje gång, så ett omförsök efter ett tappat svar kan ge två poster i databasen.",
+      a: "PUT är idempotent: samma avsedda anrop ska ge samma slutläge. Det gör omförsök säkrare, men ett tappat svar kan komma efter att servern hunnit göra ändringen. Gör automatiska omförsök först när API:ets kontrakt tillåter det.",
     },
     {
       q: "En användare får `403` och skickas till inloggningssidan, loggar in, och får `403` igen. Vad är fel?",
@@ -407,7 +406,7 @@ stället för `GET`, så kroppen uteblir med flit.
     },
     {
       q: "Du la ut en felaktig `301` och rättade den efter en timme. Varför fungerar det ändå inte för vissa?",
-      a: "En `301` sparas av webbläsaren, som slutar fråga efter den gamla adressen. De som besökte sidan medan felet fanns går direkt till fel plats tills de rensar sin cache. Använd `302` när du är osäker.",
+      a: "En klient kan ha cachelagrat 301-svaret och går då direkt till fel plats även efter att servern rättats. Använd 302 medan du är osäker, och sätt tydliga cache-headers när flytten är viktig.",
     },
     {
       q: "Vad är problemet med ett API som svarar `200 OK` och lägger felet i kroppen?",
@@ -418,18 +417,18 @@ stället för `GET`, så kroppen uteblir med flit.
 
 ## Snabb sammanfattning
 
-- HTTP är läsbar text i två meddelanden: en förfrågan och ett svar.
-- Båda består av en start- eller statusrad, headers, en tom rad och eventuellt en kropp.
+- HTTP/1.1 är läsbar text i två meddelanden: en förfrågan och ett svar.
+- HTTP/1.1 består av en start- eller statusrad, headers, en tom rad och eventuell kropp.
 - Metoden säger vad som ska hända med det sökvägen pekar ut. Betydelserna är konventioner.
 - `GET` hämtar och har parametrarna i URL:en. `POST` skickar och har dem i kroppen.
-- `PUT` ersätter hela resursen, `PATCH` bara de fält du skickar.
+- API:ets kontrakt avgör hur PUT hanterar utelämnade fält. PATCH är en uttrycklig partiell uppdatering.
 - Säker betyder "ändrar inget". Idempotent betyder "samma slutläge hur många gånger som helst".
 - Statuskoden läses av infrastruktur, inte bara av dig.
 - Första siffran räcker: 2xx lyckades, 3xx leta annanstans, 4xx fel fråga, 5xx serverns fel.
 - `401` handlar om vem du är, `403` om vad du får göra.
-- `301` sparas av webbläsaren och är svår att ta tillbaka. `302` är den säkra medan du är osäker.
+- `301` kan cachelagras och är svår att ta tillbaka. `302` passar medan du är osäker.
 - Headers är metadata. Samma namn kan betyda olika saker i förfrågan och i svar.
-- HTTP minns ingenting. Beviset på vem du är skickas med varje anrop.
+- HTTP knyter inte automatiskt ihop anrop. Cookie eller token kopplar sessionen till rätt anrop.
 
 ## Nästa del
 

@@ -1,6 +1,6 @@
 ---
 title: 'Vad ett API är och vem som anropar vem'
-description: 'Kontraktet mellan två system — och varför frontend aldrig får prata med databasen'
+description: 'Kontraktet mellan två system — och varför frontend normalt går via ett API'
 category: 'api'
 part: 1
 partTitle: 'Grunderna'
@@ -150,8 +150,8 @@ res.json(produkt);   // ← allt som råkar finnas i raden
 ```
 
 Det fungerar — tills någon lägger till en kolumn. Då börjar API:et skicka ut den också, utan att
-någon bestämt det. På användartabeller är det så här `losenord_hash` och `ar_admin` läcker ut, och
-`SELECT *` gör att ingen märker det i kodgranskningen.
+någon bestämt det. På användartabeller är det så här `losenord_hash` och `ar_admin` kan läcka ut,
+och `SELECT *` gör det svårare att se kontraktet i kodgranskningen.
 
 Välj fälten uttryckligen. Det är fem sekunders extra arbete och den enda versionen som håller över
 tid.
@@ -162,7 +162,7 @@ tid.
 ## Lagren mellan webbläsaren och datan
 
 <Stack
-  caption="Varje lager pratar bara med det närmast under sig. Ingen hoppar över ett steg."
+  caption="En vanlig uppdelning: klienten går via API:et till datan."
   ground="Fraktbolagets API — ett annat system, med sitt eget kontrakt"
   layers={[
     {
@@ -176,20 +176,27 @@ tid.
     },
     {
       label: "Databasen",
-      note: "Nås aldrig utifrån. I Docker-serien var det just därför tjänsten `db` saknade `ports`.",
+      note: "Nås normalt inte direkt av klienter. I Docker-serien saknade tjänsten `db` därför `ports`.",
     },
   ]}
 />
 
-> **DOODLE** — Två klienter till vänster, en laptop märkt "webb" och en telefon märkt "app". Båda med
-> heldragna pilar in till en låda märkt "API". Från API-lådan en heldragen pil ner till en cylinder
-> märkt "databas". En streckad pil direkt från laptopen till cylindern, överkryssad med ett stort X.
-> Under: "Alla frågar API:et. Ingen frågar databasen."
+{/* DOODLE bortvald i steg 2: `Stack`-komponenten direkt ovanför säger redan
+    samma sak — klienten går via API:et till datan — med samma tre lager i samma
+    ordning. Två bilder om samma sak i samma sektion bryter komplementariteten.
+    Hör klientmångfalden (webb och app mot samma API) någon gång hemma i bild är
+    det som en extra rad i `Stack`, inte som en egen doodle. */}
 
-## Varför frontend inte pratar med databasen
+## Varför frontend normalt går via API:et
 
 Det är en rimlig fråga, särskilt när API:et till en början bara ser ut att skicka vidare det
 databasen redan har.
+
+En frontend ska normalt inte ansluta direkt till en databas med databasens egna
+inloggningsuppgifter. API:et väljer vilka uppgifter klienten får läsa eller ändra.
+
+Vissa tjänster erbjuder kontrollerad klientåtkomst, men även då sker åtkomsten genom ett API och
+dess behörighetsregler.
 
 <Split
   leftTitle="Frontend mot databasen"
@@ -200,18 +207,19 @@ databasen redan har.
 >
   <div slot="left">
 
-  Anslutningsuppgifterna måste finnas i webbläsaren — alltså **synliga för alla**.
+  Databasens anslutningsuppgifter behöver exponeras för klienten och blir därmed möjliga att missbruka.
 
-  Ingen kan hindra en användare från att hämta andras ordrar, eller skriva vad som helst.
+  Behörighetskontroll och validering hamnar i varje klient eller i databasens regler, i stället för i
+  ett gemensamt API-lager.
 
-  Byter ni databas måste varje klient skrivas om.
+  Byter ni databas kan varje klient som bygger på den direkta anslutningen behöva ändras.
 
   Varje ny skärm blir en ny fråga direkt mot tabellerna, och reglerna sprids ut överallt.
 
   </div>
   <div slot="right">
 
-  Uppgifterna stannar på servern. Klienten ser dem aldrig.
+  Databasens anslutningsuppgifter stannar på servern. Klienten får bara API:ets svar.
 
   API:et avgör vem som får se vad, och kan **validera** innan något sparas.
 
@@ -370,7 +378,7 @@ hastighetsgräns. Och `curl` utan `-s` skriver ut en förloppsindikator som blan
 - En resurs är det API:et handlar om, inte hur det lagras.
 - JSON är läsbar text. Du kan alltid titta på vad som skickas.
 - Svaret är en vald representation av resursen — inte databasraden.
-- Frontend pratar med API:et, aldrig med databasen. Uppgifter i en webbläsare är publika.
+- Frontend går normalt via API:et. Uppgifter i en webbläsare är publika.
 - Validering i klienten är hjälp, inte skydd.
 - Att lägga till ett fält är normalt ofarligt. Att byta namn på ett är en brytande ändring.
 - Internt API = klienter du äger. Publikt API = ett löfte du inte kan bryta ensidigt.

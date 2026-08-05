@@ -18,8 +18,8 @@ Den här delen handlar inte om `SELECT`. Frågespråket är den enkla delen — 
 avgör hur systemet mår om två år, är hur data är **uppdelad** från början. Att sätta ihop den igen
 tar nästa del.
 
-Exemplen är skrivna i PostgreSQL-syntax, som är den vanligaste. Andra databaser skiljer sig i
-detaljer men inte i begreppen.
+Exemplen är skrivna i PostgreSQL-syntax. Andra relationsdatabaser använder många av samma idéer,
+men syntax och detaljer kan skilja sig.
 
 <Del titel="Tabellen" />
 
@@ -107,10 +107,7 @@ CREATE TABLE produkter (
 );
 ```
 
-> **DOODLE** — Två rutnät sida vid sida. Vänster märkt `kategorier` med två kolumner `id` och
-> `namn`, raden `4 | Handverktyg` markerad. Höger märkt `produkter` med kolumnen `kategori_id` där
-> flera rader innehåller `4`. Heldragna pilar från varje `4` till den markerade raden. Under:
-> "Namnet står en gång. Alla pekar dit."
+<Doodle name="nyckeln-pekar-hem" caption="Tre pilar från höger, en enda rad i mål." />
 
 <Del titel="Typer och villkor" />
 
@@ -197,7 +194,8 @@ garantierna utan att låsa fast dig.
 
 ## Vad en främmande nyckel är
 
-En **främmande nyckel** är en kolumn som pekar på en annan tabells primärnyckel.
+En **främmande nyckel** är en kolumn eller kolumngrupp som refererar till en primärnyckel eller en
+unik nyckel i en annan tabell.
 
 ```sql
 kategori_id INTEGER NOT NULL
@@ -399,7 +397,7 @@ kommandon som börjar med punkt (`.quit`, `.tables`) är sqlite3:s egna, inte SQ
 - **Varje faktum ska ha ett enda hem.** Upprepad text är framtida fel.
 - Primärnyckeln är radens identitet — helst ett id utan egen betydelse, så det aldrig behöver ändras.
 - `UNIQUE` kan finnas i flera per tabell och tillåter `NULL`. Primärnyckeln gör ingetdera.
-- Främmande nyckeln är pekaren, och databasen bevakar att den pekar på något som finns.
+- Främmande nyckeln refererar till en primärnyckel eller unik nyckel som finns.
 - `ON DELETE` avgör vad som händer när det pekade tas bort. `RESTRICT` är oftast rätt.
 - Många-till-många löses med en kopplingstabell där båda kolumnerna utgör primärnyckeln.
 - Villkor i databasen gäller **alla** som skriver, inte bara ditt API.
@@ -446,7 +444,7 @@ kommandon som börjar med punkt (`.quit`, `.tables`) är sqlite3:s egna, inte SQ
 - Primärnyckeln är radens identitet: en per tabell, aldrig `NULL`.
 - `UNIQUE` kan finnas i flera per tabell och tillåter `NULL`.
 - Använd en syntetisk nyckel som primärnyckel och `UNIQUE` på det naturliga värdet.
-- Främmande nyckeln pekar på en annan tabells primärnyckel, och databasen bevakar det.
+- Främmande nyckeln refererar till en annan tabells primärnyckel eller unika nyckel.
 - `ON DELETE` avgör vad som händer när det pekade raderas. `RESTRICT`, `CASCADE` eller `SET NULL`.
 - En till många: pekaren ligger på många-sidan. Många till många: en kopplingstabell.
 - `NULL` betyder "vet inte" — inte noll och inte tom sträng.

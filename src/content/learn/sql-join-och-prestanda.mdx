@@ -43,9 +43,7 @@ Skruvmejsel PH2    149    Handverktyg
 
 Ingenting ändras i databasen. En `JOIN` är ett sätt att läsa, inte ett sätt att lagra.
 
-> **DOODLE** — Två smala rutnät till vänster, `produkter` och `kategorier`, med en heldragen pil från
-> en rad i det första till en rad i det andra. Till höger ett brett rutnät där de två raderna sitter
-> ihop till en. Under: "Två rader in. En rad ut."
+<Doodle name="join-tva-rader-in" caption="De två skrafferade raderna till vänster blir den skrafferade raden till höger." />
 
 ## Vad `ON` gör
 
@@ -54,9 +52,10 @@ Ingenting ändras i databasen. En `JOIN` är ett sätt att läsa, inte ett sätt
 Läs raden som en mening: *ta med raden ur `kategorier` vars `id` är samma som produktens
 `kategori_id`.*
 
-Kopplingen är nästan alltid främmande nyckel mot primärnyckel — precis den relation förra delen
-byggde. Glöms `ON` bort paras varje rad ihop med varje rad i den andra tabellen, vilket ger ett svar
-med hundratusentals rader ur två små tabeller.
+Kopplingen är ofta en främmande nyckel mot en primärnyckel — precis den relation förra delen byggde.
+En vanlig `JOIN` behöver ett villkor, till exempel `ON` eller `USING`. Utan villkor blir frågan
+normalt ett syntaxfel. `CROSS JOIN` är den uttryckliga varianten som parar ihop varje rad med varje
+rad i den andra tabellen.
 
 ## Vad ett alias är
 
@@ -132,11 +131,11 @@ test med tvåhundra produkter, och samma fråga läser nu hela produktionstabell
 
 ## Vad ett index är
 
-Ett **index** är en sorterad struktur vid sidan av tabellen, som låter databasen hitta rätt rad utan
-att läsa alla.
+Ett **index** är en extra datastruktur som hjälper databasen att hitta rader. PostgreSQL använder
+ofta ett sorterat B-tree-index, men det finns också andra indextyper med andra egenskaper.
 
 <Stack
-  caption="Ett index är en sorterad kopia av en kolumn plus en pekare till raden. Uppslag i tjugo steg i stället för fyrahundratusen."
+  caption="Ett B-tree-index är en sorterad sökstruktur som kan hitta en rad utan att läsa hela tabellen."
   ground="Disken"
   layers={[
     {
@@ -202,7 +201,8 @@ hitta en.
 De två raderna du letar efter i utdatan.
 
 **`Seq Scan`** betyder sekventiell genomsökning: hela tabellen lästes. På en liten tabell är det
-oproblematiskt och ofta snabbast. På en stor är det signalen att ett index saknas.
+oproblematiskt och ofta snabbast. Det kan också vara rätt på en stor tabell, även om ett index finns,
+när frågan ska läsa många rader.
 
 **`Index Scan`** betyder att databasen slog upp i indexet och bara läste de rader den behövde.
 
@@ -219,12 +219,13 @@ inte syns i test.
 
 ## Vad som ska indexeras
 
-Kolumner som står i **`WHERE`**, i **`JOIN ... ON`** eller i **`ORDER BY`**.
+Kolumner som står i **`WHERE`**, i **`JOIN ... ON`** eller i **`ORDER BY`** är kandidater för index.
 
 Det är de tre ställen där databasen behöver leta, koppla eller sortera. Kolumner som bara läses ut i
 `SELECT` behöver inget index.
 
-Börja med de främmande nycklarna, eftersom de används i varje `JOIN` och inte indexeras automatiskt.
+Börja med de främmande nycklarna när faktiska frågor använder dem i `JOIN`. De indexeras inte
+automatiskt i PostgreSQL.
 
 ## Priset för ett index
 
@@ -236,7 +237,7 @@ En tabell med tolv index blir märkbart långsammare att skriva till, tar mer di
 säkerhetskopiorna större. På en tabell som skrivs mer än den läses kan ett index kosta mer än det
 ger.
 
-Indexera det du faktiskt söker på — och mät med `EXPLAIN ANALYZE` i stället för att gissa.
+Indexera utifrån faktiska frågor — och mät med `EXPLAIN ANALYZE` i stället för att gissa.
 </Callout>
 
 <Del titel="N+1" />
@@ -292,8 +293,9 @@ Samma resultat, helt olika kostnad.
 
 **En JOIN** ställer 1 fråga som hämtar allt på en gång, och databasen gör kopplingen internt.
 
-Använder du ett ORM finns oftast en inställning för det — `include`, `with` eller `preload` — och den
-måste sättas uttryckligen. Standardbeteendet är just den där loopen.
+Många ORM:er kan läsa in relationer i förväg, till exempel med `include`, `with` eller `preload`.
+Vilken fråga som faktiskt skickas beror på ORM:ets inställningar och relationen, så kontrollera
+frågorna i loggen i stället för att utgå från ett visst standardbeteende.
 
 ## Varför N+1 inte syns i test
 
@@ -304,17 +306,17 @@ Ingen märker något.
 I produktion ligger databasen på en annan maskin, och varje fråga kostar en nätverksresa till.
 Femtioen resor à två millisekunder blir hundra — per anrop, för varje besökare samtidigt.
 
-Det är exakt samma sorts fel som den saknade sidindelningen i API-serien: koden är inte fel, den
-skalar bara inte. Den enda tillförlitliga upptäckten är att **logga antalet frågor per anrop** — då
-syns det direkt, långt innan det blir ett problem.
+Det är samma sorts problem som den saknade sidindelningen i API-serien: koden kan vara korrekt men
+inte skala. Logga antalet frågor per anrop, och använd tester eller profilering när du behöver se
+frågemönstret tydligare.
 </Callout>
 
 <Del titel="Öva och förstå" />
 
 ## Vad det här betyder i ditt arbete
 
-Du kommer att skriva `JOIN` i nästan varje fråga som hämtar något användbart, och du kommer att
-orsaka minst ett N+1 innan året är slut. Det gör alla.
+Du kommer att skriva `JOIN` i många frågor som hämtar data från flera tabeller. N+1 är ett
+frågemönster att känna igen och förebygga när listor och relationer växer.
 
 Två vanor räcker långt: kör `EXPLAIN` på frågor som känns långsamma i stället för att gissa, och
 logga antalet databasfrågor per API-anrop så att N+1 syns medan tabellerna fortfarande är små.
@@ -326,7 +328,8 @@ räcker — och då är `EXPLAIN` fortfarande verktyget du börjar med.
 
 En `JOIN` ändrar ingenting i databasen. Den sätter ihop rader i svaret.
 
-`JOIN` utan `ON` är inte samma fråga med färre tecken. Den parar ihop varje rad med varje rad.
+En vanlig `JOIN` utan villkor är inte en kortare variant av samma fråga, utan normalt ett syntaxfel.
+Skriv `CROSS JOIN` när du avsiktligt vill para ihop varje rad med varje rad.
 
 `JOIN` är inte neutral. Utan ordet `LEFT` tystas rader utan träff bort utan varning.
 
@@ -387,8 +390,9 @@ SELECT * FROM kunder
 WHERE epost = 'k150000@example.se';
 ```
 
-Nu står det `SEARCH` i stället för `SCAN`. Kör frågan igen och jämför tiden med förra mätningen —
-skillnaden är ungefär tusenfaldig. **Det är hela avsnittet, demonstrerat på din egen maskin.**
+Nu står det ofta `SEARCH` i stället för `SCAN`. Kör frågan igen och jämför planen och tiden med den
+förra mätningen. Hur stor skillnaden blir beror på din dator, SQLite-version och hur många rader som
+finns i tabellen.
 
 Tre saker som kan förvirra: raden säger troligen `USING COVERING INDEX`, inte bara `USING INDEX`.
 *Covering* betyder att indexet ensamt räckte för att svara — databasen behövde inte ens öppna
@@ -400,12 +404,14 @@ det är därför tidsraderna dyker upp mellan svaren.
 - `JOIN ... ON` sätter ihop rader från två tabeller, oftast främmande nyckel mot primärnyckel.
 - **INNER** (standard) tystar bort rader utan träff. **LEFT** behåller dem med `NULL` — och är
   därför också ett felsökningsverktyg.
-- `EXPLAIN` visar planen, `EXPLAIN ANALYZE` kör frågan. Leta efter **`Seq Scan`** på stora tabeller.
+- `EXPLAIN` visar planen, `EXPLAIN ANALYZE` kör frågan. Bedöm **`Seq Scan`** utifrån hur många rader
+  frågan ska läsa.
 - Ett index är en sökstruktur, primärnyckeln en regel om identitet.
-- Indexera det som står i `WHERE`, `JOIN ... ON` och `ORDER BY`. Främmande nycklar indexeras
-  **inte** automatiskt i PostgreSQL.
+- Kolumner i `WHERE`, `JOIN ... ON` och `ORDER BY` är kandidater för index. Främmande nycklar
+  indexeras **inte** automatiskt i PostgreSQL.
 - Index kostar vid varje skrivning. Indexera medvetet, inte allt.
-- **N+1** = en fråga plus en per rad. Lös med `JOIN`, och logga antalet frågor per anrop.
+- **N+1** = en fråga plus en per rad. Minska frågorna med `JOIN` eller förinläsning, och logga antalet
+  frågor per anrop.
 </Callout>
 
 <Check
@@ -416,7 +422,7 @@ det är därför tidsraderna dyker upp mellan svaren.
     },
     {
       q: "Vad betyder `Seq Scan` i utdata från `EXPLAIN ANALYZE`?",
-      a: "Att databasen läste igenom hela tabellen rad för rad. På en liten tabell är det oproblematiskt och ofta snabbast, men på en stor är det signalen om att ett index saknas på kolumnen du filtrerar eller kopplar på.",
+      a: "Att databasen läste igenom hela tabellen rad för rad. På en liten tabell är det oproblematiskt och ofta snabbast. Även på en stor tabell kan det vara rätt plan när frågan ska läsa många rader; bedöm därför selektiviteten och planen innan du lägger till ett index.",
     },
     {
       q: "Primärnyckeln indexeras automatiskt. Gäller det främmande nycklar också?",
@@ -424,7 +430,7 @@ det är därför tidsraderna dyker upp mellan svaren.
     },
     {
       q: "Varför är det inte en bra idé att lägga index på alla kolumner?",
-      a: "Varje index måste uppdateras vid varje `INSERT` och `UPDATE`. Många index gör skrivningar långsammare och tar mer utrymme. Indexera de kolumner du faktiskt söker, kopplar eller sorterar på, och mät med `EXPLAIN ANALYZE`.",
+      a: "Varje index måste uppdateras vid varje `INSERT` och `UPDATE`. Många index gör skrivningar långsammare och tar mer utrymme. Utgå från de frågor systemet faktiskt kör och mät med `EXPLAIN ANALYZE`.",
     },
     {
       q: "Varför märks N+1 sällan i utvecklingsmiljön?",
@@ -444,13 +450,14 @@ det är därför tidsraderna dyker upp mellan svaren.
 - Alias gör kolumnerna entydiga när båda tabellerna har kolumner med samma namn.
 - `INNER` (standard) tystar bort rader utan träff. `LEFT` behåller dem med `NULL`.
 - `LEFT JOIN` plus `WHERE ... IS NULL` hittar raderna som saknar sin koppling.
-- En full table scan läser varenda rad. Gratis på tvåhundra, dyrt på fyrahundratusen.
+- En full table scan läser varenda rad. Kostnaden beror på tabellens storlek och hur mycket data frågan
+  behöver läsa.
 - Ett index är en sorterad sökstruktur vid sidan av tabellen.
 - Primärnyckeln är en regel och indexeras automatiskt. Främmande nycklar är det inte.
 - `EXPLAIN` visar planen. `EXPLAIN ANALYZE` kör frågan — även när det är en `DELETE`.
-- `Seq Scan` på en stor tabell betyder att ett index saknas. `Index Scan` betyder att det används.
-- Indexera det som står i `WHERE`, `JOIN ... ON` och `ORDER BY` — inte allt.
-- N+1 är en fråga plus en per rad. Lös med `JOIN` och logga antalet frågor per anrop.
+- `Seq Scan` betyder att hela tabellen läses. Det kan vara rätt plan även på en stor tabell.
+- Kolumner i `WHERE`, `JOIN ... ON` och `ORDER BY` är kandidater för index — indexera inte slentrianmässigt.
+- N+1 är en fråga plus en per rad. Minska frågorna med `JOIN` eller förinläsning och logga antalet frågor per anrop.
 
 ## Nästa del
 

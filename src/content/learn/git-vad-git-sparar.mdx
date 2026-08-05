@@ -28,8 +28,10 @@ att du kan gå tillbaka till vilken som helst av dem.
 Git körs lokalt på din dator. Hela historiken ligger i en dold mapp som heter `.git` i
 projektmappen, och du behöver varken internet eller ett konto för att använda den.
 
-Git är inte en säkerhetskopia. En säkerhetskopia sparar det senaste; Git sparar varje läge du
-själv har markerat som ett läge värt att spara.
+Git sparar historik. En säkerhetskopia är en separat kopia som du kan återställa om datorn eller
+repositoryt försvinner.
+
+Git kan ingå i en backup-rutin, men ett lokalt Git-repository är inte en säkerhetskopia i sig.
 
 ## Git vs GitHub
 
@@ -43,9 +45,7 @@ De två blandas ihop nästan alltid, och de är olika saker.
 Du kan använda Git i åratal utan GitHub. Du kan däremot inte använda GitHub utan Git — tjänsten
 lagrar Git-projekt.
 
-> **DOODLE** — En laptop med `.git`-mapp inuti, streckad pil upp till ett moln märkt "GitHub ·
-> GitLab · Bitbucket". Under laptopen texten "hela historiken finns redan här". Streckad pil =
-> valfritt steg.
+<Doodle name="historiken-ligger-lokalt" caption="Mappen ligger inuti laptopen. Pilen uppåt är streckad — den är valfri." />
 
 ## Repository
 
@@ -61,7 +61,7 @@ alla sina filer, men ingen historik alls.
 
 ## Vad en commit är
 
-En **commit** är ett sparat läge i projektet.
+En **commit** är ett sparat läge av de spårade filer som ligger i staging.
 
 Du bestämmer själv när ett läge ska sparas, och du ger det en beskrivning i samma stund. Det är
 det som skiljer en commit från en autosparad fil: commiten är ett medvetet påstående om att
@@ -91,10 +91,9 @@ Det här är den felaktiga bilden som orsakar mest problem.
   </div>
   <div slot="right">
 
-  **En commit sparar hela projektet.**
+  **En commit sparar de spårade filerna i staging.**
 
-  Varje commit är en ögonblicksbild av alla filer som de såg ut i det ögonblicket, plus en
-  pekare till commiten före.
+  Varje commit är en ögonblicksbild av de spårade filerna, plus en pekare till commiten före.
 
   Med den bilden är en gren bara en pekare till, och att gå bakåt är att titta på en annan bild.
 
@@ -131,12 +130,12 @@ en enda bokstav i något av det blir hashen en annan.
 
 Det ger två garantier som är värda att förstå:
 
-- Två utvecklare med samma hash har garanterat exakt samma kod.
+- Två utvecklare med samma hash har samma commit-objekt och samma spårade ögonblicksbild.
 - Historik går inte att ändra i smyg. Ändras något bakåt i kedjan får alla efterföljande commits
   nya hashar, eftersom var och en innehåller sin förälders hash.
 
-I praktiken skriver du sällan ut en hel hash. De sju första tecknen räcker nästan alltid, och det
-är därför `git log --oneline` visar just så många.
+I praktiken skriver du sällan ut en hel hash. Git accepterar det kortaste prefix som är entydigt i
+just repositoryt. Sju tecken räcker ofta i små repositoryn, men längden kan behöva vara längre.
 
 <Del titel="Vägen till en commit" />
 
@@ -186,14 +185,14 @@ mellan en historik man kan använda och en man skrollar förbi.
 
 Den vanligaste missuppfattningen om de två kommandona är att båda sparar. Bara det ena gör det.
 
-**`git add`** flyttar filen till staging. Ingenting blir permanent, och kör du `git add` femton
-gånger finns fortfarande ingen commit.
+**`git add`** flyttar filen till staging. Staging sparas mellan Git-kommandon, men är fortfarande
+bara nästa föreslagna commit.
 
 **`git commit`** tar det som ligger i staging och skriver en ögonblicksbild. Först nu finns något du
 kan återvända till.
 
-Följden märks när något går fel: har du bara kört `git add` och sedan skriver över filen är arbetet
-borta. Staging är en förberedelse, inte en säkerhetskopia.
+Följden märks när något går fel: du kan ändra eller tömma staging innan du committar. Staging är en
+förberedelse, inte en säkerhetskopia.
 
 ## Spårade vs ospårade filer
 
@@ -282,10 +281,11 @@ arbeta. De blir intressanta först den dag du felsöker ett trasigt repo.
 
 Git är inte GitHub. Git skapar historiken lokalt; GitHub lagrar en kopia åt flera personer.
 
-En commit sparar inte dina ändringar utan hela projektet. Diffen räknas ut vid behov.
+En commit sparar inte bara dina ändringar utan de spårade filer som ligger i staging. Diffen räknas
+ut vid behov.
 
-`git add` sparar ingenting permanent. Den lägger filen i staging, och först `git commit` skriver
-en ögonblicksbild.
+`git add` lägger filen i staging. Du kan ändra staging före commiten; `git commit` skriver sedan en
+ögonblicksbild i historiken.
 
 `.gitignore` skyddar inte redan spårade filer, och den raderar inget som redan ligger i historiken.
 
@@ -300,11 +300,11 @@ Gå till ett Git-projekt du redan har. Alla kommandon nedan bara läser.
 git log --oneline | head -5
 ```
 
-Du får fem rader, var och en med en kort hash och ett meddelande. Välj en hash och titta på vad
+Du får fem rader, var och en med en kort hash och ett meddelande. Titta sedan på vad den senaste
 commiten faktiskt innehåller:
 
 ```bash
-git cat-file -p a3f9c2e
+git cat-file -p HEAD
 ```
 
 Nu ser du commitens fyra delar i klartext: en rad `tree` (ögonblicksbilden), en rad `parent`
@@ -313,8 +313,8 @@ Nu ser du commitens fyra delar i klartext: en rad `tree` (ögonblicksbilden), en
 Leta sedan upp den allra första commiten i repot:
 
 ```bash
-git log --oneline | tail -1
-git cat-file -p <hashen därifrån>
+git rev-list --max-parents=0 HEAD \
+  | xargs -n1 git cat-file -p
 ```
 
 **Den saknar `parent`-raden.** Det är inte ett fel — det är kedjans början, den enda commit som
@@ -324,9 +324,8 @@ Två saker som kan förvirra: `git log` öppnas i en bläddrare som avslutas med
 pekar på ett objekt, inte på en fil. Att följa `tree` vidare behöver du inte göra nu.
 
 <Callout type="kom-ihag">
-- En commit är en **ögonblicksbild av hela projektet** plus en pekare till föräldern — inte en
-  lista med ändringar.
-- Hashen räknas ut ur innehållet. Samma hash betyder garanterat samma kod.
+- En commit är en **ögonblicksbild av spårade filer i staging** plus en pekare till föräldern.
+- Hashen räknas ut ur innehållet. Samma hash betyder samma spårade ögonblicksbild.
 - Tre platser: arbetskatalog → staging → repository. `git add` och `git commit` flyttar mellan dem.
 - Staging finns för att du ska kunna committa **en sak i taget**, även när du gjort flera.
 - `.gitignore` påverkar bara **ospårade** filer. En committad hemlighet är läckt — byt den.
@@ -336,7 +335,7 @@ pekar på ett objekt, inte på en fil. Att följa `tree` vidare behöver du inte
   items={[
     {
       q: "Vad sparar Git i en commit — dina ändringar eller hela projektet?",
-      a: "Hela projektet, som en ögonblicksbild, plus en pekare till commiten före. Diffen du ser i `git diff` räknas ut i stunden genom att jämföra två bilder — den är inte det som lagras.",
+      a: "De spårade filer som ligger i staging, som en ögonblicksbild, plus en pekare till commiten före. Diffen du ser i `git diff` räknas ut i stunden genom att jämföra två bilder — den är inte det som lagras.",
     },
     {
       q: "Du lade nyss till `.env` i `.gitignore`, men den dyker fortfarande upp i `git status`. Varför?",
@@ -362,9 +361,9 @@ pekar på ett objekt, inte på en fil. Att följa `tree` vidare behöver du inte
 - Git är ett versionshanteringssystem som körs lokalt och lagrar historiken i mappen `.git`.
 - Git är inte GitHub. GitHub lagrar en kopia av ett Git-projekt åt flera personer.
 - Ett repository är ett projekt Git håller reda på. `git init` skapar det.
-- En commit är ett sparat läge — en ögonblicksbild av hela projektet, inte en lista med ändringar.
+- En commit är ett sparat läge — en ögonblicksbild av spårade filer i staging, inte en lista med ändringar.
 - En commit innehåller ögonblicksbilden, föräldern, metadata och en hash.
-- Hashen räknas ut ur innehållet. Samma hash betyder garanterat samma kod.
+- Hashen räknas ut ur innehållet. Samma hash betyder samma spårade ögonblicksbild.
 - Tre platser: arbetskatalog → staging → repository. `git add` och `git commit` flyttar mellan dem.
 - Staging finns för att du ska kunna committa en sak i taget, även när du gjort flera.
 - Spårade filer följer Git; ospårade gör den inte. `.gitignore` påverkar bara ospårade.
