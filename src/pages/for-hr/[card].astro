@@ -4,6 +4,17 @@
 // med tillbaka-knapp + kort-switcher. Fulla kort får en dokument-layout: artikel
 // + sticky innehållsförteckning (scroll-spy) som fyller ytan och ger överblick.
 // Utkast (utan `what`) visar ett "på gång"-block.
+//
+// LAYOUTEN ÄR EN MOSAIK, inte en spalt. Varje sektion är ett block (`.hrd-block`)
+// och blocken läggs i rader: full bredd när texten är lång, två i bredd när den
+// är kort. Skälet är läsbarhet över scroll — en enda kolumn med identisk bredd,
+// vänsterkant och densitet blir enformig efter tre skärmar, och kortet har sju
+// sektioner.
+//
+// EN rad = EN post i innehållsförteckningen. Två sektioner sida vid sida får
+// identisk offsetTop, och scroll-spyn (toc.ts) låter den sista av likvärdiga
+// träffar vinna — vänsterkortet hade aldrig kunnat markeras. Därför bär raden
+// id:t, inte de enskilda blocken.
 import AppLayout from "../../layouts/AppLayout.astro";
 import HrTabBar from "../../components/hr/HrTabBar.astro";
 import ArticleToc from "../../components/site/ArticleToc.astro";
@@ -31,16 +42,34 @@ const github = site.social.find((s) => s.name === "GitHub")?.href ?? "#";
 
 const pageTitle = `${card.title} · Teknik-guiden`;
 
-// Innehållsförteckning — bara de sektioner kortet faktiskt har.
+// Rubriken på översiktsblocket följer taxonomin: en roll GÖR något, ett verktyg
+// ÄR något. Härlett ur `typ` i stället för ett eget fält — samma skillnad som
+// biblioteket redan grupperar på.
+const isRole = card.typ === "Roll";
+const overviewTitle = isRole ? "Vad rollen gör" : `Vad ${card.title} är`;
+
+// Faktaraden svarar på rekryterarens tre första frågor innan hon scrollat.
+// Tredje cellen är guidens tes: roller sätts i annonsrubriken, allt annat
+// listas som färdighet. Den står uttryckligen i innehållet (se `confuse` på
+// Kubernetes och Frontend, och FAQ f4) och härleds här ur `typ` — det finns
+// medvetet inget nivåspann här, eftersom årtalen bara finns på en del kort och
+// guiden själv avråder från år som mätare.
+const facts = [
+  { k: "Typ", v: card.typ },
+  { k: "Var i produkten", v: card.dom },
+  { k: "I annonsen", v: isRole ? "Sätt i rubriken" : "Lista som färdighet" },
+];
+
+// Innehållsförteckning — en post per RAD (se noten överst om scroll-spy), och
+// bara de rader kortet faktiskt har.
+const hasProfile = !!card.tasks?.length || !!card.fits?.length;
 const toc = [
   { id: "oversikt", label: "Översikt", show: true },
-  { id: "analogi", label: "Tänk så här", show: !!card.analogy },
-  { id: "arbetsdag", label: "En vanlig arbetsdag", show: !!card.tasks?.length },
-  { id: "passar", label: "Passar en person som", show: !!card.fits?.length },
+  { id: "arbetsdag", label: "En vanlig arbetsdag", show: hasProfile },
   { id: "blandas", label: "Blandas ihop med", show: !!card.confuse?.length },
-  { id: "cv", label: "Ord i CV:t", show: !!card.cv?.length },
   { id: "fragor", label: "Frågor att ställa", show: !!card.ask?.length },
   { id: "niva", label: "Junior eller senior?", show: !!(card.junior || card.senior) },
+  { id: "cv", label: "Ord i CV:t", show: !!card.cv?.length },
   { id: "faq", label: "Vanliga frågor", show: faqs.length > 0 },
 ]
   .filter((t) => t.show)
@@ -97,111 +126,151 @@ const showToc = !draft && toc.length >= TOC_MIN_ITEMS;
 
               {showToc && <ArticleToc items={toc} variant="jump" />}
 
-              <p class="hrd__lead" id="oversikt">{typo(card.what)}</p>
+              <p class="hrd__lead">{typo(card.one)}</p>
 
-              {card.analogy && (
-                <div class="hrd-sec" id="analogi">
-                  <p class="hrd-sec__label">Tänk så här</p>
-                  <p class="hrd-analogy">{typo(card.analogy)}</p>
+              <div class="hrd-facts">
+                {facts.map((f) => (
+                  <div class="hrd-fact">
+                    <p class="hrd-fact__k">{f.k}</p>
+                    <p class="hrd-fact__v">{f.v}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div class="hrd-row" id="oversikt">
+                <section class="hrd-block">
+                  <h2 class="hrd-block__h">{overviewTitle}</h2>
+                  <p class="hrd-text">{typo(card.what)}</p>
+                  {card.analogy && (
+                    <>
+                      <p class="hrd-label">Tänk så här</p>
+                      <p class="hrd-analogy">{typo(card.analogy)}</p>
+                    </>
+                  )}
+                </section>
+              </div>
+
+              {hasProfile && (
+                <div class="hrd-row hrd-row--2" id="arbetsdag">
+                  {card.tasks && card.tasks.length > 0 && (
+                    <section class="hrd-block">
+                      <h2 class="hrd-block__h">En vanlig arbetsdag</h2>
+                      <ul class="hrd-list hrd-list--tasks">
+                        {card.tasks.map((t) => (
+                          <li>{typo(t)}</li>
+                        ))}
+                      </ul>
+                    </section>
+                  )}
+                  {card.fits && card.fits.length > 0 && (
+                    <section class="hrd-block">
+                      <h2 class="hrd-block__h">Passar en person som</h2>
+                      <ul class="hrd-list hrd-list--fits">
+                        {card.fits.map((f) => (
+                          <li>{typo(f)}</li>
+                        ))}
+                      </ul>
+                    </section>
+                  )}
                 </div>
               )}
 
-              {card.tasks && card.tasks.length > 0 && (
-                <section class="hrd-sec" id="arbetsdag">
-                  <p class="hrd-sec__label">En vanlig arbetsdag</p>
-                  <ul class="hrd-list hrd-list--tasks">
-                    {card.tasks.map((t) => (
-                      <li>{typo(t)}</li>
-                    ))}
-                  </ul>
-                </section>
-              )}
-
-              {card.fits && card.fits.length > 0 && (
-                <section class="hrd-sec" id="passar">
-                  <p class="hrd-sec__label">Passar en person som</p>
-                  <ul class="hrd-list hrd-list--fits">
-                    {card.fits.map((f) => (
-                      <li>{typo(f)}</li>
-                    ))}
-                  </ul>
-                </section>
-              )}
-
               {card.confuse && card.confuse.length > 0 && (
-                <section class="hrd-sec" id="blandas">
-                  <p class="hrd-sec__label">Blandas ofta ihop med</p>
-                  <div class="hrd-confuse">
-                    {card.confuse.map((c) => (
-                      <div class="hrd-confuse__item">
-                        <p class="hrd-confuse__a">{typo(c.a)}</p>
-                        <p class="hrd-confuse__b">{typo(c.b)}</p>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {card.cv && card.cv.length > 0 && (
-                <section class="hrd-sec" id="cv">
-                  <p class="hrd-sec__label">Ord du ser i CV:t</p>
-                  <div class="hrd-cv">
-                    {card.cv.map((word) => (
-                      <span>{word}</span>
-                    ))}
-                  </div>
-                </section>
+                <div class="hrd-row" id="blandas">
+                  <section class="hrd-block">
+                    <h2 class="hrd-block__h">
+                      Blandas ofta ihop med
+                      {card.confuse.length > 1 && (
+                        <span class="hrd-block__n">{card.confuse.length} par</span>
+                      )}
+                    </h2>
+                    <div class="hrd-sub">
+                      {card.confuse.map((c) => (
+                        <div class="hrd-item">
+                          <p class="hrd-item__t">{typo(c.a)}</p>
+                          <p class="hrd-text">{typo(c.b)}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                </div>
               )}
 
               {card.ask && card.ask.length > 0 && (
-                <section class="hrd-sec" id="fragor">
-                  <p class="hrd-sec__label">Frågor du kan ställa</p>
-                  {card.ask.map((a) => (
-                    <div class="hrd-ask">
-                      <p class="hrd-ask__q">”{typo(a.q)}”</p>
-                      <p class="hrd-ask__label">Bra svar</p>
-                      <p class="hrd-ask__good">{typo(a.good)}</p>
+                <div class="hrd-row" id="fragor">
+                  <section class="hrd-block">
+                    <h2 class="hrd-block__h">
+                      Frågor du kan ställa
+                      {card.ask.length > 1 && (
+                        <span class="hrd-block__n">{card.ask.length} frågor</span>
+                      )}
+                    </h2>
+                    <div class="hrd-sub hrd-sub--q">
+                      {card.ask.map((a) => (
+                        <div class="hrd-item">
+                          <p class="hrd-item__t">”{typo(a.q)}”</p>
+                          <p class="hrd-label">Bra svar</p>
+                          <p class="hrd-text">{typo(a.good)}</p>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </section>
+                  </section>
+                </div>
               )}
 
               {(card.junior || card.senior) && (
-                <section class="hrd-sec" id="niva">
-                  <p class="hrd-sec__label">Junior eller senior?</p>
-                  <div class="hrd-levels">
-                    {card.junior && (
-                      <div class="hrd-level">
-                        <p class="hrd-level__k">Junior</p>
-                        <p class="hrd-level__v">{typo(card.junior)}</p>
-                      </div>
-                    )}
-                    {card.senior && (
-                      <div class="hrd-level">
-                        <p class="hrd-level__k">Senior</p>
-                        <p class="hrd-level__v">{typo(card.senior)}</p>
-                      </div>
-                    )}
-                  </div>
-                </section>
+                <div class="hrd-row" id="niva">
+                  <section class="hrd-block">
+                    <h2 class="hrd-block__h">Junior eller senior?</h2>
+                    <div class="hrd-sub">
+                      {card.junior && (
+                        <div class="hrd-item">
+                          <p class="hrd-label hrd-label--top">Junior</p>
+                          <p class="hrd-text">{typo(card.junior)}</p>
+                        </div>
+                      )}
+                      {card.senior && (
+                        <div class="hrd-item">
+                          <p class="hrd-label hrd-label--top">Senior</p>
+                          <p class="hrd-text">{typo(card.senior)}</p>
+                        </div>
+                      )}
+                    </div>
+                  </section>
+                </div>
+              )}
+
+              {card.cv && card.cv.length > 0 && (
+                <div class="hrd-row" id="cv">
+                  <section class="hrd-block">
+                    <h2 class="hrd-block__h">Ord du ser i CV:t</h2>
+                    <div class="hrd-cv">
+                      {card.cv.map((word) => (
+                        <span>{word}</span>
+                      ))}
+                    </div>
+                  </section>
+                </div>
               )}
 
               {faqs.length > 0 && (
-                <section class="hrd-sec" id="faq">
-                  <p class="hrd-sec__label">Vanliga frågor om {card.title}</p>
-                  <div>
-                    {faqs.map((f) => (
-                      <div class="hrd-faq__item">
-                        <p class="hrd-faq__q">{typo(f.q)}</p>
-                        <p class="hrd-faq__a">{typo(f.a)}</p>
-                      </div>
-                    ))}
-                  </div>
-                  <a class="hrd-faq__all" href="/for-hr/?flik=faq">
-                    Alla frågor i FAQ
-                    <Icon name="ArrowRight" size={14} />
-                  </a>
-                </section>
+                <div class="hrd-row" id="faq">
+                  <section class="hrd-block">
+                    <h2 class="hrd-block__h">Vanliga frågor om {card.title}</h2>
+                    <div class="hrd-sub">
+                      {faqs.map((f) => (
+                        <div class="hrd-item">
+                          <p class="hrd-item__t">{typo(f.q)}</p>
+                          <p class="hrd-text">{typo(f.a)}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <a class="hrd-faq__all" href="/for-hr/?flik=faq">
+                      Alla frågor i FAQ
+                      <Icon name="ArrowRight" size={14} />
+                    </a>
+                  </section>
+                </div>
               )}
 
               <div class="hrd-actions">

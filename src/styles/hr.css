@@ -1151,14 +1151,13 @@
 }
 .hrd-main { min-width: 0; }
 
-/* Ankar-offset så sektioner inte hamnar under sticky topbaren vid hopp. */
-.hrd__lead[id],
-.hrd-sec[id] { scroll-margin-top: 210px; }
+/* Ankar-offset så rader inte hamnar under sticky topbaren vid hopp. Id:t sitter
+   på raden, inte på blocken — se noten i [card].astro om scroll-spy. */
+.hrd-row[id] { scroll-margin-top: 210px; }
 /* Mobil: baren är låg när switchern är hopfälld (3.2) — 210 px lämnade en halv
    skärm tom ovanför avsnittet man hoppade till. */
 @media (max-width: 767px) {
-  .hrd__lead[id],
-  .hrd-sec[id] { scroll-margin-top: 120px; }
+  .hrd-row[id] { scroll-margin-top: 120px; }
 }
 
 /* Innehållsförteckningens egna stilar bor i global.css (.toc-*) — den delas
@@ -1177,15 +1176,18 @@
     /* Identisk uppställning med Learn Hubs .toc-doc--toc: tak på båda
        kolumnerna, space-between som lägger överskottet i rännan. Se den
        långa motiveringen i global.css. */
-    grid-template-columns: minmax(0, 34rem) 12.5rem;
+    /* 40rem, inte 34: mosaikens tvåspaltsrader delar bredden på mitten, och vid
+       34rem blev varje spalt ~250 px — för smalt för en intervjufråga med svar
+       under. Taket ryms utan att röra rännan: 40 + 12.5 rem är fortfarande
+       mindre än de 64 rem space-between fördelar. */
+    grid-template-columns: minmax(0, 40rem) 12.5rem;
     justify-content: space-between;
     gap: 6.5rem;
     /* Ingen align-items:start — TOC-kolumnen sträcks till artikelns höjd så
        den sticky innehållsförteckningen har utrymme att sticka längs hela
        kortet. */
   }
-  .hrd__lead[id],
-  .hrd-sec[id] { scroll-margin-top: 184px; }
+  .hrd-row[id] { scroll-margin-top: 184px; }
 }
 
 .hrd__meta {
@@ -1217,40 +1219,194 @@
   .hrd__lead { font-size: 15px; line-height: 1.62; }
 }
 
-/* Sektionsetikett + block. Accent-streck + full textfärg + generös luft ger
-   tydlig hierarki mot brödtexten (som är sans, secondary och större). */
-.hrd-sec { margin-top: 38px; }
-.hrd-sec__label {
+/* ---- Faktaraden ----------------------------------------------------------
+   Svarar på rekryterarens tre första frågor innan hon scrollat: vad det är,
+   var i produkten, och vad det ska stå som i annonsen. Ligger direkt under
+   ingressen och är därför medvetet låg och tät — den ska läsas i ett svep,
+   inte konkurrera med första blocket. */
+/* Två former, inte en staplad. Tre rutor under varandra på mobil tog 400 px av
+   en 812 px hög skärm och sköt ner första blocket under vikningen — för tre
+   fakta på ett ord vardera. Under 560 px är raden därför en tabellartad lista
+   (etikett vänster, värde höger) i EN ruta; över 560 px tre rutor i bredd. */
+.hrd-facts {
+  margin-top: 20px;
+  background: var(--c-muted);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.hrd-fact {
   display: flex;
-  align-items: center;
-  gap: 9px;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 13px;
+}
+.hrd-fact + .hrd-fact { border-top: 1px solid var(--c-border); }
+.hrd-fact__k {
+  flex: none;
   font-family: var(--font-mono);
   font-weight: 600;
-  font-size: 11px;
-  letter-spacing: 0.14em;
+  font-size: 9px;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--c-text);
-  margin: 0 0 14px;
+  color: var(--c-text-muted);
+  margin: 0;
 }
-.hrd-sec__label::before {
+.hrd-fact__v {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--c-text-secondary);
+  text-align: right;
+  margin: 0;
+}
+@media (min-width: 560px) {
+  .hrd-facts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    background: none;
+    border-radius: 0;
+    overflow: visible;
+  }
+  .hrd-fact {
+    display: block;
+    background: var(--c-muted);
+    border-radius: 10px;
+    padding: 11px 13px;
+  }
+  .hrd-fact + .hrd-fact { border-top: 0; }
+  .hrd-fact__k { margin-bottom: 4px; }
+  .hrd-fact__v { text-align: left; }
+}
+
+/* ---- Mosaiken: rader och block -------------------------------------------
+   Raden bär id:t och ligger i innehållsförteckningen; blocket är rutan. En rad
+   är full bredd som standard och tvåspaltig med --2.
+
+   auto-fit, inte `1fr 1fr`: en rad kan sakna sitt ena block (ett kort utan
+   `fits`), och med en fast tvåspalt hade det kvarvarande blocket lagt sig i
+   vänsterhalvan och lämnat ett hål. */
+.hrd-row { margin-top: 14px; }
+.hrd-row--2 { display: grid; gap: 14px; }
+@media (min-width: 620px) {
+  .hrd-row--2 { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+}
+
+.hrd-block {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: 14px;
+  padding: 16px 17px 17px;
+}
+
+/* Sektionsrubriken. Sans och 15/17 px — INTE mono 11 px som förut: samma form
+   användes då både här och på fältetiketterna (”Bra svar”, ”Junior”), och som
+   sektionsrubrik förlorade den mot den feta sans-texten under sig. Rubriken var
+   alltså mindre än sina egna underrubriker. Etiketterna behåller mono-formen,
+   som fungerar för dem — de namnger nästa rad och konkurrerar inte.
+
+   Riktig h2, inte p: kortet hade tidigare en h1 och sedan ingen rubrik alls,
+   och innehållsförteckningen hoppade till avsnitt som formellt inte fanns. */
+.hrd-block__h {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  color: var(--c-text);
+  margin: 0 0 11px;
+}
+.hrd-block__h::before {
   content: "";
   flex: none;
-  width: 16px;
-  height: 2px;
+  width: 14px;
+  height: 3px;
   border-radius: 2px;
   background: var(--c-accent);
+  /* Streckets optiska mitt mot versalhöjden — baseline-linjeringen lägger det
+     annars på textens baslinje. */
+  transform: translateY(-3px);
+}
+.hrd-block__n {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
 }
 @media (min-width: 768px) {
-  .hrd-sec { margin-top: 44px; }
+  .hrd-block__h { font-size: 17px; }
+  .hrd-block__h::before { width: 18px; transform: translateY(-4px); }
 }
+
+/* Inre rutnät. Blocket äger ramen — posterna inuti är oramade, annars blir det
+   ruta i ruta och ingen av dem betyder något. */
+.hrd-sub { display: grid; gap: 14px 16px; }
+@media (min-width: 620px) {
+  .hrd-sub { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+}
+.hrd-item { min-width: 0; }
+
+/* Frågekorten linjeras optiskt. En fråga är en till tre rader, och utan detta
+   hamnade ”Bra svar” på olika höjd i de två spalterna — ögat läser då de två
+   korten som olika sorters innehåll. Subgrid låter posternas tre delar dela
+   radhöjd med varandra.
+
+   Bara ask-blocket får det: det har alltid exakt två poster, så raden kan
+   aldrig radbrytas och `row-gap: 0` kan därför inte klistra ihop två poster.
+   Utan @supports faller det tillbaka på vanligt blockflöde — samma utseende som
+   före linjeringen, aldrig något trasigt. */
+@supports (grid-template-rows: subgrid) {
+  @media (min-width: 620px) {
+    .hrd-sub--q { row-gap: 0; }
+    .hrd-sub--q .hrd-item {
+      display: grid;
+      grid-template-rows: subgrid;
+      grid-row: span 3;
+    }
+  }
+}
+.hrd-item__t {
+  font-weight: 600;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--c-text);
+  margin: 0 0 5px;
+}
+
+/* Brödtext och fältetikett — de två formerna allt innehåll i ett block byggs
+   av. Etiketten är 9 px mono: mindre än förut, eftersom den nu ligger under en
+   riktig rubrik och inte längre behöver bära sektionsgränsen själv. */
+.hrd-text {
+  font-size: 13px;
+  line-height: 1.62;
+  color: var(--c-text-secondary);
+  margin: 0;
+  text-wrap: pretty;
+}
+.hrd-label {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+  margin: 12px 0 5px;
+}
+.hrd-label--top { margin-top: 0; }
 
 /* Analogi-ruta */
 .hrd-analogy {
   background: var(--hr-soft);
   border-left: 3px solid var(--c-accent);
   border-radius: 12px;
-  padding: 15px 17px;
-  font-size: 13.5px;
+  padding: 14px 16px;
+  font-size: 13px;
   line-height: 1.62;
   color: var(--c-text);
   margin: 0;
@@ -1260,34 +1416,24 @@
 .hrd-list { list-style: none; margin: 0; padding: 0; }
 .hrd-list li {
   position: relative;
-  padding-left: 20px;
-  font-size: 13.5px;
-  line-height: 1.65;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.6;
   color: var(--c-text-secondary);
-  margin: 0 0 11px;
+  margin: 0 0 10px;
 }
 .hrd-list li:last-child { margin-bottom: 0; }
 .hrd-list li::before {
   content: "";
   position: absolute;
   left: 2px;
-  top: 9px;
+  top: 8px;
   width: 5px;
   height: 5px;
   border-radius: 50%;
 }
 .hrd-list--tasks li::before { background: var(--c-accent); }
 .hrd-list--fits li::before { background: var(--c-text-muted); }
-
-/* Blandas ihop med (confuse) */
-.hrd-confuse { display: grid; gap: 10px; }
-.hrd-confuse__item {
-  background: var(--c-muted);
-  border-radius: 11px;
-  padding: 14px 16px;
-}
-.hrd-confuse__a { font-weight: 700; font-size: 14px; color: var(--c-text); margin: 0; }
-.hrd-confuse__b { font-size: 13.5px; line-height: 1.6; color: var(--c-text-secondary); margin: 6px 0 0; }
 
 /* CV-chips */
 .hrd-cv { display: flex; flex-wrap: wrap; gap: 7px; }
@@ -1300,45 +1446,7 @@
   padding: 4px 9px;
 }
 
-/* Frågor att ställa (ask) */
-.hrd-ask + .hrd-ask { margin-top: 20px; }
-.hrd-ask__q { font-weight: 600; font-size: 14.5px; line-height: 1.55; color: var(--c-text); margin: 0; }
-.hrd-ask__label {
-  font-family: var(--font-mono);
-  font-weight: 600;
-  font-size: 9.5px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--c-text-muted);
-  margin: 11px 0 5px;
-}
-.hrd-ask__good { font-size: 13.5px; line-height: 1.6; color: var(--c-text-secondary); margin: 0; }
-
-/* Junior/senior */
-.hrd-levels { display: grid; gap: 10px; }
-@media (min-width: 640px) {
-  .hrd-levels { grid-template-columns: 1fr 1fr; }
-}
-.hrd-level {
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
-  border-radius: 12px;
-  padding: 16px;
-}
-.hrd-level__k {
-  font-family: var(--font-mono);
-  font-size: 9.5px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--c-text-muted);
-  margin: 0 0 7px;
-}
-.hrd-level__v { font-size: 13.5px; line-height: 1.6; color: var(--c-text-secondary); margin: 0; }
-
 /* Taggade FAQ på kortet */
-.hrd-faq__item + .hrd-faq__item { margin-top: 18px; }
-.hrd-faq__q { font-weight: 700; font-size: 14.5px; color: var(--c-text); margin: 0; }
-.hrd-faq__a { font-size: 13.5px; line-height: 1.65; color: var(--c-text-secondary); margin: 6px 0 0; max-width: 68ch; text-wrap: pretty; }
 .hrd-faq__all {
   display: inline-flex;
   align-items: center;
