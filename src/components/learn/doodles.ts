@@ -196,7 +196,7 @@ export const DOODLES: Record<string, string> = {
 
   /* ---- Linux 1.1 · Roten vs hemkatalogen — STIL: HANDRITAD ---- */
   "filsystemstradet": `
-<svg viewBox="0 0 880 418" role="img" aria-label="Ett träd som växer nedåt från roten snedstreck, med grenar till etc, usr och home. Under home är lisa inringad.">
+<svg viewBox="0 0 880 400" role="img" aria-label="Ett träd som växer nedåt från roten snedstreck, med grenar till etc, usr och home. Under home är lisa inringad.">
   <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 <path d="M401 57 Q440 54 479 56 Q482 79 481 103 Q440 102 400 101 Q399 79 401 57 Z"/><path d="M134 158 Q200 156 266 157 Q267 181 266 204 Q200 205 136 204 Q133 181 134 158 Z"/><path d="M374 158 Q440 156 505 158 Q507 181 504 204 Q440 206 375 205 Q373 181 374 158 Z"/><path d="M616 159 Q680 157 746 157 Q746 181 745 204 Q680 204 616 204 Q613 181 616 159 Z"/><path d="M440 104 Q330 108 205 154"/><path d="M440 104 Q441 130 440 154"/><path d="M440 104 Q550 108 675 154"/><path d="M680 206 Q681 224 680 242"/><path d="M614 269 Q680 267 744 269 Q747 291 744 313 Q680 316 615 313 Q615 291 614 269 Z"/><path d="M680 244 Q776 244 779 291 Q776 338 681 338 Q584 338 583 291 Q584 244 680 244 Z" stroke-width="1.5" opacity="0.5"/>
   </g>
@@ -210,10 +210,7 @@ export const DOODLES: Record<string, string> = {
     <text x="680" y="300">lisa</text>
   </g>
   <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
-    <text x="680" y="368">~</text>
-  </g>
-  <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="middle" opacity="0.62">
-    <text x="680" y="394">här hamnar du</text>
+    <text x="680" y="374">~</text>
   </g>
 </svg>`,
 
@@ -376,13 +373,9 @@ export const DOODLES: Record<string, string> = {
 <path d="M351 46 Q440 45 529 44 Q531 90 531 136 Q440 137 350 134 Q349 90 351 46 Z"/><path d="M71 279 Q185 278 301 279 Q301 325 300 371 Q185 371 71 369 Q69 325 71 279 Z"/><path d="M600 342 Q568 342 568 316 Q568 294 592 292 Q596 262 630 260 Q650 234 688 240 Q718 226 744 250 Q784 248 790 278 Q814 286 809 312 Q806 340 776 342 Z"/><path d="M390 140 Q300 190 220 210 Q185 220 185 262"/><path d="M179 257 L185 270 L191 257"/><path d="M490 140 Q574 172 650 184 Q700 194 700 220"/><path d="M694 215 L700 228 L706 215"/><g stroke-dasharray="8 9"><path d="M312 330 Q440 336 556 330"/></g><path d="M319 324 L306 330 L319 336"/><path d="M549 324 L562 330 L549 336"/>
   </g>
   <g font-family="var(--font-mono)" font-size="16" fill="currentColor" text-anchor="middle">
-    <text x="440" y="82">main.tf</text>
-    <text x="185" y="318">terraform.tfstate</text>
-  </g>
-  <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="middle" opacity="0.62">
-    <text x="440" y="108">önskat läge</text>
-    <text x="185" y="344">vad jag gjorde</text>
-    <text x="690" y="312">verkligheten</text>
+    <text x="440" y="96">main.tf</text>
+    <text x="185" y="332">terraform.tfstate</text>
+    <text x="690" y="306">verkligheten</text>
   </g>
   <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle">
     <text x="434" y="304">jämförs</text>
@@ -405,7 +398,7 @@ export const DOODLES: Record<string, string> = {
     <text x="546" y="168">push · valfritt</text>
   </g>
   <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.62">
-    <text x="430" y="466">hela historiken finns redan här</text>
+    <text x="430" y="466">din dator</text>
   </g>
 </svg>`,
 
@@ -427,9 +420,6 @@ export const DOODLES: Record<string, string> = {
     <text x="772" y="101">db=test</text>
     <text x="772" y="216">db=stage</text>
     <text x="772" y="331">db=prod</text>
-  </g>
-  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.62">
-    <text x="155" y="300">samma image</text>
   </g>
   <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="middle" opacity="0.62">
     <text x="772" y="392">ConfigMap per miljö</text>

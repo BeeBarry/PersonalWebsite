@@ -225,7 +225,7 @@ def alla():
     grenar=('<path d="M440 104 Q330 108 205 154"/><path d="M440 104 Q441 130 440 154"/>'
             '<path d="M440 104 Q550 108 675 154"/><path d="M680 206 Q681 224 680 242"/>')
     D['filsystemstradet']=(
-      '<svg viewBox="0 0 880 418" role="img" aria-label="Ett träd som växer nedåt från roten '
+      '<svg viewBox="0 0 880 400" role="img" aria-label="Ett träd som växer nedåt från roten '
       'snedstreck, med grenar till etc, usr och home. Under home är lisa inringad.">\n'
       + G % (f'<path d="{w(400,56,80,46)}"/>'
              + "".join(f'<path d="{w(x,158,130,46)}"/>' for x in (135,375,615))
@@ -233,8 +233,7 @@ def alla():
              + f'<path d="{ell(680,291,98,48)}" stroke-width="1.5" opacity="0.5"/>')
       + "\n" + txt([(440,88,"/")],18.5)
       + "\n" + txt([(200,190,"etc"),(440,190,"usr"),(680,190,"home"),(680,300,"lisa")])
-      + "\n" + txt([(680,368,"~")],18.5)
-      + "\n" + txt([(680,394,"här hamnar du")],14,' opacity="0.62"') + "\n</svg>")
+      + "\n" + txt([(680,374,"~")],18.5) + "\n</svg>")
 
     # 11 — SQL 1.2 · Två rader in, en rad ut
     # Radhöjd 43, inte 35: en 14-punktsetikett behöver fontstorleken plus ett
@@ -357,9 +356,7 @@ def alla():
              + '<path d="M490 140 Q574 172 650 184 Q700 194 700 220"/>'+arrow(700,228,"down")
              + '<g stroke-dasharray="8 9"><path d="M312 330 Q440 336 556 330"/></g>'
              + arrow(306,330,"left")+arrow(562,330))
-      + "\n" + txt([(440,82,"main.tf"),(185,318,"terraform.tfstate")],16)
-      + "\n" + txt([(440,108,"önskat läge"),(185,344,"vad jag gjorde"),(690,312,"verkligheten")],
-                   14,' opacity="0.62"')
+      + "\n" + txt([(440,96,"main.tf"),(185,332,"terraform.tfstate"),(690,306,"verkligheten")],16)
       + "\n" + txt([(434,304,"jämförs")],15) + "\n</svg>")
 
     # 18 — Git 1.1 · Historiken ligger redan lokalt
@@ -381,7 +378,7 @@ def alla():
       + "\n" + txt([(430,92,"GitHub · GitLab · Bitbucket")],13)
       + "\n" + txt([(430,312,".git")])
       + "\n" + txt([(546,168,"push · valfritt")],14,' opacity="0.62"')
-      + "\n" + txt([(430,466,"hela historiken finns redan här")],15,' opacity="0.62"')
+      + "\n" + txt([(430,466,"din dator")],15,' opacity="0.62"')
       + "\n</svg>")
 
     # 19 — Kubernetes 1.3 · En image, tre miljöer
@@ -398,7 +395,6 @@ def alla():
       + "\n" + txt([(155,206,"searchapi:v3")],16)
       + "\n" + txt([(605,101,"test"),(605,216,"stage"),(605,331,"prod")])
       + "\n" + txt([(772,101,"db=test"),(772,216,"db=stage"),(772,331,"db=prod")],13)
-      + "\n" + txt([(155,300,"samma image")],15,' opacity="0.62"')
       + "\n" + txt([(772,392,"ConfigMap per miljö")],14,' opacity="0.62"') + "\n</svg>")
 
     # 20 — Git 1.2 · Grenen pekar på en commit, HEAD på grenen
