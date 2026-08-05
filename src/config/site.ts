@@ -125,11 +125,29 @@ const site = {
                 { name: "ArgoCD", icon: "logos:argo-icon" },
             ],
         },
+        // Embedded och protokollen är två grupper, inte en. Slås de ihop blir
+        // kolumnen dubbelt så lång som de andra, och rubriken måste ljuga om
+        // halva innehållet — en broker är inte hårdvarunära och ett kretskort
+        // är inget protokoll. Två grupper ger dessutom ett 3×2-rutnät med en
+        // ledig plats, alltså faktisk plats för nästa rubrik.
         {
-            title: "Protokoll",
+            title: "Embedded",
             items: [
-                { name: "CoAP", icon: "mdi:access-point" },
+                { name: "nRF Connect SDK", icon: "simple-icons:nordicsemiconductor" },
+                { name: "Zephyr", icon: "mdi:chip" },
+                { name: "Arduino", icon: "logos:arduino" },
+                { name: "Raspberry Pi", icon: "logos:raspberry-pi" },
+            ],
+        },
+        {
+            title: "Protokoll & meddelanden",
+            items: [
                 { name: "MQTT", icon: "mdi:transit-connection-variant" },
+                { name: "CoAP", icon: "mdi:access-point" },
+                { name: "AMQP", icon: "mdi:swap-horizontal" },
+                { name: "RabbitMQ", icon: "logos:rabbitmq-icon" },
+                { name: "Mosquitto", icon: "simple-icons:eclipsemosquitto" },
+                { name: "CBOR", icon: "mdi:code-braces" },
             ],
         },
     ],

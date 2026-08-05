@@ -67,6 +67,13 @@
     /* Layout-rytm */
     --content: 800px;
     --wide: 1120px;
+    /* Breeze-kortets höjd på desktop (lg och uppåt). Bor här, inte bara som en
+       Tailwind-klass i AppLayout, eftersom <main> ÄR scroll-containern på
+       desktop — allt som vill mäta sig mot den synliga ytan (i dag den sticky
+       innehållsförteckningen) måste utgå från det här värdet och inte från
+       100vh. Kortet är dessutom indraget från fönsterkanten, så 100vh är alltid
+       för mycket. Ändras den här måste AppLayout.astro följa med. */
+    --app-shell-h: min(90vh, 54rem);
     --space-section: clamp(2.5rem, 2rem + 3vw, 4.5rem);
     --radius-card: 14px;
     --radius-control: 8px;
@@ -2392,16 +2399,45 @@ html[data-astro-transition-fallback] * {
     .toc__inner {
         position: sticky;
         top: 120px;
-        /* Långa artiklar (Linux-delen har 20 rubriker) blev högre än fönstret
-           och kapades i underkant — de sista avsnitten gick då inte att nå.
-           Panelen scrollar i stället i sig själv; toc.ts håller den aktiva
-           posten synlig. Scrollbaren döljs, som i .toc-jump och .hr-chips. */
-        max-height: calc(100vh - 9.5rem);
+        /* Långa artiklar (Docker-introt har 20 rubriker + fyra sektionsetiketter)
+           blir högre än den synliga ytan. Utan tak kapades de sista posterna av
+           <main>:s overflow och gick inte att nå.
+
+           Taket MÅSTE räknas från --app-shell-h, inte från 100vh: panelen är
+           sticky inuti <main>, och <main> är kortare än fönstret (kortets höjd)
+           OCH indraget från fönsterkanten. Med 100vh blev taket större än den
+           faktiska ytan — då triggade overflow aldrig, och panelen klipptes i
+           stället för att scrolla. Uppmätt vid 800 px fönsterhöjd: 648 px tak
+           mot 598 px verklig yta, två poster utanför.
+
+           --toc-reserve = ytan OVANFÖR panelen + luft i underkant. 9rem =
+           sticky-offsetten (120px) + 24px luft, vilket stämmer för Learn Hub
+           och inlägg där panelen börjar i höjd med sin sticky-position.
+           Kort-vyn (/for-hr/[card]) har en 121px hög sticky topbar ovanför sig
+           och startar därför ~50px längre ner innan man scrollat — den höjer
+           reserven själv i hr.css. */
+        max-height: calc(var(--app-shell-h) - var(--toc-reserve, 9rem));
         overflow-y: auto;
-        scrollbar-width: none;
+        overscroll-behavior: contain;
+        /* Smal men SYNLIG scrollbar. Den döljs inte som i .toc-jump och
+           .hr-chips: där finns en uttoning i kanten som visar att raden
+           fortsätter, här är scrollbaren enda signalen om att förteckningen har
+           fler poster än de synliga. */
+        scrollbar-width: thin;
+        scrollbar-color: var(--c-border) transparent;
     }
     .toc__inner::-webkit-scrollbar {
-        display: none;
+        width: 4px;
+    }
+    .toc__inner::-webkit-scrollbar-thumb {
+        background: var(--c-border);
+        border-radius: 10px;
+    }
+    /* Uttoning i underkanten = ”listan fortsätter”. Klassen sätts av toc.ts och
+       BARA när det finns mer att scrolla till, så sista posten aldrig ligger
+       halvt bortsuddad när man väl är längst ner. */
+    .toc__inner.is-scrollable {
+        mask-image: linear-gradient(to bottom, #000 calc(100% - 30px), transparent);
     }
     .toc__title {
         font-family: var(--font-mono);

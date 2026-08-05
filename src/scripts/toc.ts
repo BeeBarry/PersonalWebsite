@@ -125,24 +125,48 @@ function setActive(id: string) {
   tocLinks().forEach((l) => l.classList.toggle("is-active", l.dataset.tocLink === id));
 }
 
-// Sidopanelen scrollar numera i sig själv när artikeln har fler rubriker än
-// fönstret rymmer (global.css: max-height + overflow på .toc__inner). Utan den
-// här nudgen kunde scroll-spyn markera en post som låg utanför panelens EGEN
-// synliga yta — markeringen fanns, men syntes inte.
+function tocPane() {
+  return document.querySelector<HTMLElement>(".toc__inner");
+}
+
+// Sidopanelen scrollar i sig själv när artikeln har fler rubriker än den
+// synliga ytan rymmer (global.css: max-height + overflow på .toc__inner).
+// Två saker måste hållas i synk med det:
 //
-// Egen scrollTop, inte scrollIntoView: den senare scrollar även föräldrarna,
-// alltså hela sidan, mitt under användarens scroll. No-op när panelen får plats
-// (det vanliga fallet) och när posten redan syns med marginal.
-function keepActiveVisible(link: HTMLAnchorElement | undefined) {
-  const pane = link?.closest<HTMLElement>(".toc__inner");
-  if (!link || !pane || pane.scrollHeight <= pane.clientHeight) return;
-  const edge = 24;
-  const paneBox = pane.getBoundingClientRect();
-  const linkBox = link.getBoundingClientRect();
-  const below = linkBox.bottom - (paneBox.bottom - edge);
-  const above = paneBox.top + edge - linkBox.top;
-  if (below > 0) pane.scrollTop += below;
-  else if (above > 0) pane.scrollTop -= above;
+// 1. Den aktiva posten ska synas i panelens EGEN yta. Utan det kunde scroll-spyn
+//    markera en post som låg utanför — markeringen fanns, men syntes inte.
+//    Egen scrollTop, inte scrollIntoView: den senare scrollar även föräldrarna,
+//    alltså hela sidan, mitt under användarens scroll.
+// 2. Att det finns mer att scrolla till måste SYNAS. Scrollbaren duger inte som
+//    signal: på macOS ritas den som en overlay som bara visas medan man
+//    scrollar, så i vila ser listan bara avhuggen ut. `is-scrollable` styr en
+//    uttoning i underkanten och sätts bara när det faktiskt finns mer kvar —
+//    en permanent uttoning hade dolt sista posten även längst ner.
+//
+// No-op när panelen får plats (det vanliga fallet på korta artiklar).
+function syncTocPane(link?: HTMLAnchorElement) {
+  const pane = tocPane();
+  if (!pane) return;
+
+  const scrollable = pane.scrollHeight > pane.clientHeight;
+  if (scrollable && link) {
+    const edge = 24;
+    const paneBox = pane.getBoundingClientRect();
+    const linkBox = link.getBoundingClientRect();
+    const below = linkBox.bottom - (paneBox.bottom - edge);
+    const above = paneBox.top + edge - linkBox.top;
+    if (below > 0) pane.scrollTop += below;
+    else if (above > 0) pane.scrollTop -= above;
+  }
+
+  const more = pane.scrollHeight - pane.clientHeight - pane.scrollTop > 4;
+  pane.classList.toggle("is-scrollable", scrollable && more);
+}
+
+// Egen scroll i panelen ska uppdatera uttoningen direkt — utan markerings-
+// justering, annars skulle scroll-spyn dra tillbaka det användaren just gjorde.
+function onPaneScroll() {
+  syncTocPane();
 }
 
 // Modul-scope: slår upp elementen vid varje anrop, så samma funktionsreferens
@@ -190,7 +214,7 @@ function tocUpdate() {
   if (pendingId) active = pendingId;
 
   links.forEach((l) => l.classList.toggle("is-active", l.dataset.tocLink === active));
-  keepActiveVisible(links.find((l) => l.dataset.tocLink === active));
+  syncTocPane(links.find((l) => l.dataset.tocLink === active));
 }
 
 function onLinkClick(e: MouseEvent) {
@@ -247,6 +271,7 @@ function bindToc() {
   document
     .querySelector<HTMLElement>("main")
     ?.addEventListener("scroll", tocUpdate, { passive: true });
+  tocPane()?.addEventListener("scroll", onPaneScroll, { passive: true });
 
   if (!windowListenersBound) {
     windowListenersBound = true;

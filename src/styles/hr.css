@@ -1166,6 +1166,12 @@
    som ger sidopanelen sin kolumn. */
 @media (min-width: 1200px) {
   .hrd-doc--toc {
+    /* Kortets sticky topbar är 121px hög, så förteckningen börjar ~50px längre
+       ner än på en Learn Hub-artikel innan man scrollat. Utan den högre
+       reserven blev taket större än den faktiskt synliga ytan i det oscrollade
+       läget, och ett kort med många avsnitt hade kapats i underkant i stället
+       för att scrolla. Se .toc__inner i global.css. */
+    --toc-reserve: 12rem;
     max-width: 64rem;
     display: grid;
     /* Identisk uppställning med Learn Hubs .toc-doc--toc: tak på båda

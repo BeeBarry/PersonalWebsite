@@ -94,23 +94,31 @@ const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
       >
         Inriktningar
       </h2>
-      <div class="grid gap-3 sm:grid-cols-3">
+      {/* INGEN ram, ingen bakgrund, ingen rundning. Kortchromet var identiskt
+          med ”Rekryterar du inom tech?”-kortet ovanför, som ÄR en länk — tre
+          statiska textblock lovade alltså ett klick som inte finns. Utan lådan
+          bär i stället accentlinjen överst strukturen: tre parallella streck
+          läser som tre jämbördiga spår, och ingenting av det ser tryckbart ut.
+          Ikonen och rubriken får bära blicken i stället för ramen. */}
+      <div class="grid gap-x-7 gap-y-8 sm:grid-cols-3">
         {
           domains.map((d) => (
-            <div class="rounded-xl border border-border bg-muted/10 p-4">
+            <div class="border-t-2 border-primary/30 pt-3.5">
               <div class="flex items-center gap-2">
                 {d.icon && (
-                  <Icon name={d.icon} class="h-[18px] w-[18px] shrink-0 text-primary" />
+                  <Icon name={d.icon} class="h-5 w-5 shrink-0 text-primary" />
                 )}
-                <h3 class="text-[13px] font-bold text-foreground">{d.short}</h3>
+                <h3 class="text-[14px] font-extrabold tracking-tight text-foreground">
+                  {d.short}
+                </h3>
               </div>
-              <p class="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">
+              <p class="mt-1.5 text-[12.5px] leading-relaxed text-muted-foreground">
                 {d.description}
               </p>
-              <ul class="mt-3 space-y-1.5 border-t border-border/60 pt-3">
+              <ul class="mt-3.5 space-y-1.5">
                 {d.bullets.map((b) => (
                   <li class="flex gap-2 text-[12px] leading-relaxed text-muted-foreground">
-                    <span class="text-primary/70" aria-hidden="true">
+                    <span class="text-primary" aria-hidden="true">
                       –
                     </span>
                     <span>{b}</span>
@@ -151,7 +159,10 @@ const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
       {/* Grupperna ligger horisontellt bredvid varandra och posterna vertikalt
           inom varje — utnyttjar den bredare spalten och gör grupptillhörigheten
           läsbar i en blick, i stället för fyra wrappande rader under varandra. */}
-      <div class="grid gap-x-6 gap-y-7 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Tre spalter, inte fyra: med fem grupper hade den femte blivit ensam
+          kvar på rad två. 3×2 ger en jämn uppställning OCH en ledig plats där
+          nästa grupp kan gå in utan att layouten behöver röras. */}
+      <div class="grid gap-x-6 gap-y-7 sm:grid-cols-2 lg:grid-cols-3">
         {
           site.stackGroups.map((group) => (
             <div>
@@ -202,33 +213,40 @@ const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
       </div>
     </nav>
 
-    <!-- Kontakt: sidans avslut. Adresserna kommer ur site.social. -->
-    <section class="mt-8 rounded-xl border border-border bg-primary/8 p-5">
+    <!-- Kontakt: sidans avslut. Adresserna kommer ur site.social.
+         Ingen ram — den gröna tonplattan räcker för att skilja blocket från
+         flödet, och ram PÅ tonplatta blev två avgränsningar för samma sak.
+         Skalan är sänkt till samma nivå som ”Rekryterar du inom tech?”-kortet
+         överst (rubrik 14, brödtext 12,5): blocket var sidans största text
+         trots att det ligger sist, och drog blicken förbi allt annat. -->
+    <section class="mt-8 rounded-xl bg-primary/8 p-4">
       <h2
         class="mt-0 mb-0 font-mono text-[10px] tracking-[0.22em] text-muted-foreground/60 uppercase"
       >
         Kontakt
       </h2>
-      <p class="mt-2.5 text-[16px] leading-snug font-bold text-foreground">
+      <p class="mt-2 text-[14px] leading-snug font-bold text-foreground">
         Rekryterar du just nu?
       </p>
-      <p class="mt-2 max-w-[52ch] text-[13px] leading-relaxed text-muted-foreground">
+      <p class="mt-1.5 max-w-[52ch] text-[12.5px] leading-relaxed text-muted-foreground">
         Jag är nyexaminerad fullstack- och cloudutvecklare och söker mitt
         första jobb — junior roll, trainee eller praktik. Hör av dig så
         berättar jag mer.
       </p>
-      <div class="mt-4 flex flex-wrap gap-2.5">
+      {/* 40 px hög träffyta i stället för 44: med den mindre skalan blev 44 px
+          höga knappar oproportionerligt tunga. WCAG 2.2 SC 2.5.8 kräver 24. */}
+      <div class="mt-3.5 flex flex-wrap gap-2">
         <a
           href={linkedin}
           target="_blank"
           rel="noopener noreferrer"
-          class="inline-flex min-h-11 items-center rounded-lg border border-primary bg-primary px-4 text-[13px] font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+          class="inline-flex min-h-10 items-center rounded-lg border border-primary bg-primary px-3.5 text-[12.5px] font-semibold text-primary-foreground transition-opacity hover:opacity-90"
         >
           Kontakta mig på LinkedIn
         </a>
         <a
           href={mail}
-          class="inline-flex min-h-11 items-center rounded-lg border border-border px-4 text-[13px] font-semibold text-foreground transition-colors hover:border-primary"
+          class="inline-flex min-h-10 items-center rounded-lg border border-border px-3.5 text-[12.5px] font-semibold text-foreground transition-colors hover:border-primary"
         >
           Skicka ett mejl
         </a>
