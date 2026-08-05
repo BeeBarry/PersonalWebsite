@@ -144,19 +144,34 @@ function tocPane() {
 //    en permanent uttoning hade dolt sista posten även längst ner.
 //
 // No-op när panelen får plats (det vanliga fallet på korta artiklar).
-function syncTocPane(link?: HTMLAnchorElement) {
+//
+// Posten slås upp INUTI panelen, inte via tocLinks(): varje rubrik har två
+// länkar med samma data-toc-link — en i ”hoppa till”-raden och en i panelen —
+// och raden kommer först i DOM. En find() över alla träffade därför raden, som
+// är display:none över 1200px och alltså har en nollställd rect. Nollan tolkades
+// som ”posten ligger ovanför panelen” och drog scrollTop till 0 vid varje
+// uppdatering, så panelen stod stilla medan artikeln rullade.
+function syncTocPane(activeId?: string | null) {
   const pane = tocPane();
   if (!pane) return;
 
   const scrollable = pane.scrollHeight > pane.clientHeight;
-  if (scrollable && link) {
-    const edge = 24;
-    const paneBox = pane.getBoundingClientRect();
-    const linkBox = link.getBoundingClientRect();
-    const below = linkBox.bottom - (paneBox.bottom - edge);
-    const above = paneBox.top + edge - linkBox.top;
-    if (below > 0) pane.scrollTop += below;
-    else if (above > 0) pane.scrollTop -= above;
+  if (scrollable && activeId) {
+    const link = Array.from(
+      pane.querySelectorAll<HTMLAnchorElement>("[data-toc-link]"),
+    ).find((l) => l.dataset.tocLink === activeId);
+    if (link) {
+      // 44px, inte 24: posten ska inte hamna precis i kanten utan ha nästa
+      // rubrik synlig under sig — man vill se vad som kommer härnäst, inte
+      // bara var man är.
+      const edge = 44;
+      const paneBox = pane.getBoundingClientRect();
+      const linkBox = link.getBoundingClientRect();
+      const below = linkBox.bottom - (paneBox.bottom - edge);
+      const above = paneBox.top + edge - linkBox.top;
+      if (below > 0) pane.scrollTop += below;
+      else if (above > 0) pane.scrollTop -= above;
+    }
   }
 
   const more = pane.scrollHeight - pane.clientHeight - pane.scrollTop > 4;
@@ -214,7 +229,7 @@ function tocUpdate() {
   if (pendingId) active = pendingId;
 
   links.forEach((l) => l.classList.toggle("is-active", l.dataset.tocLink === active));
-  syncTocPane(links.find((l) => l.dataset.tocLink === active));
+  syncTocPane(active);
 }
 
 function onLinkClick(e: MouseEvent) {

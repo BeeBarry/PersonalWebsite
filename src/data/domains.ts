@@ -20,6 +20,16 @@ export interface Domain {
     /**
      * Iconify-namn för kortets ikon (t.ex. "mdi:cloud-outline"). Utelämnas →
      * ingen ikon renderas.
+     *
+     * De tre står bredvid varandra på startsidan och måste därför ha samma
+     * optiska vikt. Det avgörs inte av ikonrutan (den är alltid 20px) utan av
+     * hur mycket av viewBoxen glyfen faktiskt fyller. Den gamla uppsättningen
+     * mätte 16,7 / 13,3 / 11,8 enheter av 24 — den ena läste som en tung ruta,
+     * den andra som ett litet märke, trots identiska rutor.
+     *
+     * Nuvarande: 15,9 / 13,3 / 15,0, alla med bläckcentrum ~10. Byter du en:
+     * mät med svg.getBBox() och håll höjden inom ett par enheter från de
+     * andra, och centrum kring 10 — annars hamnar den i otakt vertikalt.
      */
     icon?: string;
 }
@@ -30,7 +40,7 @@ export const domains: Domain[] = [
         title: "Fullstack & Web",
         short: "Fullstack",
         description: "Fullstack-appar, sajter och utvecklarverktyg.",
-        icon: "mdi:application-brackets-outline",
+        icon: "mdi:layers-outline",
         bullets: [
             "Astro, React och Blazor i frontend",
             "API:er i C#/.NET och Node mot SQL",
@@ -54,7 +64,7 @@ export const domains: Domain[] = [
         title: "IoT & Embedded",
         short: "IoT",
         description: "Hårdvarunära kod, CoAP/LTE-M och enheter ute i fält.",
-        icon: "mdi:access-point",
+        icon: "mdi:developer-board",
         bullets: [
             "CoAP och MQTT över LTE-M",
             "Sensordata från fält till moln",

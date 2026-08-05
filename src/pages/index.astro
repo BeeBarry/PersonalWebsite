@@ -17,36 +17,40 @@ const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
          Profilbild, roll och certifikat hör ihop visuellt — certifikaten är
          ramlösa så de läses som meriter under rollen, inte som chips. -->
     <section class="mb-11">
+      {/* Hero:t är sidans översta hierarkinivå och var tidigare bara ett par
+          punkter större än brödtexten. Bild 64→80, rubrik 24→28, certifikat
+          12→13 — steget till avsnittsrubrikerna (10px mono) och brödtexten
+          (14px) är nu entydigt. */}
       <div class="flex items-start gap-4">
         <div
-          class="h-16 w-16 shrink-0 overflow-hidden rounded-full ring-1 ring-border"
+          class="h-20 w-20 shrink-0 overflow-hidden rounded-full ring-1 ring-border"
         >
           <Image
             src={profilePic}
             alt="Barry Namdari"
-            width={128}
-            height={128}
+            width={160}
+            height={160}
             class="h-full w-full object-cover"
             loading="eager"
           />
         </div>
-        <div class="min-w-0 pt-0.5">
+        <div class="min-w-0 pt-1">
           {/* Rollen är sidans h1 — mb-0 nollar h1:ns basmarginal från @layer base,
               och text-foreground i stället för accent: accentfärg på stor fet
               text blir skrikig och tappar kontrast. */}
           <h1
-            class="mb-0 text-[1.5rem] leading-tight font-extrabold tracking-tight text-foreground"
+            class="mb-0 text-[1.75rem] leading-tight font-extrabold tracking-tight text-foreground"
           >
             {site.hero.role}
           </h1>
           {/* Certifikat: leverantörslogga (Iconify) + officiellt namn.
               Mindre och dämpade så de läses som meriter under rollen. */}
-          <ul class="mt-2 flex flex-wrap gap-x-5 gap-y-1.5">
+          <ul class="mt-2.5 flex flex-wrap gap-x-5 gap-y-1.5">
             {
               site.certs.map((c) => (
                 <li class="inline-flex items-center gap-1.5">
-                  <Icon name={c.icon} class="h-[17px] w-[17px] shrink-0" />
-                  <span class="text-[12px] font-medium text-foreground/80">
+                  <Icon name={c.icon} class="h-[19px] w-[19px] shrink-0" />
+                  <span class="text-[13px] font-medium text-foreground/80">
                     {c.name}
                   </span>
                 </li>
@@ -60,28 +64,33 @@ const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
            Indraget till hero-textens vänsterkant (bildens 4rem + gap 1rem) och
            hållen smal, så den läser som en sidoingång och inte som ett block i
            huvudflödet. -->
-      <div class="mt-6 sm:ml-20">
+      {/* ml-24, inte ml-20: indraget ska landa exakt på hero-textens vänsterkant,
+          alltså bildens bredd (5rem) + gap (1rem). Med den större bilden hade
+          det gamla måttet lämnat kortet 1rem för långt till vänster.
+          Skalan är samtidigt sänkt ett steg — kortet är en sidoingång och ska
+          ligga UNDER hero:t i hierarkin, inte konkurrera med det. */}
+      <div class="mt-5 sm:ml-24">
         <a
           href="/for-hr/"
-          class="group flex items-center gap-3 rounded-xl border border-border bg-muted/10 p-3.5 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-muted/20 sm:w-[23rem] lg:p-4"
+          class="group flex items-center gap-2.5 rounded-xl border border-border bg-muted/10 p-3 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-muted/20 sm:w-[21rem]"
         >
           <span
-            class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/12 text-primary"
+            class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary/12 text-primary"
           >
-            <Icon name="mdi:account-group-outline" class="h-[18px] w-[18px]" />
+            <Icon name="mdi:account-group-outline" class="h-4 w-4" />
           </span>
           <span class="min-w-0 flex-1">
-            <span class="block text-[13px] font-bold text-foreground"
+            <span class="block text-[12.5px] font-bold text-foreground"
               >Rekryterar du inom tech?</span
             >
-            <span class="mt-0.5 block text-[12px] leading-relaxed text-muted-foreground"
+            <span class="mt-0.5 block text-[11.5px] leading-relaxed text-muted-foreground"
               >Teknik-guiden är skriven för HR — ingen förkunskap krävs.</span
             >
           </span>
           <span
             class="shrink-0 text-primary transition-transform group-hover:translate-x-0.5"
           >
-            <Icon name="mdi:arrow-right" />
+            <Icon name="mdi:arrow-right" class="h-4 w-4" />
           </span>
         </a>
       </div>
@@ -104,20 +113,31 @@ const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
         {
           domains.map((d) => (
             <div class="border-t-2 border-primary/30 pt-3.5">
+              {/* Ikonrutan är 20px för alla tre och centreras mot rubriken.
+                  translate-y kompenserar att mdi-glyferna sitter systematiskt
+                  ~2 av 24 enheter högt i sin viewBox — utan den läser ikonen
+                  som lyft en aning över texten den hör till. */}
               <div class="flex items-center gap-2">
                 {d.icon && (
-                  <Icon name={d.icon} class="h-5 w-5 shrink-0 text-primary" />
+                  <Icon
+                    name={d.icon}
+                    class="h-5 w-5 shrink-0 translate-y-[1.5px] text-primary"
+                  />
                 )}
-                <h3 class="text-[14px] font-extrabold tracking-tight text-foreground">
+                <h3 class="text-[15px] leading-tight font-extrabold tracking-tight text-foreground">
                   {d.short}
                 </h3>
               </div>
-              <p class="mt-1.5 text-[12.5px] leading-relaxed text-muted-foreground">
+              {/* Tre tydliga nivåer: rubrik 15 fet, beskrivning 13 i ljusare
+                  text, punkter 11,5 dämpade. Förut låg beskrivning och punkter
+                  på 12,5 respektive 12 i samma färg — en halv punkt isär, vilket
+                  läses som ett enda textblock utan inbördes ordning. */}
+              <p class="mt-2 text-[13px] leading-relaxed text-foreground/70">
                 {d.description}
               </p>
               <ul class="mt-3.5 space-y-1.5">
                 {d.bullets.map((b) => (
-                  <li class="flex gap-2 text-[12px] leading-relaxed text-muted-foreground">
+                  <li class="flex gap-2 text-[11.5px] leading-relaxed text-muted-foreground">
                     <span class="text-primary" aria-hidden="true">
                       –
                     </span>
