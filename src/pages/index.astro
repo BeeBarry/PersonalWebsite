@@ -93,8 +93,21 @@ const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
 
     <!-- Inriktningar: det unika, lyft högt -->
     <section class="mb-11">
+      {/* SEKTIONSRUBRIKEN — 12px/85%. Måttet delas av alla fyra sektionerna på
+          sidan (Inriktningar, Om, Verktyg & tekniker, Kontakt) och får inte
+          ändras på en av dem i taget.
+
+          Den låg tidigare på 10px/50% medan gruppetiketterna inne i ”Verktyg &
+          tekniker” låg på 9,5px/70%: sektionsrubriken var alltså en halv pixel
+          större men LJUSSVAGARE än sina egna underrubriker, och lästes därför
+          som ett syskon till dem i stället för som en nivå över.
+
+          Steget togs uppåt, inte nedåt. Att dämpa gruppetiketten till 55% hade
+          gett samma skillnad men tagit den till 3,48:1 mot panelen — under WCAG
+          AA för 9,5 px text. 85% ger sektionsrubriken 6,57:1 mot gruppens
+          4,88:1, och båda klarar AA. */}
       <h2
-        class="mb-4 font-mono text-[10px] tracking-[0.22em] text-muted-foreground/50 uppercase"
+        class="mb-4 font-mono text-[12px] tracking-[0.2em] text-muted-foreground/85 uppercase"
       >
         Inriktningar
       </h2>
@@ -149,7 +162,7 @@ const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
     <!-- Om -->
     <section class="mb-11">
       <h2
-        class="mb-3 font-mono text-[10px] tracking-[0.22em] text-muted-foreground/50 uppercase"
+        class="mb-4 font-mono text-[12px] tracking-[0.2em] text-muted-foreground/85 uppercase"
       >
         Om
       </h2>
@@ -167,27 +180,43 @@ const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
     <!-- Verktyg & tekniker: grupperade. Rena färgade loggor, ingen container/hover -->
     <section class="mb-11">
       <h2
-        class="mb-5 font-mono text-[10px] tracking-[0.22em] text-muted-foreground/50 uppercase"
+        class="mb-4 font-mono text-[12px] tracking-[0.2em] text-muted-foreground/85 uppercase"
       >
         Verktyg &amp; tekniker
       </h2>
       {/* Grupperna ligger horisontellt bredvid varandra och posterna vertikalt
           inom varje — utnyttjar den bredare spalten och gör grupptillhörigheten
           läsbar i en blick, i stället för fyra wrappande rader under varandra. */}
-      {/* Tre spalter, inte fyra: med fem grupper hade den femte blivit ensam
-          kvar på rad två. 3×2 ger en jämn uppställning OCH en ledig plats där
-          nästa grupp kan gå in utan att layouten behöver röras. */}
-      <div class="grid gap-x-6 gap-y-7 sm:grid-cols-2 lg:grid-cols-3">
+      {/* SPALTFLÖDE, inte grid. Grupperna är olika långa (5, 5, 8, 4, 6 poster),
+          och i ett grid får varje RAD höjden av sin längsta cell: rad ett
+          sträcktes till åtta poster för Cloud & DevOps skull, så Språk och
+          Frameworks lämnade 92 px tomt var innan rad två började. Uppmätt total
+          död yta: 246 px. Det var det som läste som osymmetriskt.
+
+          Ett flerspaltsflöde har inga rader att linjera, så nästa grupp börjar
+          direkt under den föregående i samma spalt och webbläsaren balanserar
+          spalthöjderna. Motsatt slutsats mot ordlistan i hr.css — där gällde
+          måttet RADER som måste linjera mellan spalterna, här är varje grupp ett
+          eget block där bara posterna inom gruppen behöver linjera.
+
+          break-inside: avoid håller en grupp samlad; utan den kunde en rubrik
+          hamna sist i en spalt och sina poster först i nästa. */}
+      <div class="columns-1 gap-x-6 sm:columns-2 lg:columns-3">
         {
           site.stackGroups.map((group) => (
-            <div>
+            <div class="mb-7 break-inside-avoid last:mb-0">
               {/* Gruppnamnet är en ETIKETT, inte innehåll — det körs därför i
                   sajtens etikettidiom (mono, versaler, dämpad), samma som
                   ”Verktyg & tekniker” en nivå upp. Förut låg det på
                   foreground/75 halvfet och posterna på muted: knappt någon
                   skillnad, så rubrik och innehåll flöt ihop till ett block.
                   Nu skiljer de sig på fyra sätt samtidigt — familj, storlek,
-                  versalgemen och ljushet. */}
+                  versalgemen och ljushet.
+
+                  70% är ett GOLV, inte en smaksak: 9,5 px mono på panelens
+                  bakgrund ger 4,88:1 här, och 55% hade tagit det till 3,48:1 —
+                  under WCAG AA. Hierarkin mot sektionsrubriken löses därför
+                  uppåt (h2 till 85%), inte genom att dämpa den här. */}
               <h3 class="mb-3 font-mono text-[9.5px] tracking-[0.14em] text-muted-foreground/70 uppercase">
                 {group.title}
               </h3>
@@ -221,7 +250,7 @@ const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
          trots att det ligger sist, och drog blicken förbi allt annat. -->
     <section class="mt-8 rounded-xl bg-primary/8 p-4">
       <h2
-        class="mt-0 mb-0 font-mono text-[10px] tracking-[0.22em] text-muted-foreground/60 uppercase"
+        class="mt-0 mb-0 font-mono text-[12px] tracking-[0.2em] text-muted-foreground/85 uppercase"
       >
         Kontakt
       </h2>
