@@ -848,16 +848,26 @@
   .hr-acc__body { padding: 0 18px 18px; }
 }
 
-/* ---- Annonsen (annons-översättaren) --------------------------------------- */
-/* EN spalt. Citatet i mono med citattecken, betydelsen i brödtext direkt under.
-   Den typografiska kontrasten bär relationen "det här betyder det här" — samma
-   grepp som en ordlista använder mellan term och definition.
-
-   Tidigare stod de sida vid sida i ett grid som fyra regler måste hålla synkat
-   (kolumnrubriker, radhuvud, utfälld kropp, pil i rännan) och som lämnade en
-   tom vänsterhalva så fort en rad fälldes ut. Ingen av dem behövs nu. */
+/* ---- Annonsen (snabb avkodning) -------------------------------------------- */
+/* Varje rad bär en tydlig läsordning: formuleringen → hur den kan uppfattas →
+   när ett förtydligande hjälper. Siffran gör listan skannbar, medan den öppna
+   raden delar kandidatens fråga från rekryterarens beslutspunkt. */
 [data-hr-translate] { max-width: var(--hr-w-read); }
 
+.hr-tr__number {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--c-muted);
+  color: var(--c-text-muted);
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
 .hr-tr__said { flex: 1; min-width: 0; }
 .hr-tr__say {
   display: block;
@@ -868,6 +878,16 @@
   color: var(--c-text);
   text-wrap: pretty;
 }
+.hr-tr__label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--c-text-muted);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
 .hr-tr__means {
   display: block;
   font-size: 12.5px;
@@ -877,10 +897,14 @@
   text-wrap: pretty;
 }
 
-/* De två råden har samma uppbyggnad — bara etiketten och vänsterkanten skiljer
-   dem åt. Accentstrecket säger "gör så här", det streckade "se upp". */
+/* Två frågor i radens öppna svar — på desktop i varsin kolumn, på mobil i
+   läsordning. Båda är vägledning, så varningsfärger och värdeomdömen undviks. */
+.hr-tr__decode {
+  display: grid;
+  gap: 14px;
+  padding-top: 2px;
+}
 .hr-tr__block { padding-left: 13px; border-left: 2px solid var(--c-accent); }
-.hr-tr__block + .hr-tr__block { margin-top: 14px; }
 .hr-tr__block--watch {
   border-left-style: dashed;
   border-left-color: var(--c-border);
@@ -927,6 +951,10 @@
   .hr-tr__say { font-size: 14px; }
   .hr-tr__means { font-size: 13px; }
   .hr-tr__blocktext { font-size: 13px; }
+  .hr-tr__decode {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+  }
 }
 
 /* ---- FAQ ------------------------------------------------------------------ */
