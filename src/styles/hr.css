@@ -29,8 +29,10 @@
        grid  Ordlistan          korta uppslag i två–tre spalter. Måttet gäller
                                 BLOCKET, inte kortet — bredare block betyder
                                 fler kort per rad, inte bredare kort.
-       read  Annonsen, Frågor   en spalt som läses uppifrån och ner. Här är
+       read  Frågor             en spalt som läses uppifrån och ner. Här är
                                 måttet raden, och den ska hålla sig kort.
+       grid  Annonsen           områden och utfällda svar behöver rymmas utan
+                                att lämna ett tomt fält till höger.
 
      Ändra här, inte på enskilda selektorer, så förhållandet dem emellan
      hålls ihop. */
@@ -852,21 +854,55 @@
 /* Varje rad bär en tydlig läsordning: formuleringen → hur den kan uppfattas →
    när ett förtydligande hjälper. Siffran gör listan skannbar, medan den öppna
    raden delar kandidatens fråga från rekryterarens beslutspunkt. */
-[data-hr-translate] { max-width: var(--hr-w-read); }
+[data-hr-translate] { max-width: var(--hr-w-grid); }
 
-.hr-tr__number {
-  flex: none;
-  display: inline-grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: var(--c-muted);
+/* Filtervalen är en fast läsyta: till skillnad från det generella chipmönstret
+   ska de aldrig börja sidscrolla på smala skärmar. En extra rad är tydligare
+   än ett delvis dolt val, och håller filtret stilla när pekaren rör sig över
+   det. */
+.hr-tr__chips,
+.hr-faq__chips {
+  flex-wrap: wrap;
+  row-gap: 8px;
+  overflow: visible;
+  mask-image: none;
+}
+.hr-tr__groups { margin-top: 28px; }
+.hr-tr__group + .hr-tr__group { margin-top: 38px; }
+.hr-tr__grouptitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 12px;
   color: var(--c-text-muted);
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.hr-tr__grouptitle::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--c-border);
+}
+.hr-tr__groupcount {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 5px;
+  background: var(--c-muted);
+  font-size: 9.5px;
   letter-spacing: 0.04em;
+}
+.hr-tr__groupsub {
+  margin: -2px 0 15px;
+  color: var(--c-text-muted);
+  font-size: 11.5px;
+  line-height: 1.45;
 }
 .hr-tr__said { flex: 1; min-width: 0; }
 .hr-tr__say {
@@ -880,7 +916,7 @@
 }
 .hr-tr__label {
   display: block;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
   color: var(--c-text-muted);
   font-family: var(--font-mono);
   font-size: 9px;
@@ -893,7 +929,7 @@
   font-size: 12.5px;
   line-height: 1.5;
   color: var(--c-text-secondary);
-  margin-top: 5px;
+  margin-top: 8px;
   text-wrap: pretty;
 }
 
@@ -901,8 +937,8 @@
    läsordning. Båda är vägledning, så varningsfärger och värdeomdömen undviks. */
 .hr-tr__decode {
   display: grid;
-  gap: 14px;
-  padding-top: 2px;
+  gap: 20px;
+  padding-top: 8px;
 }
 .hr-tr__block { padding-left: 13px; border-left: 2px solid var(--c-accent); }
 .hr-tr__block--watch {
@@ -919,7 +955,7 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--c-text-muted);
-  margin: 0 0 5px;
+  margin: 0 0 7px;
 }
 .hr-tr__blocklabel svg { flex: none; }
 .hr-tr__blocktext {
@@ -936,7 +972,7 @@
   align-items: center;
   gap: 6px;
   min-height: 40px;
-  margin-top: 6px;
+  margin-top: 12px;
   font-weight: 600;
   font-size: 12.5px;
   color: var(--c-text);
@@ -948,12 +984,20 @@
 .hr-tr__cardlink:hover svg { transform: translateX(2px); }
 
 @media (min-width: 768px) {
+  .hr-tr__group + .hr-tr__group { margin-top: 44px; }
+  .hr-tr__groupsub { font-size: 12px; }
   .hr-tr__say { font-size: 14px; }
   .hr-tr__means { font-size: 13px; }
   .hr-tr__blocktext { font-size: 13px; }
   .hr-tr__decode {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 18px;
+    gap: 0;
+    padding-top: 8px;
+  }
+  .hr-tr__block { padding: 0 22px 0 14px; }
+  .hr-tr__block--watch {
+    padding: 0 0 0 22px;
+    border-left: 1px solid var(--c-border);
   }
 }
 
@@ -963,8 +1007,9 @@
    samtidigt sträckan mellan frågan och dess +/− kort. */
 [data-hr-faq] { max-width: var(--hr-w-read); }
 
+.hr-faq { margin-top: 28px; }
 .hr-faq__group + .hr-faq__group { margin-top: 28px; }
-/* Grupprubriken bär kategorin EN gång i stället för elva. Linjen ut till
+/* Grupprubriken bär kategorin EN gång i stället för på varje fråga. Linjen ut till
    kanten binder ihop rubrik och lista utan att kosta en egen ram. */
 .hr-faq__grouptitle {
   display: flex;
@@ -1138,12 +1183,12 @@
 }
 
 /* Rutnät. Grid, inte CSS-columns: ett flerspaltsflöde ger rader som aldrig kan
-   linjera med varandra — varje definition är olika lång, så de sexton
-   underlinjerna hamnade på sexton olika höjder. Griddets rader sträcks i
+   linjera med varandra — varje definition är olika lång, så underlinjerna
+   hamnade på olika höjder. Griddets rader sträcks i
    stället till lika höjd, och listan får en rak kant hela vägen ner.
    Bokstavsavdelarna (hrGuide.ts sätter in dem som syskon till korten) döljs
    här: de kan inte spänna över spalterna utan att bryta rutnätet, och med
-   sexton termer, sökfält och filter tillför de inget. Under 760 px, där listan
+   en kort ordlista, sökfält och filter tillför de inget. Under 760 px, där listan
    är en enda spalt, syns de som förut. */
 @media (min-width: 760px) {
   .hr-gloss__list {
