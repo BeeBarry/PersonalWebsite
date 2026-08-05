@@ -139,6 +139,8 @@ Det får två följder. Byter du namn på Deploymenten händer ingenting med tra
 i en label — `app: api` mot `app: API` — hittar Servicen inga poddar alls, och det syns inte som ett
 fel någonstans. Trafiken tar bara slut.
 
+<Doodle name="selectorn-matchar-lappen" caption="Två pilar heldragna, en streckad. Skillnaden syns bara i lappen längst till höger." />
+
 ## `port` vs `targetPort`
 
 Två portnummer i samma block, och de betyder olika saker.
@@ -214,6 +216,8 @@ listar din regel, och ingenting händer — `ADDRESS`-kolumnen förblir tom. Kon
 ditt kluster har.
 
 Fältet `ingressClassName` är kopplingen dem emellan. Stavar du fel där ignoreras hela objektet, tyst.
+
+<Doodle name="ingress-utan-controller" caption="Platsen i mitten är tom. Båda pilarna är streckade — ingenting rör sig." />
 
 ## Reglerna
 

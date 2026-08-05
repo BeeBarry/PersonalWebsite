@@ -188,6 +188,8 @@ till `terraform apply`; annars skapar `apply` en ny plan vid körningen.
 Det uppstår när någon ändrar direkt i konsolen på en miljö Terraform hanterar. Beskrivningen säger
 en sak, molnet en annan, och nästa körning kommer att göra något åt saken.
 
+<Doodle name="driften-ar-avstandet" caption="Lådorna ligger inte i samma höjd. Avståndet mellan dem är det som heter drift." />
+
 <Callout type="fallgrop">
 Johan går in i konsolen och höjer serverns minne "bara snabbt, det är akut". Nästa gång pipelinen
 kör `terraform plan` ser Terraform att verkligheten avviker från beskrivningen. Planen visar sedan

@@ -68,9 +68,12 @@ def rader(x,y,W,H,n,delare=()):
 def markerad(x,y,W,H,step=26):
     """Skraffering över en rad — volym och markering, aldrig fyllning."""
     return f'<g stroke-width="1.1" opacity="0.42">{hatch(x,y,W,H,step)}</g>'
-T='  <g font-family="var(--font-mono)" font-size="%s" fill="currentColor" text-anchor="middle"%s>\n%s\n  </g>'
-def txt(items,size=16.5,extra=""):
-    return T % (size, extra, "\n".join(f'    <text x="{x}" y="{y}">{s}</text>' for x,y,s in items))
+# text-anchor är en PARAMETER, inte något man skickar via extra: två likadana
+# attribut i samma tagg är ogiltigt och parsern behåller det första.
+T='  <g font-family="var(--font-mono)" font-size="%s" fill="currentColor" text-anchor="%s"%s>\n%s\n  </g>'
+def txt(items,size=16.5,extra="",anchor="middle"):
+    return T % (size, anchor, extra,
+                "\n".join(f'    <text x="{x}" y="{y}">{s}</text>' for x,y,s in items))
 G='  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">\n%s\n  </g>'
 
 def alla():
@@ -414,6 +417,297 @@ def alla():
       + "\n" + txt([(596,180,"main")],15)
       + "\n" + txt([(782,106,"HEAD")],14)
       + "\n" + txt([(360,340,"historiken")],15,' opacity="0.62"') + "\n</svg>")
+    # 21 — Docker 1.1 · Punkten ritar ramen
+    # Bilden bär ETT argument: punkten i kommandot ritar en gräns, och gränsen
+    # avgör vad COPY når. `.dockerignore` hör till nästa sektion och är medvetet
+    # utelämnad — tre argument i samma bild var det som gjorde skissen otydlig.
+    ram=('<path d="M120 140 Q390 137 660 140 Q662 205 660 270 Q390 273 120 270 '
+         'Q118 205 120 140 Z" stroke-dasharray="9 10" stroke-width="1.5" opacity="0.55"/>')
+    kryss='<path d="M500 278 L520 298"/><path d="M520 278 L500 298"/>'
+    D['byggkontexten-ramen']=(
+      '<svg viewBox="0 0 880 450" role="img" aria-label="Punkten sist i docker build är inringad och '
+      'en pil går från den till en streckad ram runt projektmappen. Allt inuti ramen skickas till '
+      'Docker. En fil under ramen når inte in.">\n'
+      + G % (f'<path d="{ell(428,51,20,26)}" stroke-width="1.5" opacity="0.6"/>'
+             + '<path d="M428 82 Q422 106 340 114 Q314 118 302 120"/>'+arrow(300,128,"down")
+             + ram
+             + f'<path d="{w(180,170,150,70)}"/><path d="{w(380,170,210,70)}"/>'
+             + '<path d="M664 205 Q690 204 712 205"/>'+arrow(718,205)
+             + f'<path d="{w(730,165,120,80)}"/>'
+             + f'<path d="{w(400,350,220,70)}"/>'
+             + '<path d="M510 344 Q508 322 510 302" stroke-dasharray="7 8"/>' + kryss)
+      + "\n" + txt([(380,58,"docker build -t app:1.0")],17,anchor="end")
+      + "\n" + txt([(428,58,".")],17)
+      + "\n" + txt([(255,212,"app/"),(485,212,"package.json"),(790,212,"Docker"),
+                    (510,392,"../nycklar")],15)
+      + "\n" + txt([(250,306,"byggkontexten")],15,' opacity="0.62"') + "\n</svg>")
+
+    # 22 — Docker 1.2 · Samma ord, tre olika maskiner
+    def sjalvpil(cx, top):
+        return (f'<path d="M{cx+62} {top-4} Q{cx+66} {top-48} {cx+20} {top-50} '
+                f'Q{cx-26} {top-50} {cx-22} {top-12}"/>' + arrow(cx-22, top-4, "down", 11))
+    D['localhost-tre-maskiner']=(
+      '<svg viewBox="0 0 880 330" role="img" aria-label="Tre lådor märkta din dator, api och db. '
+      'Varje låda har en pil som vänder tillbaka in i sig själv, och alla tre bär etiketten '
+      'localhost.">\n'
+      + G % ("".join(f'<path d="{w(x,170,200,90)}"/>' for x in (60,340,620))
+             + "".join(sjalvpil(x+100,170) for x in (60,340,620)))
+      + "\n" + txt([(160,223,"din dator"),(440,223,"api"),(720,223,"db")])
+      + "\n" + txt([(160,300,"localhost"),(440,300,"localhost"),(720,300,"localhost")],15,
+                   ' opacity="0.62"') + "\n</svg>")
+
+    # 23 — Kubernetes 1.2 · Selectorn matchar lappen, inte Deploymenten
+    # Servicens lapp har SAMMA form som poddarnas — det är formlikheten som gör
+    # att man ser att den letar efter en likadan, inte efter ett objekt.
+    lapp=lambda x,y: f'<path d="{w(x,y,140,44)}"/>'
+    D['selectorn-matchar-lappen']=(
+      '<svg viewBox="0 0 880 470" role="img" aria-label="En Service håller upp en lapp med app kolon '
+      'api. Två poddar bär samma lapp och nås av heldragna pilar. Den tredje bär app kolon versalt '
+      'API och pilen dit är streckad och överkryssad.">\n'
+      + G % (f'<path d="{w(330,50,220,80)}"/>'
+             + '<path d="M440 132 Q441 145 440 156"/>' + lapp(370,158)
+             + '<path d="M410 206 Q290 226 172 288"/>'+arrow(170,296,"down")
+             + '<path d="M440 206 Q441 250 440 288"/>'+arrow(440,296,"down")
+             + '<path d="M470 206 Q590 226 706 262" stroke-dasharray="8 9"/>'
+             + '<path d="M707 265 L725 283"/><path d="M725 265 L707 283"/>'
+             + "".join(f'<path d="{w(x,300,180,80)}"/>' for x in (70,350,630))
+             + lapp(90,400) + lapp(370,400) + lapp(650,400))
+      + "\n" + txt([(440,97,"Service · api")])
+      + "\n" + txt([(160,347,"pod"),(440,347,"pod"),(720,347,"pod")])
+      + "\n" + txt([(440,186,"app: api"),(160,428,"app: api"),(440,428,"app: api"),
+                    (720,428,"app: API")],14) + "\n</svg>")
+
+    # 24 — Kubernetes 1.2 · Ingress-objektet utan controller
+    # Den tomma streckade platsen är hubbens etablerade sätt att rita frånvaro —
+    # samma grepp som Gäst-OS-lagret i vm-vs-container. Inget kryss behövs.
+    D['ingress-utan-controller']=(
+      '<svg viewBox="0 0 880 340" role="img" aria-label="Ingress-objektet till vänster, en tom '
+      'streckad plats i mitten märkt finns inte, och tjänsten till höger. Båda pilarna är '
+      'streckade.">\n'
+      + G % (f'<path d="{w(80,150,220,110)}"/>'
+             + f'<path d="{w(360,150,220,110)}" stroke-dasharray="8 9" opacity="0.38"/>'
+             + f'<path d="{w(640,150,180,110)}"/>'
+             + '<path d="M304 205 Q328 204 350 205" stroke-dasharray="7 8"/>'+arrow(356,205)
+             + '<path d="M584 205 Q606 204 628 205" stroke-dasharray="7 8"/>'+arrow(634,205))
+      + "\n" + txt([(190,211,"reglerna"),(730,211,"api")])
+      + "\n" + txt([(470,211,"finns inte")],15,' opacity="0.4"')
+      + "\n" + txt([(190,300,"Ingress-objektet"),(470,300,"Ingress-controllern"),
+                    (730,300,"tjänsten")],15,' opacity="0.62"') + "\n</svg>")
+
+    # 25 — Kubernetes 1.3 · Variabeln står kvar, filen byts ut
+    def panel_cfg(x, varde):
+        return (f'<path d="{w(x,120,300,160)}"/>'
+                f'<path d="M{x+15} 207 Q{x+150} 205 {x+285} 207" opacity="0.4"/>')
+    D['variabeln-star-kvar']=(
+      '<svg viewBox="0 0 880 360" role="img" aria-label="Samma container två gånger. Vid start har '
+      'både miljövariabeln och den monterade filen värdet info. Efter en ändring i ConfigMap har '
+      'bara filen bytt till debug.">\n'
+      + G % (panel_cfg(80,"info") + panel_cfg(500,"debug")
+             # Glesare och blekare än standardskrafferingen: här ska den peka ut
+             # raden, inte konkurrera med värdet som står i den.
+             + '<g stroke-width="1.1" opacity="0.26">%s</g>' % hatch(512,214,276,56,46)
+             + '<path d="M386 200 Q440 199 484 200"/>'+arrow(490,200))
+      + "\n" + txt([(265,180,"LOG_LEVEL=info"),(265,235,"/cfg/log=info"),
+                    (685,180,"LOG_LEVEL=info"),(685,235,"/cfg/log=debug")],15)
+      + "\n" + txt([(135,180,"env"),(135,235,"fil"),(555,180,"env"),(555,235,"fil")],13,
+                   ' opacity="0.62"')
+      + "\n" + txt([(440,92,"ConfigMap ändras")],14,' opacity="0.62"')
+      + "\n" + txt([(230,330,"vid start"),(650,330,"efteråt")],15,' opacity="0.62"')
+      + "\n</svg>")
+
+    # 26 — Terraform 1.1 · Drift är höjdskillnaden
+    # Avvikelsen ritas som ett AVSTÅND, inte som en pil mellan två lådor. Det
+    # skiljer bilden från state-triangeln i nästa del, som har samma två objekt.
+    matt=('<path d="M334 125 L752 125" stroke-dasharray="6 8" opacity="0.4"/>'
+          '<path d="M646 285 L752 285" stroke-dasharray="6 8" opacity="0.4"/>'
+          '<path d="M760 131 Q761 205 760 279"/>')
+    konsol=(f'<path d="{w(70,240,220,90)}"/><path d="M76 268 Q180 266 284 268"/>'
+            '<path d="M150 300 L150 322 L156 316 L161 326 L166 324 L161 314 L169 313 Z"/>')
+    D['driften-ar-avstandet']=(
+      '<svg viewBox="0 0 880 400" role="img" aria-label="main.tf säger size lika med 2 och '
+      'verkligheten säger size lika med 8. Lådorna ligger på olika höjd och avståndet mellan dem är '
+      'märkt drift. En konsol med muspekare pekar in i verkligheten.">\n'
+      + G % (f'<path d="{w(70,80,260,90)}"/>' + konsol
+             + f'<path d="{w(380,240,260,90)}"/>'
+             + '<path d="M294 285 Q330 284 368 285"/>'+arrow(374,285)
+             + matt + arrow(760,123,"up") + arrow(760,287,"down"))
+      + "\n" + txt([(200,132,"size = 2"),(510,292,"size = 8")],16)
+      + "\n" + txt([(812,212,"drift")],15)
+      + "\n" + txt([(200,206,"main.tf")],15,' opacity="0.62"')
+      + "\n" + txt([(180,364,"konsolen"),(510,364,"verkligheten")],15,' opacity="0.62"')
+      + "\n</svg>")
+
+    # 27 — Terraform 1.2 · Tre namn i samma block
+    # Kodraden är styckad i separata text-element med känt ankare, så att
+    # understrykningarna sitter under rätt token oavsett monofontens bredd.
+    D['tre-namn-i-blocket']=(
+      '<svg viewBox="0 0 880 340" role="img" aria-label="Ett resource-block där typen, resursnamnet '
+      'och argumentet name är understrukna. Tre pilar leder ner till tre lådor märkta name, typen '
+      'och resursnamnet, med ägaren under varje.">\n'
+      + G % ('<path d="M198 84 Q311 82 424 84"/><path d="M438 84 Q455 82 472 84"/>'
+             + '<path d="M128 132 Q229 130 330 132"/>'
+             + '<path d="M230 138 Q206 170 187 196"/>'+arrow(185,204,"down")
+             + '<path d="M400 90 Q422 140 432 194"/>'+arrow(435,204,"down")
+             + '<path d="M455 90 Q580 130 695 194"/>'+arrow(700,204,"down")
+             + f'<path d="{w(90,210,190,60)}"/><path d="{w(340,210,190,60)}"/>'
+             + f'<path d="{w(590,210,220,60)}"/>')
+      + "\n" + txt([(186,70,"resource")],16,anchor="end")
+      + "\n" + txt([(196,70,'"azurerm_resource_group"'),(436,70,'"rg"'),(484,70,"{"),
+                    (128,118,'name = "rg-shop-prod"')],16,anchor="start")
+      + "\n" + txt([(185,248,"name"),(435,248,"typen"),(700,248,"resursnamnet")])
+      + "\n" + txt([(185,306,"Azure"),(435,306,"providern"),(700,306,"din fil")],15,
+                   ' opacity="0.62"') + "\n</svg>")
+
+    # 28 — Linux 1.1 · Prompten, del för del
+    # Tokens sätts som separata text-element med 14 px luft emellan. Skrivs de
+    # som en sträng hamnar understrykningarna under `~` och `$` 3 px isär och
+    # läser som ett enda streck.
+    D['prompten-rad-for-rad']=(
+      '<svg viewBox="0 0 880 300" role="img" aria-label="Prompten lisa snabel-a shop-prod-01 kolon '
+      'tilde dollar. Tre delar är understrukna med var sin pil ner till en låda. Sista tecknet har '
+      'en anteckning bredvid sig.">\n'
+      + G % ('<path d="M252 112 Q282 110 311 112"/><path d="M358 112 Q450 110 542 112"/>'
+             + '<path d="M588 112 Q595 110 601 112"/>'
+             + '<path d="M281 116 Q240 150 194 186"/>'+arrow(190,194,"down")
+             + '<path d="M450 116 Q446 152 442 186"/>'+arrow(440,194,"down")
+             + '<path d="M594 116 Q640 150 686 186"/>'+arrow(690,194,"down")
+             + f'<path d="{w(90,200,200,70)}"/><path d="{w(340,200,200,70)}"/>'
+             + f'<path d="{w(590,200,200,70)}"/>')
+      + "\n" + txt([(250,80,"lisa"),(326,80,"@"),(356,80,"shop-prod-01"),(557,80,":"),
+                    (587,80,"~"),(616,80,"$")],26,anchor="start")
+      + "\n" + txt([(672,86,"$ vanlig · # root")],14,' opacity="0.62"',anchor="start")
+      + "\n" + txt([(190,244,"användaren"),(440,244,"maskinen"),(690,244,"katalogen")],16)
+      + "\n</svg>")
+
+    # 29 — Linux 1.2 · PATH är en rad du står utanför
+    # Den streckade ramen gör "utanför sökningen" till ett rumsligt faktum i
+    # stället för en bildtext — samma grepp som byggkontexten-ramen.
+    D['path-raden']=(
+      '<svg viewBox="0 0 880 450" role="img" aria-label="Tre kataloger i en streckad ram märkt PATH '
+      'genomsöks i tur och ordning och slutar i command not found. Katalogen du står i ligger utanför '
+      'ramen.">\n'
+      + G % ('<path d="M30 105 Q345 102 660 105 Q662 170 660 235 Q345 238 30 235 '
+             'Q28 170 30 105 Z" stroke-dasharray="9 10" stroke-width="1.5" opacity="0.55"/>'
+             + '<path d="M130 86 Q128 104 130 118"/>'+arrow(130,126,"down")
+             + f'<path d="{w(50,130,160,80)}"/><path d="{w(250,130,200,80)}"/>'
+             + f'<path d="{w(490,130,130,80)}"/>'
+             + '<path d="M214 170 Q229 169 238 170"/>'+arrow(244,170)
+             + '<path d="M454 170 Q469 169 478 170"/>'+arrow(478,170)
+             + '<path d="M624 170 Q638 169 646 170"/>'+arrow(652,170)
+             + f'<path d="{w(250,310,260,80)}"/>')
+      + "\n" + txt([(130,58,"deploy.sh")],18)
+      + "\n" + txt([(130,177,"/usr/bin"),(350,177,"/usr/local/bin"),(555,177,"/bin")],15)
+      + "\n" + txt([(668,176,"command not found")],14,anchor="start")
+      + "\n" + txt([(380,357,"./deploy.sh")],16)
+      + "\n" + txt([(345,272,"PATH, i ordning")],15,' opacity="0.62"')
+      + "\n" + txt([(380,424,"katalogen du står i")],15,' opacity="0.62"')
+      + "\n</svg>")
+
+    # 30 — Git 1.2 · Merge mot rebase
+    # r=26, inte 22: en tvåteckensetikett som C' behöver mer luft ut till bågen
+    # än en enteckens. Vid r=22 nuddar cirkeln etikettens ruta.
+    def commit(cx, cy, txt_=None): return f'<path d="{circ(cx,cy,26)}"/>'
+    D['merge-vs-rebase']=(
+      '<svg viewBox="0 0 880 350" role="img" aria-label="Till vänster möts två utvecklingslinjer i en '
+      'merge-commit. Till höger ligger samma commits på en rak linje, men två av dem har fått '
+      'primtecken för att visa att de är nya objekt.">\n'
+      + G % ("".join(commit(x,120) for x in (70,160,380))
+             + "".join(commit(x,225) for x in (230,320))
+             + '<path d="M96 120 Q115 119 134 120"/>'
+             + '<path d="M186 120 Q270 118 354 120"/>'
+             + '<path d="M178 138 Q194 170 212 207"/>'
+             + '<path d="M256 225 Q275 224 294 225"/>'
+             + '<path d="M338 207 Q352 170 362 138"/>'
+             + "".join(commit(x,120) for x in (520,610,700,790))
+             + '<path d="M546 120 Q565 119 584 120"/>'
+             + '<path d="M636 120 Q655 119 674 120"/>'
+             + '<path d="M726 120 Q745 119 764 120"/>')
+      + "\n" + txt([(70,126,"A"),(160,126,"B"),(380,126,"M"),(230,231,"C"),(320,231,"D"),
+                    (520,126,"A"),(610,126,"B"),(700,126,"C'"),(790,126,"D'")],15)
+      + "\n" + txt([(745,180,"nya hashar")],14,' opacity="0.62"')
+      + "\n" + txt([(225,315,"merge"),(655,315,"rebase")],15,' opacity="0.62"')
+      + "\n</svg>")
+
+    # 31 — API 1.1 · Resursen är ett urval ur raden
+    # De tre streckade pilarna slutar i tomma luften, utan pilspets. Det är
+    # bilden av att fälten inte kommer med — inget kryss behövs.
+    D['resursen-ar-ett-urval']=(
+      '<svg viewBox="0 0 880 430" role="img" aria-label="Databasraden till vänster har sex fält. Tre '
+      'heldragna pilar går vidare till svaret till höger. Tre streckade pilar slutar i tomma '
+      'luften.">\n'
+      + G % (rader(60,90,380,270,6,(290,)) + rader(580,90,280,135,3,(700,))
+             + "".join(f'<path d="M444 {y} Q510 {y-1} 570 {y}"/>'+arrow(576,y)
+                       for y in (112,157,202))
+             + "".join(f'<path d="M444 {y} Q490 {y-1} 530 {y}" stroke-dasharray="7 8"/>'
+                       for y in (247,292,337)))
+      + "\n" + txt([(175,120,"id"),(365,120,"8842"),
+                    (175,165,"namn"),(365,165,"Skruvmejsel"),
+                    (175,210,"pris"),(365,210,"149"),
+                    (175,255,"inkopspris"),(365,255,"62"),
+                    (175,300,"leverantor_id"),(365,300,"7"),
+                    (175,345,"senast_andrad_av"),(365,345,"lisa"),
+                    (640,120,"id"),(780,120,"8842"),
+                    (640,165,"namn"),(780,165,"Skruvmejsel"),
+                    (640,210,"pris"),(780,210,"149")],14)
+      + "\n" + txt([(250,400,"databasraden"),(720,400,"svaret")],15,' opacity="0.62"')
+      + "\n</svg>")
+
+    # 32 — API 1.1 · Grinden går att runda
+    D['grinden-gar-att-runda']=(
+      '<svg viewBox="0 0 880 400" role="img" aria-label="Webbläsaren går genom formulärets kontroller '
+      'till API:et. curl går utanför grinden och når API:et direkt.">\n'
+      + G % (f'<path d="{w(50,80,200,90)}"/>' + f'<path d="{w(360,70,200,110)}"/>'
+             + f'<path d="{w(660,140,180,100)}"/>' + f'<path d="{w(50,270,200,90)}"/>'
+             + '<path d="M252 125 Q300 124 348 125"/>'+arrow(354,125)
+             + '<path d="M564 125 Q612 128 640 164"/>'+arrow(652,170)
+             + '<path d="M252 315 Q450 318 570 276 Q615 258 640 220"/>'+arrow(652,215))
+      + "\n" + txt([(150,132,"webbläsaren"),(460,132,"formuläret"),(750,196,"API:et"),
+                    (150,322,"curl")])
+      + "\n" + txt([(460,214,"klientens kontroller")],15,' opacity="0.62"')
+      + "\n" + txt([(430,352,"går runt")],14,' opacity="0.62"') + "\n</svg>")
+
+    # 33 — API 1.2 · Vem skriver numret
+    # Asymmetrin ÄR poängen: numret står i paketet till höger och i servern till
+    # vänster. Det behövs ingen text som säger vem som bestämmer.
+    D['vem-skriver-numret']=(
+      '<svg viewBox="0 0 880 430" role="img" aria-label="Vid POST skickas paketet utan nummer och '
+      'servern sätter id 8842. Vid PUT står 8842 redan på paketet och servern lägger den där.">\n'
+      + G % (f'<path d="{w(80,80,220,110)}"/>'
+             + '<path d="M190 194 Q191 216 190 238"/>'+arrow(190,246,"down")
+             + f'<path d="{w(80,260,220,100)}"/>'
+             + f'<path d="{w(580,80,220,110)}"/>'
+             + '<path d="M592 146 Q690 144 788 146" opacity="0.4"/>'
+             + '<path d="M690 194 Q691 216 690 238"/>'+arrow(690,246,"down")
+             + f'<path d="{w(580,260,220,100)}"/>')
+      + "\n" + txt([(190,142,"{ namn, pris }"),(690,126,"{ namn, pris }"),(690,172,"8842")],15)
+      + "\n" + txt([(190,300,"servern"),(690,316,"servern")],16)
+      + "\n" + txt([(190,332,"id = 8842")],14)
+      + "\n" + txt([(190,400,"POST /produkter"),(690,400,"PUT /produkter/8842")],15,
+                   ' opacity="0.62"') + "\n</svg>")
+
+    # 34 — SQL 1.1 · Kopplingstabellen
+    # De två pilarna som korsar varandra till höger är avsiktliga: korsningen ÄR
+    # många-till-många. Med bara en främmande nyckel går den inte att rita.
+    D['kopplingstabellen']=(
+      '<svg viewBox="0 0 880 340" role="img" aria-label="Tabellen produkt_taggar i mitten har tre '
+      'rader. Varje rad pekar med en pil åt vänster mot en produkt och en pil åt höger mot en tagg. '
+      'Två av pilarna korsar varandra.">\n'
+      + G % (rader(60,105,180,150,2) + rader(340,90,260,180,3,(470,))
+             + rader(700,105,160,150,2,(760,))
+             + '<path d="M336 120 Q292 124 256 138"/><path d="M336 180 Q292 172 256 148"/>'
+             + arrow(248,142,"left")
+             + '<path d="M336 240 Q292 234 256 212"/>' + arrow(248,217,"left")
+             + '<path d="M604 120 Q650 124 688 138"/><path d="M604 240 Q650 210 688 148"/>'
+             + arrow(696,142)
+             + '<path d="M604 180 Q650 190 688 212"/>' + arrow(696,217))
+      + "\n" + txt([(150,150,"8842"),(150,225,"8843"),
+                    (405,127,"8842"),(535,127,"3"),
+                    (405,187,"8842"),(535,187,"7"),
+                    (405,247,"8843"),(535,247,"3"),
+                    (730,150,"3"),(810,150,"rea"),(730,225,"7"),(810,225,"nyhet")],15)
+      + "\n" + txt([(150,310,"produkter"),(470,310,"produkt_taggar"),(780,310,"taggar")],15,
+                   ' opacity="0.62"') + "\n</svg>")
+
     return D
 
 if __name__ == "__main__":

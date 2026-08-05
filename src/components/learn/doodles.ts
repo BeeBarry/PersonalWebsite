@@ -447,4 +447,344 @@ export const DOODLES: Record<string, string> = {
     <text x="360" y="340">historiken</text>
   </g>
 </svg>`,
+
+  /* ---- Docker 1.1 · Vad byggkontexten är — STIL: HANDRITAD ---- */
+  "byggkontexten-ramen": `
+<svg viewBox="0 0 880 450" role="img" aria-label="Punkten sist i docker build är inringad och en pil går från den till en streckad ram runt projektmappen. Allt inuti ramen skickas till Docker. En fil under ramen når inte in.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M427 25 Q448 26 447 51 Q448 76 427 77 Q408 76 408 50 Q408 26 427 25 Z" stroke-width="1.5" opacity="0.6"/><path d="M428 82 Q422 106 340 114 Q314 118 302 120"/><path d="M294 115 L300 128 L306 115"/><path d="M120 140 Q390 137 660 140 Q662 205 660 270 Q390 273 120 270 Q118 205 120 140 Z" stroke-dasharray="9 10" stroke-width="1.5" opacity="0.55"/><path d="M180 170 Q255 170 329 171 Q332 205 329 239 Q255 241 179 240 Q178 205 180 170 Z"/><path d="M379 170 Q485 168 590 170 Q592 205 590 240 Q485 240 381 241 Q379 205 379 170 Z"/><path d="M664 205 Q690 204 712 205"/><path d="M705 199 L718 205 L705 211"/><path d="M730 164 Q790 163 849 166 Q851 205 849 245 Q790 246 731 244 Q729 205 730 164 Z"/><path d="M401 349 Q510 348 620 350 Q622 385 619 421 Q510 422 401 421 Q399 385 401 349 Z"/><path d="M510 344 Q508 322 510 302" stroke-dasharray="7 8"/><path d="M500 278 L520 298"/><path d="M520 278 L500 298"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="17" fill="currentColor" text-anchor="end">
+    <text x="380" y="58">docker build -t app:1.0</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="17" fill="currentColor" text-anchor="middle">
+    <text x="428" y="58">.</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle">
+    <text x="255" y="212">app/</text>
+    <text x="485" y="212">package.json</text>
+    <text x="790" y="212">Docker</text>
+    <text x="510" y="392">../nycklar</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="250" y="306">byggkontexten</text>
+  </g>
+</svg>`,
+
+  /* ---- Docker 1.2 · Vad localhost betyder inuti en container — STIL: HANDRITAD ---- */
+  "localhost-tre-maskiner": `
+<svg viewBox="0 0 880 330" role="img" aria-label="Tre lådor märkta din dator, api och db. Varje låda har en pil som vänder tillbaka in i sig själv, och alla tre bär etiketten localhost.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M61 170 Q160 169 259 169 Q262 215 259 259 Q160 262 60 261 Q58 215 61 170 Z"/><path d="M340 170 Q440 170 541 170 Q540 215 539 260 Q440 260 341 259 Q338 215 340 170 Z"/><path d="M621 171 Q720 169 821 170 Q821 215 821 260 Q720 261 619 261 Q620 215 621 171 Z"/><path d="M222 166 Q226 122 180 120 Q134 120 138 158"/><path d="M132 155 L138 166 L144 155"/><path d="M502 166 Q506 122 460 120 Q414 120 418 158"/><path d="M412 155 L418 166 L424 155"/><path d="M782 166 Q786 122 740 120 Q694 120 698 158"/><path d="M692 155 L698 166 L704 155"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="16.5" fill="currentColor" text-anchor="middle">
+    <text x="160" y="223">din dator</text>
+    <text x="440" y="223">api</text>
+    <text x="720" y="223">db</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="160" y="300">localhost</text>
+    <text x="440" y="300">localhost</text>
+    <text x="720" y="300">localhost</text>
+  </g>
+</svg>`,
+
+  /* ---- Kubernetes 1.2 · Selector vs Deployment-namn — STIL: HANDRITAD ---- */
+  "selectorn-matchar-lappen": `
+<svg viewBox="0 0 880 470" role="img" aria-label="En Service håller upp en lapp med app kolon api. Två poddar bär samma lapp och nås av heldragna pilar. Den tredje bär app kolon versalt API och pilen dit är streckad och överkryssad.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M330 51 Q440 48 550 51 Q551 90 550 131 Q440 130 330 130 Q330 90 330 51 Z"/><path d="M440 132 Q441 145 440 156"/><path d="M369 157 Q440 157 509 159 Q511 180 510 201 Q440 203 369 201 Q370 180 369 157 Z"/><path d="M410 206 Q290 226 172 288"/><path d="M164 283 L170 296 L176 283"/><path d="M440 206 Q441 250 440 288"/><path d="M434 283 L440 296 L446 283"/><path d="M470 206 Q590 226 706 262" stroke-dasharray="8 9"/><path d="M707 265 L725 283"/><path d="M725 265 L707 283"/><path d="M69 300 Q160 300 250 301 Q252 340 251 381 Q160 380 69 381 Q68 340 69 300 Z"/><path d="M349 299 Q440 298 531 301 Q530 340 530 381 Q440 382 350 379 Q348 340 349 299 Z"/><path d="M630 300 Q720 300 809 299 Q811 340 809 381 Q720 382 630 380 Q629 340 630 300 Z"/><path d="M89 400 Q160 400 230 401 Q230 422 230 444 Q160 446 90 443 Q88 422 89 400 Z"/><path d="M369 399 Q440 398 511 401 Q511 422 509 444 Q440 445 370 445 Q370 422 369 399 Z"/><path d="M649 401 Q720 398 789 399 Q792 422 790 444 Q720 445 649 444 Q650 422 649 401 Z"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="16.5" fill="currentColor" text-anchor="middle">
+    <text x="440" y="97">Service · api</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="16.5" fill="currentColor" text-anchor="middle">
+    <text x="160" y="347">pod</text>
+    <text x="440" y="347">pod</text>
+    <text x="720" y="347">pod</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="middle">
+    <text x="440" y="186">app: api</text>
+    <text x="160" y="428">app: api</text>
+    <text x="440" y="428">app: api</text>
+    <text x="720" y="428">app: API</text>
+  </g>
+</svg>`,
+
+  /* ---- Kubernetes 1.2 · Ingress-objektet vs Ingress-controllern — STIL: HANDRITAD ---- */
+  "ingress-utan-controller": `
+<svg viewBox="0 0 880 340" role="img" aria-label="Ingress-objektet till vänster, en tom streckad plats i mitten märkt finns inte, och tjänsten till höger. Båda pilarna är streckade.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M80 150 Q190 148 300 150 Q300 205 301 259 Q190 262 81 259 Q79 205 80 150 Z"/><path d="M360 151 Q470 149 579 150 Q581 205 580 261 Q470 260 361 260 Q360 205 360 151 Z" stroke-dasharray="8 9" opacity="0.38"/><path d="M640 151 Q730 150 819 150 Q820 205 821 260 Q730 260 639 260 Q639 205 640 151 Z"/><path d="M304 205 Q328 204 350 205" stroke-dasharray="7 8"/><path d="M343 199 L356 205 L343 211"/><path d="M584 205 Q606 204 628 205" stroke-dasharray="7 8"/><path d="M621 199 L634 205 L621 211"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="16.5" fill="currentColor" text-anchor="middle">
+    <text x="190" y="211">reglerna</text>
+    <text x="730" y="211">api</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.4">
+    <text x="470" y="211">finns inte</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="190" y="300">Ingress-objektet</text>
+    <text x="470" y="300">Ingress-controllern</text>
+    <text x="730" y="300">tjänsten</text>
+  </g>
+</svg>`,
+
+  /* ---- Kubernetes 1.3 · Miljövariabel vs monterad fil — STIL: HANDRITAD ---- */
+  "variabeln-star-kvar": `
+<svg viewBox="0 0 880 360" role="img" aria-label="Samma container två gånger. Vid start har både miljövariabeln och den monterade filen värdet info. Efter en ändring i ConfigMap har bara filen bytt till debug.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M80 121 Q230 119 379 119 Q380 200 379 280 Q230 282 80 279 Q80 200 80 121 Z"/><path d="M95 207 Q230 205 365 207" opacity="0.4"/><path d="M499 121 Q650 118 799 120 Q801 200 801 281 Q650 280 501 280 Q498 200 499 121 Z"/><path d="M515 207 Q650 205 785 207" opacity="0.4"/><g stroke-width="1.1" opacity="0.26"><path d="M558 270 L512 224"/><path d="M604 270 L548 214"/><path d="M650 270 L594 214"/><path d="M696 270 L640 214"/><path d="M742 270 L686 214"/><path d="M788 270 L732 214"/><path d="M788 224 L778 214"/></g><path d="M386 200 Q440 199 484 200"/><path d="M477 194 L490 200 L477 206"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle">
+    <text x="265" y="180">LOG_LEVEL=info</text>
+    <text x="265" y="235">/cfg/log=info</text>
+    <text x="685" y="180">LOG_LEVEL=info</text>
+    <text x="685" y="235">/cfg/log=debug</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="135" y="180">env</text>
+    <text x="135" y="235">fil</text>
+    <text x="555" y="180">env</text>
+    <text x="555" y="235">fil</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="440" y="92">ConfigMap ändras</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="230" y="330">vid start</text>
+    <text x="650" y="330">efteråt</text>
+  </g>
+</svg>`,
+
+  /* ---- Terraform 1.1 · Vad drift är — STIL: HANDRITAD ---- */
+  "driften-ar-avstandet": `
+<svg viewBox="0 0 880 400" role="img" aria-label="main.tf säger size lika med 2 och verkligheten säger size lika med 8. Lådorna ligger på olika höjd och avståndet mellan dem är märkt drift. En konsol med muspekare pekar in i verkligheten.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M71 80 Q200 80 330 81 Q331 125 330 169 Q200 172 71 171 Q69 125 71 80 Z"/><path d="M70 239 Q180 238 290 241 Q291 285 290 330 Q180 331 70 330 Q70 285 70 239 Z"/><path d="M76 268 Q180 266 284 268"/><path d="M150 300 L150 322 L156 316 L161 326 L166 324 L161 314 L169 313 Z"/><path d="M380 240 Q510 239 640 240 Q640 285 639 330 Q510 331 381 331 Q379 285 380 240 Z"/><path d="M294 285 Q330 284 368 285"/><path d="M361 279 L374 285 L361 291"/><path d="M334 125 L752 125" stroke-dasharray="6 8" opacity="0.4"/><path d="M646 285 L752 285" stroke-dasharray="6 8" opacity="0.4"/><path d="M760 131 Q761 205 760 279"/><path d="M754 136 L760 123 L766 136"/><path d="M754 274 L760 287 L766 274"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="16" fill="currentColor" text-anchor="middle">
+    <text x="200" y="132">size = 2</text>
+    <text x="510" y="292">size = 8</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle">
+    <text x="812" y="212">drift</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="200" y="206">main.tf</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="180" y="364">konsolen</text>
+    <text x="510" y="364">verkligheten</text>
+  </g>
+</svg>`,
+
+  /* ---- Terraform 1.2 · Resurstyp vs resursnamn vs name — STIL: HANDRITAD ---- */
+  "tre-namn-i-blocket": `
+<svg viewBox="0 0 880 340" role="img" aria-label="Ett resource-block där typen, resursnamnet och argumentet name är understrukna. Tre pilar leder ner till tre lådor märkta name, typen och resursnamnet, med ägaren under varje.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M198 84 Q311 82 424 84"/><path d="M438 84 Q455 82 472 84"/><path d="M128 132 Q229 130 330 132"/><path d="M230 138 Q206 170 187 196"/><path d="M179 191 L185 204 L191 191"/><path d="M400 90 Q422 140 432 194"/><path d="M429 191 L435 204 L441 191"/><path d="M455 90 Q580 130 695 194"/><path d="M694 191 L700 204 L706 191"/><path d="M90 210 Q185 209 280 211 Q282 240 279 270 Q185 270 91 270 Q89 240 90 210 Z"/><path d="M339 211 Q435 209 531 210 Q531 240 529 270 Q435 272 340 271 Q339 240 339 211 Z"/><path d="M590 211 Q700 209 809 210 Q810 240 810 271 Q700 270 589 271 Q589 240 590 211 Z"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="16" fill="currentColor" text-anchor="end">
+    <text x="186" y="70">resource</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="16" fill="currentColor" text-anchor="start">
+    <text x="196" y="70">"azurerm_resource_group"</text>
+    <text x="436" y="70">"rg"</text>
+    <text x="484" y="70">{</text>
+    <text x="128" y="118">name = "rg-shop-prod"</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="16.5" fill="currentColor" text-anchor="middle">
+    <text x="185" y="248">name</text>
+    <text x="435" y="248">typen</text>
+    <text x="700" y="248">resursnamnet</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="185" y="306">Azure</text>
+    <text x="435" y="306">providern</text>
+    <text x="700" y="306">din fil</text>
+  </g>
+</svg>`,
+
+  /* ---- Linux 1.1 · Vad prompten säger — STIL: HANDRITAD ---- */
+  "prompten-rad-for-rad": `
+<svg viewBox="0 0 880 300" role="img" aria-label="Prompten lisa snabel-a shop-prod-01 kolon tilde dollar. Tre delar är understrukna med var sin pil ner till en låda. Sista tecknet har en anteckning bredvid sig.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M252 112 Q282 110 311 112"/><path d="M358 112 Q450 110 542 112"/><path d="M588 112 Q595 110 601 112"/><path d="M281 116 Q240 150 194 186"/><path d="M184 181 L190 194 L196 181"/><path d="M450 116 Q446 152 442 186"/><path d="M434 181 L440 194 L446 181"/><path d="M594 116 Q640 150 686 186"/><path d="M684 181 L690 194 L696 181"/><path d="M89 200 Q190 200 290 200 Q291 235 290 269 Q190 270 89 271 Q90 235 89 200 Z"/><path d="M340 199 Q440 198 539 201 Q542 235 541 270 Q440 271 340 270 Q339 235 340 199 Z"/><path d="M591 201 Q690 200 790 200 Q790 235 790 269 Q690 271 591 270 Q588 235 591 201 Z"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="26" fill="currentColor" text-anchor="start">
+    <text x="250" y="80">lisa</text>
+    <text x="326" y="80">@</text>
+    <text x="356" y="80">shop-prod-01</text>
+    <text x="557" y="80">:</text>
+    <text x="587" y="80">~</text>
+    <text x="616" y="80">$</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="start" opacity="0.62">
+    <text x="672" y="86">$ vanlig · # root</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="16" fill="currentColor" text-anchor="middle">
+    <text x="190" y="244">användaren</text>
+    <text x="440" y="244">maskinen</text>
+    <text x="690" y="244">katalogen</text>
+  </g>
+</svg>`,
+
+  /* ---- Linux 1.2 · Vad PATH är — STIL: HANDRITAD ---- */
+  "path-raden": `
+<svg viewBox="0 0 880 450" role="img" aria-label="Tre kataloger i en streckad ram märkt PATH genomsöks i tur och ordning och slutar i command not found. Katalogen du står i ligger utanför ramen.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M30 105 Q345 102 660 105 Q662 170 660 235 Q345 238 30 235 Q28 170 30 105 Z" stroke-dasharray="9 10" stroke-width="1.5" opacity="0.55"/><path d="M130 86 Q128 104 130 118"/><path d="M124 113 L130 126 L136 113"/><path d="M50 129 Q130 129 209 131 Q211 170 209 209 Q130 211 50 210 Q49 170 50 129 Z"/><path d="M251 131 Q350 129 449 131 Q450 170 451 211 Q350 210 249 211 Q250 170 251 131 Z"/><path d="M490 129 Q555 130 619 129 Q622 170 619 211 Q555 210 490 209 Q490 170 490 129 Z"/><path d="M214 170 Q229 169 238 170"/><path d="M231 164 L244 170 L231 176"/><path d="M454 170 Q469 169 478 170"/><path d="M465 164 L478 170 L465 176"/><path d="M624 170 Q638 169 646 170"/><path d="M639 164 L652 170 L639 176"/><path d="M250 311 Q380 309 510 311 Q512 350 511 391 Q380 391 249 390 Q250 350 250 311 Z"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18" fill="currentColor" text-anchor="middle">
+    <text x="130" y="58">deploy.sh</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle">
+    <text x="130" y="177">/usr/bin</text>
+    <text x="350" y="177">/usr/local/bin</text>
+    <text x="555" y="177">/bin</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="start">
+    <text x="668" y="176">command not found</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="16" fill="currentColor" text-anchor="middle">
+    <text x="380" y="357">./deploy.sh</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="345" y="272">PATH, i ordning</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="380" y="424">katalogen du står i</text>
+  </g>
+</svg>`,
+
+  /* ---- Git 1.2 · Merge vs rebase — STIL: HANDRITAD ---- */
+  "merge-vs-rebase": `
+<svg viewBox="0 0 880 350" role="img" aria-label="Till vänster möts två utvecklingslinjer i en merge-commit. Till höger ligger samma commits på en rak linje, men två av dem har fått primtecken för att visa att de är nya objekt.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M70 93 Q95 95 95 119 Q95 145 70 145 Q45 145 44 119 Q45 95 70 93 Z"/><path d="M160 94 Q185 95 186 121 Q185 145 159 147 Q135 145 134 120 Q135 95 160 94 Z"/><path d="M380 95 Q405 95 406 120 Q405 145 381 145 Q355 145 354 120 Q355 95 380 95 Z"/><path d="M229 199 Q255 200 256 226 Q255 250 230 252 Q205 250 204 225 Q205 200 229 199 Z"/><path d="M321 198 Q345 200 347 225 Q345 250 320 252 Q295 250 294 225 Q295 200 321 198 Z"/><path d="M96 120 Q115 119 134 120"/><path d="M186 120 Q270 118 354 120"/><path d="M178 138 Q194 170 212 207"/><path d="M256 225 Q275 224 294 225"/><path d="M338 207 Q352 170 362 138"/><path d="M520 95 Q545 95 545 120 Q545 145 520 146 Q495 145 495 120 Q495 95 520 95 Z"/><path d="M611 94 Q635 95 636 119 Q635 145 610 147 Q585 145 584 121 Q585 95 611 94 Z"/><path d="M700 94 Q725 95 726 120 Q725 145 700 147 Q675 145 673 121 Q675 95 700 94 Z"/><path d="M791 94 Q815 95 815 120 Q815 145 789 145 Q765 145 765 120 Q765 95 791 94 Z"/><path d="M546 120 Q565 119 584 120"/><path d="M636 120 Q655 119 674 120"/><path d="M726 120 Q745 119 764 120"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle">
+    <text x="70" y="126">A</text>
+    <text x="160" y="126">B</text>
+    <text x="380" y="126">M</text>
+    <text x="230" y="231">C</text>
+    <text x="320" y="231">D</text>
+    <text x="520" y="126">A</text>
+    <text x="610" y="126">B</text>
+    <text x="700" y="126">C'</text>
+    <text x="790" y="126">D'</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="745" y="180">nya hashar</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="225" y="315">merge</text>
+    <text x="655" y="315">rebase</text>
+  </g>
+</svg>`,
+
+  /* ---- API 1.1 · Resurs vs databasrad — STIL: HANDRITAD ---- */
+  "resursen-ar-ett-urval": `
+<svg viewBox="0 0 880 430" role="img" aria-label="Databasraden till vänster har sex fält. Tre heldragna pilar går vidare till svaret till höger. Tre streckade pilar slutar i tomma luften.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M60 91 Q250 89 441 90 Q440 225 440 360 Q250 361 60 360 Q59 225 60 91 Z"/><path d="M62 135 Q250 134 438 135"/><path d="M62 180 Q250 179 438 180"/><path d="M62 225 Q250 224 438 225"/><path d="M62 270 Q250 269 438 270"/><path d="M62 315 Q250 314 438 315"/><path d="M290 92 Q291 225 290 358"/><path d="M581 89 Q720 90 859 89 Q862 158 861 226 Q720 226 580 225 Q578 158 581 89 Z"/><path d="M582 135 Q720 134 858 135"/><path d="M582 180 Q720 179 858 180"/><path d="M700 92 Q701 158 700 223"/><path d="M444 112 Q510 111 570 112"/><path d="M563 106 L576 112 L563 118"/><path d="M444 157 Q510 156 570 157"/><path d="M563 151 L576 157 L563 163"/><path d="M444 202 Q510 201 570 202"/><path d="M563 196 L576 202 L563 208"/><path d="M444 247 Q490 246 530 247" stroke-dasharray="7 8"/><path d="M444 292 Q490 291 530 292" stroke-dasharray="7 8"/><path d="M444 337 Q490 336 530 337" stroke-dasharray="7 8"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="middle">
+    <text x="175" y="120">id</text>
+    <text x="365" y="120">8842</text>
+    <text x="175" y="165">namn</text>
+    <text x="365" y="165">Skruvmejsel</text>
+    <text x="175" y="210">pris</text>
+    <text x="365" y="210">149</text>
+    <text x="175" y="255">inkopspris</text>
+    <text x="365" y="255">62</text>
+    <text x="175" y="300">leverantor_id</text>
+    <text x="365" y="300">7</text>
+    <text x="175" y="345">senast_andrad_av</text>
+    <text x="365" y="345">lisa</text>
+    <text x="640" y="120">id</text>
+    <text x="780" y="120">8842</text>
+    <text x="640" y="165">namn</text>
+    <text x="780" y="165">Skruvmejsel</text>
+    <text x="640" y="210">pris</text>
+    <text x="780" y="210">149</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="250" y="400">databasraden</text>
+    <text x="720" y="400">svaret</text>
+  </g>
+</svg>`,
+
+  /* ---- API 1.1 · Validering i klienten är ingen validering — STIL: HANDRITAD ---- */
+  "grinden-gar-att-runda": `
+<svg viewBox="0 0 880 400" role="img" aria-label="Webbläsaren går genom formulärets kontroller till API:et. curl går utanför grinden och når API:et direkt.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M50 80 Q150 78 250 80 Q250 125 250 171 Q150 172 49 170 Q49 125 50 80 Z"/><path d="M361 70 Q460 69 559 70 Q560 125 560 181 Q460 181 361 180 Q358 125 361 70 Z"/><path d="M659 139 Q750 138 839 140 Q840 190 839 241 Q750 242 659 241 Q658 190 659 139 Z"/><path d="M51 269 Q150 269 249 271 Q252 315 251 361 Q150 361 51 359 Q50 315 51 269 Z"/><path d="M252 125 Q300 124 348 125"/><path d="M341 119 L354 125 L341 131"/><path d="M564 125 Q612 128 640 164"/><path d="M639 164 L652 170 L639 176"/><path d="M252 315 Q450 318 570 276 Q615 258 640 220"/><path d="M639 209 L652 215 L639 221"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="16.5" fill="currentColor" text-anchor="middle">
+    <text x="150" y="132">webbläsaren</text>
+    <text x="460" y="132">formuläret</text>
+    <text x="750" y="196">API:et</text>
+    <text x="150" y="322">curl</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="460" y="214">klientens kontroller</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="430" y="352">går runt</text>
+  </g>
+</svg>`,
+
+  /* ---- API 1.2 · POST vs PUT vid skapande — STIL: HANDRITAD ---- */
+  "vem-skriver-numret": `
+<svg viewBox="0 0 880 430" role="img" aria-label="Vid POST skickas paketet utan nummer och servern sätter id 8842. Vid PUT står 8842 redan på paketet och servern lägger den där.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M79 81 Q190 79 301 79 Q302 135 299 190 Q190 190 81 189 Q80 135 79 81 Z"/><path d="M190 194 Q191 216 190 238"/><path d="M184 233 L190 246 L196 233"/><path d="M80 259 Q190 259 300 260 Q301 310 300 360 Q190 361 79 361 Q79 310 80 259 Z"/><path d="M580 81 Q690 79 801 81 Q802 135 800 190 Q690 191 579 191 Q579 135 580 81 Z"/><path d="M592 146 Q690 144 788 146" opacity="0.4"/><path d="M690 194 Q691 216 690 238"/><path d="M684 233 L690 246 L696 233"/><path d="M581 261 Q690 259 800 260 Q802 310 800 361 Q690 362 580 360 Q578 310 581 261 Z"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle">
+    <text x="190" y="142">{ namn, pris }</text>
+    <text x="690" y="126">{ namn, pris }</text>
+    <text x="690" y="172">8842</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="16" fill="currentColor" text-anchor="middle">
+    <text x="190" y="300">servern</text>
+    <text x="690" y="316">servern</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="middle">
+    <text x="190" y="332">id = 8842</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="190" y="400">POST /produkter</text>
+    <text x="690" y="400">PUT /produkter/8842</text>
+  </g>
+</svg>`,
+
+  /* ---- SQL 1.1 · Många till många — STIL: HANDRITAD ---- */
+  "kopplingstabellen": `
+<svg viewBox="0 0 880 340" role="img" aria-label="Tabellen produkt_taggar i mitten har tre rader. Varje rad pekar med en pil åt vänster mot en produkt och en pil åt höger mot en tagg. Två av pilarna korsar varandra.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M59 104 Q150 105 240 105 Q242 180 241 256 Q150 256 59 256 Q58 180 59 104 Z"/><path d="M62 180 Q150 179 238 180"/><path d="M341 91 Q470 88 600 91 Q602 180 600 269 Q470 272 340 271 Q338 180 341 91 Z"/><path d="M342 150 Q470 149 598 150"/><path d="M342 210 Q470 209 598 210"/><path d="M470 92 Q471 180 470 268"/><path d="M700 105 Q780 103 860 104 Q862 180 859 256 Q780 257 701 255 Q698 180 700 105 Z"/><path d="M702 180 Q780 179 858 180"/><path d="M760 107 Q761 180 760 253"/><path d="M336 120 Q292 124 256 138"/><path d="M336 180 Q292 172 256 148"/><path d="M261 136 L248 142 L261 148"/><path d="M336 240 Q292 234 256 212"/><path d="M261 211 L248 217 L261 223"/><path d="M604 120 Q650 124 688 138"/><path d="M604 240 Q650 210 688 148"/><path d="M683 136 L696 142 L683 148"/><path d="M604 180 Q650 190 688 212"/><path d="M683 211 L696 217 L683 223"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle">
+    <text x="150" y="150">8842</text>
+    <text x="150" y="225">8843</text>
+    <text x="405" y="127">8842</text>
+    <text x="535" y="127">3</text>
+    <text x="405" y="187">8842</text>
+    <text x="535" y="187">7</text>
+    <text x="405" y="247">8843</text>
+    <text x="535" y="247">3</text>
+    <text x="730" y="150">3</text>
+    <text x="810" y="150">rea</text>
+    <text x="730" y="225">7</text>
+    <text x="810" y="225">nyhet</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="150" y="310">produkter</text>
+    <text x="470" y="310">produkt_taggar</text>
+    <text x="780" y="310">taggar</text>
+  </g>
+</svg>`,
 };
