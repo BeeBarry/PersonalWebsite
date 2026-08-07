@@ -708,6 +708,83 @@ def alla():
       + "\n" + txt([(150,310,"produkter"),(470,310,"produkt_taggar"),(780,310,"taggar")],15,
                    ' opacity="0.62"') + "\n</svg>")
 
+    # 35 — Azure 1.0 · Resurs-ID:t är hela adressen
+    # Anatomiformen lodrätt i stället för vågrätt: strängen är för lång för en rad
+    # i 880 px, och artikeln bryter den på samma ställen. Rutan är ETT objekt —
+    # en sträng — med fyra namngivna delar, precis som url-raden.
+    idrader=[("/subscriptions/12345678-…-90ab","prenumeration"),
+             ("/resourceGroups/shop-prod","resursgrupp"),
+             ("/providers/Microsoft.Storage","leverantör"),
+             ("/storageAccounts/shopbilder","resurs")]
+    idsep="".join(f'<path d="M64 {y} Q300 {y-1} 528 {y}" stroke-dasharray="6 7" opacity="0.45"/>'
+                  for y in (113,170,227))
+    idpil="".join(f'<path d="M536 {y} Q552 {y+1} 566 {y}"/>'+arrow(572,y,"right",10)
+                  for y in (84,141,198,255))
+    D['resurs-id-raden']=(
+      # Smalare viewBox än de andra: bilden är 59..707 bred, och 880 hade gett
+      # ett tomt fält till höger som läser som att något fattas.
+      '<svg viewBox="0 0 768 336" role="img" aria-label="Ett resurs-ID brutet på fyra rader i en '
+      'ruta. Varje rad har en pil åt höger till sitt namn: prenumeration, resursgrupp, leverantör '
+      'och resurs.">\n'
+      + G % (f'<path d="{w(60,56,470,228)}"/>'+idsep+idpil)
+      + "\n" + txt([(78,89+i*57,s) for i,(s,_) in enumerate(idrader)],13.5,anchor="start")
+      + "\n" + txt([(590,89+i*57,e) for i,(_,e) in enumerate(idrader)],15,anchor="start")
+      + "\n" + txt([(295,320,"ett resurs-ID")],15,' opacity="0.62"') + "\n</svg>")
+
+    # 36 — Azure 1.0 · Logisk zon vs fysisk zon
+    # Båda pilarna är streckade: mappningen är härledd, inte ett flöde. Att de
+    # INTE korsar varandra är ett val — poängen bärs av att siffran är densamma
+    # och huset ett annat, och en korsning hade bara gjort bilden svårare.
+    hus="".join(f'<path d="{w(x,120,130,90)}"/><path d="M{x-14} 122 L{x+65} 70 L{x+144} 122"/>'
+                for x in (330,510,690))
+    zonpil=('<path d="M258 118 Q470 96 682 164" stroke-dasharray="8 9"/>'+arrow(688,168)
+            +'<path d="M258 272 Q350 266 452 210" stroke-dasharray="8 9"/>'+arrow(458,205))
+    D['zon-ettan']=(
+      '<svg viewBox="0 0 880 396" role="img" aria-label="Två klippbräden märkta zon 1 pekar med '
+      'streckade pilar in i en region med tre hus. Prenumeration A pekar på az3 och prenumeration B '
+      'på az1.">\n'
+      + G % (f'<path d="{w(300,36,560,232)}" stroke-dasharray="9 10" opacity="0.45"/>'
+             + hus + f'<path d="{w(50,86,206,74)}"/><path d="{w(50,240,206,74)}"/>' + zonpil)
+      + "\n" + txt([(153,132,"zon 1"),(153,286,"zon 1")],17)
+      + "\n" + txt([(395,242,"az1"),(575,242,"az2"),(755,242,"az3")],15)
+      + "\n" + txt([(153,184,"Prenumeration A"),(153,338,"Prenumeration B")],13.5,' opacity="0.62"')
+      + "\n" + txt([(580,308,"swedencentral")],15,' opacity="0.62"') + "\n</svg>")
+
+    # 37 — Azure 1.1 · Container Apps skalar till noll
+    plattor=(f'<path d="{w(60,248,340,24)}"/>'
+             f'<path d="{w(480,248,340,24)}" stroke-dasharray="8 9" opacity="0.35"/>')
+    repliker=(f'<path d="{w(90,158,120,86)}"/><path d="{w(240,158,120,86)}"/>'
+              f'<path d="{w(510,158,120,86)}" stroke-dasharray="7 8" opacity="0.28"/>'
+              f'<path d="{w(660,158,120,86)}" stroke-dasharray="7 8" opacity="0.28"/>')
+    # Mätaren står i höjd med replikerna, inte ovanför dem: den ska läsas som
+    # den tomma plattans räkneverk, inte som en egen rubrik.
+    matare=(f'<path d="{circ(820,200,30)}"/><path d="M820 200 Q806 194 800 184"/>')
+    D['skala-till-noll']=(
+      '<svg viewBox="0 0 880 380" role="img" aria-label="Till vänster två repliker på en heldragen '
+      'platta märkt dagtid. Till höger en streckad tom platta märkt natten, med en mätare som står '
+      'på noll.">\n'
+      + G % (plattor + repliker + matare)
+      + "\n" + txt([(150,208,"replik"),(300,208,"replik")],15)
+      + "\n" + txt([(820,208,"0")],17)
+      + "\n" + txt([(230,318,"dagtid"),(650,318,"natten")],18.5) + "\n</svg>")
+
+    # 38 — Azure 1.1 · Stoppad vs frigjord
+    # Båda maskinerna är avstängda — strömsymbolen är densamma. Skillnaden ligger
+    # helt i plattan under: skrafferad = hårdvaran är fortfarande din och kostar.
+    stromb=lambda cx,cy: f'<path d="{circ(cx,cy,13)}"/><path d="M{cx} {cy-9} Q{cx+1} {cy-2} {cx} {cy+5}"/>'
+    D['stoppad-vs-frigjord']=(
+      '<svg viewBox="0 0 880 400" role="img" aria-label="Två avstängda serverlådor. Den vänstra står '
+      'på en skrafferad platta märkt hårdvaran reserverad, den högra svävar över en streckad tom '
+      'platta märkt hårdvaran släppt.">\n'
+      + G % (f'<path d="{w(60,268,320,26)}"/>' + markerad(66,272,308,18,22)
+             + f'<path d="{w(110,130,220,132)}"/>' + stromb(300,152)
+             + f'<path d="{w(500,268,320,26)}" stroke-dasharray="8 9" opacity="0.33"/>'
+             + f'<path d="{w(550,110,220,132)}"/>' + stromb(740,132))
+      + "\n" + txt([(220,200,"VM"),(660,180,"VM")],17)
+      + "\n" + txt([(220,330,"hårdvaran reserverad"),(660,330,"hårdvaran släppt")],13.5,
+                   ' opacity="0.62"')
+      + "\n" + txt([(220,376,"stoppad"),(660,376,"frigjord")],18.5) + "\n</svg>")
+
     return D
 
 if __name__ == "__main__":

@@ -1,0 +1,451 @@
+---
+title: 'Virtuell maskin, webbtjänst eller kluster'
+description: 'IaaS, PaaS och hur du väljer var e-handelssystemet ska köra'
+category: 'azure'
+part: 1
+order: 2
+date: '2026-08-07'
+tags: ['Beginner', 'Compute', 'Containers']
+---
+
+## Var vi är
+
+Förra delen gav kartan: resursen ligger i en resursgrupp, som ligger i en prenumeration, som betalar
+för den. Regionen bestämmer var den kör och tillgänglighetszonen vilket hus.
+
+Kvar står frågan den slutade med. E-handelssystemet från Docker-serien är tre containrar. Vilken
+sorts resurs ska de bli?
+
+Den här delen jämför de fyra körmiljöer du realistiskt väljer mellan för en webbapplikation. Azure
+har fler tjänster för compute än så — här tar vi de fyra som täcker det mesta.
+
+<Del titel="Modellerna" />
+
+## Vad compute är
+
+**Compute** är samlingsnamnet för de resurser som kör din kod.
+
+En databas lagrar, ett nätverk transporterar, ett lagringskonto sparar filer. Compute är den resurs
+som faktiskt startar en process och håller den vid liv.
+
+Valet av compute är det första riktiga arkitekturbeslutet i ett molnprojekt. Det avgör hur mycket du
+underhåller varje vecka, vad du betalar när ingen använder systemet, och hur svårt det blir att byta
+sedan.
+
+## Vad IaaS är
+
+**IaaS** — infrastructure as a service — betyder att du hyr maskinen och sköter allt ovanför den.
+
+Du får en virtuell maskin, ett nätverk och diskar. Sedan installerar du operativsystemets
+uppdateringar, körtiden, din applikation och det som ska starta den vid omstart.
+
+Microsoft ansvarar för hårdvaran, hypervisorn och datacentret. Allt från operativsystemet och uppåt
+är ditt — det är samma tabell som i delen om delat ansvar, med linjen dragen så lågt den går.
+
+## Vad PaaS är
+
+**PaaS** — platform as a service — betyder att du lämnar in koden eller imagen och slipper maskinen.
+
+Plattformen kör operativsystemet, håller det uppdaterat, startar om det som kraschar och skalar
+antalet instanser. Du ser aldrig en server att logga in på.
+
+Priset är kontroll. Du väljer inte kärnversion, du installerar inte systempaket, och du kan bara
+göra det plattformen har ett reglage för.
+
+## IaaS vs PaaS
+
+Samma applikation, två helt olika arbetsveckor.
+
+**IaaS** ger dig full kontroll och full portabilitet. Du kan köra vad som helst, och du kan flytta
+det någon annanstans. Du äger också varje säkerhetsuppdatering och varje omstart.
+
+**PaaS** ger dig färre reglage och mycket mindre underhåll. Plattformen gör det du annars hade
+skrivit skript för, och de skripten blir aldrig dina att underhålla.
+
+<Stack
+  caption="Linjen mellan dig och Microsoft flyttar sig uppåt ju mer hanterad tjänsten är. Lagren försvinner inte — någon annan tar dem."
+  ground="Datacentret, elen, kylningen och näten — alltid Microsofts"
+  layers={[
+    {
+      label: "Din applikation",
+      note: "Din kod och dina beroenden. **Alltid ditt**, i alla fyra körmiljöerna.",
+      accent: true,
+    },
+    {
+      label: "Körtid och ramverk",
+      note: "Node, .NET, JVM. Ditt på en virtuell maskin. Plattformens i App Service och Container Apps.",
+    },
+    {
+      label: "Operativsystem",
+      note: "Uppdateringar och omstarter. Ditt på en virtuell maskin. Aldrig ditt i en PaaS-tjänst.",
+    },
+    {
+      label: "Maskin och nät",
+      note: "Hypervisor, fysiska värdar, nätutrustning. Alltid Microsofts.",
+    },
+  ]}
+/>
+
+Tumregeln som håller: välj den mest hanterade tjänsten som klarar ditt krav. Kontroll du inte
+behöver är underhåll du betalar för.
+
+<Del titel="Valen" />
+
+## Virtuella maskiner
+
+En **virtuell maskin** i Azure är en server du hyr och loggar in på, precis som en fysisk server
+utan hårdvaran.
+
+Den passar när du behöver full kontroll. Exempel: en gammal applikation som inte går att paketera,
+en programvara som kräver en särskild kärnmodul, eller en migrering som inte får ändra koden.
+
+Storleken väljs som en **SKU** — ett namn som `Standard_B2als_v2` som anger antal kärnor, minne och
+egenskaper. Namnen skiljer sig mellan regioner, och det är en vanlig anledning till att ett exempel
+från en blogg inte går att köra rakt av.
+
+Priset för kontrollen är att allt underhåll är ditt. Kraschar processen startar ingen om den åt dig
+om du inte skrivit det själv.
+
+## App Service
+
+**App Service** är en hanterad tjänst för webbapplikationer, API:er och deras bakgrundsjobb.
+
+Du lämnar in kod eller en container, och plattformen kör den bakom en adress med certifikat,
+autoskalning och distributionsplatser för test före växling.
+
+Det är den snabbaste vägen från en fungerande applikation till en fungerande adress. För en
+frontend och ett API räcker den ofta hela vägen till produktion.
+
+Det den inte ger dig är orkestrering av flera samverkande tjänster med egna nätverksregler. Behöver
+du det tittar du nedåt i listan.
+
+## Vad en App Service-plan är
+
+En **App Service-plan** är de virtuella maskiner dina appar kör på, och det är planen — inte appen —
+som du betalar för.
+
+Planen har en prisnivå: `F1` och `Free` delar maskiner med andra, medan `Basic` och uppåt ger
+dedikerade instanser. Nivån bestämmer minne, processorkraft och vilka funktioner du får.
+
+Flera appar kan ligga i samma plan. De delar då maskinernas resurser med varandra, vilket är billigt
+och också är hur en app kan sinka en annan.
+
+<Callout type="fallgrop">
+**Planen kostar även när appen är stoppad.** Du betalar per instans i planen, oavsett hur många
+appar som ligger där och oavsett om de tar emot ett enda anrop.
+
+Att stoppa appen i portalen ändrar därför ingenting på fakturan. Det som tar bort kostnaden är att
+skala ner planen till en fri nivå, eller att ta bort planen.
+
+En bortglömd App Service-plan utan appar i är en av de vanligaste raderna på en oväntad molnfaktura.
+</Callout>
+
+## Container Apps
+
+**Container Apps** är en hanterad tjänst för att köra containrar utan att du driftar ett kluster.
+
+Den är byggd på Kubernetes, men Kubernetes syns inte. Du beskriver imagen, portarna, miljövariablerna
+och skalningsreglerna — inte poddar, Deployments eller Services.
+
+Den skalar till noll. Får din tjänst inga anrop stängs alla instanser av, och då kostar den ingen
+compute alls. Första anropet därefter får vänta på en start.
+
+*Serverlöst* är ordet för den modellen. Det betyder inte att servrarna är borta — det betyder att du
+varken väljer eller betalar för dem när ingenting händer.
+
+En ändring rullas ut som en ny **revision**, och du kan låta trafik gå till två revisioner samtidigt
+när du vill testa en ny version mot en del av användarna.
+
+<Doodle
+  name="skala-till-noll"
+  caption="Samma platta två gånger. Den högra är streckad och tom."
+/>
+
+## Azure Kubernetes Service
+
+**AKS** är hanterad Kubernetes: Microsoft driftar control plane, du äger noderna och allt du kör på
+dem.
+
+Här är Kubernetes-API:t framme igen. `kubectl`, manifest, Deployments, Services, Ingress — allt från
+Kubernetes-serien fungerar precis som där, för det *är* Kubernetes.
+
+Det du slipper är att installera och uppgradera control plane. Det du får tillbaka är noder att
+hålla uppdaterade, ett kluster att övervaka och versioner att följa med i.
+
+För produktion rekommenderar Microsoft minst sex noder — tre för systemets egna komponenter och tre
+för dina. Det är en tydlig signal om att AKS inte är ett litet åtagande.
+
+## App Service vs Container Apps
+
+Två hanterade tjänster som båda kör en container bakom en adress. Skillnaden är vad de är byggda
+för.
+
+**App Service** utgår från *en webbapplikation*. Den har distributionsplatser, inbyggd autentisering
+och ett bygg- och driftsflöde som är gjort för kod lika mycket som för containrar.
+
+**Container Apps** utgår från *flera samverkande containrar*. Den har intern tjänsteupptäckt,
+skalning på kölängd och bakgrundsjobb, och den skalar till noll.
+
+Har du en frontend och ett API som talar HTTP räcker App Service oftast. Har du fem tjänster där
+några läser från en kö är Container Apps den som är byggd för formen.
+
+## Container Apps vs AKS
+
+Den här är seriens viktigaste val, och den är samma fråga som Kubernetes-serien ställde: har du
+problemet Kubernetes löser?
+
+<Split
+  leftTitle="Container Apps"
+  rightTitle="Azure Kubernetes Service"
+  caption="Båda kör dina containrar. Frågan är om du behöver komma åt maskineriet."
+>
+  <div slot="left">
+
+  Kubernetes finns under, men du når det inte. Ingen `kubectl`, inga manifest, inget API att prata
+  med.
+
+  Du beskriver appen och skalningsreglerna. Uppgraderingar av plattformen är inte ditt problem.
+
+  Rätt val när teamet vill ha containrar i drift utan att någon ska bli klusteransvarig.
+
+  </div>
+  <div slot="right">
+
+  Kubernetes-API:t är framme. Du kör `kubectl`, skriver manifest och installerar det som saknas.
+
+  Du äger noderna, deras versioner och deras uppdateringar — och kan därmed köra saker som inte
+  ryms i en hanterad modell.
+
+  Rätt val när du behöver operatorer, egna controllers eller portabilitet mot ett annat kluster.
+
+  </div>
+</Split>
+
+Prövningen är konkret: skriv ner vad du faktiskt tänker göra med `kubectl`. Är listan tom är
+Container Apps samma sak fast utan klusteransvaret.
+
+<Del titel="Räkningen" />
+
+## Vad du faktiskt betalar för
+
+De fyra tjänsterna räknar på fyra olika sätt, och det är där kostnadsöverraskningar bor.
+
+**Virtuell maskin:** per sekund maskinen är tilldelad hårdvara. Diskar och statiska publika
+IP-adresser kostar dessutom oavsett om maskinen kör.
+
+**App Service:** per instans i planen. Antalet appar i planen påverkar inte priset.
+
+**Container Apps** på förbrukningsplanen: per vCPU-sekund och per gibibyte-sekund som en replik
+använder, plus antal HTTP-anrop. Varje prenumeration har en gratisandel per kalendermånad — i dag
+180 000 vCPU-sekunder, 360 000 GiB-sekunder och två miljoner anrop. Hälsokontrollernas anrop räknas
+inte.
+
+**AKS:** per nod, precis som virtuella maskiner. Control plane är utan avgift i den fria nivån; vill
+du ha ett drifttidsåtagande betalar du en fast summa per kluster och timme.
+
+Mönstret är värt att se: **de hanterade tjänsterna kan gå mot noll när ingenting händer, de andra
+kan inte det.** Ett kluster med sex noder kostar lika mycket klockan tre på natten som mitt på dagen.
+
+## Stoppad vs frigjord virtuell maskin
+
+Den här skillnaden kostar mest pengar av allt i artikeln, och den syns inte förrän fakturan kommer.
+
+**Stoppad** betyder att maskinen är avstängd men fortfarande har hårdvara reserverad åt sig. Det är
+vad som händer när du stänger av från *insidan*, med ett `shutdown` i operativsystemet. Azure
+fortsätter debitera compute.
+
+**Frigjord** — *deallocated* — betyder att maskinen släppt hårdvaran. Det är vad som händer när du
+stänger av *utifrån*, via portalen, `az` eller ett API. Nu upphör compute-kostnaden.
+
+Diskarna kostar i båda fallen, och en statisk publik IP-adress gör det också. Men skillnaden mellan
+de två sätten att stänga av samma maskin är hela compute-priset, varje timme, tills någon märker det.
+
+<Doodle
+  name="stoppad-vs-frigjord"
+  caption="Strömbrytaren är av i båda. Skillnaden är plattan under."
+/>
+
+## Alla fyra är regionala
+
+Ingen av de fyra tjänsterna sträcker sig över flera regioner av sig själv.
+
+En App Service-plan, en Container Apps-miljö, ett AKS-kluster och en virtuell maskin lever alla i
+**en** region. Vill du köra i två regioner skapar du två av dem, och sätter något framför som
+fördelar trafiken.
+
+Det är samma sak som Kubernetes-serien sa om Ingress: en trafikfördelare måste finnas, och den är en
+egen resurs med eget namn. I Azure heter kandidaterna Front Door och Traffic Manager.
+
+Tillgänglighetszoner är däremot inbyggt i flera av tjänsterna, och det är därför de nästan alltid är
+första steget. Zoner ger motståndskraft utan en andra kopia av systemet.
+
+## Hur du väljer
+
+<Callout type="sa-gor-du" title="Fyra frågor, i den här ordningen">
+- **Måste du in på maskinen?** Ja → virtuell maskin. Gäller gamla applikationer, särskilda
+  kärnkrav och migreringar som inte får ändra koden.
+- **Är det en webbapplikation eller ett API, och inget mer?** Ja → App Service. Snabbast till en
+  fungerande adress, och den räcker längre än man tror.
+- **Har du flera containrar som ska samverka, eller trafik som går ner till noll?** Ja →
+  Container Apps.
+- **Ska du faktiskt använda Kubernetes-API:t?** Ja → AKS. Kan du inte namnge vad du ska göra med
+  `kubectl` är svaret nej.
+
+Går två alternativ jämnt ut: ta det mer hanterade. Att flytta uppåt i kontroll senare är arbete du
+gör en gång; att underhålla kontroll du inte behöver är arbete varje vecka.
+</Callout>
+
+Azure har fler alternativ än de fyra. Container Instances kör en enstaka container utan
+orkestrering, och Functions kör kod som svar på händelser i stället för som en tjänst som står och
+lyssnar. Båda hör hemma i en senare del.
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att läsa andras val oftare än du gör egna. Att se `Microsoft.Web/serverfarms` i en
+Terraform-plan och veta att det är en App Service-plan — och att den kostar även utan appar — är det
+som återkommer.
+
+Du kommer också att bli tillfrågad varför notan ser ut som den gör. Nio gånger av tio är svaret en
+av tre saker i den här artikeln. En plan ingen tog bort, en maskin som stoppades inifrån, eller ett
+kluster som står och går på natten.
+
+Nätverksisolering, autoskalningsregler och kostnadsoptimering på allvar kan vänta. De blir dina den
+dag du äger en miljö — och de bygger på samma fyra val.
+
+## Vanliga nybörjarförväxlingar
+
+PaaS betyder inte att servrarna är borta. Det betyder att någon annan sköter dem.
+
+App Service-planen är det du betalar för, inte appen. Att stoppa appen sänker inte kostnaden.
+
+Container Apps är inte "AKS light". Den är byggd på Kubernetes men ger dig inte Kubernetes-API:t.
+
+AKS ger dig inte mindre Kubernetes än ett eget kluster. Det du slipper är att drifta control plane,
+inte att förstå poddar och Services.
+
+En stoppad virtuell maskin kostar fortfarande compute. Det är den frigjorda som inte gör det.
+
+Ingen av tjänsterna är regionsöverskridande av sig själv. Två regioner betyder två av allt, plus
+något som fördelar trafiken.
+
+Serverlöst betyder inte gratis. Det betyder att räkningen följer användningen — och kan bli noll när
+användningen är det.
+
+## Prova själv
+
+Allt nedan är läsande och kostar ingenting. Du behöver vara inloggad med `az login` från förra
+delen.
+
+Börja med att fråga var den fria App Service-nivån finns:
+
+```bash
+az appservice list-locations --sku F1 -o table
+```
+
+Du får en lista på ett femtiotal regioner. Kör samma kommando med `--sku P1V3` och jämför — listorna
+skiljer sig, för alla prisnivåer finns inte överallt. Det är samma sak som förra delen sa om
+regioner, nu med en tjänst att ta på.
+
+Fråga sedan vilka Kubernetes-versioner AKS erbjuder:
+
+```bash
+az aks get-versions --location swedencentral -o table
+```
+
+Kolumnen `SupportPlan` visar vilka versioner som har långtidsstöd. Listan flyttar sig med tiden, så
+den du ser nu är inte den som stod här när artikeln skrevs. Det är hela poängen med att fråga i
+stället för att läsa.
+
+Titta nu på vad resursleverantören bakom Container Apps faktiskt erbjuder:
+
+```bash
+az provider show --namespace Microsoft.App \
+  --query "resourceTypes[].resourceType" -o tsv
+```
+
+Där står `containerApps` och `managedEnvironments`. Det är precis de namn som dyker upp efter
+`/providers/` i ett resurs-ID — förra delens sträng, nu med innehåll.
+
+Kolla slutligen vilka maskinstorlekar som finns i en region:
+
+```bash
+az vm list-skus --location swedencentral \
+  --size Standard_B2 --resource-type virtualMachines \
+  -o table
+```
+
+Kolumnen `Zones` visar vilka tillgänglighetszoner storleken går att lägga i, och `Restrictions`
+visar om något hindrar dig. Lägg märke till att namnen slutar på `_v2` — `Standard_B2s` utan suffix
+finns inte i den här regionen.
+
+Tre saker som kan förvirra. Det äldre kommandot `az vm list-sizes` svarar fortfarande, men skriver
+`WARNING: This command has been deprecated and will be removed in a future release. Use 'az vm
+list-skus' instead.` Ersättaren är dessutom långsam — den hämtar hela regionens lista och filtrerar
+lokalt, så en körning tar närmare en minut även med `--size`. Och listorna är knutna till din
+prenumeration: en annan prenumeration kan sakna storlekar och regioner som du ser.
+
+<Callout type="kom-ihag">
+- **IaaS** ger kontroll och underhåll. **PaaS** tar underhållet och ger dig färre reglage.
+- Välj den mest hanterade tjänsten som klarar kravet. Kontroll du inte behöver är arbete varje vecka.
+- Du betalar för **App Service-planen**, inte för apparna i den. Stoppad app sänker inte notan.
+- Container Apps är byggd på Kubernetes men ger dig inte Kubernetes-API:t. AKS gör det.
+- Container Apps skalar till noll. Ett AKS-kluster kostar lika mycket på natten som på dagen.
+- **Stoppad** virtuell maskin debiteras. **Frigjord** gör det inte — skillnaden är var du stänger av.
+- Alla fyra är regionala. Två regioner betyder två av allt plus en trafikfördelare.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Vad är den praktiska skillnaden mellan IaaS och PaaS för din arbetsvecka?",
+      a: "I IaaS äger du allt från operativsystemet och uppåt: uppdateringar, omstarter och det som ska starta appen igen. I PaaS gör plattformen det, och du lämnar bara in koden eller imagen. Priset för PaaS är att du bara kan göra det plattformen har ett reglage för.",
+    },
+    {
+      q: "Du stoppar din webbapp i portalen för att spara pengar. Vad händer med fakturan?",
+      a: "Ingenting. Du betalar för App Service-planen — alltså instanserna appen kör på — inte för appen. Kostnaden försvinner först när du skalar ner planen till en fri nivå eller tar bort den.",
+    },
+    {
+      q: "En kollega säger att Container Apps är \"AKS fast enklare\". Stämmer det?",
+      a: "Delvis fel. Container Apps är byggd på Kubernetes, men exponerar inte Kubernetes-API:t — ingen `kubectl`, inga manifest. Behöver du API:t, egna controllers eller operatorer är AKS rätt val. Kan du inte namnge vad du ska göra med `kubectl` är Container Apps samma sak utan klusteransvaret.",
+    },
+    {
+      q: "Din virtuella maskin har varit avstängd i två veckor men kostar fortfarande compute. Vad hände?",
+      a: "Den stängdes av inifrån, med ett `shutdown` i operativsystemet, och står därför som stoppad med hårdvara reserverad. Stäng av utifrån — via portalen, `az` eller API:t — så frigörs hårdvaran och compute-kostnaden upphör. Diskarna kostar i båda fallen.",
+    },
+    {
+      q: "Ni vill köra i både `swedencentral` och `westeurope`. Räcker det att kryssa i en ruta?",
+      a: "Nej. Alla fyra körmiljöerna är regionala. Du skapar en av varje i båda regionerna och sätter något framför som fördelar trafiken, till exempel Front Door eller Traffic Manager. Tillgänglighetszoner inom en region är däremot ofta inbyggt.",
+    },
+    {
+      q: "En liten intern tjänst används några minuter per dag. Vilken körmiljö är billigast, och varför?",
+      a: "Container Apps på förbrukningsplanen. Den skalar till noll när ingen anropar den, och räkningen följer vCPU-sekunder, GiB-sekunder och antal anrop — med en gratisandel per prenumeration och månad. En virtuell maskin eller ett AKS-kluster kostar lika mycket dygnet runt.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- Compute är de resurser som kör din kod. Valet styr underhåll, kostnad och hur svårt det blir att byta.
+- IaaS: du hyr maskinen och äger allt från operativsystemet och uppåt.
+- PaaS: du lämnar in koden eller imagen, och plattformen sköter maskinen — mot färre reglage.
+- Välj den mest hanterade tjänsten som klarar kravet.
+- En virtuell maskin ger full kontroll. Storleken väljs som en SKU, och namnen skiljer sig mellan regioner.
+- App Service kör webbappar och API:er bakom en adress, med certifikat och distributionsplatser.
+- App Service-planen är instanserna du betalar för. Flera appar i samma plan delar dem.
+- Container Apps kör containrar utan kluster, skalar till noll och rullar ut i revisioner.
+- AKS är hanterad Kubernetes. Control plane är Microsofts, noderna dina — minst sex i produktion.
+- Container Apps döljer Kubernetes-API:t. AKS ger dig det. Det är hela skillnaden.
+- Fyra sätt att räkna: per sekund tilldelad hårdvara, per planinstans, per förbrukning, per nod.
+- Stoppad virtuell maskin debiteras, frigjord gör det inte. Skillnaden är var du stänger av.
+- Diskar och statiska publika IP-adresser kostar oavsett maskinens tillstånd.
+- Alla fyra är regionala. Flera regioner kräver flera uppsättningar och en trafikfördelare.
+
+## Nästa del
+
+Nu står applikationen någonstans. Nästa fråga är vem som får göra vad med den — och hur den själv
+loggar in på databasen utan att ett lösenord ligger i en fil.
+
+Det tar oss till identiteter: vad en roll är, var behörigheten ärvs ifrån, och varför en tjänst helst
+inte ska ha någon hemlighet alls.

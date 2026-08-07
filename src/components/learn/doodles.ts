@@ -787,4 +787,90 @@ export const DOODLES: Record<string, string> = {
     <text x="780" y="310">taggar</text>
   </g>
 </svg>`,
+
+  /* ---- Azure 1.0 · Resurs-ID:t är hela adressen — STIL: HANDRITAD ---- */
+  "resurs-id-raden": `
+<svg viewBox="0 0 768 336" role="img" aria-label="Ett resurs-ID brutet på fyra rader i en ruta. Varje rad har en pil åt höger till sitt namn: prenumeration, resursgrupp, leverantör och resurs.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M60 57 Q295 54 531 56 Q531 170 530 284 Q295 285 59 283 Q59 170 60 57 Z"/><path d="M64 113 Q300 112 528 113" stroke-dasharray="6 7" opacity="0.45"/><path d="M64 170 Q300 169 528 170" stroke-dasharray="6 7" opacity="0.45"/><path d="M64 227 Q300 226 528 227" stroke-dasharray="6 7" opacity="0.45"/><path d="M536 84 Q552 85 566 84"/><path d="M562 78 L572 84 L562 90"/><path d="M536 141 Q552 142 566 141"/><path d="M562 135 L572 141 L562 147"/><path d="M536 198 Q552 199 566 198"/><path d="M562 192 L572 198 L562 204"/><path d="M536 255 Q552 256 566 255"/><path d="M562 249 L572 255 L562 261"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13.5" fill="currentColor" text-anchor="start">
+    <text x="78" y="89">/subscriptions/12345678-…-90ab</text>
+    <text x="78" y="146">/resourceGroups/shop-prod</text>
+    <text x="78" y="203">/providers/Microsoft.Storage</text>
+    <text x="78" y="260">/storageAccounts/shopbilder</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="start">
+    <text x="590" y="89">prenumeration</text>
+    <text x="590" y="146">resursgrupp</text>
+    <text x="590" y="203">leverantör</text>
+    <text x="590" y="260">resurs</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="295" y="320">ett resurs-ID</text>
+  </g>
+</svg>`,
+
+  /* ---- Azure 1.0 · Logisk zon vs fysisk zon — STIL: HANDRITAD ---- */
+  "zon-ettan": `
+<svg viewBox="0 0 880 396" role="img" aria-label="Två klippbräden märkta zon 1 pekar med streckade pilar in i en region med tre hus. Prenumeration A pekar på az3 och prenumeration B på az1.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M301 35 Q580 35 860 36 Q862 152 859 269 Q580 269 299 268 Q299 152 301 35 Z" stroke-dasharray="9 10" opacity="0.45"/><path d="M330 120 Q395 120 459 119 Q460 165 461 210 Q395 211 329 210 Q329 165 330 120 Z"/><path d="M316 122 L395 70 L474 122"/><path d="M510 119 Q575 120 639 121 Q641 165 641 210 Q575 212 510 209 Q510 165 510 119 Z"/><path d="M496 122 L575 70 L654 122"/><path d="M691 121 Q755 119 819 119 Q822 165 819 209 Q755 211 689 209 Q690 165 691 121 Z"/><path d="M676 122 L755 70 L834 122"/><path d="M50 85 Q153 86 257 87 Q258 123 255 159 Q153 162 49 160 Q48 123 50 85 Z"/><path d="M51 241 Q153 239 256 241 Q257 277 255 313 Q153 315 51 315 Q50 277 51 241 Z"/><path d="M258 118 Q470 96 682 164" stroke-dasharray="8 9"/><path d="M675 162 L688 168 L675 174"/><path d="M258 272 Q350 266 452 210" stroke-dasharray="8 9"/><path d="M445 199 L458 205 L445 211"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="17" fill="currentColor" text-anchor="middle">
+    <text x="153" y="132">zon 1</text>
+    <text x="153" y="286">zon 1</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle">
+    <text x="395" y="242">az1</text>
+    <text x="575" y="242">az2</text>
+    <text x="755" y="242">az3</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13.5" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="153" y="184">Prenumeration A</text>
+    <text x="153" y="338">Prenumeration B</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="580" y="308">swedencentral</text>
+  </g>
+</svg>`,
+
+  /* ---- Azure 1.1 · Container Apps skalar till noll — STIL: HANDRITAD ---- */
+  "skala-till-noll": `
+<svg viewBox="0 0 880 380" role="img" aria-label="Till vänster två repliker på en heldragen platta märkt dagtid. Till höger en streckad tom platta märkt natten, med en mätare som står på noll.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M59 248 Q230 247 399 247 Q400 260 400 271 Q230 274 59 271 Q58 260 59 248 Z"/><path d="M479 249 Q650 246 819 249 Q822 260 821 273 Q650 274 479 272 Q479 260 479 249 Z" stroke-dasharray="8 9" opacity="0.35"/><path d="M90 158 Q150 158 211 158 Q211 201 210 243 Q150 244 89 243 Q90 201 90 158 Z"/><path d="M239 158 Q300 157 359 157 Q362 201 361 244 Q300 244 239 244 Q240 201 239 158 Z"/><path d="M509 159 Q570 157 630 157 Q632 201 630 243 Q570 246 509 243 Q510 201 509 159 Z" stroke-dasharray="7 8" opacity="0.28"/><path d="M659 157 Q720 158 781 157 Q781 201 781 244 Q720 244 661 243 Q658 201 659 157 Z" stroke-dasharray="7 8" opacity="0.28"/><path d="M821 170 Q849 171 849 200 Q849 229 821 229 Q791 229 790 199 Q791 171 821 170 Z"/><path d="M820 200 Q806 194 800 184"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle">
+    <text x="150" y="208">replik</text>
+    <text x="300" y="208">replik</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="17" fill="currentColor" text-anchor="middle">
+    <text x="820" y="208">0</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="230" y="318">dagtid</text>
+    <text x="650" y="318">natten</text>
+  </g>
+</svg>`,
+
+  /* ---- Azure 1.1 · Stoppad vs frigjord virtuell maskin — STIL: HANDRITAD ---- */
+  "stoppad-vs-frigjord": `
+<svg viewBox="0 0 880 400" role="img" aria-label="Två avstängda serverlådor. Den vänstra står på en skrafferad platta märkt hårdvaran reserverad, den högra svävar över en streckad tom platta märkt hårdvaran släppt.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M59 269 Q220 266 381 267 Q380 281 379 293 Q220 295 60 294 Q59 281 59 269 Z"/><g stroke-width="1.1" opacity="0.42"><path d="M88 290 L70 272"/><path d="M110 290 L92 272"/><path d="M132 290 L114 272"/><path d="M154 290 L136 272"/><path d="M176 290 L158 272"/><path d="M198 290 L180 272"/><path d="M220 290 L202 272"/><path d="M242 290 L224 272"/><path d="M264 290 L246 272"/><path d="M286 290 L268 272"/><path d="M308 290 L290 272"/><path d="M330 290 L312 272"/><path d="M352 290 L334 272"/><path d="M374 290 L356 272"/></g><path d="M111 130 Q220 130 329 129 Q331 196 331 262 Q220 264 111 261 Q110 196 111 130 Z"/><path d="M300 138 Q313 139 314 152 Q313 165 301 164 Q287 165 286 153 Q287 139 300 138 Z"/><path d="M300 143 Q301 150 300 157"/><path d="M500 267 Q660 266 820 268 Q822 281 819 294 Q660 296 500 294 Q500 281 500 267 Z" stroke-dasharray="8 9" opacity="0.33"/><path d="M550 111 Q660 109 770 111 Q771 176 769 243 Q660 243 551 242 Q548 176 550 111 Z"/><path d="M741 118 Q753 119 752 131 Q753 145 739 146 Q727 145 726 131 Q727 119 741 118 Z"/><path d="M740 123 Q741 130 740 137"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="17" fill="currentColor" text-anchor="middle">
+    <text x="220" y="200">VM</text>
+    <text x="660" y="180">VM</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13.5" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="220" y="330">hårdvaran reserverad</text>
+    <text x="660" y="330">hårdvaran släppt</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="220" y="376">stoppad</text>
+    <text x="660" y="376">frigjord</text>
+  </g>
+</svg>`,
 };

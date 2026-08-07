@@ -1,0 +1,510 @@
+---
+title: 'Prenumerationen, resursgruppen och regionen'
+description: 'Var en resurs bor, vem som betalar, och var gränsen mot Microsoft går'
+category: 'azure'
+part: 1
+partTitle: 'Grunderna'
+order: 1
+date: '2026-08-07'
+tags: ['Beginner', 'Overview']
+---
+
+## Var vi är
+
+Terraform-serien slutade med en fil som beskriver infrastruktur, och med ett `terraform plan` som
+kunde falla på *could not acquire access token*. Felet betydde inte att filen var trasig. Det betydde
+att beskrivningen ska köras mot en leverantör, och att du inte var inloggad hos den.
+
+Den här serien handlar om leverantören. Vi använder Azure, men uppdelningen — konto, container,
+region, ansvar — ser likadan ut hos alla stora moln.
+
+Den här delen ger kartan: vad du hyr, var en resurs bor, och vad som är ditt ansvar. Vi skapar
+ingenting än, och allt du kör är läsande.
+
+<Del titel="Ingången" />
+
+## Vad Azure är
+
+Azure är Microsofts moln: en samling tjänster du hyr per tidsenhet i stället för att köpa hårdvara.
+
+Du beställer en virtuell maskin, en databas eller ett nätverk, och Microsoft levererar det på
+maskiner de äger, i ett datacenter de driftar. Betalningen löper så länge saken finns.
+
+Azure är inte ett program du installerar och inte ett operativsystem. Det är ett API framför någon
+annans datorhall, plus ett gränssnitt och ett verktyg som talar med det API:et.
+
+Du behöver inte kunna vilka tjänster som finns — det är över tvåhundra. Det som ska sitta är
+uppdelningen: vem äger vad, var ligger det, och vem betalar.
+
+## Vad delat ansvar betyder
+
+**Delat ansvar** är modellen för vad Microsoft sköter och vad du sköter. Gränsen flyttar sig
+beroende på vilken sorts tjänst du valt.
+
+Microsoft ansvarar alltid för det fysiska: datacentret, elen, kylningen, näten och maskinerna. Du
+ansvarar alltid för din data, dina konton och identiteter, och vem som får komma åt vad.
+
+Däremellan ligger operativsystem, nätverksregler och applikation. Hyr du en virtuell maskin är de
+dina. Hyr du en färdig databastjänst är operativsystemet Microsofts.
+
+<Callout type="varfor" title="Varför modellen är värd att lära sig först">
+Nästan varje incident i ett molnprojekt handlar om ett ansvar någon trodde låg hos den andra.
+
+Att en virtuell maskin har säkerhetsuppdateringar kvar att installera är inte Microsofts problem.
+Att ett lösenord ligger i en publik lagringsplats är inte heller det. Båda ligger i den del av
+tabellen som aldrig flyttar.
+</Callout>
+
+## Vad en resurs är
+
+En **resurs** är varje sak i Azure som går att skapa, läsa och ta bort för sig.
+
+En virtuell maskin är en resurs. Ett lagringskonto, ett virtuellt nätverk, en publik IP-adress och
+en databas är också resurser, var och en med eget namn och egen livslängd.
+
+Det är resursen som kostar pengar och som allt annat i den här artikeln handlar om att placera,
+namnge och ansvara för.
+
+## Vad Azure Resource Manager är
+
+**Azure Resource Manager** är API:et som tar emot allt du vill göra med en resurs. Det förkortas
+ARM.
+
+Portalen i webbläsaren, kommandot `az`, Terraform och Bicep gör alla samma sak: de skickar ett
+HTTPS-anrop till ARM. Ingen av dem har en egen väg in.
+
+Det är därför en resurs du klickat fram i portalen syns direkt i `az`, och därför Terraform kan
+upptäcka att någon ändrat för hand. De tittar på samma register.
+
+<Flow
+  caption="Fyra verktyg, en väg in. Det är därför en ändring i portalen syns i `az` direkt."
+  steps={[
+    {
+      label: "Portalen · `az` · Terraform",
+      note: "Det du använder. Alla tre bygger samma anrop.",
+    },
+    {
+      label: "Azure Resource Manager",
+      via: "HTTPS",
+      note: "Tar emot begäran, kontrollerar behörighet och skickar vidare.",
+      accent: true,
+    },
+    {
+      label: "Resursleverantören",
+      via: "`Microsoft.Storage`",
+      note: "Tjänsten som faktiskt kan skapa den här sortens resurs.",
+    },
+    {
+      label: "Resursen",
+      via: "skapas eller ändras",
+      note: "Lagringskontot, den virtuella maskinen, nätverket.",
+    },
+  ]}
+/>
+
+Ordet *control plane* är samma ord som i Kubernetes-serien, och samma idé: lagret du talar med, inte
+lagret som kör din last.
+
+## Control plane vs data plane
+
+Två vägar in till samma resurs, med olika portvakt. Att blanda ihop dem gör felsökning svårare än
+den behöver vara.
+
+<Split
+  leftTitle="Control plane"
+  rightTitle="Data plane"
+  caption="Samma lagringskonto. Två helt skilda dörrar, med varsin behörighetsmodell."
+>
+  <div slot="left">
+
+  Anrop **om** resursen: skapa den, ändra dess inställningar, ta bort den, läsa hur den är
+  konfigurerad.
+
+  Går alltid till Azure Resource Manager. Behörigheten styrs av rollen du fått i Azure.
+
+  Exempel: `az storage account show`.
+
+  </div>
+  <div slot="right">
+
+  Anrop **till** resursen: läsa en fil, skriva en rad, ställa en fråga till databasen.
+
+  Går direkt till resursens egen adress. Behörigheten styrs av resursens egen modell.
+
+  Exempel: att hämta en bild från lagringskontot över HTTP.
+
+  </div>
+</Split>
+
+Det förklarar ett fel som ser motsägelsefullt ut: du kan ha rätt att se att ett lagringskonto finns
+och ändå få *nekad* när du försöker läsa en fil ur det. Två dörrar, två nycklar.
+
+<Del titel="Adressen" />
+
+## Vad en prenumeration är
+
+En **prenumeration** är den behållare som fakturan hör till. Allt du skapar hamnar i exakt en
+prenumeration, och kostnaden landar där.
+
+Prenumerationen är också en gräns för administration. Behörigheter, kvoter och gränsvärden räknas
+per prenumeration, vilket är varför team ofta får en egen.
+
+Varje prenumeration litar på **en** katalog av användare — en Entra-tenant. Samma tenant kan äga
+många prenumerationer, men inte tvärtom.
+
+Vad du gör med identiteterna i den katalogen tar vi i delen om behörigheter. Här räcker det att veta
+att inloggningen kommer därifrån.
+
+## Vad en resursgrupp är
+
+En **resursgrupp** är en behållare för resurser som hör ihop och ska hanteras tillsammans.
+
+Varje resurs ligger i exakt en resursgrupp. Gruppen har ett namn du väljer, och den kostar
+ingenting i sig — den är en etikett med regler.
+
+Den vanligaste indelningen är per system och miljö: `shop-prod`, `shop-test`. Då kan du ge ett team
+behörighet till en hel miljö i ett svep, och se vad just den miljön kostar.
+
+<Callout type="fallgrop">
+**Att radera en resursgrupp raderar allt som ligger i den.** Det är hela poängen med den, och det är
+också varför den är farlig.
+
+Kommandot frågar en gång och kör sedan vidare i bakgrunden. Det finns ingen papperskorg, och en
+raderad databas kommer inte tillbaka utan en säkerhetskopia som ligger någon annanstans.
+
+Det som skyddar är ett **resurslås** på gruppen. Det är en egen resurs som säger att ingenting här
+får raderas förrän låset tas bort.
+</Callout>
+
+## Prenumeration vs resursgrupp
+
+De två förväxlas eftersom båda är behållare som resurser ligger i.
+
+**Prenumerationen** är fakturan och den yttre administrativa gränsen. En resurs kan inte flyttas
+mellan prenumerationer utan en särskild flyttoperation.
+
+**Resursgruppen** är den inre indelningen, som du styr fritt. Den finns för livscykel och
+behörighet: saker som skapas ihop, raderas ihop och ägs av samma team.
+
+Tumregeln: prenumerationen är vem som betalar, resursgruppen är vad som hör ihop.
+
+## Vad en hanteringsgrupp är
+
+En **hanteringsgrupp** är en behållare för prenumerationer.
+
+Den finns för att en organisation med femtio prenumerationer inte ska behöva sätta samma regel
+femtio gånger. En regel på hanteringsgruppen ärvs nedåt.
+
+<Stack
+  caption="Fyra nivåer, varje inuti den ovanför. En regel du sätter högt upp gäller allt under."
+  ground="Azure Resource Manager — alla fyra nivåerna adresseras genom samma API"
+  layers={[
+    {
+      label: "Hanteringsgrupp",
+      note: "Behållare för prenumerationer. Finns för regler som ska gälla brett.",
+    },
+    {
+      label: "Prenumeration",
+      note: "Fakturan och den administrativa gränsen. Litar på **en** katalog av användare.",
+    },
+    {
+      label: "Resursgrupp",
+      note: "Resurser som hör ihop och hanteras tillsammans. Kostar ingenting i sig.",
+      accent: true,
+    },
+    {
+      label: "Resurs",
+      note: "Den virtuella maskinen, lagringskontot, nätverket. Det här är det som kostar.",
+    },
+  ]}
+/>
+
+Som utvecklare skapar du sällan hanteringsgrupper. Vad de används till — policy och behörighetsarv
+— tar vi i delen om identitet och behörigheter.
+
+## Resurs-ID:t är hela adressen
+
+Varje resurs i Azure har ett **resurs-ID**: en sträng som pekar ut den entydigt genom hela
+hierarkin.
+
+```
+/subscriptions/12345678-1234-1234-1234-1234567890ab
+/resourceGroups/shop-prod
+/providers/Microsoft.Storage
+/storageAccounts/shopbilder
+```
+
+Det är **en enda rad**, bruten här för att rymmas. Läs den uppifrån och ner så står de fyra nivåerna
+i tur och ordning: prenumeration, resursgrupp, leverantör, resurs.
+
+`Microsoft.Storage` är en **resursleverantör** — den tjänst inuti Azure som kan skapa den här sorten.
+`Microsoft.Compute` levererar virtuella maskiner, `Microsoft.Network` nätverk. Namnet står alltid
+efter `/providers/`.
+
+Att kunna läsa strängen betalar sig direkt. Den dyker upp i felmeddelanden, i Terraform-planer, i
+behörighetsregler och i loggar — och den säger var resursen ligger utan att du behöver leta.
+
+<Doodle
+  name="resurs-id-raden"
+  caption="Fyra rader, fyra pilar — och ändå en enda sträng."
+/>
+
+<Del titel="Geografin" />
+
+## Vad en region är
+
+En **region** är en geografisk plats där Azure har datacenter, och den du väljer när du skapar en
+resurs.
+
+Namnet skrivs i ett ord utan versaler: `swedencentral`, `westeurope`, `eastus`. Portalen visar
+`Sweden Central`, men API:et och `az` vill ha den ihopskrivna formen.
+
+Regionen avgör tre saker: hur långt datat har till dina användare, vilket lands lagar det ligger
+under, och vad det kostar. Priset skiljer sig mellan regioner för samma tjänst.
+
+Alla tjänster finns inte i alla regioner. En ny tjänst dyker upp i de stora regionerna först, och
+det är en vanlig anledning till att ett bygge fungerar i en region och inte i en annan.
+
+## Vad en tillgänglighetszon är
+
+En **tillgänglighetszon** är en avskild grupp datacenter inuti en region, med egen el, egen kylning
+och eget nät.
+
+Zonerna ligger tillräckligt nära varandra för låg fördröjning och tillräckligt långt isär för att en
+strömavbrott eller översvämning inte ska ta alla samtidigt.
+
+En region med zoner har normalt tre. Vissa tjänster sprider sig över dem åt dig; för andra anger du
+själv vilken zon en resurs ska ligga i.
+
+## Region vs tillgänglighetszon
+
+Två nivåer av samma sak — avstånd — och de skyddar mot olika fel.
+
+**Regionen** är landet och staden. Två regioner ligger hundratals kilometer isär, och att köra i två
+regioner skyddar mot att en hel region faller.
+
+**Zonen** är huset. Tre zoner ligger inom några mil, och att sprida sig över dem skyddar mot att ett
+datacenter faller.
+
+Zoner är nästan alltid det första steget: de kostar lite eller ingenting extra och kräver ingen
+egen kopia av systemet. Flera regioner kostar dubbelt och kräver att du löser hur data hålls i takt.
+
+## Logisk zon vs fysisk zon
+
+Den här skillnaden syns sällan, och den bränner den som antar fel.
+
+**Den fysiska zonen** är den faktiska gruppen datacenter. Den heter något i stil med
+`swedencentral-az1` och är samma hus för alla.
+
+**Den logiska zonen** är siffran `1`, `2` eller `3` som du skriver i ditt manifest. Den översätts
+till en fysisk zon — och översättningen sätts per prenumeration när prenumerationen skapas.
+
+Din zon `1` kan alltså vara någon annans zon `3`. Två team som båda lägger sin databas i "zon 1" har
+inte nödvändigtvis lagt den i samma hus. Två prenumerationer som ska ligga *tillsammans* går därför
+inte att samordna på siffran.
+
+Mappningen går att läsa ut, och du gör det i *Prova själv* längre ner.
+
+<Doodle
+  name="zon-ettan"
+  caption="Båda lapparna säger samma siffra. Pilarna pekar på olika hus."
+/>
+
+## Parade regioner är inte längre regeln
+
+Många regioner har en **parregion**: en utpekad andra region som vissa tjänster replikerar till
+automatiskt.
+
+`swedencentral` är parad med `swedensouth`. Du väljer inte paret själv — Microsoft har bestämt det,
+och paret ligger normalt i samma geografi så att data stannar under samma lagstiftning.
+
+Många nyare regioner är däremot **inte** parade. De använder tillgänglighetszoner som sitt
+huvudsakliga skydd i stället, och flera tjänster kan replikera geografiskt oavsett om ett par finns.
+
+Äldre material påstår ofta att varje region har ett par. Kontrollera i stället din egen region innan
+du bygger något på antagandet.
+
+## Resursgruppens region vs resursens region
+
+Resursgruppen har en region, och den betyder inte det man först tror.
+
+**Resursgruppens region** är där gruppens *metadata* lagras — listan över vad som ligger i den. Den
+används också för att dirigera control plane-anrop som rör gruppen.
+
+**Resursens region** är där resursen faktiskt kör. Den behöver inte vara samma som gruppens, och en
+grupp kan innehålla resurser i flera regioner.
+
+Portalen varnar när de skiljer sig åt. Varningen är information, inte ett fel — men att lägga dem i
+samma region är ändå det enklaste, eftersom ett regionavbrott då bara drabbar ett ställe.
+
+<Callout type="fallgrop">
+**Taggar ärvs inte nedåt.** En tagg är ett nyckel/värde-par du sätter på en resurs, och den
+används mest för att dela upp kostnadsrapporten: `miljo: prod`, `team: shop`.
+
+Sätter du taggen på resursgruppen får resurserna i den **inte** taggen automatiskt. Kostnadsrapporten
+per tagg blir därför full av otaggade rader, och den som byggde miljön är säker på att taggningen är
+gjord.
+
+Det som löser det är en policy som sätter taggen vid skapandet, eller att taggen står i
+Terraform-koden för varje resurs.
+</Callout>
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att välja resursgrupp och region varje gång du skapar något, och att läsa resurs-ID:n i
+felmeddelanden, i Terraform-planer och i behörighetsregler. Det är det som återkommer varje vecka.
+
+Du kommer också att bli tillfrågad var något ligger, och då är svaret nästan alltid en rad i
+hierarkin: fel prenumeration, fel resursgrupp eller fel region.
+
+Hanteringsgrupper, policy och prenumerationsdesign kan vänta. De blir dina den dag du äger
+plattformen i stället för en applikation på den — och då är det fortfarande de fyra nivåerna, bara
+med krav på sig.
+
+## Vanliga nybörjarförväxlingar
+
+Azure är inte ett program du installerar. Det är ett API framför någon annans datorhall.
+
+`az` är inte Azure. Det är en klient som skickar HTTPS-anrop till Azure Resource Manager, precis som
+portalen gör.
+
+En resursgrupp är inte en region. Den har en region för sin metadata, och resurserna i den kan ligga
+någon annanstans.
+
+Att radera en resursgrupp raderar allt i den. Det är avsiktligt, och det finns ingen papperskorg.
+
+Zon `1` är inte samma datacenter för alla. Översättningen från siffra till hus sätts per
+prenumeration.
+
+Alla regioner har inte en parregion längre. Många nyare regioner förlitar sig på zoner i stället.
+
+En tagg på resursgruppen sätter sig inte på resurserna i den. Arv sker inte av sig självt.
+
+## Prova själv
+
+Allt nedan är läsande. Ingenting skapas, och ingenting kostar pengar.
+
+Installera Azure CLI om du saknar det, och kontrollera att klienten finns:
+
+```bash
+az version
+```
+
+Du får versionsnumret utan att vara inloggad. Fråga nu efter ditt konto:
+
+```bash
+az account show
+```
+
+Har du inte loggat in svarar den `ERROR: Please run 'az login' to setup account.` och avslutar med
+kod 1. **Det är inte ett fel i installationen** — `az` är en klient, precis som `kubectl` i
+Kubernetes-serien, och utan inloggning har den ingen Resource Manager att fråga.
+
+Logga in och fråga igen:
+
+```bash
+az login
+az account show -o table
+```
+
+Nu står prenumerationens namn, dess tillstånd och tenant-id:t i en tabell. Titta sedan på regionerna:
+
+```bash
+az account list-locations -o table
+```
+
+Listan är lång — över hundra rader. Zooma in på en region och läs hela posten:
+
+```bash
+az account list-locations \
+  --query "[?name=='swedencentral']" -o json
+```
+
+Här står `physicalLocation` — för `swedencentral` är det **Gävle**. Här står också `pairedRegion`
+med `swedensouth`, och `availabilityZoneMappings`, som visar hur *din* prenumerations logiska zoner
+`1`, `2` och `3` översätts till fysiska zoner. Kör samma kommando i en annan prenumeration och
+ordningen kan vara en annan.
+
+Titta slutligen på dina resursgrupper:
+
+```bash
+az group list -o table
+```
+
+Kolumnen `Location` är gruppens region — alltså var metadatan ligger, inte nödvändigtvis var
+resurserna kör.
+
+Tre saker som kan förvirra. Listan från `list-locations` innehåller poster med `regionType`
+`Logical`, som `eastusstage`, och dem går det inte att lägga en resurs i — filtrera på
+`metadata.regionType=='Physical'` om du bara vill se de riktiga. Antalet regioner du ser är dessutom
+ditt eget: en prenumeration kan sakna åtkomst till regioner som en annan har. Och `az account show`
+visar den prenumeration som råkar vara vald — har du flera byter du med `az account set`.
+
+<Callout type="kom-ihag">
+- Azure är ett API framför någon annans datacenter. `az`, portalen och Terraform talar alla med
+  **Azure Resource Manager**.
+- Fyra nivåer: hanteringsgrupp → prenumeration → resursgrupp → resurs. Resurs-ID:t är samma fyra
+  nivåer som en sträng.
+- Prenumerationen är fakturan. Resursgruppen är vad som hör ihop — och raderas den försvinner allt i den.
+- Regionen är staden, tillgänglighetszonen är huset. Zoner skyddar billigare än flera regioner.
+- Logisk zon `1` översätts per prenumeration. Din etta är inte allas etta.
+- Delat ansvar: data, konton och åtkomst är alltid dina, oavsett vilken tjänst du valt.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Du klickar fram en resurs i portalen. Varför syns den direkt i `az`?",
+      a: "För att båda talar med samma API. Portalen, `az`, Terraform och Bicep skickar alla HTTPS-anrop till Azure Resource Manager, och läser ur samma register. Ingen av dem har en egen väg in.",
+    },
+    {
+      q: "Vad är skillnaden mellan en prenumeration och en resursgrupp?",
+      a: "Prenumerationen är faktureringsgränsen och den yttre administrativa gränsen — allt du skapar hamnar i exakt en. Resursgruppen är den inre indelningen du styr fritt, för resurser som hör ihop i livscykel och behörighet.",
+    },
+    {
+      q: "Du har rätt att se att ett lagringskonto finns, men får nekad när du hämtar en fil ur det. Hur går det ihop?",
+      a: "Det är två olika dörrar. Att läsa resursens konfiguration är ett control plane-anrop till Azure Resource Manager. Att läsa en fil är ett data plane-anrop direkt till resursen, med resursens egen behörighetsmodell.",
+    },
+    {
+      q: "Ditt team och ett annat team lägger båda sin databas i \"zon 1\". Ligger de i samma datacenter?",
+      a: "Inte nödvändigtvis. Siffran är en logisk zon, och översättningen till fysisk zon sätts per prenumeration när prenumerationen skapas. Ligger teamen i olika prenumerationer kan zon 1 peka på olika hus.",
+    },
+    {
+      q: "Resursgruppen ligger i `westeurope` men du skapar en virtuell maskin i `swedencentral`. Är det fel?",
+      a: "Nej. Resursgruppens region säger var gruppens metadata lagras och vart control plane-anrop dirigeras. Resursen kör där du valt. Att lägga dem i samma region är ändå enklast, eftersom ett regionavbrott då bara drabbar ett ställe.",
+    },
+    {
+      q: "Du sätter taggen `miljo: prod` på resursgruppen. Får resurserna i den taggen?",
+      a: "Nej. Taggar ärvs inte nedåt. Kostnadsrapporten per tagg kommer att sakna raderna, trots att gruppen ser taggad ut. Sätt taggen på varje resurs i koden, eller använd en policy som sätter den vid skapandet.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- Azure är tjänster du hyr per tidsenhet — ett API framför Microsofts datacenter, inte ett program.
+- Delat ansvar: det fysiska är alltid Microsofts, data och identiteter alltid dina. Resten beror på tjänsten.
+- En resurs är varje sak som går att skapa, läsa och ta bort för sig. Det är resursen som kostar.
+- Azure Resource Manager tar emot allt. Portalen, `az`, Terraform och Bicep är bara olika klienter.
+- Control plane är anrop *om* resursen, data plane anrop *till* den. Två dörrar, två behörigheter.
+- Prenumerationen är fakturan och den administrativa gränsen. Den litar på en katalog av användare.
+- Resursgruppen samlar det som hör ihop. Raderas den försvinner allt i den, utan papperskorg.
+- Hanteringsgrupper ligger ovanför prenumerationer och finns för regler som ska ärvas nedåt.
+- Resurs-ID:t är hela adressen: prenumeration, resursgrupp, leverantör, resurs — i en sträng.
+- Regionen är platsen. Namnet skrivs ihop: `swedencentral`. Pris och tjänsteutbud skiljer sig åt.
+- En tillgänglighetszon är avskilda datacenter inuti regionen, med egen el, kylning och nät.
+- Zoner skyddar mot att ett hus faller, flera regioner mot att en hel region faller.
+- Logisk zon är siffran du skriver, fysisk zon är huset. Översättningen är per prenumeration.
+- Många nyare regioner saknar parregion och använder zoner i stället. Kontrollera din egen.
+- Resursgruppens region är metadatans plats. Resurserna i gruppen kan ligga i andra regioner.
+- Taggar ärvs inte. En tagg på gruppen sätter sig inte på resurserna.
+
+## Nästa del
+
+Nu vet du var en resurs bor och vem som betalar för den. Frågan som återstår är vilken sorts resurs
+din applikation ska vara.
+
+E-handelssystemet från Docker-serien ligger i tre containrar. Ska de bli virtuella maskiner, en
+webbtjänst, eller ett Kubernetes-kluster — och vad kostar valet dig i arbete varje vecka?
