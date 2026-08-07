@@ -735,20 +735,23 @@ def alla():
     # Båda pilarna är streckade: mappningen är härledd, inte ett flöde. Att de
     # INTE korsar varandra är ett val — poängen bärs av att siffran är densamma
     # och huset ett annat, och en korsning hade bara gjort bilden svårare.
-    hus="".join(f'<path d="{w(x,120,130,90)}"/><path d="M{x-14} 122 L{x+65} 70 L{x+144} 122"/>'
-                for x in (330,510,690))
-    zonpil=('<path d="M258 118 Q470 96 682 164" stroke-dasharray="8 9"/>'+arrow(688,168)
-            +'<path d="M258 272 Q350 266 452 210" stroke-dasharray="8 9"/>'+arrow(458,205))
+    hus="".join(f'<path d="{w(x,96,140,86)}"/><path d="M{x-14} 98 L{x+70} 46 L{x+154} 98"/>'
+                for x in (280,480,680))
+    # Klippbräden ligger UNDER regionen och pilarna går upp underifrån. Första
+    # versionen hade dem till vänster, och då korsade pilarna rakt genom husen
+    # och landade ovanpå az-etiketterna — oläsbart.
+    zonpil=('<path d="M160 266 Q230 232 344 196" stroke-dasharray="8 9"/>'+arrow(350,191,"up")
+            +'<path d="M440 266 Q580 242 744 196" stroke-dasharray="8 9"/>'+arrow(750,191,"up"))
     D['zon-ettan']=(
-      '<svg viewBox="0 0 880 396" role="img" aria-label="Två klippbräden märkta zon 1 pekar med '
-      'streckade pilar in i en region med tre hus. Prenumeration A pekar på az3 och prenumeration B '
-      'på az1.">\n'
-      + G % (f'<path d="{w(300,36,560,232)}" stroke-dasharray="9 10" opacity="0.45"/>'
-             + hus + f'<path d="{w(50,86,206,74)}"/><path d="{w(50,240,206,74)}"/>' + zonpil)
-      + "\n" + txt([(153,132,"zon 1"),(153,286,"zon 1")],17)
-      + "\n" + txt([(395,242,"az1"),(575,242,"az2"),(755,242,"az3")],15)
-      + "\n" + txt([(153,184,"Prenumeration A"),(153,338,"Prenumeration B")],13.5,' opacity="0.62"')
-      + "\n" + txt([(580,308,"swedencentral")],15,' opacity="0.62"') + "\n</svg>")
+      '<svg viewBox="0 0 880 420" role="img" aria-label="Tre hus i en streckad region. Två '
+      'klippbräden under regionen, båda märkta zon 1, pekar med streckade pilar upp mot olika hus.">\n'
+      + G % (f'<path d="{w(240,30,600,190)}" stroke-dasharray="9 10" opacity="0.45"/>'
+             + hus + f'<path d="{w(60,270,200,74)}"/><path d="{w(340,270,200,74)}"/>' + zonpil)
+      + "\n" + txt([(350,150,"az1"),(550,150,"az2"),(750,150,"az3")],15)
+      + "\n" + txt([(163,314,"zon 1"),(443,314,"zon 1")],17)
+      + "\n" + txt([(540,208,"swedencentral")],14,' opacity="0.55"')
+      + "\n" + txt([(163,368,"Prenumeration A"),(443,368,"Prenumeration B")],13.5,
+                   ' opacity="0.62"') + "\n</svg>")
 
     # 37 — Azure 1.1 · Container Apps skalar till noll
     plattor=(f'<path d="{w(60,248,340,24)}"/>'
@@ -853,22 +856,23 @@ def alla():
     # Vänster: heldragna pilar, lådan lämnas vidare. Höger: streckade pilar upp till
     # hyllan och ner igen — cachen KAN saknas nästa gång, och streckat är hubbens
     # tecken för härlett eller uteblivet.
-    hylla=('<path d="M540 148 Q660 146 790 148"/><path d="M542 160 Q660 158 788 160"/>'
-           '<path d="M544 160 Q542 184 546 206"/><path d="M786 159 Q788 184 784 206"/>')
+    hylla=('<path d="M540 150 Q660 148 790 150"/><path d="M542 162 Q660 160 788 162"/>'
+           '<path d="M544 162 Q542 186 546 208"/><path d="M786 161 Q788 186 784 208"/>')
     D['artefakten-och-cachen']=(
       '<svg viewBox="0 0 880 380" role="img" aria-label="Till vänster lämnas en låda vidare mellan '
-      'två jobb med heldragna pilar. Till höger ställs en låda tillbaka på en hylla med streckade '
-      'pilar.">\n'
-      + G % (f'<path d="{w(60,150,130,90)}"/>' + '<path d="M194 195 Q200 196 206 195"/>' + arrow(212,195)
-             + f'<path d="{w(218,168,58,54)}"/>'
-             + '<path d="M280 195 Q286 196 292 195"/>' + arrow(298,195)
-             + f'<path d="{w(304,150,130,90)}"/>'
-             + hylla + f'<path d="{w(608,86,120,58)}"/>'
-             + f'<path d="{w(600,246,140,90)}"/>'
-             + '<path d="M636 240 Q634 208 636 176" stroke-dasharray="7 8"/>' + arrow(636,168,"up")
-             + '<path d="M700 172 Q702 206 700 238" stroke-dasharray="7 8"/>' + arrow(700,244,"down"))
-      + "\n" + txt([(125,200,"jobb 1"),(369,200,"jobb 2"),(670,296,"jobb")],15)
-      + "\n" + txt([(247,364,"artefakten"),(665,364,"cachen")],18.5) + "\n</svg>")
+      'två jobb med heldragna pilar. Till höger går en streckad dubbelriktad linje mellan ett jobb '
+      'och en låda på en hylla.">\n'
+      + G % (f'<path d="{w(60,150,130,90)}"/>' + '<path d="M194 195 Q202 196 210 195"/>' + arrow(216,195)
+             + f'<path d="{w(222,166,66,58)}"/>'
+             + '<path d="M292 195 Q300 196 308 195"/>' + arrow(314,195)
+             + f'<path d="{w(320,150,130,90)}"/>'
+             + hylla + f'<path d="{w(606,88,120,58)}"/>'
+             + f'<path d="{w(600,250,140,86)}"/>'
+             # EN linje med huvud i båda ändar: hämtas och läggs tillbaka är samma väg.
+             + '<path d="M668 244 Q670 208 668 172" stroke-dasharray="7 8"/>'
+             + arrow(668,166,"up") + arrow(668,250,"down"))
+      + "\n" + txt([(125,200,"jobb 1"),(385,200,"jobb 2"),(670,298,"jobb")],15)
+      + "\n" + txt([(255,364,"artefakten"),(665,364,"cachen")],18.5) + "\n</svg>")
 
     # 44 — CI/CD 1.1 · Matrisen
     rutor="".join(f'<path d="{w(x,y,160,96)}"/>' for x in (430,620) for y in (78,208))
@@ -913,15 +917,18 @@ def alla():
             + f'<path d="{circ(475,185,7)}"/>'
             + "".join(f'<path d="M{475+x1} {185+y1} L{475+x2} {185+y2}"/>'
                       for x1,y1,x2,y2 in ((-55,-40,-46,-33),(0,-68,0,-57),(55,-40,46,-33))))
-    trad=(f'<path d="{w(660,120,180,52)}"/><path d="{w(660,196,180,52)}"/>'
-          f'<path d="{w(660,272,180,52)}"/>'
-          '<path d="M700 118 Q636 146 700 172 Q764 200 700 224 Q636 252 700 274" '
-          'stroke-width="1.6"/>')
+    # Tråden går RAKT genom lådorna med en knut i varje. Första versionen lät den
+    # slingra sig mellan dem, och då lästes den som ett klotter i stället för som
+    # ett sammanhang som passerar tre ställen.
+    trad=(f'<path d="{w(660,118,180,52)}"/><path d="{w(660,194,180,52)}"/>'
+          f'<path d="{w(660,270,180,52)}"/>'
+          '<path d="M750 100 Q754 220 750 340" stroke-width="1.6"/>'
+          + "".join(f'<path d="{circ(750,y,7)}"/>' for y in (144,220,296)))
     D['tre-signalerna']=(
       '<svg viewBox="0 0 880 400" role="img" aria-label="En uppslagen bok, en mätare med visare, och '
-      'tre lådor med en tråd som slingrar sig genom alla tre.">\n'
+      'tre lådor med en rak tråd som går genom alla tre med en knut i varje.">\n'
       + G % (bok + matare + trad)
-      + "\n" + txt([(185,352,"logg"),(475,352,"mätvärde"),(750,352,"spårning")],18.5) + "\n</svg>")
+      + "\n" + txt([(185,352,"logg"),(475,352,"mätvärde"),(750,368,"spårning")],18.5) + "\n</svg>")
 
     # 47 — Observability 1.0 · Kardinalitetsexplosionen
     # Vänster: fem lådor med luft emellan. Höger: samma hylla proppfull av smala
@@ -972,16 +979,20 @@ def alla():
       + G % (staplar + '<path d="M56 208 Q440 206 824 208" stroke-dasharray="9 9"/>'
              + '<path d="M796 118 Q798 152 796 186"/>' + arrow(796,192,"down")
              + '<path d="M60 288 Q440 290 824 288" opacity="0.5"/>')
-      + "\n" + txt([(824,200,"medel")],15,' opacity="0.75"',"end")
+      # Etiketten sitter i VÄNSTER ände. I höger ände krockade den med p95-pilens
+      # spets — ögat läste dem som ett enda hopklumpat märke.
+      + "\n" + txt([(62,200,"medel")],15,' opacity="0.75"',"start")
       + "\n" + txt([(796,108,"p95")],16)
       + "\n" + txt([(440,332,"svarstider, sorterade")],15,' opacity="0.62"') + "\n</svg>")
 
     # 50 — Cyber 1.0 · Hotet och sprickan
     # Molnet är streckat i konturen: det är en omständighet, inte ett föremål du
     # äger. Väggen är heldragen — den är din, och det är sprickan du kan laga.
-    moln=(f'<path d="{circ(132,126,46)}" stroke-dasharray="8 9"/>'
-          f'<path d="{circ(190,112,38)}" stroke-dasharray="8 9"/>'
-          f'<path d="{circ(96,146,30)}" stroke-dasharray="8 9"/>')
+    # Tre lösa cirklar lästes inte som ett moln. En bred ellips med två bulor
+    # ovanpå, alla streckade, ger en sammanhängande blob.
+    moln=(f'<path d="{ell(146,140,92,44)}" stroke-dasharray="8 9"/>'
+          f'<path d="{ell(118,110,42,26)}" stroke-dasharray="8 9"/>'
+          f'<path d="{ell(180,114,34,22)}" stroke-dasharray="8 9"/>')
     spricka=('<path d="M620 98 L636 138 L612 174 L640 216 L616 254 L630 286"/>')
     D['hotet-och-sprickan']=(
       '<svg viewBox="0 0 880 380" role="img" aria-label="Ett streckat moln till vänster med en '
@@ -1008,17 +1019,20 @@ def alla():
     # 52 — Cyber 1.1 · Injektionen bryter ut
     # Luckan är streckad i BÅDA raderna och exakt lika bred. Det är jämförelsen:
     # samma mall, och lappen nedtill är helt enkelt större än hålet den ska i.
-    def rad(y, sx, sw, mall_y):
-        return (f'<path d="{w(60,y,760,56)}"/>'
-                f'<path d="{w(330,y+8,150,40)}" stroke-dasharray="6 7" opacity="0.45"/>'
-                f'<path d="{w(sx,y+10,sw,36)}"/>')
+    # Nedre lappen är bredare än REMSAN, inte bara än hålet. Första versionen
+    # gjorde den bara bredare än luckan, och då låg den kvar inuti remsan — de två
+    # raderna såg identiska ut och "bryter ut" syntes inte alls.
+    def rad(y, sx, sw):
+        return (f'<path d="{w(150,y,580,56)}"/>'
+                f'<path d="{w(390,y+8,140,40)}" stroke-dasharray="6 7" opacity="0.45"/>'
+                f'<path d="{w(sx,y+11,sw,34)}"/>')
     D['injektionen-bryter-ut']=(
       '<svg viewBox="0 0 880 392" role="img" aria-label="Två likadana remsor med en streckad lucka. '
-      'I den övre ryms lappen i luckan, i den undre är lappen bredare och sticker ut på båda '
-      'sidor.">\n'
-      + G % (rad(80,340,130,0) + rad(240,250,330,0))
-      + "\n" + txt([(405,113,"lisa")],15)
-      + "\n" + txt([(415,273,"' OR '1'='1")],15)
+      'I den övre ryms lappen i luckan, i den undre är lappen bredare än hela remsan och sticker ut '
+      'på båda sidor.">\n'
+      + G % (rad(80,410,100) + rad(240,95,690))
+      + "\n" + txt([(460,113,"lisa")],15)
+      + "\n" + txt([(440,273,"' OR '1'='1")],15)
       + "\n" + txt([(440,180,"avsedd indata"),(440,352,"indata som bryter ut")],18.5)
       + "\n</svg>")
 
@@ -1039,6 +1053,44 @@ def alla():
       + "\n" + txt([(113,168,"angripare"),(327,168,"webbläsare"),
                     (543,168,"webbläsare"),(763,168,"tjänsten"),(546,52,"angripare")],14)
       + "\n" + txt([(220,336,"XSS"),(653,336,"CSRF")],18.5) + "\n</svg>")
+
+    # 54 — Git 1.2 · fetch vs pull
+    # Vänsterpanelen har EN pil, högerpanelen två. Tomrummet där den andra pilen
+    # saknas är hela poängen — fetch stannar vid fjärrgrenen.
+    def synk(x, andra):
+        p=(f'<path d="{w(x,56,130,58)}"/><path d="{w(x,176,130,58)}"/>'
+           f'<path d="{w(x+190,176,150,58)}"/>'
+           f'<path d="M{x+65} 118 Q{x+67} 142 {x+65} 166"/>'+arrow(x+65,172,"down"))
+        if andra:
+            p+=f'<path d="M{x+134} 205 Q{x+160} 204 {x+184} 205"/>'+arrow(x+190,205)
+        return p
+    D['fetch-och-pull']=(
+      '<svg viewBox="0 0 880 372" role="img" aria-label="Två paneler. I båda går en pil från origin '
+      'ner till origin/main. Bara i den högra går en andra pil vidare till arbetskopian.">\n'
+      + G % (synk(60, False) + synk(500, True))
+      + "\n" + txt([(125,90,"origin"),(125,210,"origin/main"),(385,210,"arbetskopian"),
+                     (565,90,"origin"),(565,210,"origin/main"),(825,210,"arbetskopian")],13)
+      + "\n" + txt([(230,330,"fetch"),(670,330,"pull")],18.5) + "\n</svg>")
+
+    # 55 — Git 1.2 · Squash vs merge-commit
+    def gren(x, kvar):
+        p=(f'<path d="M{x} 220 Q{x+170} 218 {x+340} 220"/>'
+           f'<path d="{circ(x+30,220,10)}"/><path d="{circ(x+300,220,10)}"/>'
+           f'<path d="M{x+110} 150 Q{x+155} 149 {x+200} 150"/>'
+           + "".join(f'<path d="{circ(x+cx,150,9)}"/>' for cx in (110,155,200)))
+        if kvar:
+            p+=(f'<path d="M{x+40} 212 Q{x+72} 178 {x+104} 154"/>'
+                f'<path d="M{x+208} 156 Q{x+256} 186 {x+290} 212"/>')
+        else:
+            p+=(f'<path d="M{x+210} 158 Q{x+262} 186 {x+286} 210" stroke-dasharray="7 8"/>'
+                + arrow(x+292,215))
+        return p
+    D['squash-eller-merge']=(
+      '<svg viewBox="0 0 880 340" role="img" aria-label="Till vänster tre commits ovanför '
+      'huvudlinjen med en streckad pil ner till en enda commit. Till höger är de tre commitarna '
+      'sammanbundna med huvudlinjen i båda ändar.">\n'
+      + G % (gren(50, False) + gren(490, True))
+      + "\n" + txt([(220,296,"squash"),(660,296,"merge-commit")],18.5) + "\n</svg>")
 
     return D
 

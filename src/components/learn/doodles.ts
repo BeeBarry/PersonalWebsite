@@ -38,8 +38,6 @@ export const DOODLES: Record<string, string> = {
     <text x="689" y="376">Container</text>
   </g>
 </svg>`,
-
-
   /* ---- Docker 1.0 · Registry, repository och tagg — STIL: HANDRITAD ---- */
   "registry-hyllan": `
 <svg viewBox="0 0 880 400" role="img" aria-label="En hylla med tre lådor märkta v1, v2 och latest. En klammer under dem märkt repository.">
@@ -58,7 +56,6 @@ export const DOODLES: Record<string, string> = {
     <text x="448" y="348">Repository · searchapi</text>
   </g>
 </svg>`,
-
   /* ---- Docker 1.0 · Docker vs Docker Compose — STIL: HANDRITAD ---- */
   "compose-en-fil": `
 <svg viewBox="0 0 880 400" role="img" aria-label="En fil märkt compose.yaml med tre pilar till tre lådor inneslutna i en ring märkt eget nätverk.">
@@ -77,7 +74,6 @@ export const DOODLES: Record<string, string> = {
     <text x="646" y="384">eget nätverk</text>
   </g>
 </svg>`,
-
   /* ---- Docker 1.2 · Tjänstnamnet är ett värdnamn — STIL: HANDRITAD ---- */
   "compose-natverket": `
 <svg viewBox="0 0 880 380" role="img" aria-label="En ring märkt shop_default med två lådor inuti. En laptop utanför når inte in.">
@@ -98,7 +94,6 @@ export const DOODLES: Record<string, string> = {
     <text x="522" y="356">shop_default</text>
   </g>
 </svg>`,
-
   /* ---- Docker 1.3 · Vad en volym är — STIL: HANDRITAD ---- */
   "volymen-star-kvar": `
 <svg viewBox="0 0 880 400" role="img" aria-label="Två paneler. I den vänstra skriver containern genom sin botten ner i volymen. I den högra är containern borta och volymen kvar.">
@@ -115,7 +110,6 @@ export const DOODLES: Record<string, string> = {
     <text x="650" y="352">containern borta</text>
   </g>
 </svg>`,
-
   /* ---- Nätverk 1.2 · Ett HTTP-anrop är text — STIL: HANDRITAD ---- */
   "forfragan-och-svar": `
 <svg viewBox="0 0 880 372" role="img" aria-label="Ett webbläsarfönster och ett servertorn. En heldragen pil dit med förfrågan och en heldragen pil tillbaka med svaret.">
@@ -131,7 +125,6 @@ export const DOODLES: Record<string, string> = {
     <text x="675" y="332">servern</text>
   </g>
 </svg>`,
-
   /* ---- Nätverk 1.2 · Första siffran räcker — STIL: HANDRITAD ---- */
   "statuskodernas-fyra": `
 <svg viewBox="0 0 880 300" role="img" aria-label="Fyra webbläsarfönster märkta 2xx, 3xx, 4xx och 5xx, vart och ett med en symbol för vad gruppen betyder.">
@@ -151,7 +144,6 @@ export const DOODLES: Record<string, string> = {
     <text x="755" y="278">serverns fel</text>
   </g>
 </svg>`,
-
   /* ---- Nätverk 1.1 · URL:en, del för del — STIL: HANDRITAD ---- */
   "url-raden": `
 <svg viewBox="0 0 880 232" role="img" aria-label="En URL uppdelad i fem rutor med en pil ner till varje dels namn. Rutan med värdnamnet är skrafferad.">
@@ -173,7 +165,6 @@ export const DOODLES: Record<string, string> = {
     <text x="737.5" y="210">frågesträng</text>
   </g>
 </svg>`,
-
   /* ---- Nätverk 1.1 · IP-adress vs port — STIL: HANDRITAD ---- */
   "porten-ar-dorren": `
 <svg viewBox="0 0 880 440" role="img" aria-label="Ett hus med en IP-adress och fyra dörrar märkta med portnummer. En heldragen pil går in i dörren 443.">
@@ -193,7 +184,6 @@ export const DOODLES: Record<string, string> = {
     <text x="150" y="414">anropet</text>
   </g>
 </svg>`,
-
   /* ---- Linux 1.1 · Roten vs hemkatalogen — STIL: HANDRITAD ---- */
   "filsystemstradet": `
 <svg viewBox="0 0 880 400" role="img" aria-label="Ett träd som växer nedåt från roten snedstreck, med grenar till etc, usr och home. Under home är lisa inringad.">
@@ -213,7 +203,6 @@ export const DOODLES: Record<string, string> = {
     <text x="680" y="374">~</text>
   </g>
 </svg>`,
-
   /* ---- SQL 1.2 · Vad en JOIN är — STIL: HANDRITAD ---- */
   "join-tva-rader-in": `
 <svg viewBox="0 0 880 340" role="img" aria-label="Två rutnät med var sin markerad rad, och till höger ett bredare rutnät där de två raderna blivit en.">
@@ -250,7 +239,6 @@ export const DOODLES: Record<string, string> = {
     <text x="720" y="310">resultatet</text>
   </g>
 </svg>`,
-
   /* ---- SQL 1.1 · Varje faktum ska ha ett enda hem — STIL: HANDRITAD ---- */
   "nyckeln-pekar-hem": `
 <svg viewBox="0 0 880 360" role="img" aria-label="Tabellen produkter till höger har flera rader med fyran, och varje fyra pekar med en heldragen pil på en enda rad i kategorier.">
@@ -284,7 +272,6 @@ export const DOODLES: Record<string, string> = {
     <text x="700" y="330">produkter</text>
   </g>
 </svg>`,
-
   /* ---- Linux 1.2 · stdout vs stderr — STIL: HANDRITAD ---- */
   "rorets-ovre-kanal": `
 <svg viewBox="0 0 880 430" role="img" aria-label="Kommandot ls har två rör ut. Det övre går in i grep, det nedre böjer av förbi grep och slutar på skärmen.">
@@ -303,7 +290,6 @@ export const DOODLES: Record<string, string> = {
     <text x="745" y="410">skärmen</text>
   </g>
 </svg>`,
-
   /* ---- Kubernetes 1.1 · Klustret — STIL: HANDRITAD ---- */
   "control-plane-och-noder": `
 <svg viewBox="0 0 880 430" role="img" aria-label="En låda märkt control plane med heldragna pilar ner till tre noder, var och en med två poddar inuti.">
@@ -327,7 +313,6 @@ export const DOODLES: Record<string, string> = {
     <text x="710" y="402">Nod 3</text>
   </g>
 </svg>`,
-
   /* ---- Kubernetes 1.1 · Service — STIL: HANDRITAD ---- */
   "service-vagskylten": `
 <svg viewBox="0 0 880 410" role="img" aria-label="En vägskylt märkt api:5000 med en heldragen pil in från frontend och tre streckade pilar ut till poddar, varav en är överkryssad.">
@@ -347,7 +332,6 @@ export const DOODLES: Record<string, string> = {
     <text x="415" y="372">Servicen</text>
   </g>
 </svg>`,
-
   /* ---- API 1.2 · Samlingar och medlemmar — STIL: HANDRITAD ---- */
   "hyllan-och-ladan": `
 <svg viewBox="0 0 880 386" role="img" aria-label="En hylla märkt snedstreck produkter med fem platser. Den tredje lådan är utlyft ovanför hyllan och märkt med sitt eget id.">
@@ -365,7 +349,6 @@ export const DOODLES: Record<string, string> = {
     <text x="544" y="360">/produkter</text>
   </g>
 </svg>`,
-
   /* ---- Terraform 1.2 · Vad state är — STIL: HANDRITAD ---- */
   "state-triangeln": `
 <svg viewBox="0 0 880 400" role="img" aria-label="Tre punkter i en triangel: main.tf överst, terraform.tfstate nere till vänster och ett moln för verkligheten nere till höger.">
@@ -381,7 +364,6 @@ export const DOODLES: Record<string, string> = {
     <text x="434" y="304">jämförs</text>
   </g>
 </svg>`,
-
   /* ---- Git 1.1 · Git vs GitHub — STIL: HANDRITAD ---- */
   "historiken-ligger-lokalt": `
 <svg viewBox="0 0 880 486" role="img" aria-label="En laptop med en punkt-git-mapp inuti och en streckad pil upp till ett moln med GitHub, GitLab och Bitbucket.">
@@ -401,7 +383,6 @@ export const DOODLES: Record<string, string> = {
     <text x="430" y="466">din dator</text>
   </g>
 </svg>`,
-
   /* ---- Kubernetes 1.3 · Varför konfiguration inte hör hemma i imagen — STIL: HANDRITAD ---- */
   "en-image-tre-miljoer": `
 <svg viewBox="0 0 880 420" role="img" aria-label="En låda med en image och tre heldragna pilar ut till test, stage och prod. Vid varje miljö hänger en lapp med olika värde.">
@@ -425,7 +406,6 @@ export const DOODLES: Record<string, string> = {
     <text x="772" y="392">ConfigMap per miljö</text>
   </g>
 </svg>`,
-
   /* ---- Git 1.2 · Gren vs HEAD — STIL: HANDRITAD ---- */
   "grenen-och-head": `
 <svg viewBox="0 0 880 380" role="img" aria-label="Tre commits på rad. En flagga märkt main står på den sista, och en mindre flagga märkt HEAD pekar på main-flaggan.">
@@ -447,7 +427,6 @@ export const DOODLES: Record<string, string> = {
     <text x="360" y="340">historiken</text>
   </g>
 </svg>`,
-
   /* ---- Docker 1.1 · Vad byggkontexten är — STIL: HANDRITAD ---- */
   "byggkontexten-ramen": `
 <svg viewBox="0 0 880 450" role="img" aria-label="Punkten sist i docker build är inringad och en pil går från den till en streckad ram runt projektmappen. Allt inuti ramen skickas till Docker. En fil under ramen når inte in.">
@@ -470,7 +449,6 @@ export const DOODLES: Record<string, string> = {
     <text x="250" y="306">byggkontexten</text>
   </g>
 </svg>`,
-
   /* ---- Docker 1.2 · Vad localhost betyder inuti en container — STIL: HANDRITAD ---- */
   "localhost-tre-maskiner": `
 <svg viewBox="0 0 880 330" role="img" aria-label="Tre lådor märkta din dator, api och db. Varje låda har en pil som vänder tillbaka in i sig själv, och alla tre bär etiketten localhost.">
@@ -488,7 +466,6 @@ export const DOODLES: Record<string, string> = {
     <text x="720" y="300">localhost</text>
   </g>
 </svg>`,
-
   /* ---- Kubernetes 1.2 · Selector vs Deployment-namn — STIL: HANDRITAD ---- */
   "selectorn-matchar-lappen": `
 <svg viewBox="0 0 880 470" role="img" aria-label="En Service håller upp en lapp med app kolon api. Två poddar bär samma lapp och nås av heldragna pilar. Den tredje bär app kolon versalt API och pilen dit är streckad och överkryssad.">
@@ -510,7 +487,6 @@ export const DOODLES: Record<string, string> = {
     <text x="720" y="428">app: API</text>
   </g>
 </svg>`,
-
   /* ---- Kubernetes 1.2 · Ingress-objektet vs Ingress-controllern — STIL: HANDRITAD ---- */
   "ingress-utan-controller": `
 <svg viewBox="0 0 880 340" role="img" aria-label="Ingress-objektet till vänster, en tom streckad plats i mitten märkt finns inte, och tjänsten till höger. Båda pilarna är streckade.">
@@ -530,7 +506,6 @@ export const DOODLES: Record<string, string> = {
     <text x="730" y="300">tjänsten</text>
   </g>
 </svg>`,
-
   /* ---- Kubernetes 1.3 · Miljövariabel vs monterad fil — STIL: HANDRITAD ---- */
   "variabeln-star-kvar": `
 <svg viewBox="0 0 880 360" role="img" aria-label="Samma container två gånger. Vid start har både miljövariabeln och den monterade filen värdet info. Efter en ändring i ConfigMap har bara filen bytt till debug.">
@@ -557,7 +532,6 @@ export const DOODLES: Record<string, string> = {
     <text x="650" y="330">efteråt</text>
   </g>
 </svg>`,
-
   /* ---- Terraform 1.1 · Vad drift är — STIL: HANDRITAD ---- */
   "driften-ar-avstandet": `
 <svg viewBox="0 0 880 400" role="img" aria-label="main.tf säger size lika med 2 och verkligheten säger size lika med 8. Lådorna ligger på olika höjd och avståndet mellan dem är märkt drift. En konsol med muspekare pekar in i verkligheten.">
@@ -579,7 +553,6 @@ export const DOODLES: Record<string, string> = {
     <text x="510" y="364">verkligheten</text>
   </g>
 </svg>`,
-
   /* ---- Terraform 1.2 · Resurstyp vs resursnamn vs name — STIL: HANDRITAD ---- */
   "tre-namn-i-blocket": `
 <svg viewBox="0 0 880 340" role="img" aria-label="Ett resource-block där typen, resursnamnet och argumentet name är understrukna. Tre pilar leder ner till tre lådor märkta name, typen och resursnamnet, med ägaren under varje.">
@@ -606,7 +579,6 @@ export const DOODLES: Record<string, string> = {
     <text x="700" y="306">din fil</text>
   </g>
 </svg>`,
-
   /* ---- Linux 1.1 · Vad prompten säger — STIL: HANDRITAD ---- */
   "prompten-rad-for-rad": `
 <svg viewBox="0 0 880 300" role="img" aria-label="Prompten lisa snabel-a shop-prod-01 kolon tilde dollar. Tre delar är understrukna med var sin pil ner till en låda. Sista tecknet har en anteckning bredvid sig.">
@@ -630,7 +602,6 @@ export const DOODLES: Record<string, string> = {
     <text x="690" y="244">katalogen</text>
   </g>
 </svg>`,
-
   /* ---- Linux 1.2 · Vad PATH är — STIL: HANDRITAD ---- */
   "path-raden": `
 <svg viewBox="0 0 880 450" role="img" aria-label="Tre kataloger i en streckad ram märkt PATH genomsöks i tur och ordning och slutar i command not found. Katalogen du står i ligger utanför ramen.">
@@ -658,7 +629,6 @@ export const DOODLES: Record<string, string> = {
     <text x="380" y="424">katalogen du står i</text>
   </g>
 </svg>`,
-
   /* ---- Git 1.2 · Merge vs rebase — STIL: HANDRITAD ---- */
   "merge-vs-rebase": `
 <svg viewBox="0 0 880 350" role="img" aria-label="Till vänster möts två utvecklingslinjer i en merge-commit. Till höger ligger samma commits på en rak linje, men två av dem har fått primtecken för att visa att de är nya objekt.">
@@ -684,7 +654,6 @@ export const DOODLES: Record<string, string> = {
     <text x="655" y="315">rebase</text>
   </g>
 </svg>`,
-
   /* ---- API 1.1 · Resurs vs databasrad — STIL: HANDRITAD ---- */
   "resursen-ar-ett-urval": `
 <svg viewBox="0 0 880 430" role="img" aria-label="Databasraden till vänster har sex fält. Tre heldragna pilar går vidare till svaret till höger. Tre streckade pilar slutar i tomma luften.">
@@ -716,7 +685,6 @@ export const DOODLES: Record<string, string> = {
     <text x="720" y="400">svaret</text>
   </g>
 </svg>`,
-
   /* ---- API 1.1 · Validering i klienten är ingen validering — STIL: HANDRITAD ---- */
   "grinden-gar-att-runda": `
 <svg viewBox="0 0 880 400" role="img" aria-label="Webbläsaren går genom formulärets kontroller till API:et. curl går utanför grinden och når API:et direkt.">
@@ -736,7 +704,6 @@ export const DOODLES: Record<string, string> = {
     <text x="430" y="352">går runt</text>
   </g>
 </svg>`,
-
   /* ---- API 1.2 · POST vs PUT vid skapande — STIL: HANDRITAD ---- */
   "vem-skriver-numret": `
 <svg viewBox="0 0 880 430" role="img" aria-label="Vid POST skickas paketet utan nummer och servern sätter id 8842. Vid PUT står 8842 redan på paketet och servern lägger den där.">
@@ -760,7 +727,6 @@ export const DOODLES: Record<string, string> = {
     <text x="690" y="400">PUT /produkter/8842</text>
   </g>
 </svg>`,
-
   /* ---- SQL 1.1 · Många till många — STIL: HANDRITAD ---- */
   "kopplingstabellen": `
 <svg viewBox="0 0 880 340" role="img" aria-label="Tabellen produkt_taggar i mitten har tre rader. Varje rad pekar med en pil åt vänster mot en produkt och en pil åt höger mot en tagg. Två av pilarna korsar varandra.">
@@ -787,7 +753,6 @@ export const DOODLES: Record<string, string> = {
     <text x="780" y="310">taggar</text>
   </g>
 </svg>`,
-
   /* ---- Azure 1.0 · Resurs-ID:t är hela adressen — STIL: HANDRITAD ---- */
   "resurs-id-raden": `
 <svg viewBox="0 0 768 336" role="img" aria-label="Ett resurs-ID brutet på fyra rader i en ruta. Varje rad har en pil åt höger till sitt namn: prenumeration, resursgrupp, leverantör och resurs.">
@@ -810,31 +775,29 @@ export const DOODLES: Record<string, string> = {
     <text x="295" y="320">ett resurs-ID</text>
   </g>
 </svg>`,
-
   /* ---- Azure 1.0 · Logisk zon vs fysisk zon — STIL: HANDRITAD ---- */
   "zon-ettan": `
-<svg viewBox="0 0 880 396" role="img" aria-label="Två klippbräden märkta zon 1 pekar med streckade pilar in i en region med tre hus. Prenumeration A pekar på az3 och prenumeration B på az1.">
+<svg viewBox="0 0 880 420" role="img" aria-label="Tre hus i en streckad region. Två klippbräden under regionen, båda märkta zon 1, pekar med streckade pilar upp mot olika hus.">
   <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-<path d="M301 35 Q580 35 860 36 Q862 152 859 269 Q580 269 299 268 Q299 152 301 35 Z" stroke-dasharray="9 10" opacity="0.45"/><path d="M330 120 Q395 120 459 119 Q460 165 461 210 Q395 211 329 210 Q329 165 330 120 Z"/><path d="M316 122 L395 70 L474 122"/><path d="M510 119 Q575 120 639 121 Q641 165 641 210 Q575 212 510 209 Q510 165 510 119 Z"/><path d="M496 122 L575 70 L654 122"/><path d="M691 121 Q755 119 819 119 Q822 165 819 209 Q755 211 689 209 Q690 165 691 121 Z"/><path d="M676 122 L755 70 L834 122"/><path d="M50 85 Q153 86 257 87 Q258 123 255 159 Q153 162 49 160 Q48 123 50 85 Z"/><path d="M51 241 Q153 239 256 241 Q257 277 255 313 Q153 315 51 315 Q50 277 51 241 Z"/><path d="M258 118 Q470 96 682 164" stroke-dasharray="8 9"/><path d="M675 162 L688 168 L675 174"/><path d="M258 272 Q350 266 452 210" stroke-dasharray="8 9"/><path d="M445 199 L458 205 L445 211"/>
-  </g>
-  <g font-family="var(--font-mono)" font-size="17" fill="currentColor" text-anchor="middle">
-    <text x="153" y="132">zon 1</text>
-    <text x="153" y="286">zon 1</text>
+<path d="M241 29 Q540 29 840 30 Q842 125 839 221 Q540 221 239 220 Q239 125 241 29 Z" stroke-dasharray="9 10" opacity="0.45"/><path d="M280 96 Q350 96 419 95 Q420 139 421 182 Q350 183 279 182 Q279 139 280 96 Z"/><path d="M266 98 L350 46 L434 98"/><path d="M480 95 Q550 96 619 97 Q621 139 621 182 Q550 184 480 181 Q480 139 480 95 Z"/><path d="M466 98 L550 46 L634 98"/><path d="M681 97 Q750 95 819 95 Q822 139 819 181 Q750 183 679 181 Q680 139 681 97 Z"/><path d="M666 98 L750 46 L834 98"/><path d="M60 269 Q160 270 261 271 Q262 307 259 343 Q160 346 59 344 Q58 307 60 269 Z"/><path d="M341 271 Q440 269 540 271 Q541 307 539 343 Q440 345 341 345 Q340 307 341 271 Z"/><path d="M160 266 Q230 232 344 196" stroke-dasharray="8 9"/><path d="M344 204 L350 191 L356 204"/><path d="M440 266 Q580 242 744 196" stroke-dasharray="8 9"/><path d="M744 204 L750 191 L756 204"/>
   </g>
   <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle">
-    <text x="395" y="242">az1</text>
-    <text x="575" y="242">az2</text>
-    <text x="755" y="242">az3</text>
+    <text x="350" y="150">az1</text>
+    <text x="550" y="150">az2</text>
+    <text x="750" y="150">az3</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="17" fill="currentColor" text-anchor="middle">
+    <text x="163" y="314">zon 1</text>
+    <text x="443" y="314">zon 1</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="middle" opacity="0.55">
+    <text x="540" y="208">swedencentral</text>
   </g>
   <g font-family="var(--font-mono)" font-size="13.5" fill="currentColor" text-anchor="middle" opacity="0.62">
-    <text x="153" y="184">Prenumeration A</text>
-    <text x="153" y="338">Prenumeration B</text>
-  </g>
-  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.62">
-    <text x="580" y="308">swedencentral</text>
+    <text x="163" y="368">Prenumeration A</text>
+    <text x="443" y="368">Prenumeration B</text>
   </g>
 </svg>`,
-
   /* ---- Azure 1.1 · Container Apps skalar till noll — STIL: HANDRITAD ---- */
   "skala-till-noll": `
 <svg viewBox="0 0 880 380" role="img" aria-label="Till vänster två repliker på en heldragen platta märkt dagtid. Till höger en streckad tom platta märkt natten, med en mätare som står på noll.">
@@ -853,7 +816,6 @@ export const DOODLES: Record<string, string> = {
     <text x="650" y="318">natten</text>
   </g>
 </svg>`,
-
   /* ---- Azure 1.1 · Stoppad vs frigjord virtuell maskin — STIL: HANDRITAD ---- */
   "stoppad-vs-frigjord": `
 <svg viewBox="0 0 880 400" role="img" aria-label="Två avstängda serverlådor. Den vänstra står på en skrafferad platta märkt hårdvaran reserverad, den högra svävar över en streckad tom platta märkt hårdvaran släppt.">
@@ -873,7 +835,6 @@ export const DOODLES: Record<string, string> = {
     <text x="660" y="376">frigjord</text>
   </g>
 </svg>`,
-
   /* ---- AWS 1.0 · ARN:ens anatomi — STIL: HANDRITAD ---- */
   "arn-raden": `
 <svg viewBox="0 0 880 244" role="img" aria-label="En ARN uppdelad i sex rutor med en pil ner till varje dels namn. Rutorna för region och konto är tomma och skrafferade.">
@@ -895,7 +856,6 @@ export const DOODLES: Record<string, string> = {
     <text x="656.0" y="200">resurs</text>
   </g>
 </svg>`,
-
   /* ---- AWS 1.0 · Resursgrupp vs taggar — STIL: HANDRITAD ---- */
   "taggen-inte-behallaren": `
 <svg viewBox="0 0 880 384" role="img" aria-label="Till vänster två lådor inuti en ram. Till höger två fristående lådor med varsin hängande lapp, omslutna av en streckad ellips.">
@@ -911,7 +871,6 @@ export const DOODLES: Record<string, string> = {
     <text x="660" y="352">taggarna</text>
   </g>
 </svg>`,
-
   /* ---- AWS 1.1 · Fargate tar bort noden — STIL: HANDRITAD ---- */
   "fargate-utan-nod": `
 <svg viewBox="0 0 880 366" role="img" aria-label="Till vänster två tasks som står på en heldragen instans. Till höger samma två tasks över en streckad, tom platta.">
@@ -935,7 +894,6 @@ export const DOODLES: Record<string, string> = {
     <text x="645" y="344">Fargate</text>
   </g>
 </svg>`,
-
   /* ---- AWS 1.1 · Publik vs elastisk IP — STIL: HANDRITAD ---- */
   "ip-lappen-byts": `
 <svg viewBox="0 0 880 380" role="img" aria-label="Två maskiner med varsin skylt. Den vänstra skylten dras iväg av en streckad pil, den högra hålls fast av två spikar.">
@@ -957,24 +915,22 @@ export const DOODLES: Record<string, string> = {
     <text x="680" y="344">elastisk IP</text>
   </g>
 </svg>`,
-
   /* ---- CI/CD 1.0 · Artefakt vs cache — STIL: HANDRITAD ---- */
   "artefakten-och-cachen": `
-<svg viewBox="0 0 880 380" role="img" aria-label="Till vänster lämnas en låda vidare mellan två jobb med heldragna pilar. Till höger ställs en låda tillbaka på en hylla med streckade pilar.">
+<svg viewBox="0 0 880 380" role="img" aria-label="Till vänster lämnas en låda vidare mellan två jobb med heldragna pilar. Till höger går en streckad dubbelriktad linje mellan ett jobb och en låda på en hylla.">
   <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-<path d="M60 149 Q125 150 190 151 Q191 195 190 240 Q125 241 59 240 Q58 195 60 149 Z"/><path d="M194 195 Q200 196 206 195"/><path d="M199 189 L212 195 L199 201"/><path d="M218 168 Q247 166 275 168 Q276 195 276 223 Q247 224 218 222 Q216 195 218 168 Z"/><path d="M280 195 Q286 196 292 195"/><path d="M285 189 L298 195 L285 201"/><path d="M303 149 Q369 150 434 151 Q435 195 434 241 Q369 242 303 239 Q303 195 303 149 Z"/><path d="M540 148 Q660 146 790 148"/><path d="M542 160 Q660 158 788 160"/><path d="M544 160 Q542 184 546 206"/><path d="M786 159 Q788 184 784 206"/><path d="M607 85 Q668 84 727 87 Q730 115 728 144 Q668 145 608 144 Q608 115 607 85 Z"/><path d="M600 246 Q670 246 739 245 Q741 291 741 337 Q670 337 600 337 Q600 291 600 246 Z"/><path d="M636 240 Q634 208 636 176" stroke-dasharray="7 8"/><path d="M630 181 L636 168 L642 181"/><path d="M700 172 Q702 206 700 238" stroke-dasharray="7 8"/><path d="M694 231 L700 244 L706 231"/>
+<path d="M60 149 Q125 150 190 151 Q191 195 190 240 Q125 241 59 240 Q58 195 60 149 Z"/><path d="M194 195 Q202 196 210 195"/><path d="M203 189 L216 195 L203 201"/><path d="M222 166 Q255 164 287 166 Q288 195 288 225 Q255 226 222 224 Q220 195 222 166 Z"/><path d="M292 195 Q300 196 308 195"/><path d="M301 189 L314 195 L301 201"/><path d="M319 149 Q385 150 450 151 Q451 195 450 241 Q385 242 319 239 Q319 195 319 149 Z"/><path d="M540 150 Q660 148 790 150"/><path d="M542 162 Q660 160 788 162"/><path d="M544 162 Q542 186 546 208"/><path d="M786 161 Q788 186 784 208"/><path d="M605 87 Q666 86 725 89 Q728 117 726 146 Q666 147 606 146 Q606 117 605 87 Z"/><path d="M600 250 Q670 250 739 249 Q741 293 741 337 Q670 337 600 337 Q600 293 600 250 Z"/><path d="M668 244 Q670 208 668 172" stroke-dasharray="7 8"/><path d="M662 179 L668 166 L674 179"/><path d="M662 237 L668 250 L674 237"/>
   </g>
   <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle">
     <text x="125" y="200">jobb 1</text>
-    <text x="369" y="200">jobb 2</text>
-    <text x="670" y="296">jobb</text>
+    <text x="385" y="200">jobb 2</text>
+    <text x="670" y="298">jobb</text>
   </g>
   <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
-    <text x="247" y="364">artefakten</text>
+    <text x="255" y="364">artefakten</text>
     <text x="665" y="364">cachen</text>
   </g>
 </svg>`,
-
   /* ---- CI/CD 1.1 · Matrisen — STIL: HANDRITAD ---- */
   "matrisen-fyra-korningar": `
 <svg viewBox="0 0 880 380" role="img" aria-label="Ett jobb till vänster med fyra pilar ut till ett rutnät med fyra jobb, ett per kombination av Node-version och operativsystem.">
@@ -1001,7 +957,6 @@ export const DOODLES: Record<string, string> = {
     <text x="605" y="352">fyra jobb</text>
   </g>
 </svg>`,
-
   /* ---- CI/CD 1.1 · Nyckeln som upphör — STIL: HANDRITAD ---- */
   "nyckeln-som-upphor": `
 <svg viewBox="0 0 880 356" role="img" aria-label="Till vänster en heldragen nyckel som hänger på en ring. Till höger samma nyckel ritad med streckade linjer, inuti en streckad ram.">
@@ -1013,37 +968,34 @@ export const DOODLES: Record<string, string> = {
     <text x="706" y="318">OIDC-token</text>
   </g>
 </svg>`,
-
   /* ---- Observability 1.0 · De tre signalerna — STIL: HANDRITAD ---- */
   "tre-signalerna": `
-<svg viewBox="0 0 880 400" role="img" aria-label="En uppslagen bok, en mätare med visare, och tre lådor med en tråd som slingrar sig genom alla tre.">
+<svg viewBox="0 0 880 400" role="img" aria-label="En uppslagen bok, en mätare med visare, och tre lådor med en rak tråd som går genom alla tre med en knut i varje.">
   <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-<path d="M71 110 Q185 109 300 109 Q300 185 299 260 Q185 261 70 259 Q69 185 71 110 Z"/><path d="M185 112 Q186 184 185 258"/><path d="M96 146 Q140 145 172 146"/><path d="M198 146 Q242 145 274 146"/><path d="M96 176 Q140 175 172 176"/><path d="M198 176 Q242 175 274 176"/><path d="M96 206 Q140 205 172 206"/><path d="M198 206 Q242 205 274 206"/><path d="M96 236 Q140 235 172 236"/><path d="M198 236 Q242 235 274 236"/><path d="M474 106 Q551 109 553 185 Q551 261 476 263 Q399 261 397 186 Q399 109 474 106 Z"/><path d="M475 185 Q452 168 436 142"/><path d="M474 178 Q482 178 482 186 Q482 192 475 193 Q468 192 467 185 Q468 178 474 178 Z"/><path d="M420 145 L429 152"/><path d="M475 117 L475 128"/><path d="M530 145 L521 152"/><path d="M660 120 Q750 118 841 121 Q840 146 839 171 Q750 172 660 171 Q659 146 660 120 Z"/><path d="M660 195 Q750 196 840 196 Q842 222 840 247 Q750 248 659 247 Q660 222 660 195 Z"/><path d="M661 272 Q750 272 839 272 Q841 298 840 323 Q750 325 660 323 Q660 298 661 272 Z"/><path d="M700 118 Q636 146 700 172 Q764 200 700 224 Q636 252 700 274" stroke-width="1.6"/>
+<path d="M71 110 Q185 109 300 109 Q300 185 299 260 Q185 261 70 259 Q69 185 71 110 Z"/><path d="M185 112 Q186 184 185 258"/><path d="M96 146 Q140 145 172 146"/><path d="M198 146 Q242 145 274 146"/><path d="M96 176 Q140 175 172 176"/><path d="M198 176 Q242 175 274 176"/><path d="M96 206 Q140 205 172 206"/><path d="M198 206 Q242 205 274 206"/><path d="M96 236 Q140 235 172 236"/><path d="M198 236 Q242 235 274 236"/><path d="M474 106 Q551 109 553 185 Q551 261 476 263 Q399 261 397 186 Q399 109 474 106 Z"/><path d="M475 185 Q452 168 436 142"/><path d="M474 178 Q482 178 482 186 Q482 192 475 193 Q468 192 467 185 Q468 178 474 178 Z"/><path d="M420 145 L429 152"/><path d="M475 117 L475 128"/><path d="M530 145 L521 152"/><path d="M660 118 Q750 116 841 119 Q840 144 839 169 Q750 170 660 169 Q659 144 660 118 Z"/><path d="M660 193 Q750 194 840 194 Q842 220 840 245 Q750 246 659 245 Q660 220 660 193 Z"/><path d="M661 270 Q750 270 839 270 Q841 296 840 321 Q750 323 660 321 Q660 296 661 270 Z"/><path d="M750 100 Q754 220 750 340" stroke-width="1.6"/><path d="M750 136 Q757 137 756 143 Q757 151 749 152 Q743 151 744 144 Q743 137 750 136 Z"/><path d="M749 213 Q757 213 758 221 Q757 227 749 228 Q743 227 744 221 Q743 213 749 213 Z"/><path d="M750 288 Q757 289 758 296 Q757 303 750 303 Q743 303 743 297 Q743 289 750 288 Z"/>
   </g>
   <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
     <text x="185" y="352">logg</text>
     <text x="475" y="352">mätvärde</text>
-    <text x="750" y="352">spårning</text>
+    <text x="750" y="368">spårning</text>
   </g>
 </svg>`,
-
   /* ---- Observability 1.0 · Kardinalitetsexplosionen — STIL: HANDRITAD ---- */
   "kardinalitetsexplosionen": `
 <svg viewBox="0 0 880 380" role="img" aria-label="Två hyllor. Den vänstra har fem lådor med luft emellan, den högra är proppfull av smala lådor.">
   <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-<path d="M56 236 Q230 234 404 236"/><path d="M56 248 Q230 246 404 248"/><path d="M60 248 Q58 272 62 294"/><path d="M400 247 Q402 272 398 294"/><path d="M72 149 Q99 148 125 149 Q127 193 125 237 Q99 238 73 236 Q72 193 72 149 Z"/><path d="M139 151 Q167 149 195 151 Q195 193 194 235 Q167 237 141 236 Q140 193 139 151 Z"/><path d="M207 149 Q235 149 262 150 Q263 193 263 236 Q235 236 209 237 Q207 193 207 149 Z"/><path d="M276 149 Q303 149 330 149 Q330 193 330 237 Q303 238 275 235 Q274 193 276 149 Z"/><path d="M345 151 Q371 149 399 150 Q399 193 397 236 Q371 237 344 236 Q344 193 345 151 Z"/><path d="M476 236 Q650 234 824 236"/><path d="M476 248 Q650 246 824 248"/><path d="M480 248 Q478 272 482 294"/><path d="M820 247 Q822 272 818 294"/><path d="M483 149 Q489 149 496 150 Q497 193 496 236 Q489 238 481 235 Q482 193 483 149 Z" stroke-width="1.4"/><path d="M500 151 Q506 149 514 150 Q514 193 514 235 Q506 238 499 236 Q498 193 500 151 Z" stroke-width="1.4"/><path d="M516 150 Q523 148 530 151 Q531 193 529 235 Q523 237 516 236 Q515 193 516 150 Z" stroke-width="1.4"/><path d="M533 150 Q540 148 547 150 Q549 193 546 235 Q540 236 534 236 Q531 193 533 150 Z" stroke-width="1.4"/><path d="M550 149 Q557 149 564 150 Q564 193 563 236 Q557 237 549 236 Q548 193 550 149 Z" stroke-width="1.4"/><path d="M567 151 Q574 148 581 151 Q583 193 582 235 Q574 237 568 237 Q565 193 567 151 Z" stroke-width="1.4"/><path d="M585 150 Q591 148 599 149 Q599 193 599 235 Q591 236 583 236 Q583 193 585 150 Z" stroke-width="1.4"/><path d="M601 150 Q608 148 616 150 Q617 193 616 236 Q608 237 602 237 Q601 193 601 150 Z" stroke-width="1.4"/><path d="M618 151 Q625 149 631 150 Q632 193 633 237 Q625 237 619 235 Q618 193 618 151 Z" stroke-width="1.4"/><path d="M634 151 Q642 148 649 149 Q649 193 648 236 Q642 236 636 236 Q635 193 634 151 Z" stroke-width="1.4"/><path d="M651 150 Q659 149 665 150 Q668 193 666 235 Q659 238 653 236 Q650 193 651 150 Z" stroke-width="1.4"/><path d="M669 149 Q676 149 683 151 Q684 193 684 235 Q676 237 668 237 Q667 193 669 149 Z" stroke-width="1.4"/><path d="M687 150 Q693 149 701 150 Q700 193 699 236 Q693 236 685 237 Q685 193 687 150 Z" stroke-width="1.4"/><path d="M703 150 Q710 149 717 150 Q719 193 716 236 Q710 236 703 235 Q701 193 703 150 Z" stroke-width="1.4"/><path d="M720 149 Q727 150 733 150 Q734 193 733 236 Q727 237 720 237 Q720 193 720 149 Z" stroke-width="1.4"/><path d="M738 151 Q744 150 751 150 Q752 193 751 235 Q744 237 738 237 Q737 193 738 151 Z" stroke-width="1.4"/><path d="M755 150 Q761 149 768 150 Q770 193 768 236 Q761 237 753 236 Q753 193 755 150 Z" stroke-width="1.4"/><path d="M770 149 Q778 149 785 149 Q786 193 784 237 Q778 236 771 236 Q769 193 770 149 Z" stroke-width="1.4"/><path d="M788 150 Q795 148 803 150 Q802 193 803 236 Q795 237 789 236 Q788 193 788 150 Z" stroke-width="1.4"/><path d="M805 151 Q812 148 819 151 Q819 193 818 236 Q812 236 806 235 Q803 193 805 151 Z" stroke-width="1.4"/>
+<path d="M56 236 Q230 234 404 236"/><path d="M56 248 Q230 246 404 248"/><path d="M60 248 Q58 272 62 294"/><path d="M400 247 Q402 272 398 294"/><path d="M71 149 Q99 149 126 150 Q127 193 127 236 Q99 236 73 237 Q71 193 71 149 Z"/><path d="M140 149 Q167 149 194 149 Q194 193 194 237 Q167 238 139 235 Q138 193 140 149 Z"/><path d="M209 151 Q235 149 263 150 Q263 193 261 236 Q235 237 208 236 Q208 193 209 151 Z"/><path d="M277 149 Q303 149 330 150 Q331 193 330 236 Q303 238 275 235 Q276 193 277 149 Z"/><path d="M345 151 Q371 149 399 150 Q399 193 399 235 Q371 238 344 236 Q343 193 345 151 Z"/><path d="M476 236 Q650 234 824 236"/><path d="M476 248 Q650 246 824 248"/><path d="M480 248 Q478 272 482 294"/><path d="M820 247 Q822 272 818 294"/><path d="M482 150 Q489 148 496 151 Q497 193 495 235 Q489 237 482 236 Q481 193 482 150 Z" stroke-width="1.4"/><path d="M499 150 Q506 148 513 150 Q515 193 512 235 Q506 236 500 236 Q497 193 499 150 Z" stroke-width="1.4"/><path d="M516 149 Q523 149 530 150 Q530 193 529 236 Q523 237 515 236 Q514 193 516 149 Z" stroke-width="1.4"/><path d="M533 151 Q540 148 547 151 Q549 193 548 235 Q540 237 534 237 Q531 193 533 151 Z" stroke-width="1.4"/><path d="M551 150 Q557 148 565 149 Q565 193 565 235 Q557 236 549 236 Q549 193 551 150 Z" stroke-width="1.4"/><path d="M567 150 Q574 148 582 150 Q583 193 582 236 Q574 237 568 237 Q567 193 567 150 Z" stroke-width="1.4"/><path d="M584 151 Q591 149 597 150 Q598 193 599 237 Q591 237 585 235 Q584 193 584 151 Z" stroke-width="1.4"/><path d="M600 151 Q608 148 615 149 Q615 193 614 236 Q608 236 602 236 Q601 193 600 151 Z" stroke-width="1.4"/><path d="M617 150 Q625 149 631 150 Q634 193 632 235 Q625 238 619 236 Q616 193 617 150 Z" stroke-width="1.4"/><path d="M635 149 Q642 149 649 151 Q650 193 650 235 Q642 237 634 237 Q633 193 635 149 Z" stroke-width="1.4"/><path d="M653 150 Q659 149 667 150 Q666 193 665 236 Q659 236 651 237 Q651 193 653 150 Z" stroke-width="1.4"/><path d="M669 150 Q676 149 683 150 Q685 193 682 236 Q676 236 669 235 Q667 193 669 150 Z" stroke-width="1.4"/><path d="M686 149 Q693 150 699 150 Q700 193 699 236 Q693 237 686 237 Q686 193 686 149 Z" stroke-width="1.4"/><path d="M704 151 Q710 150 717 150 Q718 193 717 235 Q710 237 704 237 Q703 193 704 151 Z" stroke-width="1.4"/><path d="M721 150 Q727 149 734 150 Q736 193 734 236 Q727 237 719 236 Q719 193 721 150 Z" stroke-width="1.4"/><path d="M736 149 Q744 149 751 149 Q752 193 750 237 Q744 236 737 236 Q735 193 736 149 Z" stroke-width="1.4"/><path d="M754 150 Q761 148 769 150 Q768 193 769 236 Q761 237 755 236 Q754 193 754 150 Z" stroke-width="1.4"/><path d="M771 151 Q778 148 785 151 Q785 193 784 236 Q778 236 772 235 Q769 193 771 151 Z" stroke-width="1.4"/><path d="M788 149 Q795 150 802 149 Q804 193 802 237 Q795 237 788 235 Q786 193 788 149 Z" stroke-width="1.4"/><path d="M806 151 Q812 150 819 149 Q819 193 818 236 Q812 237 806 236 Q805 193 806 151 Z" stroke-width="1.4"/>
   </g>
   <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
     <text x="230" y="346">status</text>
     <text x="650" y="346">status + user_id</text>
   </g>
 </svg>`,
-
   /* ---- Observability 1.1 · Pull vs push — STIL: HANDRITAD ---- */
   "pull-och-push": `
 <svg viewBox="0 0 880 386" role="img" aria-label="Till vänster hämtar en databas från två tjänster med pilar som pekar mot databasen. Till höger skickar tjänsterna själva, med pilar som pekar från dem.">
   <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-<path d="M60 85 Q120 86 180 85 Q182 118 180 151 Q120 151 60 149 Q58 118 60 85 Z"/><path d="M61 217 Q120 216 180 215 Q180 248 179 280 Q120 281 61 280 Q60 248 61 217 Z"/><path d="M276 146 Q342 145 408 146 Q409 188 407 230 Q342 231 275 230 Q274 188 276 146 Z"/><path d="M270 174 Q226 148 186 122"/><path d="M193 112 L180 118 L193 124"/><path d="M270 202 Q226 228 186 248"/><path d="M193 245 L180 251 L193 257"/><path d="M478 85 Q538 85 599 86 Q598 118 599 149 Q538 150 478 151 Q476 118 478 85 Z"/><path d="M479 215 Q538 215 599 216 Q599 248 598 280 Q538 282 478 280 Q476 248 479 215 Z"/><path d="M695 147 Q760 145 827 146 Q828 188 827 231 Q760 230 694 229 Q692 188 695 147 Z"/><path d="M604 122 Q648 148 688 174"/><path d="M681 172 L694 178 L681 184"/><path d="M604 248 Q648 228 688 202"/><path d="M681 192 L694 198 L681 204"/>
+<path d="M60 86 Q120 85 180 86 Q181 118 179 150 Q120 151 59 150 Q58 118 60 86 Z"/><path d="M60 215 Q120 215 181 216 Q180 248 181 279 Q120 280 60 281 Q58 248 60 215 Z"/><path d="M277 145 Q342 145 409 146 Q409 188 408 230 Q342 232 276 230 Q274 188 277 145 Z"/><path d="M270 174 Q226 148 186 122"/><path d="M193 112 L180 118 L193 124"/><path d="M270 202 Q226 228 186 248"/><path d="M193 245 L180 251 L193 257"/><path d="M479 87 Q538 85 599 86 Q600 118 599 151 Q538 150 478 149 Q476 118 479 87 Z"/><path d="M478 216 Q538 214 599 216 Q598 248 599 279 Q538 280 479 279 Q477 248 478 216 Z"/><path d="M694 145 Q760 144 827 146 Q826 188 825 229 Q760 232 695 231 Q692 188 694 145 Z"/><path d="M604 122 Q648 148 688 174"/><path d="M681 172 L694 178 L681 184"/><path d="M604 248 Q648 228 688 202"/><path d="M681 192 L694 198 L681 204"/>
   </g>
   <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="middle">
     <text x="120" y="124">tjänst</text>
@@ -1060,15 +1012,14 @@ export const DOODLES: Record<string, string> = {
     <text x="652" y="352">push</text>
   </g>
 </svg>`,
-
   /* ---- Observability 1.1 · Medelvärdet döljer svansen — STIL: HANDRITAD ---- */
   "medelvardet-doljer-svansen": `
 <svg viewBox="0 0 880 372" role="img" aria-label="Elva staplar som växer åt höger. En vågrät linje märkt medel ligger lågt och passerar under den sista, mycket högre stapeln, som är märkt p95.">
   <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-<path d="M70 230 Q94 228 119 230 Q118 249 119 267 Q94 268 71 267 Q69 249 70 230 Z"/><path d="M136 223 Q160 222 185 224 Q184 246 183 267 Q160 270 137 269 Q134 246 136 223 Z"/><path d="M203 218 Q226 216 250 218 Q252 243 251 268 Q226 268 202 269 Q201 243 203 218 Z"/><path d="M268 215 Q292 212 315 214 Q316 241 316 269 Q292 268 269 268 Q267 241 268 215 Z"/><path d="M333 209 Q358 208 383 210 Q384 239 382 269 Q358 270 333 268 Q332 239 333 209 Z"/><path d="M401 207 Q424 205 447 206 Q449 237 448 269 Q424 269 399 268 Q400 237 401 207 Z"/><path d="M465 203 Q490 201 514 203 Q514 235 515 267 Q490 268 467 269 Q466 235 465 203 Z"/><path d="M531 197 Q556 195 579 197 Q582 232 579 267 Q556 270 532 267 Q532 232 531 197 Z"/><path d="M599 187 Q622 187 645 189 Q646 228 646 267 Q622 268 598 267 Q598 228 599 187 Z"/><path d="M664 173 Q688 170 711 172 Q714 220 711 268 Q688 269 663 268 Q662 220 664 173 Z"/><path d="M730 118 Q754 116 779 118 Q778 193 777 269 Q754 268 731 269 Q728 193 730 118 Z"/><path d="M56 208 Q440 206 824 208" stroke-dasharray="9 9"/><path d="M796 118 Q798 152 796 186"/><path d="M790 179 L796 192 L802 179"/><path d="M60 288 Q440 290 824 288" opacity="0.5"/>
+<path d="M71 230 Q94 228 118 230 Q120 249 119 268 Q94 268 70 269 Q69 249 71 230 Z"/><path d="M136 225 Q160 222 183 224 Q184 246 184 269 Q160 268 137 268 Q135 246 136 225 Z"/><path d="M201 217 Q226 216 251 218 Q252 243 250 269 Q226 270 201 268 Q200 243 201 217 Z"/><path d="M269 215 Q292 213 315 214 Q317 241 316 269 Q292 269 267 268 Q268 241 269 215 Z"/><path d="M333 211 Q358 209 382 211 Q382 239 383 267 Q358 268 335 269 Q334 239 333 211 Z"/><path d="M399 207 Q424 205 447 207 Q450 237 447 267 Q424 270 400 267 Q400 237 399 207 Z"/><path d="M467 201 Q490 201 513 203 Q514 235 514 267 Q490 268 466 267 Q466 235 467 201 Z"/><path d="M532 197 Q556 194 579 196 Q582 232 579 268 Q556 269 531 268 Q530 232 532 197 Z"/><path d="M598 188 Q622 186 647 188 Q646 228 645 269 Q622 268 599 269 Q596 228 598 188 Z"/><path d="M663 172 Q688 171 712 172 Q713 220 712 267 Q688 269 664 268 Q664 220 663 172 Z"/><path d="M731 119 Q754 117 778 118 Q778 193 778 269 Q754 270 730 268 Q728 193 731 119 Z"/><path d="M56 208 Q440 206 824 208" stroke-dasharray="9 9"/><path d="M796 118 Q798 152 796 186"/><path d="M790 179 L796 192 L802 179"/><path d="M60 288 Q440 290 824 288" opacity="0.5"/>
   </g>
-  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="end" opacity="0.75">
-    <text x="824" y="200">medel</text>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="start" opacity="0.75">
+    <text x="62" y="200">medel</text>
   </g>
   <g font-family="var(--font-mono)" font-size="16" fill="currentColor" text-anchor="middle">
     <text x="796" y="108">p95</text>
@@ -1077,24 +1028,22 @@ export const DOODLES: Record<string, string> = {
     <text x="440" y="332">svarstider, sorterade</text>
   </g>
 </svg>`,
-
   /* ---- Cyber 1.0 · Hotet och sprickan — STIL: HANDRITAD ---- */
   "hotet-och-sprickan": `
 <svg viewBox="0 0 880 380" role="img" aria-label="Ett streckat moln till vänster med en streckad pil mot en heldragen tegelvägg till höger, där en spricka går genom väggen.">
   <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-<path d="M131 80 Q177 81 178 126 Q177 171 132 171 Q87 171 86 126 Q87 81 131 80 Z" stroke-dasharray="8 9"/><path d="M190 74 Q227 75 228 113 Q227 149 191 151 Q153 149 152 112 Q153 75 190 74 Z" stroke-dasharray="8 9"/><path d="M96 117 Q125 117 126 146 Q125 175 96 175 Q67 175 67 145 Q67 117 96 117 Z" stroke-dasharray="8 9"/><path d="M470 97 Q630 96 789 96 Q792 191 790 285 Q630 288 469 285 Q468 191 470 97 Z"/><path d="M472 144 Q630 142 788 144"/><path d="M472 191 Q630 190 788 191"/><path d="M472 238 Q630 238 788 238"/><path d="M576 98 Q577 191 576 284"/><path d="M682 98 Q683 191 682 284"/><path d="M620 98 L636 138 L612 174 L640 216 L616 254 L630 286"/><path d="M234 132 Q380 128 596 152" stroke-dasharray="8 9"/><path d="M589 148 L602 154 L589 160"/>
+<path d="M146 97 Q236 97 237 140 Q236 183 146 183 Q56 183 53 139 Q56 97 146 97 Z" stroke-dasharray="8 9"/><path d="M119 85 Q159 85 161 109 Q159 135 118 136 Q77 135 76 110 Q77 85 119 85 Z" stroke-dasharray="8 9"/><path d="M180 93 Q213 92 213 115 Q213 136 181 136 Q147 136 146 115 Q147 92 180 93 Z" stroke-dasharray="8 9"/><path d="M469 96 Q630 95 791 96 Q791 191 791 286 Q630 287 470 286 Q469 191 469 96 Z"/><path d="M472 144 Q630 142 788 144"/><path d="M472 191 Q630 190 788 191"/><path d="M472 238 Q630 238 788 238"/><path d="M576 98 Q577 191 576 284"/><path d="M682 98 Q683 191 682 284"/><path d="M620 98 L636 138 L612 174 L640 216 L616 254 L630 286"/><path d="M234 132 Q380 128 596 152" stroke-dasharray="8 9"/><path d="M589 148 L602 154 L589 160"/>
   </g>
   <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
     <text x="140" y="340">hot</text>
     <text x="630" y="340">sårbarhet</text>
   </g>
 </svg>`,
-
   /* ---- Cyber 1.0 · Förtroendegränsen — STIL: HANDRITAD ---- */
   "fortroendegransen": `
 <svg viewBox="0 0 880 360" role="img" aria-label="En streckad lodrät linje delar bilden. En pil från internet korsar linjen genom en kontrollpunkt in i appen. En andra pil från appen till databasen korsar ingenting.">
   <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-<path d="M400 40 Q403 170 400 300" stroke-dasharray="9 10" opacity="0.5"/><path d="M70 140 Q170 140 270 140 Q271 185 270 231 Q170 231 69 231 Q70 185 70 140 Z"/><path d="M489 78 Q580 77 671 78 Q671 120 671 162 Q580 163 490 162 Q489 120 489 78 Z"/><path d="M489 206 Q580 204 669 207 Q670 248 670 291 Q580 292 490 290 Q489 248 489 206 Z"/><path d="M274 184 Q350 168 476 128"/><path d="M469 120 L482 126 L469 132"/><path d="M400 135 Q415 135 416 149 Q415 165 399 166 Q385 165 385 150 Q385 135 400 135 Z"/><path d="M580 166 Q582 184 580 198"/><path d="M574 191 L580 204 L586 191"/>
+<path d="M400 40 Q403 170 400 300" stroke-dasharray="9 10" opacity="0.5"/><path d="M69 140 Q170 138 269 141 Q270 185 270 231 Q170 232 70 230 Q69 185 69 140 Z"/><path d="M490 78 Q580 78 671 77 Q672 120 669 163 Q580 164 490 162 Q488 120 490 78 Z"/><path d="M490 207 Q580 206 671 205 Q671 248 669 289 Q580 291 489 290 Q488 248 490 207 Z"/><path d="M274 184 Q350 168 476 128"/><path d="M469 120 L482 126 L469 132"/><path d="M400 136 Q415 135 415 150 Q415 165 400 166 Q385 165 386 149 Q385 135 400 136 Z"/><path d="M580 166 Q582 184 580 198"/><path d="M574 191 L580 204 L586 191"/>
   </g>
   <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle">
     <text x="170" y="192">internet</text>
@@ -1106,30 +1055,28 @@ export const DOODLES: Record<string, string> = {
     <text x="580" y="330">betrott</text>
   </g>
 </svg>`,
-
   /* ---- Cyber 1.1 · Injektionen bryter ut — STIL: HANDRITAD ---- */
   "injektionen-bryter-ut": `
-<svg viewBox="0 0 880 392" role="img" aria-label="Två likadana remsor med en streckad lucka. I den övre ryms lappen i luckan, i den undre är lappen bredare och sticker ut på båda sidor.">
+<svg viewBox="0 0 880 392" role="img" aria-label="Två likadana remsor med en streckad lucka. I den övre ryms lappen i luckan, i den undre är lappen bredare än hela remsan och sticker ut på båda sidor.">
   <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-<path d="M61 81 Q440 78 821 79 Q820 108 820 137 Q440 136 61 135 Q59 108 61 81 Z"/><path d="M331 88 Q405 87 480 87 Q482 108 480 129 Q405 130 330 128 Q328 108 331 88 Z" stroke-dasharray="6 7" opacity="0.45"/><path d="M340 90 Q405 88 470 89 Q471 108 470 126 Q405 126 340 125 Q338 108 340 90 Z"/><path d="M61 239 Q440 238 820 239 Q821 268 821 295 Q440 298 60 297 Q59 268 61 239 Z"/><path d="M330 247 Q405 248 480 248 Q481 268 481 288 Q405 289 330 288 Q329 268 330 247 Z" stroke-dasharray="6 7" opacity="0.45"/><path d="M251 249 Q415 250 581 251 Q581 268 580 286 Q415 287 250 285 Q249 268 251 249 Z"/>
+<path d="M150 80 Q440 78 730 79 Q731 108 730 136 Q440 136 150 135 Q148 108 150 80 Z"/><path d="M391 87 Q460 86 530 87 Q531 108 531 127 Q460 130 390 129 Q389 108 391 87 Z" stroke-dasharray="6 7" opacity="0.45"/><path d="M410 90 Q460 91 510 91 Q511 108 511 125 Q460 126 410 125 Q409 108 410 90 Z"/><path d="M151 239 Q440 240 731 241 Q731 268 730 296 Q440 297 150 295 Q149 268 151 239 Z"/><path d="M391 249 Q460 247 529 248 Q532 268 530 288 Q460 289 391 288 Q389 268 391 249 Z" stroke-dasharray="6 7" opacity="0.45"/><path d="M95 252 Q440 251 785 252 Q787 268 785 284 Q440 285 95 285 Q93 268 95 252 Z"/>
   </g>
   <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle">
-    <text x="405" y="113">lisa</text>
+    <text x="460" y="113">lisa</text>
   </g>
   <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle">
-    <text x="415" y="273">' OR '1'='1</text>
+    <text x="440" y="273">' OR '1'='1</text>
   </g>
   <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
     <text x="440" y="180">avsedd indata</text>
     <text x="440" y="352">indata som bryter ut</text>
   </g>
 </svg>`,
-
   /* ---- Cyber 1.1 · XSS vs CSRF — STIL: HANDRITAD ---- */
   "xss-och-csrf": `
 <svg viewBox="0 0 880 372" role="img" aria-label="Till vänster två pilar fram och tillbaka mellan angripare och webbläsare. Till höger en streckad pil ner i webbläsaren och en pil vidare till tjänsten, utan returpil.">
   <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-<path d="M41 121 Q113 119 185 120 Q188 162 186 204 Q113 205 41 204 Q39 162 41 121 Z"/><path d="M252 121 Q327 120 402 121 Q404 162 402 203 Q327 204 252 204 Q250 162 252 121 Z"/><path d="M192 146 Q216 145 240 146"/><path d="M233 140 L246 146 L233 152"/><path d="M246 180 Q216 181 192 180"/><path d="M199 174 L186 180 L199 186"/><path d="M467 121 Q543 120 617 119 Q619 162 619 204 Q543 204 467 204 Q467 162 467 121 Z"/><path d="M688 120 Q763 118 839 121 Q840 162 839 203 Q763 204 688 204 Q686 162 688 120 Z"/><path d="M624 162 Q652 161 680 162"/><path d="M673 156 L686 162 L673 168"/><path d="M486 19 Q546 20 607 20 Q608 46 606 72 Q546 74 485 72 Q484 46 486 19 Z"/><path d="M546 74 Q548 92 546 108" stroke-dasharray="7 8"/><path d="M540 101 L546 114 L552 101"/>
+<path d="M39 121 Q113 120 185 119 Q187 162 187 204 Q113 204 39 204 Q39 162 39 121 Z"/><path d="M252 120 Q327 118 403 121 Q404 162 403 203 Q327 204 252 204 Q250 162 252 120 Z"/><path d="M192 146 Q216 145 240 146"/><path d="M233 140 L246 146 L233 152"/><path d="M246 180 Q216 181 192 180"/><path d="M199 174 L186 180 L199 186"/><path d="M468 119 Q543 120 619 120 Q620 162 618 204 Q543 206 467 204 Q466 162 468 119 Z"/><path d="M687 119 Q763 120 838 120 Q838 162 838 204 Q763 206 688 204 Q687 162 687 119 Z"/><path d="M624 162 Q652 161 680 162"/><path d="M673 156 L686 162 L673 168"/><path d="M485 20 Q546 18 606 20 Q608 46 606 72 Q546 74 485 73 Q485 46 485 20 Z"/><path d="M546 74 Q548 92 546 108" stroke-dasharray="7 8"/><path d="M540 101 L546 114 L552 101"/>
   </g>
   <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="middle">
     <text x="113" y="168">angripare</text>
@@ -1141,6 +1088,36 @@ export const DOODLES: Record<string, string> = {
   <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
     <text x="220" y="336">XSS</text>
     <text x="653" y="336">CSRF</text>
+  </g>
+</svg>`,
+  /* ---- Git 1.2 · fetch vs pull — STIL: HANDRITAD ---- */
+  "fetch-och-pull": `
+<svg viewBox="0 0 880 372" role="img" aria-label="Två paneler. I båda går en pil från origin ner till origin/main. Bara i den högra går en andra pil vidare till arbetskopian.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M60 57 Q125 56 190 57 Q190 85 189 114 Q125 115 60 113 Q58 85 60 57 Z"/><path d="M61 176 Q125 176 191 176 Q190 205 190 234 Q125 236 60 233 Q58 205 61 176 Z"/><path d="M249 175 Q325 175 401 177 Q400 205 400 234 Q325 234 249 235 Q249 205 249 175 Z"/><path d="M125 118 Q127 142 125 166"/><path d="M119 159 L125 172 L131 159"/><path d="M499 57 Q565 56 630 55 Q631 85 630 114 Q565 116 500 113 Q498 85 499 57 Z"/><path d="M501 177 Q565 174 630 175 Q631 205 630 234 Q565 236 499 234 Q499 205 501 177 Z"/><path d="M690 175 Q765 174 841 175 Q841 205 841 235 Q765 236 691 234 Q689 205 690 175 Z"/><path d="M565 118 Q567 142 565 166"/><path d="M559 159 L565 172 L571 159"/><path d="M634 205 Q660 204 684 205"/><path d="M677 199 L690 205 L677 211"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle">
+    <text x="125" y="90">origin</text>
+    <text x="125" y="210">origin/main</text>
+    <text x="385" y="210">arbetskopian</text>
+    <text x="565" y="90">origin</text>
+    <text x="565" y="210">origin/main</text>
+    <text x="825" y="210">arbetskopian</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="230" y="330">fetch</text>
+    <text x="670" y="330">pull</text>
+  </g>
+</svg>`,
+  /* ---- Git 1.2 · Squash vs merge-commit — STIL: HANDRITAD ---- */
+  "squash-eller-merge": `
+<svg viewBox="0 0 880 340" role="img" aria-label="Till vänster tre commits ovanför huvudlinjen med en streckad pil ner till en enda commit. Till höger är de tre commitarna sammanbundna med huvudlinjen i båda ändar.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M50 220 Q220 218 390 220"/><path d="M81 209 Q90 210 90 221 Q90 230 80 230 Q70 230 69 219 Q70 210 81 209 Z"/><path d="M349 211 Q360 210 361 219 Q360 230 351 229 Q340 230 340 221 Q340 210 349 211 Z"/><path d="M160 150 Q205 149 250 150"/><path d="M160 142 Q169 141 169 149 Q169 159 160 159 Q151 159 150 151 Q151 141 160 142 Z"/><path d="M204 142 Q214 141 214 149 Q214 159 205 158 Q196 159 196 151 Q196 141 204 142 Z"/><path d="M250 141 Q259 141 258 150 Q259 159 249 159 Q241 159 240 150 Q241 141 250 141 Z"/><path d="M260 158 Q312 186 336 210" stroke-dasharray="7 8"/><path d="M329 209 L342 215 L329 221"/><path d="M490 220 Q660 218 830 220"/><path d="M520 210 Q530 210 530 219 Q530 230 519 231 Q510 230 510 221 Q510 210 520 210 Z"/><path d="M791 210 Q800 210 799 219 Q800 230 791 229 Q780 230 780 220 Q780 210 791 210 Z"/><path d="M600 150 Q645 149 690 150"/><path d="M599 141 Q609 141 608 150 Q609 159 600 159 Q591 159 590 150 Q591 141 599 141 Z"/><path d="M644 140 Q654 141 653 151 Q654 159 645 160 Q636 159 635 151 Q636 141 644 140 Z"/><path d="M690 142 Q699 141 699 150 Q699 159 689 160 Q681 159 680 149 Q681 141 690 142 Z"/><path d="M530 212 Q562 178 594 154"/><path d="M698 156 Q746 186 780 212"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="220" y="296">squash</text>
+    <text x="660" y="296">merge-commit</text>
   </g>
 </svg>`,
 };

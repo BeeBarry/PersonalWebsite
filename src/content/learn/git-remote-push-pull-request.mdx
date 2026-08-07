@@ -1,0 +1,368 @@
+---
+title: 'Remote, push och pull request'
+description: 'Hur din historik möter alla andras — och vad som händer i granskningen'
+category: 'git'
+part: 1
+order: 3
+date: '2026-08-07'
+tags: ['Beginner', 'Remote', 'Pull request']
+---
+
+## Var vi är
+
+De två första delarna handlade om Git på din egen dator: commiten som ögonblicksbild, grenen som en
+fil med en hash, konflikten som två ändringar på samma rad.
+
+Allt det fungerar utan internet. Men Git är byggt för att flera ska arbeta i samma historik, och den
+delen har vi hoppat över — samtidigt som resten av hubben lutar sig mot den. Sex artiklar säger att
+något *"granskas i en merge request"* utan att någon förklarat vad det är.
+
+Den här delen fyller hålet: hur din historik möter allas andras, och vad som faktiskt händer när du
+ber om att få dina ändringar inlagda.
+
+Ett ordval först: **pull request** i GitHub heter **merge request** i GitLab. Samma sak, och de
+förkortas PR respektive MR.
+
+<Del titel="Fjärren" />
+
+## Vad en remote är
+
+En **remote** är ett namn på ett annat repository som ditt repo känner till och kan utbyta commits med.
+
+Den ligger nästan alltid på en server — GitHub, GitLab, Bitbucket — men behöver inte göra det. En
+remote kan lika gärna vara en mapp på samma dator, för Git bryr sig inte om var den finns.
+
+Namnet är bara en förkortning för en adress. `git remote -v` visar vilka du har, och du kan ha flera.
+
+## Vad `origin` är
+
+`origin` är det namn Git ger den remote du klonade ifrån. Det är en **konvention, inte ett nyckelord**.
+
+Ingenting i Git är magiskt med ordet. Du kan döpa om den, och i projekt där du arbetar mot en kopia
+av någon annans repo brukar man ha två: `origin` för din kopia och `upstream` för originalet.
+
+Att veta att det bara är ett namn tar bort en del av mystiken. `origin/main` betyder inte "den riktiga
+main" — det betyder "main, så som den såg ut på den remote som heter origin, senast vi frågade".
+
+## Vad clone gör
+
+`git clone` hämtar ett helt repository: alla commits, alla grenar, hela historiken.
+
+Den gör dessutom tre saker åt dig som är lätta att missa. Den skapar en remote som heter `origin`,
+den checkar ut standardgrenen, och den ställer in att din lokala gren **spårar** motsvarande gren på
+servern.
+
+Det är därför `git push` fungerar utan argument efter en klon, men inte i ett repo du skapat själv.
+
+## clone vs init
+
+Två sätt att få ett repo, och de skiljer sig i vad som redan är uppsatt.
+
+**`git init`** skapar ett tomt repo i en mapp du redan har. Ingen remote, ingen historik, ingen
+spårning. Du är ensam tills du lägger till en remote själv.
+
+**`git clone`** skapar repot från en befintlig remote, med historiken, `origin` och spårningen på
+plats.
+
+Följden märks första gången: efter `init` möts du av *"fatal: No configured push destination"*, och
+efter `clone` fungerar allt direkt.
+
+## Vad en fjärrgren är
+
+En **fjärrgren** — `origin/main`, `origin/develop` — är Gits lokala anteckning om var en gren låg på
+servern **senast du hämtade**.
+
+Den är alltså inte servern. Den är en kopia i ditt repo, och den uppdateras bara när du kör `fetch`
+eller `pull`. Är du offline i tre dagar står `origin/main` still i tre dagar, oavsett vad kollegorna
+gör.
+
+Du kan inte committa på en fjärrgren. Den är läsbar, och den flyttas bara av hämtningar.
+
+## `main` vs `origin/main`
+
+Den förväxling som orsakar flest förvirrade frågor om varför något "inte syns".
+
+**`main`** är din lokala gren. Den flyttas när du committar.
+
+**`origin/main`** är din anteckning om serverns `main`. Den flyttas när du hämtar.
+
+De två är olika pekare som råkar heta nästan samma sak, och de kan ligga hur långt isär som helst.
+Att `git log main..origin/main` visar tre commits betyder att servern hade tre du inte har — **när du
+senast frågade**.
+
+{/* DOODLE bortvald i steg 2: en bild med två flaggor på en commit-kedja hade
+    upprepat `grenen-och-head` i git-branch-merge-konflikter, som redan ritar en
+    flagga på en commit och en mindre flagga som pekar på flaggan. */}
+
+<Del titel="Att synka" />
+
+## Vad fetch gör
+
+`git fetch` hämtar nya commits från servern och uppdaterar dina fjärrgrenar. **Den rör inte ditt
+arbete.**
+
+Efteråt vet du vad som finns, utan att något ändrats i dina filer eller på din gren. Du kan titta i
+lugn och ro med `git log main..origin/main` innan du bestämmer dig.
+
+Det gör `fetch` till det ofarligaste kommandot i Git. Det finns ingen situation där en `fetch`
+förstör något.
+
+## Vad pull gör
+
+`git pull` är `fetch` följt av en sammanslagning in i din gren. Det är två operationer med ett namn.
+
+Den första halvan är ofarlig. Den andra kan ge en konflikt, en merge-commit du inte väntade dig, eller
+ett misslyckande mitt i om du har osparade ändringar.
+
+<Doodle
+  name="fetch-och-pull"
+  caption="Samma hämtning till vänster. Det är den andra pilen som skiljer dem åt."
+/>
+
+## fetch vs pull
+
+Skillnaden är exakt ett steg, och det steget är det som kan gå fel.
+
+**`fetch`** uppdaterar din bild av servern. Ditt arbete står orört, och du kan läsa vad som kommit
+innan du gör något.
+
+**`pull`** gör samma sak och slår sedan ihop det med din gren, direkt.
+
+Vanan som lönar sig: `fetch` först, titta, och slå ihop när du sett vad det är. Särskilt när du varit
+borta ett tag, eller när du vet att någon annan arbetat i samma filer.
+
+## Vad push gör
+
+`git push` skickar dina commits till servern och flyttar grenen där.
+
+Den skickar bara det servern saknar, och bara på den gren du står på. Din lokala historik kopieras
+alltså inte i sin helhet varje gång.
+
+Efter en push flyttas också din `origin/main`, eftersom du just fick veta var servern står.
+
+## Varför push nekas
+
+Det vanligaste felet i den här artikeln, och det låter värre än det är:
+
+```
+! [rejected] main -> main (fetch first)
+```
+
+Meddelandet betyder att servern har commits du inte har. Git vägrar flytta grenen där, eftersom det
+hade raderat någon annans arbete.
+
+Lösningen står i felmeddelandet: hämta först. Kör `git pull` — eller `fetch` och en medveten
+sammanslagning — och pusha sedan igen.
+
+Det som **inte** är lösningen är att tvinga igenom det. Att `--force` skriver över någon annans
+commits är hela anledningen till att Git nekade från början.
+
+## force vs force-with-lease
+
+Ibland behöver du verkligen skriva om en pushad gren — efter en rebase, eller när du städat din egen
+historik. Då finns två flaggor, och bara den ena är säker.
+
+**`--force`** skriver över grenen på servern, oavsett vad som står där. Har en kollega pushat under
+tiden är deras arbete borta.
+
+**`--force-with-lease`** skriver bara över om servern står **där du tror att den står**. Har någon
+annan pushat sedan din senaste hämtning avbryts kommandot.
+
+Regeln är enkel: använd aldrig `--force` på en gren någon annan kan tänkas ha rört. `--force-with-lease`
+gör samma jobb och vägrar när det är farligt.
+
+Det här är också fallgropen från förra delen, nu med ett verktyg: `--force` på en delad gren är
+farligt, och `--force-with-lease` är svaret.
+
+<Del titel="Granskningen" />
+
+## Vad en pull request är
+
+En **pull request** är en begäran om att få en gren sammanslagen i en annan, med en plats för samtal
+om ändringen.
+
+Den är inte en Git-funktion. Git kan slå ihop grenar utan att veta vad en pull request är — det här
+är något GitHub, GitLab och de andra byggt ovanpå.
+
+Vad de tillför är tre saker: en vy över skillnaden, ett ställe att kommentera rad för rad, och en
+grind. Grinden är där pipelinen från CI/CD-delen kopplas in, och där någon annan måste godkänna.
+
+Det är alltså i pull requesten som Terraform-planen granskas, manifestet läses och Dockerfilen
+kommenteras — de sex ställen i hubben som hänvisat hit.
+
+## Squash vs merge-commit
+
+När pull requesten godkänns finns flera sätt att få in den, och valet formar historiken för alltid.
+
+**En merge-commit** behåller alla commits från grenen och lägger till en commit som binder ihop dem.
+Historiken visar exakt hur arbetet gick till, med alla "wip" och "fix typo" kvar.
+
+**En squash** slår ihop grenens commits till **en** commit på målgrenen. Historiken blir en rad per
+ändring, läsbar men utan mellanstegen.
+
+<Doodle
+  name="squash-eller-merge"
+  caption="Tre commits till vänster blir en. Till höger finns de kvar, sammanbundna."
+/>
+
+Ingen av dem är rätt i alla lägen. Squash passar när grenens mellansteg inte har något värde;
+merge-commit passar när de har det, eller när flera personer arbetat i samma gren.
+
+Valet är oftast en inställning i projektet, inte något du bestämmer per gång. En squashad gren
+behöver dessutom tas bort efteråt, eftersom dess commits inte finns kvar i målgrenen.
+
+<Callout type="fallgrop">
+**En hemlighet som pushats är läckt.** Git-delen om historiken sa att en committad hemlighet ligger
+kvar även efter att du tagit bort den. Efter en push gäller det på servern också — och alla som
+hämtat har en kopia.
+
+Att ta bort filen i en ny commit hjälper inte. Att skriva om historiken och tvinga upp den hjälper
+bara om ingen hunnit hämta, vilket du sällan kan veta.
+
+Den enda tillförlitliga åtgärden är att **byta hemligheten**. Behandla den som komprometterad från
+sekunden pushen gick igenom.
+</Callout>
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att köra `pull`, `push` och öppna pull requests varje dag. Det som skiljer en lugn dag från
+en rörig är två vanor: hämta innan du börjar, och läsa felmeddelandet när en push nekas i stället för
+att nå efter `--force`.
+
+Du kommer också att vara den som granskar. Då är det diffen i pull requesten du läser, och det är där
+frågorna från Cyber-delen hör hemma — varifrån kommer datan, och vad får den här identiteten göra?
+
+Rebase-arbetsflöden, skyddade grenar, forkar och CODEOWNERS kan vänta. De blir aktuella när du äger
+ett repo, och de bygger på remote, push och pull request.
+
+## Vanliga nybörjarförväxlingar
+
+`origin` är inte ett nyckelord. Det är ett namn `clone` sätter, och du kan ha flera remotes.
+
+`origin/main` är inte servern. Det är din anteckning om var servern stod senast du hämtade.
+
+`fetch` ändrar inte dina filer. Det är `pull` som slår ihop, och det är den halvan som kan gå fel.
+
+En nekad push är inte ett fel i Git. Det betyder att servern har commits du inte har.
+
+`--force` löser inte problemet. Det tar bort det, tillsammans med någon annans arbete.
+
+En pull request är inte en Git-funktion. Den är byggd ovanpå av GitHub, GitLab och andra.
+
+En squash tar inte bort ändringarna, bara mellanstegen. Grenens commits finns inte kvar i målgrenen.
+
+En pushad hemlighet försvinner inte genom att tas bort. Den måste bytas.
+
+## Prova själv
+
+Allt nedan är läsande och rör varken servern eller din historik. Kör det i ett repo du har klonat.
+
+Fråga först vilka remotes repot känner till:
+
+```bash
+git remote -v
+```
+
+Du får normalt **två** rader med samma namn — en för `fetch` och en för `push`. Det är samma adress i
+båda, men Git tillåter att de skiljer sig.
+
+Titta sedan på fjärrgrenarna:
+
+```bash
+git branch -r
+```
+
+Där står `origin/main`, `origin/develop` och vad projektet nu har. Lägg märke till den första raden:
+`origin/HEAD -> origin/main` är serverns uppfattning om vilken gren som är standard.
+
+Se nu hur din gren förhåller sig till sin fjärrgren:
+
+```bash
+git branch -vv
+```
+
+Inom hakparentes står vilken fjärrgren din gren spårar, och ofta `ahead 3` eller `behind 2`. Det är
+den siffran som avgör om nästa push går igenom.
+
+Räkna slutligen vad du har som servern inte hade vid senaste hämtningen:
+
+```bash
+git log --oneline origin/main..HEAD
+```
+
+Två punkter betyder "det som finns i den högra men inte i den vänstra". Vänd på ordningen och du får
+det motsatta — vad servern hade som du saknar.
+
+Tre saker som kan förvirra. Siffrorna i `branch -vv` bygger på din **senaste hämtning**, inte på hur
+det ser ut just nu; är du inte uppdaterad ljuger de utan att märkas. Ett repo skapat med `git init`
+har inga remotes alls, så `git remote -v` skriver ingenting och `git branch -r` är tomt — det är inte
+ett fel. Och `git fetch` är det ofarliga sättet att uppdatera bilden — den rör aldrig dina filer.
+Det är precis därför den är den enda hämtningen du kan köra utan att tänka efter.
+
+<Callout type="kom-ihag">
+- En **remote** är ett namn på ett annat repo. `origin` är en konvention, inte ett nyckelord.
+- **`origin/main` är inte servern** — det är din anteckning om var den stod senast du hämtade.
+- `clone` sätter upp remote, utcheckning och spårning. `init` ger dig inget av det.
+- **`fetch` är ofarligt.** `pull` är `fetch` plus en sammanslagning, och det är den som kan gå fel.
+- En nekad push betyder att servern har commits du saknar. Svaret är att hämta, inte att tvinga.
+- Använd `--force-with-lease`, aldrig `--force`, på en gren någon annan kan ha rört.
+- En **pull request** är inte Git. Den är diffen, samtalet och grinden — byggd ovanpå.
+- **Squash** ger en commit och tappar mellanstegen. **Merge-commit** behåller allt.
+- En pushad hemlighet är läckt. Byt den; ta inte bara bort den.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Din kollega säger att hen pushat en fix, men du ser den inte i `origin/main`. Vad gör du?",
+      a: "Kör `git fetch`. `origin/main` är din lokala anteckning om var serverns main stod senast du hämtade — den uppdateras inte av sig själv. Efter hämtningen ser du ändringen utan att något i ditt arbete rörts.",
+    },
+    {
+      q: "Vad är skillnaden mellan `git fetch` och `git pull`?",
+      a: "`pull` är `fetch` plus en sammanslagning in i din gren. `fetch` uppdaterar bara din bild av servern och rör inte dina filer, så du kan titta på vad som kommit innan du bestämmer dig. Det är den andra halvan av `pull` som kan ge konflikter.",
+    },
+    {
+      q: "Din push nekas med `! [rejected] main -> main (fetch first)`. Vad betyder det, och vad gör du?",
+      a: "Servern har commits du inte har, och Git vägrar flytta grenen där eftersom det skulle radera dem. Hämta först — `git pull`, eller `fetch` och en medveten sammanslagning — och pusha sedan igen. Att köra `--force` löser det genom att ta bort någon annans arbete.",
+    },
+    {
+      q: "När är `--force-with-lease` säkrare än `--force`?",
+      a: "Alltid. `--force` skriver över grenen oavsett vad som står på servern. `--force-with-lease` skriver bara över om servern står där du tror att den står, och avbryter om någon pushat sedan din senaste hämtning. Samma jobb, men vägrar när det är farligt.",
+    },
+    {
+      q: "Är en pull request en del av Git?",
+      a: "Nej. Git kan slå ihop grenar utan att känna till begreppet. Pull request är något GitHub, GitLab och andra byggt ovanpå: en vy över diffen, ett ställe att kommentera, och en grind där pipelinen och en granskare måste godkänna. I GitLab heter samma sak merge request.",
+    },
+    {
+      q: "Ni squashar en gren med åtta commits vid sammanslagning. Vad händer med de åtta?",
+      a: "De hamnar inte i målgrenen — där blir det en enda commit med hela ändringen. De åtta finns kvar i grenen tills den tas bort, men eftersom de inte ingår i målgrenens historik ska grenen städas bort efteråt.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- En remote är ett namn på ett annat repo som ditt repo kan utbyta commits med.
+- `origin` är namnet `clone` sätter. Det är en konvention, och du kan ha flera remotes.
+- `clone` ger dig historiken, en remote och spårning. `init` ger ett tomt repo utan något av det.
+- En fjärrgren som `origin/main` är din anteckning om serverns läge vid senaste hämtningen.
+- `main` flyttas när du committar. `origin/main` flyttas när du hämtar.
+- `fetch` uppdaterar din bild av servern och rör inte ditt arbete. Det är alltid ofarligt.
+- `pull` är `fetch` plus en sammanslagning. Den andra halvan är den som kan ge konflikter.
+- `push` skickar det servern saknar, på den gren du står på.
+- En nekad push betyder att servern har commits du inte har. Hämta först.
+- `--force` skriver över oavsett. `--force-with-lease` vägrar om servern flyttat sig.
+- En pull request är byggd ovanpå Git: diffen, samtalet och grinden.
+- Merge-commit behåller grenens commits. Squash slår ihop dem till en.
+- En squashad gren ska tas bort, eftersom dess commits inte finns i målgrenen.
+- En pushad hemlighet är läckt och måste bytas, inte bara tas bort.
+
+## Nästa del
+
+Med Git på plats har du hela arbetsflödet: historiken lokalt, grenen som experimentyta, och vägen in
+i allas gemensamma huvudgren.
+
+Nästa serie tar sig an det som ligger mellan gränssnittet och databasen: API:et, och kontraktet två
+system kommer överens om.
