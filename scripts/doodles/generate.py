@@ -902,6 +902,80 @@ def alla():
              + nyckel(616, ' stroke-dasharray="7 8" opacity="0.5"'))
       + "\n" + txt([(290,318,"secret"),(706,318,"OIDC-token")],18.5) + "\n</svg>")
 
+    # 46 — Observability 1.0 · De tre signalerna
+    # Taxonomiformen: tre fysiska föremål bredvid varandra, ett per signal.
+    # Boken har rader, mätaren en visare, tråden går genom tre lådor. Ingen pil
+    # mellan dem — de är alternativ, inte ett flöde.
+    bok=(f'<path d="{w(70,110,230,150)}"/><path d="M185 112 Q186 184 185 258"/>'
+         + "".join(f'<path d="M96 {y} Q140 {y-1} 172 {y}"/><path d="M198 {y} Q242 {y-1} 274 {y}"/>'
+                   for y in (146,176,206,236)))
+    matare=(f'<path d="{circ(475,185,78)}"/><path d="M475 185 Q452 168 436 142"/>'
+            + f'<path d="{circ(475,185,7)}"/>'
+            + "".join(f'<path d="M{475+x1} {185+y1} L{475+x2} {185+y2}"/>'
+                      for x1,y1,x2,y2 in ((-55,-40,-46,-33),(0,-68,0,-57),(55,-40,46,-33))))
+    trad=(f'<path d="{w(660,120,180,52)}"/><path d="{w(660,196,180,52)}"/>'
+          f'<path d="{w(660,272,180,52)}"/>'
+          '<path d="M700 118 Q636 146 700 172 Q764 200 700 224 Q636 252 700 274" '
+          'stroke-width="1.6"/>')
+    D['tre-signalerna']=(
+      '<svg viewBox="0 0 880 400" role="img" aria-label="En uppslagen bok, en mätare med visare, och '
+      'tre lådor med en tråd som slingrar sig genom alla tre.">\n'
+      + G % (bok + matare + trad)
+      + "\n" + txt([(185,352,"logg"),(475,352,"mätvärde"),(750,352,"spårning")],18.5) + "\n</svg>")
+
+    # 47 — Observability 1.0 · Kardinalitetsexplosionen
+    # Vänster: fem lådor med luft emellan. Höger: samma hylla proppfull av smala
+    # lådor. Ingen siffra i bilden — mängden ÄR poängen, och en siffra hade fått
+    # ögat att läsa den i stället för att se skillnaden.
+    def hyllplan(x0,x1,y):
+        return (f'<path d="M{x0} {y} Q{(x0+x1)/2:.0f} {y-2} {x1} {y}"/>'
+                f'<path d="M{x0} {y+12} Q{(x0+x1)/2:.0f} {y+10} {x1} {y+12}"/>'
+                f'<path d="M{x0+4} {y+12} Q{x0+2} {y+36} {x0+6} {y+58}"/>'
+                f'<path d="M{x1-4} {y+11} Q{x1-2} {y+36} {x1-6} {y+58}"/>')
+    D['kardinalitetsexplosionen']=(
+      '<svg viewBox="0 0 880 380" role="img" aria-label="Två hyllor. Den vänstra har fem lådor med '
+      'luft emellan, den högra är proppfull av smala lådor.">\n'
+      + G % (hyllplan(56,404,236) + "".join(f'<path d="{w(x,150,54,86)}"/>' for x in (72,140,208,276,344))
+             + hyllplan(476,824,236)
+             + "".join(f'<path d="{w(x,150,14,86)}" stroke-width="1.4"/>'
+                       for x in range(482,818,17)))
+      + "\n" + txt([(230,346,"status"),(650,346,"status + user_id")],18.5) + "\n</svg>")
+
+    # 48 — Observability 1.1 · Pull vs push
+    D['pull-och-push']=(
+      '<svg viewBox="0 0 880 386" role="img" aria-label="Till vänster hämtar en databas från två '
+      'tjänster med pilar som pekar mot databasen. Till höger skickar tjänsterna själva, med pilar '
+      'som pekar från dem.">\n'
+      + G % (f'<path d="{w(60,86,120,64)}"/><path d="{w(60,216,120,64)}"/>'
+             + f'<path d="{w(276,146,132,84)}"/>'
+             + '<path d="M270 174 Q226 148 186 122"/>' + arrow(180,118,"left")
+             + '<path d="M270 202 Q226 228 186 248"/>' + arrow(180,251,"left")
+             + f'<path d="{w(478,86,120,64)}"/><path d="{w(478,216,120,64)}"/>'
+             + f'<path d="{w(694,146,132,84)}"/>'
+             + '<path d="M604 122 Q648 148 688 174"/>' + arrow(694,178)
+             + '<path d="M604 248 Q648 228 688 202"/>' + arrow(694,198))
+      + "\n" + txt([(120,124,"tjänst"),(120,254,"tjänst"),
+                    (538,124,"tjänst"),(538,254,"tjänst")],14)
+      + "\n" + txt([(342,194,"db"),(760,194,"db")],15)
+      + "\n" + txt([(234,352,"pull"),(652,352,"push")],18.5) + "\n</svg>")
+
+    # 49 — Observability 1.1 · Medelvärdet döljer svansen
+    # Staplarna är sorterade så att svansen hamnar till höger, och medellinjen
+    # dras HELA vägen över bilden: poängen är att den passerar under den höga
+    # stapeln utan att röra den.
+    hojder=[38,44,50,54,58,62,66,72,80,96,150]
+    staplar="".join(f'<path d="{w(70+i*66,268-h,48,h)}"/>' for i,h in enumerate(hojder))
+    D['medelvardet-doljer-svansen']=(
+      '<svg viewBox="0 0 880 372" role="img" aria-label="Elva staplar som växer åt höger. En '
+      'vågrät linje märkt medel ligger lågt och passerar under den sista, mycket högre stapeln, '
+      'som är märkt p95.">\n'
+      + G % (staplar + '<path d="M56 208 Q440 206 824 208" stroke-dasharray="9 9"/>'
+             + '<path d="M796 118 Q798 152 796 186"/>' + arrow(796,192,"down")
+             + '<path d="M60 288 Q440 290 824 288" opacity="0.5"/>')
+      + "\n" + txt([(824,200,"medel")],15,' opacity="0.75"',"end")
+      + "\n" + txt([(796,108,"p95")],16)
+      + "\n" + txt([(440,332,"svarstider, sorterade")],15,' opacity="0.62"') + "\n</svg>")
+
     return D
 
 if __name__ == "__main__":

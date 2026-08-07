@@ -66,6 +66,7 @@ const learn = defineCollection({
       "azure",
       "aws",
       "cicd",
+      "observability",
       "cybersecurity",
       "linux",
       "natverk",

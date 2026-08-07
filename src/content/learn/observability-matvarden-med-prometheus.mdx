@@ -1,0 +1,413 @@
+---
+title: 'Mätvärden med Prometheus'
+description: 'Counter, gauge, rate och varför ett genomsnitt nästan alltid ljuger'
+category: 'observability'
+part: 1
+order: 2
+date: '2026-08-07'
+tags: ['Beginner', 'Prometheus', 'PromQL']
+---
+
+## Var vi är
+
+Förra delen gav de tre signalerna och regeln att larma på mätvärden och felsöka i loggar. Nu gör vi
+mätvärdet konkret.
+
+Vi använder Prometheus, som är den vanligaste vägen och den vars format nästan allt annat kan läsa.
+Kubernetes API-server, databaser, köer och lastbalanserare exponerar redan sina mätvärden i det.
+
+Den här delen går från hur en rad ser ut till ett larm som är värt att väcka någon för. Övningarna
+körs mot en publik demo och kräver ingen installation.
+
+<Del titel="Formatet" />
+
+## Vad Prometheus är
+
+**Prometheus** är en databas för mätvärden över tid, plus ett frågespråk för att läsa dem.
+
+Den hämtar själv in värden från tjänster med jämna mellanrum, sparar dem med tidsstämpel, och låter
+dig ställa frågor om hur de utvecklats. Den ritar inga grafer — det gör Grafana ovanpå.
+
+Prometheus är i dag på version 3. Det spelar sällan roll för hur du frågar, men det är värt att veta
+när du läser handledningar: mycket material på nätet beskriver version 2.
+
+## Vad en exponeringsendpoint är
+
+En **exponeringsendpoint** är en vanlig HTTP-sökväg som svarar med tjänstens aktuella mätvärden i
+text. Konventionen är `/metrics`.
+
+Applikationen räknar alltså inte "skickar" någonting. Den håller sina siffror i minnet och skriver ut
+dem när någon frågar.
+
+Det är därför du kan `curl` en `/metrics` och se exakt vad övervakningen ser. Ingen mellanhand, inget
+format att avkoda.
+
+## Hur en rad ser ut
+
+Formatet är tre delar: namn, etiketter, värde.
+
+```
+# HELP http_requests_total Antal HTTP-anrop
+# TYPE http_requests_total counter
+http_requests_total{method="GET",status="200"} 4821
+```
+
+`# HELP` är en beskrivning för människor. `# TYPE` säger vilken sort mätvärdet är, vilket avgör hur
+det får frågas. Sedan kommer raden med namnet, etiketterna inom klamrar, och talet.
+
+Varje unik etikettkombination är en egen **tidsserie** med sin egen historik. Det är den enheten
+Prometheus lagrar, och den kardinaliteten förra delen varnade för.
+
+## Pull vs push
+
+Hur värdena tar sig från applikationen till databasen, och Prometheus valde tvärtemot vad många tror.
+
+**Push** betyder att applikationen skickar sina värden till en mottagare. Mottagaren behöver inte
+veta vem som finns.
+
+**Pull** betyder att Prometheus själv hämtar från en lista över mål den känner till. Det är
+standardläget.
+
+Pull ger en gratis egenskap: mätvärdet `up` blir `0` när hämtningen misslyckas, så du märker att en
+tjänst är borta utan att den behöver berätta det. Priset är att Prometheus måste kunna nå tjänsten,
+vilket kortlivade jobb inte alltid finns kvar länge nog för.
+
+<Doodle
+  name="pull-och-push"
+  caption="Samma två tjänster. Pilarna pekar åt motsatt håll — och bara den vänstra märker när en låda försvinner."
+/>
+
+## Vad en counter är
+
+En **counter** är ett tal som bara går uppåt, eller nollställs när processen startar om.
+
+Antal anrop, antal fel, antal bytes skickade. Frågan den svarar på är *hur många sedan starten*, och
+det talet i sig är sällan intressant.
+
+Att den nollställs vid omstart är avsiktligt. Det är också anledningen till att du aldrig ska titta
+på en counters råa värde, vilket vi tar om två sektioner.
+
+## Vad en gauge är
+
+En **gauge** är ett tal som går upp och ner: aktuellt minne, kölängd, antal pågående anrop, temperatur.
+
+Här är det aktuella värdet det intressanta. En gauge på 42 betyder att just nu är det 42.
+
+Gauges får frågas rakt av, och det är därför de är enklare — och därför man frestas att göra allt till
+gauges, vilket förlorar informationen om hur mycket något ökat.
+
+## Counter vs gauge
+
+Att välja fel sort är den vanligaste modelleringsmissen, och den upptäcks först när grafen ser konstig ut.
+
+**En counter** går bara uppåt. Du frågar den om **förändring** — hur snabbt den ökar.
+
+**En gauge** går upp och ner. Du frågar den om **nivå** — vad den är nu.
+
+Kontrollfrågan: *kan talet minska av sig självt?* Ja → gauge. Nej → counter. Antal fel kan inte
+minska; kölängden kan.
+
+Konventionen är att countrar slutar på `_total`. Ser du det suffixet vet du att en `rate()` ska
+runt om.
+
+<Del titel="Att fråga" />
+
+## Vad PromQL är
+
+**PromQL** är frågespråket. Det är byggt för tidsserier, inte för tabeller, och liknar därför inte SQL.
+
+Den enklaste frågan är ett mätvärdesnamn. Skriver du `up` får du en lista med alla tidsserier som
+heter så, var och en med sitt senaste värde.
+
+Resultatet är alltid en samling serier med etiketter, inte en tabell med rader. Det tar en stund att
+vänja sig vid och är sedan det som gör aggregering enkel.
+
+## Vad ett urval är
+
+Ett **urval** filtrerar vilka serier frågan gäller, med etiketter inom klamrar.
+
+```
+http_requests_total{status="500"}
+http_requests_total{status=~"5.."}
+http_requests_total{method!="GET"}
+```
+
+`=` är exakt likhet, `=~` är reguljärt uttryck, och `!=` är olikhet. Det andra exemplet fångar alla
+serverfel utan att räkna upp koderna.
+
+Ju fler etiketter du anger, desto färre serier — och desto snabbare fråga.
+
+## Vad `rate()` gör
+
+`rate()` räknar ut hur snabbt en counter ökar, per sekund, över ett tidsfönster.
+
+```
+rate(http_requests_total[5m])
+```
+
+Fönstret `[5m]` betyder att den tittar på de senaste fem minuternas datapunkter och räknar
+genomsnittlig ökning per sekund. Resultatet är anrop per sekund, vilket är ett tal en människa kan
+förhålla sig till.
+
+`rate()` hanterar dessutom omstarter. Ser den att talet plötsligt sjunker antar den en nollställning
+och räknar rätt ändå, i stället för att rapportera en enorm negativ förändring.
+
+Fönstret bör vara minst fyra gånger hämtningsintervallet. Är intervallet 15 sekunder är `[1m]` det
+minsta som fungerar tillförlitligt, och `[5m]` ett tryggt standardval.
+
+## Rå counter vs rate
+
+Den enskilt vanligaste nybörjarmissen i PromQL, och grafen avslöjar den direkt.
+
+**Den råa countern** ritar en trappa som bara stiger. Den ser likadan ut oavsett om systemet har
+tio anrop i sekunden eller tiotusen, och den faller till noll varje gång processen startar om.
+
+**`rate()` av samma counter** ritar den faktiska trafiken. Toppar syns som toppar, och en omstart
+syns inte alls.
+
+Regeln är kort: **en counter frågas alltid genom `rate()`** — eller `increase()`, som är samma sak
+uttryckt som totalt antal över fönstret i stället för per sekund.
+
+## Aggregering med `sum by`
+
+`sum by` slår ihop serier och behåller bara de etiketter du bryr dig om.
+
+```
+sum by (status) (rate(http_requests_total[5m]))
+```
+
+Utan `sum` får du en serie per instans, metod, sökväg och status. Med `sum by (status)` får du en
+serie per statuskod, summerad över allt annat.
+
+Det är så du går från tjugosju linjer i en graf till tre. Andra aggregeringar fungerar likadant:
+`avg by`, `max by`, `count by`.
+
+Motsatsen finns också: `sum without (instance)` behåller alla etiketter **utom** den du namnger. Det
+är ofta bekvämare, eftersom du sällan vill räkna upp allt du vill behålla.
+
+<Del titel="Fördelningen och larmet" />
+
+## Vad ett histogram är
+
+Ett **histogram** mäter fördelningen av något, till exempel svarstider, genom att räkna hur många
+observationer som hamnade under en rad gränser.
+
+Det syns i formatet som tre mätvärden med samma grundnamn: `_bucket` med en `le`-etikett för varje
+gräns, `_sum` med totalsumman, och `_count` med antalet observationer.
+
+`le` betyder *less than or equal*. Hinken `le="0.1"` räknar alla anrop som tog högst 0,1 sekunder,
+och hinkarna är kumulativa — varje hink innehåller allt som ryms i de mindre.
+
+Det låter omständligt och är det som gör percentiler möjliga utan att spara varje enskild mätning.
+
+## Genomsnitt vs percentil
+
+Här är anledningen till att histogram är värda besväret.
+
+**Genomsnittet** är summan delad med antalet. Det är ett enda tal, och det döljer allt om formen på
+fördelningen.
+
+**Percentilen** säger var en andel av mätningarna hamnar. `p95` är värdet 95 procent av anropen låg
+under — alltså hur långsamt det är för de fem procent som har det värst.
+
+```
+histogram_quantile(0.95, sum by (le) (
+  rate(demo_api_request_duration_seconds_bucket[5m])))
+```
+
+I demon jag körde mot var genomsnittet **16 millisekunder** och p95 **51 millisekunder** — en faktor
+tre. Genomsnittet ser utmärkt ut samtidigt som var tjugonde användare väntar tre gånger så länge.
+
+<Doodle
+  name="medelvardet-doljer-svansen"
+  caption="Strecket är genomsnittet. Stapeln längst till höger ligger långt ovanför det."
+/>
+
+Regeln som följer: **larma aldrig på ett genomsnitt.** Ett medelvärde kan ligga stilla medan en
+växande andel användare får oacceptabla svarstider.
+
+## Larmregeln och `for`
+
+En **larmregel** är en PromQL-fråga plus ett villkor, och den utvärderas med jämna mellanrum.
+
+```yaml
+- alert: HogFelfrekvens
+  expr: |
+    sum(rate(http_requests_total{status=~"5.."}[5m]))
+      / sum(rate(http_requests_total[5m])) > 0.05
+  for: 10m
+```
+
+Uttrycket är andelen serverfel av alla anrop, och villkoret är att den ligger över fem procent. Det
+är ett **symptomlarm** i förra delens mening: det mäter något användaren märker.
+
+`for: 10m` är det som gör larmet användbart. Villkoret måste vara sant oavbrutet i tio minuter innan
+larmet går, vilket filtrerar bort korta toppar som ändå hade gått över.
+
+<Callout type="fallgrop">
+**Ett larm utan `for` väcker folk för brus.** En enskild hämtning där andelen råkade passera gränsen
+räcker för att telefonen ska ringa, och nästa hämtning är allt normalt igen.
+
+Motsatt fälla är ett för långt `for`. Sätter du tjugo minuter på ett totalstopp har användarna varit
+utan tjänst i tjugo minuter innan någon får veta det.
+
+Tumregeln: ju allvarligare symptom, desto kortare `for`. Ett totalstopp får en till två minuter, en
+långsam förhöjd felfrekvens tio till femton.
+</Callout>
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att läsa fler PromQL-frågor än du skriver, och de flesta du skriver är varianter av
+`sum by (något) (rate(nåt_total[5m]))`. Det mönstret bär det mesta av vardagen.
+
+Du kommer också att bli den som ser att en graf ser konstig ut. Nästan alltid är det en counter som
+frågats rakt av, eller ett genomsnitt där en percentil hörde hemma.
+
+Egna exportörer, recording rules, långtidslagring och larmroutning kan vänta. De blir dina när
+övervakningen är din — och de bygger på countern, gaugen och histogrammet.
+
+## Vanliga nybörjarförväxlingar
+
+Prometheus ritar inga grafer. Den lagrar och svarar; Grafana ritar.
+
+Applikationen skickar inte sina mätvärden. Den exponerar dem, och Prometheus hämtar.
+
+En counter frågas aldrig rakt av. Den ska genom `rate()` eller `increase()`.
+
+Ett fallande countervärde är inte ett fel. Det är en omstart, och `rate()` hanterar den.
+
+`up` betyder inte att applikationen mår bra. Det betyder att hämtningen lyckades.
+
+Ett genomsnitt är inte en sammanfattning av svarstider. Det döljer svansen där problemen finns.
+
+`le` i ett histogram är kumulativ. Hinken innehåller allt som ryms i de mindre.
+
+Ett larm utan `for` går på enskilda mätpunkter, och lär teamet att ignorera larm.
+
+## Prova själv
+
+Vi frågar en riktig Prometheus. PromLabs kör en publik demo, och den kräver ingen inloggning.
+
+Börja med den råa countern:
+
+```bash
+P=https://demo.promlabs.com/api/v1
+S=demo_api_request_duration_seconds
+Q="sum(${S}_count)"
+curl -s "$P/query" --data-urlencode "query=$Q" \
+  | jq -r '.data.result[0].value[1]'
+```
+
+Du får ett stort tal — antalet anrop sedan tjänsterna startade. Det säger ingenting om trafiken just
+nu. Fråga i stället efter förändringen:
+
+```bash
+Q="sum(rate(${S}_count[5m]))"
+curl -s "$P/query" --data-urlencode "query=$Q" \
+  | jq -r '.data.result[0].value[1]'
+```
+
+Nu får du anrop per sekund — omkring 140 när jag körde. Det är ett tal som betyder något.
+
+Dela upp det per statuskod:
+
+```bash
+Q="sum by (status) (rate(${S}_count[5m]))"
+curl -s "$P/query" --data-urlencode "query=$Q" \
+  | jq -r '.data.result[]
+      | "\(.metric.status): \(.value[1])"'
+```
+
+Tre rader: `200`, `404` och `500`. Demon producerar riktiga fel — omkring ett serverfel per sekund
+mot väl över hundra lyckade, vilket är underlaget till larmregeln ovan.
+
+Jämför slutligen genomsnitt och percentil:
+
+```bash
+Q="sum(rate(${S}_sum[5m]))/sum(rate(${S}_count[5m]))"
+curl -s "$P/query" --data-urlencode "query=$Q" \
+  | jq -r '.data.result[0].value[1]'
+```
+
+```bash
+Q="histogram_quantile(0.95, sum by (le) (
+  rate(${S}_bucket[5m])))"
+curl -s "$P/query" --data-urlencode "query=$Q" \
+  | jq -r '.data.result[0].value[1]'
+```
+
+När jag körde gav genomsnittet `0.0164` och p95 `0.0513` — **16 mot 51 millisekunder**. Samma tjänst,
+samma ögonblick, tre gånger skillnad beroende på vilken fråga du ställde.
+
+Tre saker som kan förvirra. Demon är delad och trafiken varierar, så dina siffror blir inte mina —
+men förhållandet mellan genomsnitt och p95 håller sig. Frågor med `[5m]` behöver att det finns fem
+minuters historik; kör du direkt efter att demon startat om kan svaret bli tomt i stället för noll.
+Och `--data-urlencode` är inte valfritt: PromQL innehåller tecken som `+`, `{` och mellanslag, som
+tyst förvanskas om du klistrar in frågan direkt i URL:en.
+
+<Callout type="kom-ihag">
+- Prometheus **hämtar** värden själv. Applikationen exponerar dem på `/metrics` och skickar inget.
+- `up` blir `0` när hämtningen misslyckas — den gratisegenskapen är hela poängen med pull.
+- **Counter** går bara uppåt och frågas genom `rate()`. **Gauge** går upp och ner och frågas rakt av.
+- Kontrollfrågan: kan talet minska av sig självt? Ja → gauge. Nej → counter.
+- `sum by (etikett)` går från tjugosju linjer till tre. `sum without` behåller allt utom en.
+- Histogrammets `_bucket` med `le` är kumulativ, och det är den som gör percentiler möjliga.
+- **Larma aldrig på ett genomsnitt.** Genomsnitt 16 ms och p95 51 ms är samma tjänst.
+- `for:` filtrerar bort korta toppar. Utan det larmar du på enskilda mätpunkter.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Varför ger pull-modellen en egenskap som push inte gör?",
+      a: "Mätvärdet `up` blir `0` när Prometheus inte lyckas hämta från ett mål. Du märker alltså att en tjänst är borta utan att den behöver berätta det — en försvunnen tjänst kan inte skicka ett meddelande om att den är borta. Priset är att Prometheus måste kunna nå tjänsten.",
+    },
+    {
+      q: "Är kölängden en counter eller en gauge?",
+      a: "En gauge. Kontrollfrågan är om talet kan minska av sig självt, och en kö krymper när jobb behandlas. Antal behandlade jobb totalt vore däremot en counter, eftersom det bara kan öka.",
+    },
+    {
+      q: "Din graf över `http_requests_total` är en trappa som bara stiger och ibland faller till noll. Vad är fel?",
+      a: "Ingenting är fel med datan — du frågar en counter rakt av. Det råa värdet är antalet sedan start, och fallet till noll är en omstart. Lägg `rate(...[5m])` runt om, så får du faktisk trafik per sekund, och `rate` hanterar dessutom omstarten åt dig.",
+    },
+    {
+      q: "Ert genomsnittliga svarstidsmått ligger stabilt på 16 ms, men användare klagar. Hur undersöker du?",
+      a: "Med en percentil. Genomsnittet döljer fördelningens form. I demonstrationen ovan var p95 51 ms medan genomsnittet var 16 — var tjugonde anrop tog tre gånger så lång tid. Använd `histogram_quantile` mot histogrammets `_bucket`-serier.",
+    },
+    {
+      q: "Vad gör `for: 10m` i en larmregel, och vad händer utan det?",
+      a: "Villkoret måste vara sant oavbrutet i tio minuter innan larmet går, vilket filtrerar bort korta toppar som ändå går över. Utan `for` går larmet på en enskild mätpunkt, telefonen ringer för brus, och teamet lär sig att ignorera larm.",
+    },
+    {
+      q: "Varför är `sum by (status) (rate(...))` bättre än att titta på alla serier?",
+      a: "Ett mätvärde med fem etiketter kan ha dussintals tidsserier, en per kombination. `sum by (status)` summerar över allt utom statuskoden och ger några få linjer i stället — de som faktiskt svarar på frågan om hur många anrop som misslyckas.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- Prometheus lagrar mätvärden över tid och svarar på PromQL. Grafana ritar graferna.
+- Tjänsten exponerar `/metrics` i text, och Prometheus hämtar med jämna mellanrum.
+- Raden är namn, etiketter och värde. Varje etikettkombination är en egen tidsserie.
+- `# TYPE` säger sorten, och sorten avgör hur mätvärdet får frågas.
+- Pull ger `up` gratis: du märker att en tjänst är borta utan att den berättar det.
+- En counter går bara uppåt och nollställs vid omstart. En gauge går upp och ner.
+- Kan talet minska av sig självt? Ja → gauge. Nej → counter. Countrar slutar på `_total`.
+- Urvalet filtrerar med `=`, `=~` och `!=` inom klamrar. Fler etiketter ger snabbare fråga.
+- `rate()` ger ökning per sekund över ett fönster, och hanterar omstarter.
+- Fönstret bör vara minst fyra gånger hämtningsintervallet. `[5m]` är ett tryggt val.
+- En counter frågas aldrig rakt av — alltid genom `rate()` eller `increase()`.
+- `sum by` behåller de etiketter du namnger, `sum without` alla utom dem.
+- Histogrammet räknar observationer under gränser i kumulativa `le`-hinkar.
+- `histogram_quantile` ger percentiler. Genomsnitt 16 ms och p95 51 ms var samma tjänst.
+- Larmregeln är en fråga plus ett villkor. `for:` filtrerar bort korta toppar.
+
+## Nästa del
+
+Med mätvärdena på plats står grunden: du kan se att något är fel, och ungefär var.
+
+Nästa naturliga steg är spårningen på riktigt — att instrumentera en applikation med OpenTelemetry,
+och gå från ett långsamt anrop i grafen till det exakta databasanropet som orsakade det.

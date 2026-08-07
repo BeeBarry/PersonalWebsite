@@ -63,6 +63,14 @@ export const categories: Category[] = [
         isVisible: true,
     },
     {
+        title: "Observability",
+        description: "Loggar, mätvärden och spårning — att se sitt system i drift.",
+        icon: "mdi:pulse",
+        slug: "observability",
+        domain: "cloud",
+        isVisible: true,
+    },
+    {
         title: "Cybersecurity",
         description: "Säkerhet i moderna applikationer.",
         icon: "mdi:shield-lock-outline",

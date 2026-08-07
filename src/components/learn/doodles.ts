@@ -1013,4 +1013,68 @@ export const DOODLES: Record<string, string> = {
     <text x="706" y="318">OIDC-token</text>
   </g>
 </svg>`,
+
+  /* ---- Observability 1.0 · De tre signalerna — STIL: HANDRITAD ---- */
+  "tre-signalerna": `
+<svg viewBox="0 0 880 400" role="img" aria-label="En uppslagen bok, en mätare med visare, och tre lådor med en tråd som slingrar sig genom alla tre.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M71 110 Q185 109 300 109 Q300 185 299 260 Q185 261 70 259 Q69 185 71 110 Z"/><path d="M185 112 Q186 184 185 258"/><path d="M96 146 Q140 145 172 146"/><path d="M198 146 Q242 145 274 146"/><path d="M96 176 Q140 175 172 176"/><path d="M198 176 Q242 175 274 176"/><path d="M96 206 Q140 205 172 206"/><path d="M198 206 Q242 205 274 206"/><path d="M96 236 Q140 235 172 236"/><path d="M198 236 Q242 235 274 236"/><path d="M474 106 Q551 109 553 185 Q551 261 476 263 Q399 261 397 186 Q399 109 474 106 Z"/><path d="M475 185 Q452 168 436 142"/><path d="M474 178 Q482 178 482 186 Q482 192 475 193 Q468 192 467 185 Q468 178 474 178 Z"/><path d="M420 145 L429 152"/><path d="M475 117 L475 128"/><path d="M530 145 L521 152"/><path d="M660 120 Q750 118 841 121 Q840 146 839 171 Q750 172 660 171 Q659 146 660 120 Z"/><path d="M660 195 Q750 196 840 196 Q842 222 840 247 Q750 248 659 247 Q660 222 660 195 Z"/><path d="M661 272 Q750 272 839 272 Q841 298 840 323 Q750 325 660 323 Q660 298 661 272 Z"/><path d="M700 118 Q636 146 700 172 Q764 200 700 224 Q636 252 700 274" stroke-width="1.6"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="185" y="352">logg</text>
+    <text x="475" y="352">mätvärde</text>
+    <text x="750" y="352">spårning</text>
+  </g>
+</svg>`,
+
+  /* ---- Observability 1.0 · Kardinalitetsexplosionen — STIL: HANDRITAD ---- */
+  "kardinalitetsexplosionen": `
+<svg viewBox="0 0 880 380" role="img" aria-label="Två hyllor. Den vänstra har fem lådor med luft emellan, den högra är proppfull av smala lådor.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M56 236 Q230 234 404 236"/><path d="M56 248 Q230 246 404 248"/><path d="M60 248 Q58 272 62 294"/><path d="M400 247 Q402 272 398 294"/><path d="M72 149 Q99 148 125 149 Q127 193 125 237 Q99 238 73 236 Q72 193 72 149 Z"/><path d="M139 151 Q167 149 195 151 Q195 193 194 235 Q167 237 141 236 Q140 193 139 151 Z"/><path d="M207 149 Q235 149 262 150 Q263 193 263 236 Q235 236 209 237 Q207 193 207 149 Z"/><path d="M276 149 Q303 149 330 149 Q330 193 330 237 Q303 238 275 235 Q274 193 276 149 Z"/><path d="M345 151 Q371 149 399 150 Q399 193 397 236 Q371 237 344 236 Q344 193 345 151 Z"/><path d="M476 236 Q650 234 824 236"/><path d="M476 248 Q650 246 824 248"/><path d="M480 248 Q478 272 482 294"/><path d="M820 247 Q822 272 818 294"/><path d="M483 149 Q489 149 496 150 Q497 193 496 236 Q489 238 481 235 Q482 193 483 149 Z" stroke-width="1.4"/><path d="M500 151 Q506 149 514 150 Q514 193 514 235 Q506 238 499 236 Q498 193 500 151 Z" stroke-width="1.4"/><path d="M516 150 Q523 148 530 151 Q531 193 529 235 Q523 237 516 236 Q515 193 516 150 Z" stroke-width="1.4"/><path d="M533 150 Q540 148 547 150 Q549 193 546 235 Q540 236 534 236 Q531 193 533 150 Z" stroke-width="1.4"/><path d="M550 149 Q557 149 564 150 Q564 193 563 236 Q557 237 549 236 Q548 193 550 149 Z" stroke-width="1.4"/><path d="M567 151 Q574 148 581 151 Q583 193 582 235 Q574 237 568 237 Q565 193 567 151 Z" stroke-width="1.4"/><path d="M585 150 Q591 148 599 149 Q599 193 599 235 Q591 236 583 236 Q583 193 585 150 Z" stroke-width="1.4"/><path d="M601 150 Q608 148 616 150 Q617 193 616 236 Q608 237 602 237 Q601 193 601 150 Z" stroke-width="1.4"/><path d="M618 151 Q625 149 631 150 Q632 193 633 237 Q625 237 619 235 Q618 193 618 151 Z" stroke-width="1.4"/><path d="M634 151 Q642 148 649 149 Q649 193 648 236 Q642 236 636 236 Q635 193 634 151 Z" stroke-width="1.4"/><path d="M651 150 Q659 149 665 150 Q668 193 666 235 Q659 238 653 236 Q650 193 651 150 Z" stroke-width="1.4"/><path d="M669 149 Q676 149 683 151 Q684 193 684 235 Q676 237 668 237 Q667 193 669 149 Z" stroke-width="1.4"/><path d="M687 150 Q693 149 701 150 Q700 193 699 236 Q693 236 685 237 Q685 193 687 150 Z" stroke-width="1.4"/><path d="M703 150 Q710 149 717 150 Q719 193 716 236 Q710 236 703 235 Q701 193 703 150 Z" stroke-width="1.4"/><path d="M720 149 Q727 150 733 150 Q734 193 733 236 Q727 237 720 237 Q720 193 720 149 Z" stroke-width="1.4"/><path d="M738 151 Q744 150 751 150 Q752 193 751 235 Q744 237 738 237 Q737 193 738 151 Z" stroke-width="1.4"/><path d="M755 150 Q761 149 768 150 Q770 193 768 236 Q761 237 753 236 Q753 193 755 150 Z" stroke-width="1.4"/><path d="M770 149 Q778 149 785 149 Q786 193 784 237 Q778 236 771 236 Q769 193 770 149 Z" stroke-width="1.4"/><path d="M788 150 Q795 148 803 150 Q802 193 803 236 Q795 237 789 236 Q788 193 788 150 Z" stroke-width="1.4"/><path d="M805 151 Q812 148 819 151 Q819 193 818 236 Q812 236 806 235 Q803 193 805 151 Z" stroke-width="1.4"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="230" y="346">status</text>
+    <text x="650" y="346">status + user_id</text>
+  </g>
+</svg>`,
+
+  /* ---- Observability 1.1 · Pull vs push — STIL: HANDRITAD ---- */
+  "pull-och-push": `
+<svg viewBox="0 0 880 386" role="img" aria-label="Till vänster hämtar en databas från två tjänster med pilar som pekar mot databasen. Till höger skickar tjänsterna själva, med pilar som pekar från dem.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M60 85 Q120 86 180 85 Q182 118 180 151 Q120 151 60 149 Q58 118 60 85 Z"/><path d="M61 217 Q120 216 180 215 Q180 248 179 280 Q120 281 61 280 Q60 248 61 217 Z"/><path d="M276 146 Q342 145 408 146 Q409 188 407 230 Q342 231 275 230 Q274 188 276 146 Z"/><path d="M270 174 Q226 148 186 122"/><path d="M193 112 L180 118 L193 124"/><path d="M270 202 Q226 228 186 248"/><path d="M193 245 L180 251 L193 257"/><path d="M478 85 Q538 85 599 86 Q598 118 599 149 Q538 150 478 151 Q476 118 478 85 Z"/><path d="M479 215 Q538 215 599 216 Q599 248 598 280 Q538 282 478 280 Q476 248 479 215 Z"/><path d="M695 147 Q760 145 827 146 Q828 188 827 231 Q760 230 694 229 Q692 188 695 147 Z"/><path d="M604 122 Q648 148 688 174"/><path d="M681 172 L694 178 L681 184"/><path d="M604 248 Q648 228 688 202"/><path d="M681 192 L694 198 L681 204"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="middle">
+    <text x="120" y="124">tjänst</text>
+    <text x="120" y="254">tjänst</text>
+    <text x="538" y="124">tjänst</text>
+    <text x="538" y="254">tjänst</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle">
+    <text x="342" y="194">db</text>
+    <text x="760" y="194">db</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="234" y="352">pull</text>
+    <text x="652" y="352">push</text>
+  </g>
+</svg>`,
+
+  /* ---- Observability 1.1 · Medelvärdet döljer svansen — STIL: HANDRITAD ---- */
+  "medelvardet-doljer-svansen": `
+<svg viewBox="0 0 880 372" role="img" aria-label="Elva staplar som växer åt höger. En vågrät linje märkt medel ligger lågt och passerar under den sista, mycket högre stapeln, som är märkt p95.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M70 230 Q94 228 119 230 Q118 249 119 267 Q94 268 71 267 Q69 249 70 230 Z"/><path d="M136 223 Q160 222 185 224 Q184 246 183 267 Q160 270 137 269 Q134 246 136 223 Z"/><path d="M203 218 Q226 216 250 218 Q252 243 251 268 Q226 268 202 269 Q201 243 203 218 Z"/><path d="M268 215 Q292 212 315 214 Q316 241 316 269 Q292 268 269 268 Q267 241 268 215 Z"/><path d="M333 209 Q358 208 383 210 Q384 239 382 269 Q358 270 333 268 Q332 239 333 209 Z"/><path d="M401 207 Q424 205 447 206 Q449 237 448 269 Q424 269 399 268 Q400 237 401 207 Z"/><path d="M465 203 Q490 201 514 203 Q514 235 515 267 Q490 268 467 269 Q466 235 465 203 Z"/><path d="M531 197 Q556 195 579 197 Q582 232 579 267 Q556 270 532 267 Q532 232 531 197 Z"/><path d="M599 187 Q622 187 645 189 Q646 228 646 267 Q622 268 598 267 Q598 228 599 187 Z"/><path d="M664 173 Q688 170 711 172 Q714 220 711 268 Q688 269 663 268 Q662 220 664 173 Z"/><path d="M730 118 Q754 116 779 118 Q778 193 777 269 Q754 268 731 269 Q728 193 730 118 Z"/><path d="M56 208 Q440 206 824 208" stroke-dasharray="9 9"/><path d="M796 118 Q798 152 796 186"/><path d="M790 179 L796 192 L802 179"/><path d="M60 288 Q440 290 824 288" opacity="0.5"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="end" opacity="0.75">
+    <text x="824" y="200">medel</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="16" fill="currentColor" text-anchor="middle">
+    <text x="796" y="108">p95</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="440" y="332">svarstider, sorterade</text>
+  </g>
+</svg>`,
 };

@@ -1,0 +1,464 @@
+---
+title: 'De tre signalerna'
+description: 'Loggar, mätvärden och spårning — och varför en grön pipeline inte räcker'
+category: 'observability'
+part: 1
+partTitle: 'Grunderna'
+order: 1
+date: '2026-08-07'
+tags: ['Beginner', 'Overview']
+---
+
+## Var vi är
+
+CI/CD-delen slutade med en pipeline som bygger, testar och rullar ut utan att bära på en molnnyckel.
+Den lämnade en fråga: vad händer efter utrullningen?
+
+En grön pipeline säger att inget som kördes misslyckades **på byggmaskinen**. Den säger ingenting om
+hur systemet mår hos användarna, med deras data, deras last och deras nätverk.
+
+Den här delen ger orden för att se det. Vi tar de tre signalerna, vad som gör dem användbara, och hur
+man vet när något faktiskt är fel. Nästa del gör mätvärdena konkreta.
+
+<Del titel="Signalerna" />
+
+## Vad observerbarhet är
+
+**Observerbarhet** är hur väl du kan förstå vad som händer inuti ett system genom att titta på det
+utifrån.
+
+Ordet kommer från reglertekniken och betyder ungefär: räcker signalerna systemet skickar ut för att
+sluta sig till dess inre tillstånd? För en applikation är signalerna loggar, mätvärden och spårning.
+
+Ett observerbart system låter dig ställa frågor du inte förutsåg. Det är den avgörande egenskapen —
+den intressanta frågan är nästan alltid en du inte tänkte på när du byggde.
+
+## Övervakning vs observerbarhet
+
+Två ord som ofta används synonymt, och skillnaden ligger i vilka frågor de svarar på.
+
+**Övervakning** kontrollerar saker du bestämt i förväg: är tjänsten uppe, är svarstiden under en
+gräns, är disken full. Du vet vad du frågar efter, och du får ja eller nej.
+
+**Observerbarhet** är förmågan att ställa nya frågor i efterhand: *varför* blev just de här anropen
+långsamma, och vad hade de gemensamt?
+
+Övervakning svarar på *om* något är fel. Observerbarhet hjälper dig svara på *varför*. Du behöver
+båda, och övervakning är den du sätter upp först.
+
+## Vad en logg är
+
+En **logg** är en rad text som beskriver att något hände, med en tidsstämpel.
+
+Loggen är den detaljrikaste signalen. Den kan bära ett felmeddelande, ett anropsspår, vilket värde en
+variabel hade — allt du valde att skriva ut.
+
+Priset är volym. Ett system med tusen anrop i sekunden producerar loggar snabbare än någon kan läsa
+dem, och lagringen kostar pengar i proportion.
+
+## Strukturerad logg vs textrad
+
+Samma information, och bara den ena går att söka i.
+
+<Split
+  leftTitle="Textrad"
+  rightTitle="Strukturerad logg"
+  leftTone="bad"
+  rightTone="good"
+  caption="Samma händelse. Den vänstra kan du läsa; den högra kan du fråga."
+>
+  <div slot="left">
+
+  ```
+  ERROR user 8842 checkout failed after 3.2s
+  ```
+
+  För att hitta alla misslyckade utcheckningar över tre sekunder behöver du ett reguljärt uttryck som
+  matchar just det här formatet.
+
+  Ändrar någon ordföljden slutar uttrycket fungera, tyst.
+
+  </div>
+  <div slot="right">
+
+  ```json
+  {"level":"error","event":"checkout_failed",
+   "user_id":8842,"duration_s":3.2}
+  ```
+
+  Fälten är namngivna. Frågan blir *"alla rader där `event` är `checkout_failed` och `duration_s` är
+  över 3"*.
+
+  Nya fält kan läggas till utan att gamla frågor slutar fungera.
+
+  </div>
+</Split>
+
+Regeln som följer: **logga JSON, inte meningar.** Det är en av få ändringar som kostar nästan
+ingenting att införa och betalar sig varje gång någon felsöker.
+
+## Vad ett mätvärde är
+
+Ett **mätvärde** är ett tal som mäts om och om igen över tid: antal anrop, svarstid, minnesanvändning,
+kölängd.
+
+Till skillnad från loggen sparas inte varje händelse. Mätvärdet är redan sammanräknat när det lagras,
+och det är därför det är billigt att behålla i åratal.
+
+Det är också därför det är trubbigt. Mätvärdet vet att svarstiden steg klockan 14:03. Det vet inte
+vilket anrop det gällde eller varför.
+
+## Logg vs mätvärde
+
+Den viktigaste avvägningen i hela serien, och den handlar om vad du offrar.
+
+**Loggen** behåller varje händelse med alla detaljer. Du kan gå tillbaka och titta på exakt det anrop
+som gick fel. Volymen växer med trafiken.
+
+**Mätvärdet** behåller bara summan. Du ser mönstret över tid och kan spara det länge, men enskilda
+händelser finns inte kvar.
+
+Tumregeln: **mätvärden talar om att något är fel, loggar talar om vad.** Larma på mätvärden, felsök i
+loggar — och räkna med att du behöver båda samma kväll.
+
+## Vad spårning är
+
+**Spårning** följer ett enskilt anrop genom alla tjänster det passerar.
+
+I ett system med en tjänst behövs det inte. I ett system med sex tjänster som anropar varandra är det
+enda sättet att svara på var tiden tog vägen.
+
+Resultatet — ett **trace** — är hela resan för ett anrop, från att det kom in till att svaret gick
+ut, med varje delsteg utskrivet och tidsatt.
+
+<Flow
+  caption="Samma trace-id följer med i varje anrop. Det är det som gör att stegen går att sätta ihop efteråt."
+  steps={[
+    {
+      label: "Anropet kommer in",
+      note: "Frontend tar emot det och skapar ett **trace-id** om det inte redan finns ett.",
+    },
+    {
+      label: "Id:t skickas vidare",
+      via: "i en header",
+      note: "Varje anrop till nästa tjänst bär med sig samma trace-id.",
+      accent: true,
+    },
+    {
+      label: "Varje tjänst mäter sin del",
+      via: "ett span per steg",
+      note: "Start, slut och vem som anropade — plus tjänstens eget namn.",
+    },
+    {
+      label: "Delarna sätts ihop",
+      via: "på trace-id",
+      note: "Systemet som tar emot dem bygger ett träd av hela resan.",
+    },
+  ]}
+/>
+
+## Vad ett span är
+
+Ett **span** är ett enskilt tidsatt steg inuti ett trace: ett databasanrop, ett HTTP-anrop, en
+funktion du valt att mäta.
+
+Varje span har en starttid, en varaktighet, ett namn och en pekare till sitt föräldraspan. Det är
+pekaren som gör att de går att sätta ihop till ett träd i stället för en lista.
+
+Trädet är poängen. Ser du att ett anrop tog 900 millisekunder, och att 850 av dem låg i ett enda
+databasspan, har du hittat felet utan att gissa.
+
+Det är samma N+1-problem som SQL-delen beskrev. Skillnaden är att spårningen visar det i produktion,
+inte i en testmiljö där tabellen är liten.
+
+<Doodle
+  name="tre-signalerna"
+  caption="Tre verktyg, tre frågor. Boken vet vad, mätaren vet hur mycket, tråden vet var."
+/>
+
+<Del titel="Vad som gör dem användbara" />
+
+## Vad kardinalitet är
+
+**Kardinalitet** är hur många unika kombinationer av etiketter ett mätvärde kan få.
+
+Ett mätvärde med etiketten `status` har låg kardinalitet — det finns ett trettiotal statuskoder. Ett
+mätvärde med etiketten `user_id` har lika hög kardinalitet som du har användare.
+
+Varje kombination lagras som en egen tidsserie. Tio statuskoder gånger fyra metoder gånger fem
+sökvägar är tvåhundra serier, vilket är ingenting. Lägg till användar-id och det blir miljoner.
+
+<Callout type="fallgrop">
+**Höga kardinaliteter dödar mätvärdesystem.** Ett användar-id, en sessionsnyckel eller en full
+sökväg med ett id i som etikett får antalet tidsserier att explodera, och systemet slutar svara.
+
+Felet ser inte ut som ett kardinalitetsproblem. Det ser ut som att övervakningen blev långsam och
+sedan slutade fungera, ofta veckor efter att etiketten lades till.
+
+Regeln: **etiketter ska ha få möjliga värden.** Behöver du veta vilken användare det gällde hör det
+hemma i en logg eller ett span, inte i ett mätvärde.
+</Callout>
+
+<Doodle
+  name="kardinalitetsexplosionen"
+  caption="Samma hylla två gånger. Till höger fick lådorna ett id i namnet."
+/>
+
+## Vad ett korrelations-id är
+
+Ett **korrelations-id** är ett värde som följer med genom hela behandlingen av ett anrop och skrivs
+ut i varje logg som rör det.
+
+Utan det har du tusen loggrader från tio tjänster och ingen aning om vilka som hör ihop. Med det
+filtrerar du på ett värde och får hela historien om ett enda anrop.
+
+I praktiken är korrelations-id:t oftast trace-id:t. Skriver du ut det i varje loggrad har du bundit
+ihop två av de tre signalerna, och kan gå från en långsam spårning direkt till dess loggar.
+
+Det är den enskilt billigaste förbättringen i den här artikeln: ett fält i loggformatet, en gång.
+
+## Vad OpenTelemetry är
+
+**OpenTelemetry** är en standard för hur signaler samlas in och skickas, oberoende av vilket verktyg
+som tar emot dem.
+
+Före den var varje leverantör en egen värld: byta övervakningsverktyg betydde att koda om
+instrumenteringen. Med OpenTelemetry instrumenterar du en gång och byter mottagare i en
+konfigurationsfil.
+
+Mognaden skiljer sig mellan signalerna. **Spårning är stabilt** i praktiskt taget alla språk-SDK:er,
+**mätvärden är stabila** i flera av de stora, medan **loggar fortfarande är under utveckling** i
+många av dem.
+
+Kontrollera därför statusen för just ditt språk innan du planerar att flytta allt dit. Att börja med
+spårning är det säkraste valet i dag.
+
+<Del titel="Att veta när något är fel" />
+
+## Vad en SLI är
+
+En **SLI** — service level indicator — är ett mätvärde som beskriver hur bra tjänsten är för
+användaren.
+
+Bra SLI:er mäter det användaren märker: andel lyckade anrop, andel anrop snabbare än en gräns, andel
+tid tjänsten svarade. Processorlast är inte en SLI — ingen användare bryr sig om den.
+
+Formen är nästan alltid en andel: *lyckade anrop delat med alla anrop*.
+
+## Vad en SLO är
+
+En **SLO** — service level objective — är målet du satt för en SLI, över en tidsperiod.
+
+*"99,9 procent av anropen ska lyckas, mätt över trettio dagar."* Det är en SLO: en indikator, en
+siffra, ett fönster.
+
+Talet ska vara lägre än hundra procent, och det är avsiktligt. En SLO på hundra betyder att varje
+avvikelse är en kris, vilket gör att ingen vågar ändra något.
+
+## Vad en felbudget är
+
+En **felbudget** är det som blir över när du drar SLO:n från hundra procent.
+
+En SLO på 99,9 procent över trettio dagar ger en felbudget på 0,1 procent — ungefär 43 minuter. Så
+mycket får tjänsten vara trasig innan målet är missat.
+
+<Stack
+  caption="Varje nivå vilar på den under. Utan en SLI finns ingen SLO, och utan en SLO finns ingen budget att spendera."
+  ground="Mätvärdena från tjänsten"
+  layers={[
+    {
+      label: "Larmet",
+      note: "Går när budgeten förbrukas snabbare än perioden tillåter.",
+    },
+    {
+      label: "Felbudgeten",
+      note: "Hundra procent minus SLO:n. **Det du får spendera** på fel och risktagande.",
+      accent: true,
+    },
+    {
+      label: "SLO:n",
+      note: "Målet: en siffra och ett tidsfönster. Alltid lägre än hundra procent.",
+    },
+    {
+      label: "SLI:n",
+      note: "Måttet användaren märker: andel lyckade anrop, andel snabba svar.",
+    },
+  ]}
+/>
+
+Budgeten är till för att spenderas. Är den orörd har du varit för försiktig; är den slut stoppar du
+nya utrullningar och lagar i stället. Det gör diskussionen om risk till ett tal i stället för en
+åsikt.
+
+Ett ord till: en **SLA** är ett avtal med en kund om samma sak, med pengar kopplade till sig. Din SLO
+ska alltid vara strängare än SLA:n, så att du märker problemet före kunden.
+
+## Larma på symptom, inte på orsak
+
+Den sista regeln, och den som avgör om någon orkar vara jour.
+
+**Ett symptomlarm** går när användaren märker något: felfrekvensen steg, svarstiden gick över målet,
+kön växer utan att minska.
+
+**Ett orsakslarm** går när en möjlig orsak inträffar: processorn är över 80 procent, disken är 70
+procent full, en podd startade om.
+
+Problemet med orsakslarm är att de flesta orsaker inte leder till något användaren märker. Hög
+processorlast under en förväntad topp är inte ett problem, och ett larm om den lär teamet att ignorera
+larm.
+
+Regeln: **larma på det som gör ont, undersök i det som förklarar.** Orsaksmätvärdena ska finnas — de
+är det du tittar på när symptomlarmet gått — men de ska inte väcka någon klockan tre.
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att lägga till loggar och mätvärden i kod du skriver, och att läsa någon annans när något
+är trasigt. Det som återkommer varje vecka är valet mellan att logga något och att räkna något.
+
+Du kommer också att bli den som inte hittar rätt loggrad. Nästan alltid är svaret att korrelations-id
+saknas, eller att loggen är en mening i stället för ett objekt.
+
+Egna instrumentbrädor, samplingsstrategier och att äga en jourrotation kan vänta. De blir dina när
+systemet är ditt — och de bygger på samma tre signaler.
+
+## Vanliga nybörjarförväxlingar
+
+Övervakning är inte observerbarhet. Det ena kontrollerar frågor du ställt i förväg, det andra låter
+dig ställa nya.
+
+Ett mätvärde ersätter inte en logg. Mätvärdet säger att något är fel, loggen vad.
+
+Ett trace är inte en logg. Det är ett träd av tidsatta steg, ihopsatt på ett id.
+
+Ett användar-id hör inte hemma som etikett på ett mätvärde. Det hör hemma i en logg eller ett span.
+
+En SLO på hundra procent är inte ambitiöst. Det tar bort felbudgeten och gör varje ändring till en
+risk ingen vill ta.
+
+SLO och SLA är inte samma sak. Avtalet är SLA:n, och din SLO ska vara strängare.
+
+Hög processorlast är inte ett larm värt att väcka någon för. Det är ett mätvärde du tittar på efteråt.
+
+En grön pipeline betyder inte att systemet mår bra. Den betyder att bygget gick igenom.
+
+## Prova själv
+
+Du behöver inget övervakningsverktyg. Vi tittar på riktiga mätvärden i en publik Prometheus-demo som
+PromLabs driver.
+
+Fråga vilka mål som är uppe just nu:
+
+```bash
+P=https://demo.promlabs.com/api/v1
+curl -s "$P/query" --data-urlencode 'query=up' \
+  | jq -r '.data.result[].metric.job'
+```
+
+Du får jobbnamnen `demo`, `node`, `prometheus` och `cadvisor` — sex mål totalt, eftersom `demo` körs i
+tre kopior. Mätvärdet `up` är `1` när Prometheus lyckades hämta från målet.
+
+Titta nu på etiketterna på ett riktigt mätvärde:
+
+```bash
+Q=demo_api_request_duration_seconds_count
+curl -s "$P/query" --data-urlencode "query=$Q" \
+  | jq -r '.data.result[0].metric'
+```
+
+Där står `instance`, `job`, `method`, `path` och `status` — plus `__name__`, som är mätvärdets eget
+namn i etikettform. Räkna hur många serier det blir:
+
+```bash
+curl -s "$P/query" --data-urlencode "query=$Q" \
+  | jq '.data.result | length'
+```
+
+Du får **27**. Tre instanser, två metoder, tre sökvägar och tre statuskoder ger 54 möjliga
+kombinationer — men bara de som faktiskt förekommit blir serier, och `/api/nonexistent` svarar
+aldrig 200.
+
+Tjugosju serier från **ett** mätvärde med fem etiketter. Byt i tanken ut `path` mot en sökväg med ett
+användar-id i, och du ser varför avsnittet om kardinalitet finns.
+
+Har du ett Kubernetes-kluster kan du titta på mätvärden som redan finns där, utan att installera
+något:
+
+```bash
+kubectl get --raw /metrics | head -20
+```
+
+API-servern exponerar sina egna mätvärden i Prometheus format. Du ser `# HELP` med en beskrivning,
+`# TYPE` med sorten, och sedan raden med värdet.
+
+Tre saker som kan förvirra. Demon är en delad publik tjänst — siffrorna rör sig hela tiden, och det
+är hela poängen med att fråga i stället för att läsa. `up` betyder att **hämtningen** lyckades, inte
+att applikationen mår bra; en tjänst kan svara på `/metrics` medan den är trasig för användarna. Och
+`kubectl get --raw /metrics` ger drygt sextiotusen rader från ett enda kluster, så `head` är inte
+valfritt.
+
+<Callout type="kom-ihag">
+- **Övervakning** svarar på om något är fel. **Observerbarhet** hjälper dig svara på varför.
+- **Logg** = varje händelse med detaljer. **Mätvärde** = summan över tid. **Spårning** = ett anrops resa.
+- Logga JSON, inte meningar. Strukturen är skillnaden mellan att läsa och att kunna fråga.
+- **Kardinalitet dödar.** Användar-id som etikett på ett mätvärde fäller systemet, veckor senare.
+- Skriv trace-id i varje loggrad. Det binder ihop två signaler för priset av ett fält.
+- SLI är måttet, SLO är målet, felbudgeten är det som blir över — och den är till för att spenderas.
+- **Larma på symptom, undersök i orsaker.** Processorlast väcker ingen klockan tre.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Vad är skillnaden mellan övervakning och observerbarhet?",
+      a: "Övervakning kontrollerar frågor du bestämt i förväg och svarar ja eller nej — är tjänsten uppe, är svarstiden under gränsen. Observerbarhet är förmågan att ställa nya frågor i efterhand, som varför just de här anropen blev långsamma. Du behöver båda, och övervakning sätter du upp först.",
+    },
+    {
+      q: "Svarstiden steg klockan 14:03. Vilken signal använder du för att se det, och vilken för att förstå varför?",
+      a: "Mätvärdet visar att det hände och när — det är billigt att spara och lätt att larma på. Loggarna och spårningen visar vad som hände i de enskilda anropen. Mätvärden talar om att något är fel, loggar och spårning om vad.",
+    },
+    {
+      q: "En kollega vill lägga till `user_id` som etikett på ett mätvärde för att kunna se vilka användare som drabbas. Vad svarar du?",
+      a: "Att det är den klassiska kardinalitetsfällan. Varje etikettkombination blir en egen tidsserie, så ett användar-id ger lika många serier som ni har användare, och mätvärdesystemet slutar svara — ofta veckor senare. Användar-id hör hemma i en logg eller ett span.",
+    },
+    {
+      q: "Vad gör ett trace som en samling loggar inte gör?",
+      a: "Det binder ihop stegen till ett träd med tider. Varje span har en varaktighet och en pekare till sitt föräldraspan, så du ser direkt att 850 av 900 millisekunder låg i ett databasanrop. Loggrader från olika tjänster har ingen sådan struktur om du inte lagt till ett korrelations-id.",
+    },
+    {
+      q: "Varför ska en SLO ligga under hundra procent?",
+      a: "För att skillnaden är felbudgeten — det utrymme tjänsten får vara trasig inom perioden. Utan budget blir varje avvikelse en kris och ingen vågar ändra något. Budgeten gör risk till ett tal: är den orörd har ni varit för försiktiga, är den slut stoppar ni utrullningar och lagar.",
+    },
+    {
+      q: "Ert jourlarm går varje gång processorlasten passerar 80 procent. Vad är problemet?",
+      a: "Det är ett orsakslarm, inte ett symptomlarm. Hög processorlast under en förväntad topp gör inte ont för någon användare, och larm som oftast är ofarliga lär teamet att ignorera larm. Larma på det användaren märker — felfrekvens, svarstid — och ha processorlasten som något du tittar på efteråt.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- Observerbarhet är hur väl du kan förstå ett system inifrån genom att titta på det utifrån.
+- Övervakning svarar på förutbestämda frågor. Observerbarhet låter dig ställa nya i efterhand.
+- Loggen är varje händelse med detaljer. Detaljrik, och dyr i volym.
+- Strukturerad logg går att fråga, textraden bara att läsa. Logga JSON.
+- Mätvärdet är ett tal över tid, redan sammanräknat — billigt att spara, trubbigt att felsöka i.
+- Mätvärden säger att något är fel, loggar säger vad. Larma på det ena, felsök i det andra.
+- Spårning följer ett anrop genom alla tjänster och bygger ett träd av tidsatta steg.
+- Ett span är ett steg med start, längd, namn och en pekare till sin förälder.
+- Kardinalitet är antalet unika etikettkombinationer. Höga värden fäller mätvärdesystemet.
+- Korrelations-id i varje loggrad binder ihop loggar och spårning för priset av ett fält.
+- OpenTelemetry är standarden. Spårning är stabilt, mätvärden i flera språk, loggar är på väg.
+- SLI är måttet användaren märker, SLO är målet med ett tidsfönster.
+- Felbudgeten är hundra procent minus SLO:n, och den är till för att spenderas.
+- SLA är avtalet med kunden. Din SLO ska vara strängare än det.
+- Larma på symptom, undersök i orsaker. Orsakslarm lär teamet att ignorera larm.
+
+## Nästa del
+
+Nu har signalerna namn. I nästa del gör vi den mellersta konkret: hur ett mätvärde ser ut på raden,
+och vad skillnaden mellan en counter och en gauge är. Och varför ett genomsnitt nästan alltid ljuger.
+
+Vi ställer riktiga frågor mot en riktig Prometheus, och bygger larmet som faktiskt är värt att väcka
+någon för.
