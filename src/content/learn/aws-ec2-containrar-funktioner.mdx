@@ -1,0 +1,425 @@
+---
+title: 'EC2, containrar och funktioner'
+description: 'AWS sätt att köra kod — och vad de kostar när ingen använder systemet'
+category: 'aws'
+part: 1
+order: 2
+date: '2026-08-07'
+tags: ['Beginner', 'Compute', 'Containers']
+---
+
+## Var vi är
+
+Förra delen gav kartan: resursen ligger i ett konto och en region, adresseras med en ARN, och hålls
+ihop av taggar snarare än av en behållare.
+
+Nu ska något faktiskt köra. Frågan är densamma som i Azure-delen: virtuell maskin, hanterad tjänst
+eller kluster. AWS svarar med fler alternativ, och ett av dem är så nytt att det ersatte en tjänst
+som stängde för nya kunder i april i år.
+
+Den här delen jämför de fem vägar en webbapplikation realistiskt tar i AWS. Vi skapar ingenting.
+
+<Del titel="Byggstenarna" />
+
+## Vad compute är i AWS
+
+**Compute** är de resurser som kör din kod, precis som i Azure-delen. Skillnaden är hur många former
+det finns.
+
+Azure har i praktiken fyra vägar för en webbapplikation. AWS har fem, och de överlappar mer. Det
+beror på att AWS byggt lager på lager sedan 2006 och sällan tar bort något.
+
+Det gör valet svårare men inte oöverskådligt. Alla fem svarar på samma två frågor: hur mycket av
+maskinen vill du äga, och vad ska det kosta när ingen använder systemet?
+
+## Vad EC2 är
+
+**EC2** — Elastic Compute Cloud — är AWS virtuella maskiner. En server du hyr, startar en avbild på,
+och loggar in på.
+
+Det är AWS äldsta tjänst av de fem och den mest kontrollerbara. Du väljer operativsystem, du
+installerar vad du vill, och du ansvarar för uppdateringar, omstarter och att något startar din app
+igen.
+
+EC2 ligger i botten på flera av de andra alternativen. Ett EKS-kluster kör på EC2-instanser, och
+ECS kan göra det — vilket är varför det lönar sig att förstå EC2 även om du aldrig startar en själv.
+
+## Vad en instanstyp är
+
+En **instanstyp** är storleken och karaktären på maskinen, skriven som ett kort namn: `t3.micro`,
+`m7g.large`, `c7i.xlarge`.
+
+Namnet läses i tre delar. Bokstaven först är familjen — `t` för billiga maskiner som får korta
+utbrott av kraft, `m` för allmän användning, `c` för processortung last, `r` för minnestung. Siffran
+är generationen. Efter punkten kommer storleken.
+
+Bokstäver efter generationssiffran betyder särskilda egenskaper, till exempel `g` för Gravitons
+ARM-processorer. En ARM-instans är ofta billigare, men kräver att din image byggts för rätt
+arkitektur.
+
+Namnet ser kryptiskt ut och är faktiskt systematiskt — vilket är ovanligt i AWS, och värt att
+utnyttja när du läser någon annans uppsättning.
+
+## Vad Lambda är
+
+**Lambda** kör en funktion som svar på en händelse, utan att du har någon server alls.
+
+Du laddar upp kod eller en container-image, och pekar ut vad som ska utlösa den: ett HTTP-anrop, en
+fil som dyker upp, ett meddelande i en kö, ett schema. Mellan händelserna finns ingenting igång.
+
+Betalningen följer det: du betalar per anrop och per den tid koden faktiskt körde. Ingen trafik ger
+ingen kostnad alls, utan någon nedskalning att konfigurera.
+
+Priset är formen. Koden måste starta snabbt, avsluta inom en gräns, och tåla att köras i en helt ny
+miljö varje gång. En vanlig webbserver som förväntar sig att stå och lyssna passar illa.
+
+## EC2 vs Lambda
+
+Ytterligheterna i AWS compute, och den jämförelse som gör resten begriplig.
+
+**EC2** står och går. Du betalar för tiden maskinen är igång, oavsett om någon använder den, och du
+äger operativsystemet. Applikationen kan se ut precis som den gör på din laptop.
+
+**Lambda** finns bara medan den körs. Du betalar per anrop och körtid, äger ingenting under koden,
+och applikationen måste skrivas som en funktion med en tydlig början och ett slut.
+
+Tumregeln: jämn last och långlivade processer trivs på EC2. Ojämn, händelsestyrd eller sällsynt last
+trivs på Lambda. Mitt emellan ligger de tre container­alternativen.
+
+<Del titel="Containrarna" />
+
+## Vad ECS är
+
+**ECS** — Elastic Container Service — är AWS egen orkestrerare för containrar.
+
+Du beskriver en **task definition**: vilken image, hur mycket processor och minne, vilka portar och
+miljövariabler. Sedan skapar du en **service** som håller ett antal kopior av den igång.
+
+Begreppen känns igen från Kubernetes-serien utan att vara desamma. En task motsvarar ungefär en pod,
+en service ungefär en Deployment — men API:et är AWS eget, och du använder inte `kubectl`.
+
+ECS är enklare än Kubernetes och bundet till AWS. Det är samma avvägning som mellan Container Apps
+och AKS i Azure-delen, med andra namn.
+
+## Vad Fargate är
+
+**Fargate** är ett körsätt där AWS tillhandahåller maskinerna åt dig. Det är inte en egen tjänst du
+går till, utan ett val du gör inuti ECS eller EKS.
+
+Med Fargate anger du processor och minne per task, och AWS skaffar fram kapaciteten. Det finns ingen
+instans att logga in på, inga uppdateringar att installera och ingen klusterstorlek att gissa.
+
+Betalningen sker per processor- och minnessekund som dina tasks begärt, medan de kör.
+
+<Doodle
+  name="fargate-utan-nod"
+  caption="Samma två containrar. Till höger är lådan de stod på streckad."
+/>
+
+## Fargate vs EC2-läget
+
+Samma ECS-tjänst går att köra på två sätt, och valet avgör vad du underhåller.
+
+**EC2-läget** betyder att du själv driver en flotta instanser som containrarna packas på. Du betalar
+för instanserna oavsett hur fulla de är, och du äger deras uppdateringar.
+
+**Fargate** betyder att varje task får sin kapacitet tilldelad. Du betalar för det tasken begärt, och
+du har inga instanser att underhålla.
+
+EC2-läget vinner på pris vid hög och jämn last, när du kan packa instanserna tätt. Fargate vinner på
+allt annat, och framför allt på hur mycket du slipper göra.
+
+## Vad EKS är
+
+**EKS** — Elastic Kubernetes Service — är hanterad Kubernetes, AWS motsvarighet till AKS.
+
+Här är Kubernetes-API:t framme. `kubectl`, manifest, Deployments, Services och Ingress fungerar som
+i Kubernetes-serien, för det *är* Kubernetes.
+
+AWS driver control plane och tar en fast avgift per kluster och timme för den. Noderna är dina,
+antingen som EC2-instanser eller som Fargate.
+
+Det du köper är portabilitet och ekosystem: manifesten går att flytta till ett annat moln, och allt
+som finns byggt för Kubernetes fungerar. Det du betalar är ett kluster att förstå och uppgradera.
+
+## ECS vs EKS
+
+Den viktigaste jämförelsen i artikeln, och samma fråga som Kubernetes-serien ställde: har du
+problemet Kubernetes löser?
+
+<Split
+  leftTitle="ECS"
+  rightTitle="EKS"
+  caption="Båda kör containrar över flera maskiner. Frågan är vems API du vill lära dig."
+>
+  <div slot="left">
+
+  AWS eget API. Task definitions och services i stället för manifest, ingen `kubectl`.
+
+  Färre begrepp, ingen control plane-avgift, tätare integration med resten av AWS.
+
+  Bundet till AWS. Beskrivningen går inte att flytta någon annanstans.
+
+  </div>
+  <div slot="right">
+
+  Kubernetes-API:t rakt av. Manifesten, verktygen och kunskapen är desamma som i alla andra kluster.
+
+  Ekosystemet följer med: operatorer, Helm, allt som finns byggt för Kubernetes.
+
+  Ett kluster att uppgradera, versioner att följa, och en fast avgift per kluster och timme.
+
+  </div>
+</Split>
+
+Prövningen är densamma som i Azure-delen: skriv ner vad du faktiskt tänker göra med `kubectl`. Är
+listan tom är ECS färre begrepp för samma resultat.
+
+## Vad ECS Express Mode är
+
+**Express Mode** är ett förenklat sätt att skapa en ECS-tjänst, där AWS sätter upp allt runtomkring
+åt dig.
+
+Ett kommando ger dig en Fargate-baserad tjänst med en fungerande adress, en lastbalanserare med
+TLS-certifikat, autoskalningsregler, övervakning och nätverk. Du behöver inte konfigurera något av
+det själv.
+
+Tjänsten får ett domännamn från AWS direkt, och upp till 25 Express-tjänster kan dela samma
+lastbalanserare med regelbaserad dirigering. Själva läget kostar inget extra — du betalar för
+resurserna som skapas.
+
+<Callout type="varfor" title="Varför den här finns sedan i fjol">
+AWS hade en enkel väg som hette App Runner. **Sedan den 30 april 2026 tar den inte emot nya kunder.**
+Befintliga tjänster fortsätter fungera, men AWS rekommenderar numera ECS Express Mode i stället.
+
+Det är värt att veta av två skäl. Handledningar skrivna före 2026 pekar fortfarande på App Runner och
+går inte att följa. Och det är en påminnelse om hur snabbt den enklaste vägen in i ett moln byter
+namn — medan EC2, ECS och Lambda står kvar.
+</Callout>
+
+<Del titel="Räkningen" />
+
+## Vad du betalar för
+
+Fem tjänster, fyra sätt att räkna. Det är där kostnadsöverraskningarna bor, precis som i Azure.
+
+**EC2:** per sekund instansen kör, med en minuts minimum varje gång du startar den. Diskar och
+elastiska IP-adresser kostar dessutom.
+
+**ECS på Fargate** och **EKS på Fargate:** per processor- och minnessekund som dina tasks begärt,
+medan de kör.
+
+**ECS eller EKS på EC2:** per instans i flottan, oavsett hur många containrar som ryms på den.
+
+**EKS dessutom:** en fast avgift per kluster och timme för control plane, även när klustret är tomt.
+
+**Lambda:** per anrop och per körtid. Ingen trafik ger ingen kostnad.
+
+Mönstret är samma som i Azure-delen med andra namn: **det som står och går kostar dygnet runt, det
+som startar per anrop kostar när det används.** Ett tomt EKS-kluster kostar fortfarande pengar.
+
+## Stoppad vs avslutad
+
+Två sätt att sluta använda en EC2-instans, och skillnaden är inte den man tror.
+
+**Stoppad** betyder att instansen är avstängd men finns kvar. Du betalar **ingen** instanskostnad i
+det läget. Diskarna kostar, och instansen går att starta igen med allt kvar.
+
+**Avslutad** — *terminated* — betyder att instansen är permanent borta. Den går inte att starta
+igen, och rotdisken raderas normalt med den.
+
+Ett `shutdown` inifrån operativsystemet stoppar instansen som standard. Det beteendet går att ändra
+till att i stället avsluta den, vilket är värt att kontrollera innan någon skriver ett skript.
+
+<Callout type="fallgrop">
+**Kommer du från Azure gäller motsatsen.** En stoppad Azure-maskin debiteras fortfarande, och det är
+först i läget *frigjord* som compute-kostnaden upphör.
+
+I AWS är stoppad redan gratis för instansen. Samma ord, motsatt fakturaeffekt — och en av få
+skillnader mellan molnen som kostar riktiga pengar att missa åt endera hållet.
+
+Gemensamt för båda: **diskarna kostar oavsett.** En avstängd maskin med en terabyte disk är inte
+gratis i något moln.
+</Callout>
+
+## Publik IP vs elastisk IP
+
+En fälla som drabbar alla som stoppar och startar en instans för första gången.
+
+**Den publika IP-adressen** som instansen får vid start är tillfällig. Stoppar du instansen och
+startar den igen får den en **ny** adress, och det som pekade på den gamla pekar fel.
+
+**En elastisk IP-adress** är en adress du reserverar och kopplar till instansen. Den följer med över
+stopp och start, och den släpps först när du släpper den.
+
+Priset är att en elastisk IP debiteras — och att den fortsätter debiteras när den inte sitter på
+någonting. En bortglömd reserverad adress är en klassisk rad på en AWS-faktura.
+
+<Doodle
+  name="ip-lappen-byts"
+  caption="Vänstra skylten är löstagbar. Den högra är fastspikad."
+/>
+
+## Hur du väljer
+
+<Callout type="sa-gor-du" title="Fem frågor, i den här ordningen">
+- **Är arbetet händelsestyrt, kort och ojämnt?** Ja → Lambda. Bildbehandling vid uppladdning,
+  webhooks, schemalagda jobb.
+- **Är det en webbtjänst i en container, och du vill vara igång i dag?** Ja → ECS Express Mode.
+- **Behöver du styra nätverk, lastbalanserare och skalning i detalj?** Ja → ECS på Fargate.
+- **Ska du faktiskt använda Kubernetes-API:t, eller kunna flytta till ett annat moln?** Ja → EKS.
+- **Måste du in på maskinen?** Ja → EC2. Gammal programvara, särskilda kärnkrav, migreringar som
+  inte får ändra koden.
+
+Går två alternativ jämnt ut: ta det med minst att underhålla. Att flytta nedåt i abstraktion senare
+är arbete du gör en gång.
+</Callout>
+
+Lightsail finns också, som ett förenklat paket med fast månadspris, och Elastic Beanstalk finns kvar
+för den som vill lämna in kod snarare än en container. Båda hör hemma i en senare del.
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att läsa andras val oftare än du gör egna. Att känna igen `t3.micro` i en Terraform-plan
+eller `FARGATE` i en ECS-tjänst säger dig direkt vad notan kommer att bero på.
+
+Du kommer också att svara på varför något kostar. I AWS är svaret ofta en av tre saker från den här
+artikeln. Ett EKS-kluster som står och går, en elastisk IP som ingen släppte, eller en flotta
+EC2-instanser som containrarna aldrig fyllde.
+
+Autoskalningsregler, spot-instanser och reserverad kapacitet kan vänta. De blir dina den dag notan
+är stor nog att det lönar sig — och de bygger på samma fem val.
+
+## Vanliga nybörjarförväxlingar
+
+Fargate är inte en egen tjänst. Det är ett körsätt du väljer inuti ECS eller EKS.
+
+ECS är inte Kubernetes. Begreppen liknar varandra men API:et är AWS eget, och `kubectl` fungerar inte
+mot det.
+
+En stoppad EC2-instans kostar ingen instanstid. Det är tvärtemot Azure, där stoppad fortfarande
+debiteras.
+
+En avslutad instans går inte att starta igen. Rotdisken raderas normalt med den.
+
+Den publika IP-adressen följer inte med över ett stopp. Det gör bara en elastisk IP.
+
+En elastisk IP som inte sitter på något kostar ändå pengar.
+
+App Runner går inte längre att börja med. Nya containertjänster pekas mot ECS Express Mode.
+
+Ett tomt EKS-kluster är inte gratis. Control plane debiteras per timme oavsett vad som körs.
+
+## Prova själv
+
+Det här kräver inget AWS-konto. Vi läser AWS publika prislista, som ligger öppet.
+
+Prislistan har ett index över alla tjänster. Hämta det och räkna:
+
+```bash
+P=https://pricing.us-east-1.amazonaws.com
+curl -s "$P/offers/v1.0/aws/index.json" -o idx.json
+jq '.offers | length' idx.json
+```
+
+Du får **268** tjänster med publicerad prislista. Leta upp artikelns tjänster:
+
+```bash
+jq -r '.offers | keys[]' idx.json \
+  | grep -E 'AmazonE(C2|CS|KS)|AWSLambda'
+```
+
+`AmazonEC2`, `AmazonECS`, `AmazonEKS` och `AWSLambda` står där. Sök nu efter Fargate:
+
+```bash
+jq -r '.offers | keys[]' idx.json | grep -i fargate
+```
+
+Du får **ingenting**, och avslutskoden blir 1. Det bekräftar avsnittet ovan: Fargate har ingen egen
+prislista eftersom det inte är en egen tjänst, utan ett körsätt som prissätts inuti ECS och EKS.
+
+Jämför slutligen hur brett två tjänster prissätts:
+
+```bash
+Q='.offers.AmazonEC2.currentRegionIndexUrl'
+R=$(jq -r "$Q" idx.json)
+curl -s "$P$R" -o reg.json
+jq '.regions | length' reg.json
+```
+
+EC2 ger **106**. Byter du `AmazonEC2` mot `AmazonEKS` i första raden får du **37**. Samma konto,
+samma moln, och tjänsten som kräver mest av dig finns på långt färre platser.
+
+Tre saker som kan förvirra. Talet 106 är större än antalet regioner du räknade i förra delen. Det
+beror på att prislistan tar med Local Zones och Wavelength Zones — utposter som hänger på en region
+utan att vara egna regioner. Grep-mönstret fångar också `AmazonEC2OCPULicenseFees` och `AmazonEKSAnywhere`, som är
+separata delprislistor och inte tjänsterna själva. Och siffrorna i filerna är **listpriser**: de
+säger ingenting om gratisnivåer, rabatter eller vad ditt konto faktiskt betalar.
+
+<Callout type="kom-ihag">
+- Fem vägar: **EC2** (maskinen), **ECS** (AWS containerorkestrering), **EKS** (Kubernetes),
+  **Lambda** (funktioner), **ECS Express Mode** (den snabba vägen).
+- **Fargate är ett körsätt**, inte en tjänst. Det tar bort instanserna ur ECS eller EKS.
+- ECS är färre begrepp och bundet till AWS. EKS är Kubernetes-API:t och portabilitet, mot ett kluster
+  att sköta.
+- App Runner tar inte emot nya kunder sedan 30 april 2026. ECS Express Mode är ersättaren.
+- **Stoppad EC2-instans kostar ingen instanstid** — tvärtemot Azure. Diskarna kostar i båda molnen.
+- Publik IP byts vid stopp och start. Bara en elastisk IP följer med, och den kostar när den ligger oanvänd.
+- Det som står och går kostar dygnet runt. Ett tomt EKS-kluster debiteras per timme.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Är Fargate ett alternativ till ECS?",
+      a: "Nej. Fargate är ett körsätt du väljer inuti ECS eller EKS, där AWS tillhandahåller kapaciteten i stället för att du driver en flotta EC2-instanser. Du väljer alltså både orkestrerare och körsätt, inte det ena eller det andra.",
+    },
+    {
+      q: "Vad är den avgörande skillnaden mellan ECS och EKS?",
+      a: "Vems API du använder. ECS har AWS eget — task definitions och services, ingen `kubectl`, ingen control plane-avgift, men bundet till AWS. EKS ger dig Kubernetes-API:t rakt av, med portabilitet och hela ekosystemet, mot ett kluster att uppgradera och en fast timavgift.",
+    },
+    {
+      q: "Du stoppar en EC2-instans för att spara pengar. Fungerar det, och vad kostar fortfarande?",
+      a: "Ja, det fungerar — en stoppad instans debiteras ingen instanstid. Diskarna kostar fortfarande, och en elastisk IP gör det också. Observera att det är tvärtom mot Azure, där en stoppad maskin fortsätter debiteras tills den frigörs.",
+    },
+    {
+      q: "Er övervakning tappar kontakten med en instans varje gång ni startar om den. Vad är troligast?",
+      a: "Instansen får en ny publik IP-adress vid varje stopp och start, och något pekar fortfarande på den gamla. Koppla en elastisk IP till instansen, så följer adressen med. Kom ihåg att den elastiska adressen debiteras även när den inte sitter på något.",
+    },
+    {
+      q: "En handledning från 2024 säger att du ska börja med App Runner. Vad gäller i dag?",
+      a: "App Runner tar inte emot nya kunder sedan den 30 april 2026. Befintliga tjänster fortsätter fungera, men för en ny containerapplikation rekommenderar AWS ECS Express Mode, som sätter upp Fargate-tjänst, lastbalanserare med TLS, autoskalning och nätverk åt dig.",
+    },
+    {
+      q: "Ett internt verktyg används några minuter per dag. Vilken av de fem passar sämst, och varför?",
+      a: "EKS. Control plane debiteras per timme oavsett om något körs, och till det kommer noder. Lambda eller ECS Express Mode på Fargate följer användningen mycket närmare — Lambda kostar ingenting alls mellan anropen.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- AWS har fem realistiska vägar för en webbapplikation, och de överlappar mer än Azures fyra.
+- EC2 är den virtuella maskinen: mest kontroll, mest underhåll, och grunden under flera av de andra.
+- Instanstypen läses systematiskt: familj, generation, storlek — `t3.micro`, `m7g.large`.
+- Lambda kör en funktion vid en händelse. Ingen trafik ger ingen kostnad, men koden måste passa formen.
+- ECS är AWS egen orkestrerare, med task definitions och services i stället för manifest.
+- Fargate är ett körsätt inuti ECS eller EKS där AWS skaffar kapaciteten. Inga instanser att sköta.
+- EC2-läget vinner på pris vid hög jämn last. Fargate vinner på allt du slipper göra.
+- EKS är hanterad Kubernetes: samma API och ekosystem, mot ett kluster att uppgradera.
+- ECS Express Mode sätter upp Fargate-tjänst, lastbalanserare, TLS, skalning och nätverk med ett kommando.
+- App Runner stängde för nya kunder den 30 april 2026. Express Mode är AWS rekommendation.
+- Fyra sätt att räkna: per instanssekund, per begärd processor- och minnessekund, per instans i flottan, per anrop.
+- Ett EKS-kluster debiteras per timme för control plane, även tomt.
+- Stoppad EC2-instans kostar ingen instanstid — motsatsen till Azure. Diskarna kostar i båda.
+- Publik IP byts vid stopp och start. En elastisk IP följer med, och kostar när den ligger oanvänd.
+
+## Nästa del
+
+Applikationen kör, och notan går att förklara. Kvar står frågan som AWS gör svårare än de flesta
+moln: vem får göra vad?
+
+Nästa steg är IAM på allvar: vad en policy är, och varför en roll är bättre än en nyckel. Och hur en
+tjänst bevisar vem den är utan att bära på en hemlighet.

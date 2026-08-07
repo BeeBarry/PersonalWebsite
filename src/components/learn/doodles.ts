@@ -873,4 +873,88 @@ export const DOODLES: Record<string, string> = {
     <text x="660" y="376">frigjord</text>
   </g>
 </svg>`,
+
+  /* ---- AWS 1.0 · ARN:ens anatomi — STIL: HANDRITAD ---- */
+  "arn-raden": `
+<svg viewBox="0 0 880 244" role="img" aria-label="En ARN uppdelad i sex rutor med en pil ner till varje dels namn. Rutorna för region och konto är tomma och skrafferade.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M149 73 Q440 74 730 74 Q733 99 731 124 Q440 124 149 123 Q147 99 149 73 Z"/><path d="M245 78 Q246 100 245 120" stroke-dasharray="6 7" opacity="0.5"/><path d="M341 78 Q342 100 341 120" stroke-dasharray="6 7" opacity="0.5"/><path d="M421 78 Q422 100 421 120" stroke-dasharray="6 7" opacity="0.5"/><path d="M501 78 Q502 100 501 120" stroke-dasharray="6 7" opacity="0.5"/><path d="M581 78 Q582 100 581 120" stroke-dasharray="6 7" opacity="0.5"/><g stroke-width="1.1" opacity="0.42"><path d="M445 120 L425 100"/><path d="M465 120 L425 80"/><path d="M485 120 L443 78"/><path d="M497 112 L463 78"/><path d="M497 92 L483 78"/></g><g stroke-width="1.1" opacity="0.42"><path d="M525 120 L505 100"/><path d="M545 120 L505 80"/><path d="M565 120 L523 78"/><path d="M577 112 L543 78"/><path d="M577 92 L563 78"/></g><path d="M197 130 Q198 148 197 164"/><path d="M191.0 160 L197.0 170 L203.0 160"/><path d="M293 130 Q294 148 293 164"/><path d="M287.0 160 L293.0 170 L299.0 160"/><path d="M381 130 Q382 148 381 164"/><path d="M375.0 160 L381.0 170 L387.0 160"/><path d="M461 130 Q462 148 461 164"/><path d="M455.0 160 L461.0 170 L467.0 160"/><path d="M541 130 Q542 148 541 164"/><path d="M535.0 160 L541.0 170 L547.0 160"/><path d="M656 130 Q657 148 656 164"/><path d="M650.0 160 L656.0 170 L662.0 160"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle">
+    <text x="197.0" y="105">arn</text>
+    <text x="293.0" y="105">aws</text>
+    <text x="381.0" y="105">s3</text>
+    <text x="656.0" y="105">min-hink</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="14.5" fill="currentColor" text-anchor="middle">
+    <text x="197.0" y="200">prefix</text>
+    <text x="293.0" y="200">partition</text>
+    <text x="381.0" y="200">tjänst</text>
+    <text x="461.0" y="200">region</text>
+    <text x="541.0" y="200">konto</text>
+    <text x="656.0" y="200">resurs</text>
+  </g>
+</svg>`,
+
+  /* ---- AWS 1.0 · Resursgrupp vs taggar — STIL: HANDRITAD ---- */
+  "taggen-inte-behallaren": `
+<svg viewBox="0 0 880 384" role="img" aria-label="Till vänster två lådor inuti en ram. Till höger två fristående lådor med varsin hängande lapp, omslutna av en streckad ellips.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M70 101 Q235 100 401 101 Q402 190 401 281 Q235 280 69 280 Q69 190 70 101 Z"/><path d="M105 146 Q160 146 215 145 Q217 188 215 230 Q160 232 104 229 Q104 188 105 146 Z"/><path d="M246 147 Q300 145 356 145 Q357 188 355 229 Q300 231 245 229 Q243 188 246 147 Z"/><path d="M520 146 Q575 146 631 145 Q631 188 630 230 Q575 230 519 230 Q519 188 520 146 Z"/><path d="M700 145 Q755 144 809 145 Q811 188 810 230 Q755 232 699 229 Q699 188 700 145 Z"/><path d="M573 230 Q574 240 573 250"/><path d="M546 250 Q573 248 599 249 Q601 264 600 277 Q573 280 546 279 Q544 264 546 250 Z"/><path d="M753 230 Q754 240 753 250"/><path d="M727 251 Q753 250 780 250 Q781 264 781 278 Q753 278 726 279 Q725 264 727 251 Z"/><path d="M660 82 Q856 84 859 201 Q856 316 660 318 Q464 316 460 200 Q464 84 660 82 Z" stroke-dasharray="9 10" opacity="0.45"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle">
+    <text x="573" y="268">prod</text>
+    <text x="753" y="268">prod</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="235" y="352">resursgruppen</text>
+    <text x="660" y="352">taggarna</text>
+  </g>
+</svg>`,
+
+  /* ---- AWS 1.1 · Fargate tar bort noden — STIL: HANDRITAD ---- */
+  "fargate-utan-nod": `
+<svg viewBox="0 0 880 366" role="img" aria-label="Till vänster två tasks som står på en heldragen instans. Till höger samma två tasks över en streckad, tom platta.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M70 219 Q235 220 399 220 Q400 259 400 298 Q235 299 69 298 Q69 259 70 219 Z"/><path d="M107 125 Q164 122 220 125 Q221 165 219 205 Q164 207 109 206 Q108 165 107 125 Z"/><path d="M249 123 Q306 123 363 125 Q364 165 361 206 Q306 208 250 206 Q249 165 249 123 Z"/><path d="M481 221 Q645 220 811 220 Q810 259 811 299 Q645 300 481 297 Q479 259 481 221 Z" stroke-dasharray="8 9" opacity="0.3"/><path d="M518 125 Q574 123 630 124 Q631 165 631 207 Q574 208 518 206 Q517 165 518 125 Z"/><path d="M660 124 Q716 122 772 124 Q773 165 773 207 Q716 206 660 206 Q659 165 660 124 Z"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="middle">
+    <text x="164" y="172">task</text>
+    <text x="306" y="172">task</text>
+    <text x="574" y="172">task</text>
+    <text x="716" y="172">task</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle">
+    <text x="235" y="266">EC2-instans</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.42">
+    <text x="645" y="266">ingen instans</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="235" y="344">EC2-läget</text>
+    <text x="645" y="344">Fargate</text>
+  </g>
+</svg>`,
+
+  /* ---- AWS 1.1 · Publik vs elastisk IP — STIL: HANDRITAD ---- */
+  "ip-lappen-byts": `
+<svg viewBox="0 0 880 380" role="img" aria-label="Två maskiner med varsin skylt. Den vänstra skylten dras iväg av en streckad pil, den högra hålls fast av två spikar.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M80 85 Q200 85 321 86 Q322 151 321 217 Q200 216 81 215 Q78 151 80 85 Z"/><path d="M200 216 Q201 224 200 232"/><path d="M110 232 Q200 231 291 233 Q291 255 290 279 Q200 279 110 278 Q109 255 110 232 Z"/><path d="M298 255 Q342 264 374 252" stroke-dasharray="7 8"/><path d="M367 244 L380 250 L367 256"/><path d="M560 87 Q680 85 800 86 Q802 151 799 216 Q680 218 560 216 Q559 151 560 87 Z"/><path d="M680 216 Q681 224 680 232"/><path d="M590 232 Q680 232 771 232 Q772 255 770 279 Q680 279 589 278 Q588 255 590 232 Z"/><path d="M607 249 Q612 249 613 256 Q612 261 607 261 Q600 261 599 254 Q600 249 607 249 Z"/><path d="M754 249 Q760 249 759 254 Q760 261 754 261 Q748 261 748 256 Q748 249 754 249 Z"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="17" fill="currentColor" text-anchor="middle">
+    <text x="200" y="158">EC2</text>
+    <text x="680" y="158">EC2</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="14.5" fill="currentColor" text-anchor="middle">
+    <text x="200" y="262">52.16.7.9</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="14.5" fill="currentColor" text-anchor="middle">
+    <text x="680" y="262">elastisk</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="200" y="344">publik IP</text>
+    <text x="680" y="344">elastisk IP</text>
+  </g>
+</svg>`,
 };

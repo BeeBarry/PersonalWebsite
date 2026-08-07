@@ -1,0 +1,397 @@
+---
+title: 'Kontot, regionen och ARN:en'
+description: 'Var en AWS-resurs bor — och varför det inte finns någon behållare att lägga den i'
+category: 'aws'
+part: 1
+partTitle: 'Grunderna'
+order: 1
+date: '2026-08-07'
+tags: ['Beginner', 'Overview']
+---
+
+## Var vi är
+
+Azure-delarna ställde tre frågor om ett moln: var bor resursen, vem betalar, och vad är mitt ansvar.
+AWS ställer samma frågor och svarar annorlunda på två av dem.
+
+Den här delen ger kartan för AWS. Där svaret är detsamma som i Azure säger vi det i en mening och går
+vidare. Det är skillnaderna som är värda din tid, och de som gör att du kan läsa båda molnen.
+
+Ingenting skapas här, och övningarna längst ner kräver **inget AWS-konto**.
+
+<Del titel="Kontot" />
+
+## Vad AWS är
+
+AWS är Amazons moln: en samling tjänster du hyr per tidsenhet, styrda genom ett API.
+
+Utbudet är större än Azures och namnen är mindre systematiska. Tjänsterna heter `EC2`, `S3`, `IAM`
+och `Route 53` snarare än *Virtual Machines* och *Storage*, och förkortningarna är sällan gissbara.
+
+AWS är inte äldre teknik än Azure, och inte modernare. Det är ett annat moln med andra ord för i
+stort sett samma saker, plus ett par verkliga skillnader i modellen som vi tar nedan.
+
+Du behöver inte lära dig tjänstenamnen nu. Det som ska sitta är var en resurs bor och hur den
+adresseras.
+
+## Vad ett AWS-konto är
+
+Ett **konto** i AWS är den behållare all din användning ligger i, och den enhet fakturan skrivs för.
+
+Kontot har ett tolvsiffrigt nummer, till exempel `123456789012`. Numret dyker upp i varje adress
+till en resurs och i varje behörighetsregel, så det är värt att känna igen formen.
+
+Kontot är också den hårda gränsen. Två konton delar ingenting av sig själva: en resurs i ett konto
+är osynlig från ett annat tills någon uttryckligen delar den.
+
+Just den hårdheten är varför AWS-team ofta har många konton — ett per miljö, ibland ett per team.
+Isolering är gratis, och den är svår att göra ogjord av misstag.
+
+## Konto vs prenumeration
+
+Den vanligaste översättningsmissen mellan molnen, och den beror på att gränserna inte går på samma
+ställen.
+
+**En Azure-prenumeration** är faktureringsgränsen, men identiteterna ligger i en Entra-tenant som
+många prenumerationer delar. Inloggningen är gemensam, betalningen delad.
+
+**Ett AWS-konto** är både faktureringsgräns *och* identitetsgräns. Varje konto har sin egen
+uppsättning användare, roller och behörigheter.
+
+Följden märks direkt i vardagen: att flytta mellan Azure-prenumerationer är att byta vy, medan att
+flytta mellan AWS-konton är att byta identitet.
+
+## Vad en organisation är
+
+**AWS Organizations** binder ihop flera konton under ett gemensamt tak, med en samlad faktura.
+
+Kontona sorteras i **organisationsenheter**, och på en enhet kan du sätta regler som ärvs nedåt till
+alla konton under den. Det är samma idé som Azures hanteringsgrupper.
+
+Ett konto i organisationen är **hanteringskontot**. Det äger organisationen, ser den samlade notan
+och kan inte begränsas av organisationens egna regler.
+
+Vad reglerna kan uttrycka, och hur de samspelar med behörigheter, hör till delen om identitet. Här
+räcker det att veta att kontot är byggstenen och organisationen taket.
+
+## Vad IAM är
+
+**IAM** — Identity and Access Management — är tjänsten som avgör vem som får göra vad i kontot.
+
+I AWS prövas varje anrop mot IAM. En identitet får bara göra det en regel uttryckligen tillåter, och
+det gäller även tjänster som anropar andra tjänster.
+
+Undantaget är **rotanvändaren**, som skapas med kontot och är kopplad till e-postadressen det
+registrerades på. Den begränsas inte av IAM-policyer och kan göra allt i kontot, vilket är precis
+varför den ska låsas in med tvåfaktor och sedan i princip aldrig användas.
+
+Roller, policyer och hur en tjänst får en identitet utan lösenord tar vi i nästa del. Det du behöver
+nu är att IAM finns i botten på allting, och att det är kontobundet.
+
+<Del titel="Var resursen bor" />
+
+## Vad en region är i AWS
+
+En **region** är en geografisk plats med flera datacenter, precis som i Azure-delen — samma idé,
+andra namn.
+
+Koden är uppbyggd av väderstreck och nummer: `eu-north-1` är Stockholm, `eu-central-1` Frankfurt,
+`us-east-1` norra Virginia. Formen är läsbar, till skillnad från `swedencentral`.
+
+Regionerna är isolerade från varandra, och AWS replikerar inget mellan dem automatiskt. Listar du
+dina resurser ser du bara den region du står i — vilket är varför en "försvunnen" resurs nästan
+alltid ligger i fel region.
+
+`us-east-1` är den äldsta och största regionen. Den har flest tjänster, är den som handledningar
+utgår från, och är också den som märks mest när AWS får problem.
+
+## Default-regioner vs opt-in-regioner
+
+Alla regioner är inte påslagna i ditt konto, och det är en av de mest förvirrande sakerna för någon
+som kommer från Azure.
+
+**Default-regioner** är de som lanserades före den 20 mars 2019. De är påslagna från början och går
+inte att stänga av. `eu-north-1`, `eu-central-1` och `us-east-1` hör hit.
+
+**Opt-in-regioner** är de som lanserats efter det datumet. De är avstängda tills någon slår på dem,
+syns inte ens i konsolens regionmeny, och går inte att skapa något i. `eu-central-2` i Zürich och
+`eu-south-2` i Spanien hör hit.
+
+Att slå på en region kostar ingenting, men tar några minuter till några timmar eftersom dina
+IAM-uppgifter ska spridas dit.
+
+<Callout type="fallgrop">
+**Att stänga av en region raderar ingenting.** Den tar bort din IAM-åtkomst till regionen — men
+resurserna ligger kvar och fortsätter kosta pengar.
+
+Du har alltså kvar notan för något du inte längre kan se eller ta bort utan att först slå på
+regionen igen.
+
+Städa resurserna **innan** du stänger av en region, inte efter.
+</Callout>
+
+## Vad en tillgänglighetszon är
+
+En **tillgänglighetszon** är en avskild grupp datacenter inuti regionen, med egen el, kylning och
+nät. Samma sak som i Azure-delen.
+
+Namnet är regionens kod plus en bokstav: `eu-north-1a`, `eu-north-1b`, `eu-north-1c`. De flesta
+regioner har tre.
+
+Skillnaden mot Azure är att zonen syns överallt i AWS. Ett subnät ligger i exakt en zon, och att
+sprida sig över zoner är något du gör aktivt i nästan varje tjänst.
+
+## Zonnamn vs zon-ID
+
+Här upprepar AWS exakt den fälla Azure har, med andra namn — och dokumentationen är rakare om det.
+
+**Zonnamnet** är `eu-north-1a`. AWS mappar de fysiska zonerna slumpmässigt till namnen **per konto**,
+för att inte allas resurser ska hamna i zon "a".
+
+**Zon-ID:t** är `eun1-az1`. Det pekar på samma fysiska plats i alla konton, alltid.
+
+Ditt `eu-north-1a` är alltså inte nödvändigtvis mitt `eu-north-1a`. Så länge du håller dig inom ett
+konto spelar det ingen roll, men delar två konton ett subnät med varandra är det zon-ID:t som gäller.
+
+Det är samma sak som logisk och fysisk zon i Azure-delen. Två moln, samma lösning på samma problem,
+och samma missförstånd hos den som inte läst om det.
+
+## Vad en partition är
+
+En **partition** är en grupp regioner med helt egen IAM. Ditt konto tillhör exakt en.
+
+Det finns tre: `aws` för de vanliga regionerna, `aws-cn` för Kina och `aws-us-gov` för amerikanska
+myndigheter. De är hårt åtskilda — ett konto i en partition når inte den andra alls.
+
+Du kommer nästan säkert bara att röra `aws`. Anledningen att nämna partitionen är att den står först
+i varje resursadress, och nästa avsnitt handlar om den adressen.
+
+<Del titel="Adressen" />
+
+## Vad en ARN är
+
+En **ARN** — Amazon Resource Name — är strängen som pekar ut en resurs entydigt i hela AWS.
+
+```
+arn:aws:ec2:eu-north-1:123456789012:instance/i-0abc123
+```
+
+Fälten läses från vänster: `arn`, partitionen, tjänsten, regionen, kontonumret, och sist resursen —
+ofta som typ och identifierare med snedstreck emellan.
+
+ARN:en är AWS motsvarighet till Azures resurs-ID. Den dyker upp i behörighetsregler, i
+felmeddelanden, i Terraform-planer och i loggar, och att kunna läsa den sparar mycket letande.
+
+<Doodle
+  name="arn-raden"
+  caption="Två fält står tomma. Det är inte ett fel — det är två svar."
+/>
+
+## De tomma fälten betyder något
+
+Det som förvirrar mest med ARN:er är att fält saknas. Titta på två riktiga:
+
+```
+arn:aws:s3:::min-hink
+arn:aws:iam::123456789012:user/johan
+```
+
+Den första har **tre kolon i rad**. Både regionen och kontonumret är tomma, eftersom ett hinknamn i
+S3 är unikt i hela världen — ingen annan kan ta `min-hink`, i något konto, i någon region.
+
+Den andra har tomt regionfält men ett kontonummer. Det betyder att IAM är **globalt**: användaren
+finns i kontot, inte i en region.
+
+Tomma fält är alltså inte slarv. De är information om hur långt ut tjänstens namnrymd sträcker sig,
+och de svarar på frågan "är det här globalt eller regionalt" utan att du behöver slå upp den.
+
+## Vad en tagg är
+
+En **tagg** är ett nyckel/värde-par du hänger på en resurs: `miljo = prod`, `team = shop`.
+
+Taggar används till tre saker: att dela upp kostnadsrapporten, att hitta resurser igen, och att
+skriva behörighetsregler som gäller allt med en viss tagg.
+
+I AWS är taggen inte en trevlig extrafunktion. Den är den huvudsakliga sättet att gruppera saker —
+vilket nästa avsnitt förklarar varför.
+
+<Callout type="fallgrop">
+Taggar är **metadata i klartext** och används av AWS för fakturering och administration. Lägg aldrig
+personuppgifter eller hemligheter i dem.
+
+Lika viktigt: taggar ärvs inte. En tagg på en CloudFormation-stack sätter sig inte automatiskt på
+allt stacken skapar, och kostnadsrapporten per tagg blir därefter.
+</Callout>
+
+## Resursgrupp i AWS vs resursgrupp i Azure
+
+Samma ord i båda molnen, och de betyder inte alls samma sak. Det här är den största strukturella
+skillnaden i artikeln.
+
+**En Azure-resursgrupp är en behållare.** Resursen ligger *i* den, den ligger i exakt en, och
+raderar du gruppen raderas allt i den.
+
+**En AWS-resursgrupp är en sparad fråga.** Dokumentationen definierar den som en samling resurser i
+samma region som matchar gruppens *query* — antingen på taggar eller på en CloudFormation-stack.
+
+En AWS-resurs ligger alltså inte i någon grupp. Den ligger i ett konto och en region, punkt, och
+grupperna är olika sätt att titta på samma hög. En resurs kan matcha flera grupper samtidigt.
+
+Det förklarar varför taggning tas på så mycket större allvar i AWS. I Azure kan du städa på
+resursgrupp; i AWS är taggen det enda som håller ihop en miljö.
+
+<Doodle
+  name="taggen-inte-behallaren"
+  caption="Vänster: en ram runt sakerna. Höger: lappar på sakerna, och en streckad fråga runt två av dem."
+/>
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att läsa ARN:er varje vecka — i felmeddelanden, i behörighetsregler och i planer — och du
+kommer att välja region och tagga resurser varje gång du skapar något.
+
+Du kommer också att felsöka "resursen är borta". Nästan alltid är svaret ett av tre: fel region, fel
+konto, eller en region som aldrig slogs på.
+
+Organisationer, kontostrukturer och behörighetsdesign kan vänta. De blir dina den dag du äger
+plattformen — och de bygger på kontot och ARN:en som du har nu.
+
+## Vanliga nybörjarförväxlingar
+
+Ett AWS-konto är inte en användare. Det är faktureringsgränsen *och* identitetsgränsen, med många
+användare inuti.
+
+En AWS-resursgrupp är inte en behållare. Den är en sparad fråga, och en resurs kan matcha flera.
+
+Alla regioner är inte tillgängliga. Regioner som lanserats efter mars 2019 är avstängda tills du
+slår på dem.
+
+Att stänga av en region raderar inte resurserna i den. Den tar bort din åtkomst, medan notan
+fortsätter.
+
+`eu-north-1a` är inte samma datacenter i två konton. Det stabila är zon-ID:t `eun1-az1`.
+
+Tomma fält i en ARN är inte trasiga. De säger att tjänsten är global eller att namnet är globalt
+unikt.
+
+Att en resurs saknas i konsolen betyder oftast att du står i fel region, inte att den är borta.
+
+## Prova själv
+
+Det här kräver varken AWS-konto eller AWS CLI. Alla adresser nedan är publika.
+
+AWS publicerar sina IP-adressintervall som en öppen fil. Hämta den och räkna regionerna:
+
+```bash
+U=https://ip-ranges.amazonaws.com/ip-ranges.json
+curl -s "$U" -o ip.json
+jq '[.prefixes[].region] | unique | length' ip.json
+```
+
+Du får **43**. Titta på hur koderna ser ut:
+
+```bash
+jq -r '[.prefixes[].region] | unique | .[0:8]' ip.json
+```
+
+Där står `af-south-1`, `ap-east-1`, `ap-northeast-1` och så vidare — väderstreck, riktning, nummer.
+
+Knacka nu på en riktig regional endpoint:
+
+```bash
+curl -sI https://s3.eu-north-1.amazonaws.com
+```
+
+Svaret är `HTTP/1.1 405 Method Not Allowed`, med raderna `Allow: GET` och `Server: AmazonS3`. **405
+är inte ett fel hos dig.** Det betyder att du nådde fram till S3 i Stockholm och att just den metoden
+inte är tillåten mot tjänstens rot — vilket bevisar att endpointen finns.
+
+Prova sedan en region som inte finns:
+
+```bash
+curl -I https://s3.eu-north-9.amazonaws.com
+```
+
+Nu får du `curl: (6) Could not resolve host` och avslutskod 6. Ingen HTTP-status alls. Regionala
+endpoints är **DNS-namn**, så en felstavad region är ett namnuppslagningsfel — inte ett AWS-fel med
+ett vänligt meddelande om giltiga regioner.
+
+Slå slutligen upp namnet själv:
+
+```bash
+dig +short s3.eu-north-1.amazonaws.com
+```
+
+Du får ett par IP-adresser, och de byts ut över tid.
+
+Tre saker som kan förvirra. Listan från `ip-ranges.json` innehåller värdet `GLOBAL`, som inte är en
+region utan en markering för adresser AWS annonserar från flera platser. Filen är dessutom stor,
+runt 2,5 MB, så `jq` utan filter fyller terminalen. Och det viktigaste: fältet `region` i den filen
+beskriver var AWS **annonserar IP-adresser**. Det är inte en lista över vilka tjänster du kan använda
+i en region, och den frågan går inte att besvara med den här filen.
+
+<Callout type="kom-ihag">
+- **Kontot** är AWS grundenhet: faktureringsgräns och identitetsgräns i ett. Två konton delar inget.
+- Regioner lanserade efter mars 2019 är **avstängda** tills du slår på dem. Att stänga av en region
+  raderar ingenting.
+- Zonnamnet `eu-north-1a` mappas slumpmässigt per konto. Det stabila är zon-ID:t `eun1-az1`.
+- **ARN:en** är hela adressen: `arn:partition:tjänst:region:konto:resurs`.
+- Tomma fält i en ARN är information — `arn:aws:s3:::min-hink` säger att hinknamnet är globalt unikt.
+- En **AWS-resursgrupp är en sparad fråga**, inte en behållare. Taggen är det som håller ihop en miljö.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Vad gör ett AWS-konto som en Azure-prenumeration inte gör?",
+      a: "Det bär identiteterna. En Azure-prenumeration är faktureringsgräns, medan användarna ligger i en Entra-tenant som flera prenumerationer delar. Ett AWS-konto är både faktureringsgräns och identitetsgräns, med egna användare och roller.",
+    },
+    {
+      q: "Du försöker skapa något i `eu-central-2` men regionen syns inte ens i menyn. Vad är fel?",
+      a: "Ingenting är fel. `eu-central-2` lanserades efter den 20 mars 2019 och är därför en opt-in-region, avstängd tills någon slår på den i kontot. Att slå på den är gratis men tar några minuter till några timmar.",
+    },
+    {
+      q: "Ni delar ett subnät mellan två AWS-konton. Varför räcker det inte att båda säger `eu-north-1a`?",
+      a: "AWS mappar fysiska zoner slumpmässigt till zonnamn per konto, så ditt `eu-north-1a` kan vara ett annat datacenter än mitt. Det som pekar på samma fysiska plats i alla konton är zon-ID:t, till exempel `eun1-az1`.",
+    },
+    {
+      q: "Varför har `arn:aws:s3:::min-hink` tre kolon i rad?",
+      a: "För att både regionfältet och kontofältet är tomma. Ett S3-hinknamn är globalt unikt — ingen annan kan ta det, i något konto eller någon region — så adressen behöver varken region eller konto för att peka entydigt.",
+    },
+    {
+      q: "En kollega säger att hen lagt appens resurser \"i resursgruppen shop-prod\". Vad stämmer inte i AWS?",
+      a: "Att de ligger i gruppen. En AWS-resursgrupp är en sparad fråga över taggar eller en CloudFormation-stack, inte en behållare. Resurserna ligger i ett konto och en region, och kan matcha flera grupper samtidigt.",
+    },
+    {
+      q: "Ni stänger av en oanvänd opt-in-region för att spara pengar. Vad händer med notan?",
+      a: "Ingenting. Att stänga av en region tar bort IAM-åtkomsten till den, men resurserna ligger kvar och fortsätter debiteras. Städa resurserna först, stäng av sedan.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- AWS är Amazons moln: tjänster du hyr genom ett API, med mindre systematiska namn än Azures.
+- Kontot är grundenheten — faktureringsgräns och identitetsgräns i ett, med ett tolvsiffrigt nummer.
+- Två konton delar ingenting av sig själva. Därför har AWS-team ofta många konton.
+- AWS Organizations binder ihop konton under ett tak med organisationsenheter och ärvda regler.
+- IAM avgör vem som får göra vad, och ligger i botten på varje åtgärd. Rotanvändaren ska låsas in.
+- Regionkoderna är läsbara: `eu-north-1` är Stockholm. Regioner är isolerade och replikerar inget.
+- Regioner före mars 2019 är påslagna. Senare regioner måste slås på — och att stänga av raderar inget.
+- Tillgänglighetszonen heter regionens kod plus en bokstav, och syns i nästan varje AWS-tjänst.
+- Zonnamnet mappas slumpmässigt per konto. Zon-ID:t är detsamma i alla konton.
+- Partitionen är en grupp regioner med egen IAM. Ditt konto tillhör exakt en, nästan alltid `aws`.
+- ARN:en pekar ut en resurs entydigt: `arn:partition:tjänst:region:konto:resurs`.
+- Tomma ARN-fält är information: tomt konto och region betyder globalt unikt namn, tomt region betyder global tjänst.
+- Taggen är ett nyckel/värde-par, i klartext, som används för kostnad, sökning och behörighet.
+- En AWS-resursgrupp är en sparad fråga över taggar eller en stack — inte en behållare.
+- En resurs ligger i ett konto och en region. Taggen är det enda som håller ihop en miljö.
+
+## Nästa del
+
+Kartan är ritad. Nästa fråga är densamma som i Azure-delen: vad ska applikationen faktiskt köra på?
+
+AWS har fler svar än fyra, och ett av dem är så nytt att det ersatte en tjänst som stängde för nya
+kunder tidigare i år. Vi går igenom dem, och vad var och en kostar när ingen använder systemet.

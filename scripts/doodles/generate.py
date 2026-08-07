@@ -785,6 +785,70 @@ def alla():
                    ' opacity="0.62"')
       + "\n" + txt([(220,376,"stoppad"),(660,376,"frigjord")],18.5) + "\n</svg>")
 
+    # 39 — AWS 1.0 · ARN:ens anatomi
+    # Vågrät anatomiform, till skillnad från Azures lodräta resurs-id-raden: en ARN
+    # ryms på en rad, och POÄNGEN är de två tomma rutorna. Skrafferingen markerar
+    # dem — det är tomrummet som ska dra ögat, inte texten.
+    arnseg=[(149,96,"arn","prefix"),(245,96,"aws","partition"),(341,80,"s3","tjänst"),
+            (421,80,"","region"),(501,80,"","konto"),(581,150,"min-hink","resurs")]
+    arnsep="".join(f'<path d="M{x} 78 Q{x+1} 100 {x} 120" stroke-dasharray="6 7" opacity="0.5"/>'
+                   for x,_,_,_ in arnseg[1:])
+    arnner="".join(f'<path d="M{x+b/2:.0f} 130 Q{x+b/2+1:.0f} 148 {x+b/2:.0f} 164"/>'
+                   + arrow(x+b/2,170,"down",10) for x,b,_,_ in arnseg)
+    D['arn-raden']=(
+      '<svg viewBox="0 0 880 244" role="img" aria-label="En ARN uppdelad i sex rutor med en pil ner '
+      'till varje dels namn. Rutorna för region och konto är tomma och skrafferade.">\n'
+      + G % (f'<path d="{w(149,74,582,50)}"/>'+arnsep
+             + markerad(425,78,72,42,20) + markerad(505,78,72,42,20) + arnner)
+      + "\n" + txt([(x+b/2,105,s) for x,b,s,_ in arnseg if s],15)
+      + "\n" + txt([(x+b/2,200,e) for x,b,_,e in arnseg],14.5) + "\n</svg>")
+
+    # 40 — AWS 1.0 · Resursgrupp vs taggar
+    # Lapparna HÄNGER under lådorna, inte ovanpå. Första försöket satte dem ovanför
+    # och då skar den streckade ellipsen rakt genom etiketttexten — ögat läste
+    # strecken som en del av lappen. Hängande lappar ger 19–26 px fri luft överallt.
+    lappar="".join(f'<path d="M{x+27} 230 Q{x+28} 240 {x+27} 250"/><path d="{w(x,250,54,28)}"/>'
+                   for x in (546,726))
+    D['taggen-inte-behallaren']=(
+      '<svg viewBox="0 0 880 384" role="img" aria-label="Till vänster två lådor inuti en ram. Till '
+      'höger två fristående lådor med varsin hängande lapp, omslutna av en streckad ellips.">\n'
+      + G % (f'<path d="{w(70,100,330,180)}"/>'
+             + f'<path d="{w(105,146,110,84)}"/><path d="{w(245,146,110,84)}"/>'
+             + f'<path d="{w(520,146,110,84)}"/><path d="{w(700,146,110,84)}"/>' + lappar
+             + f'<path d="{ell(660,200,200,118)}" stroke-dasharray="9 10" opacity="0.45"/>')
+      + "\n" + txt([(573,268,"prod"),(753,268,"prod")],13)
+      + "\n" + txt([(235,352,"resursgruppen"),(660,352,"taggarna")],18.5) + "\n</svg>")
+
+    # 41 — AWS 1.1 · Fargate tar bort noden
+    D['fargate-utan-nod']=(
+      '<svg viewBox="0 0 880 366" role="img" aria-label="Till vänster två tasks som står på en '
+      'heldragen instans. Till höger samma två tasks över en streckad, tom platta.">\n'
+      + G % (f'<path d="{w(70,220,330,78)}"/>'
+             + f'<path d="{w(108,124,112,82)}"/><path d="{w(250,124,112,82)}"/>'
+             + f'<path d="{w(480,220,330,78)}" stroke-dasharray="8 9" opacity="0.3"/>'
+             + f'<path d="{w(518,124,112,82)}"/><path d="{w(660,124,112,82)}"/>')
+      + "\n" + txt([(164,172,"task"),(306,172,"task"),(574,172,"task"),(716,172,"task")],14)
+      + "\n" + txt([(235,266,"EC2-instans")],15)
+      + "\n" + txt([(645,266,"ingen instans")],15,' opacity="0.42"')
+      + "\n" + txt([(235,344,"EC2-läget"),(645,344,"Fargate")],18.5) + "\n</svg>")
+
+    # 42 — AWS 1.1 · Publik IP vs elastisk IP
+    # Spikarna till höger är två små cirklar, inte en dekoration: de är hela
+    # skillnaden mellan bilderna och därför det enda som skiljer dem åt i form.
+    D['ip-lappen-byts']=(
+      '<svg viewBox="0 0 880 380" role="img" aria-label="Två maskiner med varsin skylt. Den vänstra '
+      'skylten dras iväg av en streckad pil, den högra hålls fast av två spikar.">\n'
+      + G % (f'<path d="{w(80,86,240,130)}"/><path d="M200 216 Q201 224 200 232"/>'
+             + f'<path d="{w(110,232,180,46)}"/>'
+             + '<path d="M298 255 Q342 264 374 252" stroke-dasharray="7 8"/>' + arrow(380,250)
+             + f'<path d="{w(560,86,240,130)}"/><path d="M680 216 Q681 224 680 232"/>'
+             + f'<path d="{w(590,232,180,46)}"/>'
+             + f'<path d="{circ(606,255,6)}"/><path d="{circ(754,255,6)}"/>')
+      + "\n" + txt([(200,158,"EC2"),(680,158,"EC2")],17)
+      + "\n" + txt([(200,262,"52.16.7.9")],14.5)
+      + "\n" + txt([(680,262,"elastisk")],14.5)
+      + "\n" + txt([(200,344,"publik IP"),(680,344,"elastisk IP")],18.5) + "\n</svg>")
+
     return D
 
 if __name__ == "__main__":

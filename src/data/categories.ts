@@ -47,6 +47,14 @@ export const categories: Category[] = [
         isVisible: true,
     },
     {
+        title: "AWS",
+        description: "Konton, regioner och ARN — molnet med Amazons ord.",
+        icon: "skill-icons:aws-light",
+        slug: "aws",
+        domain: "cloud",
+        isVisible: true,
+    },
+    {
         title: "Cybersecurity",
         description: "Säkerhet i moderna applikationer.",
         icon: "mdi:shield-lock-outline",

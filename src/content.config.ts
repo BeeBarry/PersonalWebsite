@@ -64,6 +64,7 @@ const learn = defineCollection({
       "kubernetes",
       "terraform",
       "azure",
+      "aws",
       "cybersecurity",
       "linux",
       "natverk",
