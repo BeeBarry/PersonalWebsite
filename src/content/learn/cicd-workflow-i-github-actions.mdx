@@ -1,0 +1,469 @@
+---
+title: 'Ett workflow i GitHub Actions'
+description: 'Filen, jobben, matrisen — och hur en pipeline loggar in i molnet utan hemligheter'
+category: 'cicd'
+part: 1
+order: 2
+date: '2026-08-07'
+tags: ['Beginner', 'GitHub Actions', 'OIDC']
+---
+
+## Var vi är
+
+Förra delen gav delarna: trigger, jobb, steg, runner, artefakt och cache. Den lämnade också en fråga
+öppen — hur en pipeline kan logga in i molnet utan att bära på en hemlighet.
+
+Nu öppnar vi filen. Vi använder GitHub Actions, som är den vanligaste av verktygen. Begreppen är
+desamma som i förra delen, men GitHub har egna ord för ett par av dem.
+
+Ett ordbyte att notera direkt: det förra delen kallade en pipeline heter i GitHub ett **workflow**,
+och GitHub säger **pull request** där hubben annars säger merge request.
+
+<Del titel="Filen" />
+
+## Var filen ligger
+
+Ett workflow är en YAML-fil i katalogen `.github/workflows/` i repot.
+
+Namnet på filen spelar ingen roll för GitHub, men den ska sluta på `.yml` eller `.yaml`. Ett repo kan
+ha många filer där, och varje fil är ett eget workflow med egna triggers.
+
+Filen versioneras som all annan kod. Ändrar du den i en pull request granskas ändringen som vanligt.
+Men den version som körs är den på grenen händelsen gällde — värt att komma ihåg när en ändring i
+pipelinen inte tycks slå igenom.
+
+## Vad `on` gör
+
+`on` är triggern: händelsen eller händelserna som startar workflowet.
+
+```yaml
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+```
+
+Fyra vanliga triggers i ett block. `push` vid varje push till `main`, `pull_request` när någon öppnar
+eller uppdaterar en, `schedule` varje måndag klockan sex, och `workflow_dispatch` som ger dig en knapp
+i webbgränssnittet.
+
+`paths` och `paths-ignore` finns också, och begränsar körningen till ändringar i vissa filer. Det är
+den vanligaste orsaken till att ett workflow inte startar när du trodde att det skulle.
+
+## Vad `jobs` och `runs-on` är
+
+`jobs` innehåller ett eller flera jobb, och `runs-on` väljer maskinen jobbet ska köra på.
+
+```yaml
+jobs:
+  bygg:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+```
+
+`ubuntu-latest` är en etikett, inte en version. Den pekar just nu på Ubuntu 24.04; Ubuntu 26.04 finns
+som `ubuntu-26.04` i publik förhandsversion. `windows-latest` och `macos-latest` fungerar likadant.
+
+Att etiketten flyttar sig är avsiktligt och ibland smärtsamt. Vill du att bygget ska bete sig likadant
+om ett år anger du versionen uttryckligen.
+
+## `uses` vs `run`
+
+De två sorters steg som finns, och skillnaden är var koden kommer ifrån.
+
+**`run`** kör ett skalkommando på runnern, precis som du hade kört det i din egen terminal.
+
+**`uses`** hämtar in en färdig **action** — ett paketerat steg någon annan skrivit — och kör den med
+de indata du anger under `with`.
+
+Tumregeln: `run` för allt du kan uttrycka som ett kommando, `uses` när något är krångligt nog att
+någon redan löst det åt dig. Att hämta koden, sätta upp en språkkörtid och ladda upp artefakter hör
+till det senare.
+
+## Vad en action är
+
+En **action** är ett återanvändbart steg som ligger i ett eget repo och refereras med `ägare/namn@version`.
+
+`actions/checkout` hämtar ditt repo till runnern. Utan den har jobbet en tom katalog, vilket är den
+vanligaste orsaken till *file not found* i ett första workflow.
+
+```yaml
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+```
+
+`actions/`-organisationen är GitHubs egna. Andra är skrivna av leverantörer — `docker/build-push-action`,
+`aws-actions/configure-aws-credentials`, `azure/login` — och tusentals av vem som helst.
+
+## Tagg vs sha i `uses`
+
+Vilken version du pekar på avgör hur mycket du litar på någon annan, varje gång pipelinen kör.
+
+**En tagg** som `@v7` är bekväm. Den följer med när underhållaren släpper rättningar inom samma
+huvudversion — men taggen är flyttbar, och den som äger repot kan peka om den.
+
+**En sha** som `@3d3c42e5aac5ba805825da76410c181273ba90b1` är låst. Exakt den koden körs, i dag och om
+två år.
+
+Det är samma avvägning som mellan tagg och digest i Docker-delen, och samma slutsats. Taggen duger
+för `actions/`-organisationens egna. En action från en okänd tredje part som får se dina hemligheter
+bör låsas med en sha.
+
+<Del titel="Flera jobb" />
+
+## Vad `needs` gör
+
+`needs` säger att ett jobb ska vänta på ett annat.
+
+```yaml
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: pnpm test
+
+  rulla-ut:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - run: ./deploy.sh
+```
+
+Utan `needs` körs jobb parallellt. Med `needs` bildas en kedja, och `rulla-ut` startar bara om `test`
+lyckades.
+
+Det är så du bygger grinden från förra delen. Lägger du till `if: github.ref == 'refs/heads/main'`
+körs utrullningen dessutom bara från huvudgrenen.
+
+## Vad en matris är
+
+En **matris** kör samma jobb flera gånger med olika värden, parallellt.
+
+```yaml
+    strategy:
+      matrix:
+        node: [22, 24]
+        os: [ubuntu-latest, windows-latest]
+```
+
+Två värden gånger två ger fyra körningar: Node 22 och 24 på både Linux och Windows. Varje körning är
+ett eget jobb med egen maskin.
+
+Matrisen är billigaste sättet att bredda testtäckningen, och snabbaste sättet att göra en pipeline
+långsam. Fyra kombinationer är rimligt; tjugo är sällan det.
+
+<Doodle
+  name="matrisen-fyra-korningar"
+  caption="Ett jobb i filen, fyra maskiner i verkligheten. Rutnätet är produkten av de två listorna."
+/>
+
+## Att skicka filer mellan jobb
+
+Eftersom jobb inte delar filsystem måste allt som ska vidare laddas upp och ner igen.
+
+```yaml
+      - uses: actions/upload-artifact@v7
+        with:
+          name: sajten
+          path: public/
+```
+
+Ett senare jobb hämtar den med `actions/download-artifact@v8`. Namnet är kopplingen mellan dem, och
+en felstavning ger ett tomt jobb utan tydligt fel.
+
+Artefakten går också att ladda ner från webbgränssnittet efteråt, vilket gör den till ett bra sätt att
+titta på vad bygget faktiskt producerade.
+
+## Vad `actions/cache` gör
+
+Cachen sparar sådant som går att skapa om, mellan körningar.
+
+```yaml
+      - uses: actions/cache@v6
+        with:
+          path: ~/.pnpm-store
+          key: pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+```
+
+Nyckeln är det viktiga. Genom att hasha låsfilen får du en ny cache först när beroendena faktiskt
+ändrats — samma resonemang som lagercachen i Dockerfile-delen.
+
+Många `setup-`-actions har cachning inbyggd, som `cache: pnpm` i exemplet längre upp. Det räcker
+nästan alltid, och är mindre att underhålla.
+
+<Del titel="Nycklarna" />
+
+## Vad en secret är
+
+En **secret** är ett värde du lagrar i repots inställningar och refererar till i filen.
+
+```yaml
+        env:
+          API_TOKEN: ${{ secrets.API_TOKEN }}
+```
+
+Värdet syns aldrig i filen och maskeras i loggen. GitHub ersätter strängen med `***` när den känner
+igen den.
+
+Maskeringen är bokstavlig. Är hemligheten kodad, delad i bitar eller inbakad i en URL går den rakt
+igenom — vilket är den fallgrop förra delen tog.
+
+## `secrets` vs `vars`
+
+Två sammanhang som ser likadana ut i filen och behandlas helt olika.
+
+**`secrets`** är för värden som ska döljas. De maskeras i loggen och går inte att läsa tillbaka från
+gränssnittet efter att de sparats.
+
+**`vars`** är för konfiguration som inte är hemlig: en region, ett resursnamn, en funktionsflagga. De
+visas i klartext, både i gränssnittet och i loggen.
+
+Att lägga en region i `secrets` är en vanlig överdrift, och den kostar dig felsökbarhet: en maskerad
+sträng i loggen går inte att se när något är fel.
+
+## `GITHUB_TOKEN` och `permissions`
+
+`GITHUB_TOKEN` är en behörighet GitHub skapar automatiskt för varje körning, och som upphör när
+körningen är klar.
+
+Med den kan workflowet läsa repot, kommentera på pull requests och skapa releaser — beroende på vilka
+rättigheter det fått. Rättigheterna sätts i filen:
+
+```yaml
+permissions:
+  contents: read
+```
+
+GitHubs egen rekommendation är att sätta standardbehörigheten till **enbart läsning** och sedan höja
+den per jobb där det behövs. Ett workflow som bara bygger och testar behöver inget mer än raden ovan.
+
+## Hemlighet vs OIDC
+
+Här är svaret på frågan förra delen lämnade öppen, och den enskilt viktigaste förbättringen du kan
+göra i en pipeline som rör molnet.
+
+**Med en hemlighet** skapar du en långlivad nyckel hos molnleverantören och kopierar in den som en
+secret. Nyckeln finns nu på två ställen, gäller tills någon byter den, och fungerar för vem som helst
+som får tag i den.
+
+**Med OIDC** skapas ingen nyckel. GitHub utfärdar en signerad token för just den körningen, molnet
+kontrollerar vem den kommer ifrån, och lämnar tillbaka en behörighet som upphör när jobbet är klart.
+
+<Flow
+  caption="Ingen nyckel byter ägare. Molnet litar på GitHubs signatur, inte på ett värde du kopierat."
+  steps={[
+    {
+      label: "Jobbet startar",
+      note: "Workflowet har `permissions: id-token: write` — annars finns ingen token att hämta.",
+    },
+    {
+      label: "GitHub utfärdar en token",
+      via: "signerad JWT",
+      note: "Unik för just den här körningen. Innehåller repo, gren och workflow som påståenden.",
+      accent: true,
+    },
+    {
+      label: "Molnet kontrollerar",
+      via: "mot förtroendet du satt upp",
+      note: "Rollen i AWS eller Azure säger vilka påståenden som accepteras — till exempel bara `main`.",
+    },
+    {
+      label: "Kortlivad behörighet",
+      via: "gäller under jobbet",
+      note: "Upphör när körningen är klar. Det finns inget kvar att stjäla efteråt.",
+    },
+  ]}
+/>
+
+Blocket som krävs på GitHub-sidan är två rader, och det står i den officiella AWS-actionens
+dokumentation:
+
+```yaml
+permissions:
+  id-token: write
+```
+
+Sedan sätter du upp förtroendet en gång i molnet: registrera GitHub som identitetsleverantör, och
+skapa en roll som bara accepterar tokens från ditt repo och din gren. Det är kontot- och
+rolldelen från AWS- respektive Azure-serien, använd på riktigt.
+
+Vinsten GitHub själva lyfter är tre saker: ingen molnhemlighet att underhålla, mer exakt kontroll över
+vem som får använda vad, och att behörigheten upphör av sig själv.
+
+<Doodle
+  name="nyckeln-som-upphor"
+  caption="Vänstra nyckeln sitter kvar på ringen. Den högra är streckad — den finns bara under jobbet."
+/>
+
+## Fallgropen `pull_request_target`
+
+<Callout type="fallgrop">
+Triggern `pull_request` kör i en begränsad miljö när ändringen kommer från en kopia av repot. Det
+finns en variant som inte gör det, och den heter `pull_request_target`.
+
+GitHubs egen dokumentation är ovanligt rak. Den säger att kombinationen exponerar repot för
+säkerhetsintrång — ordagrant *"expose the repository to security compromises"*.
+
+Sådana workflows är privilegierade: de kan ha skrivrättighet på repot och nå hemligheter. Det går att
+utnyttja för att ta över repot.
+
+Regeln som följer: använd `pull_request`. Behöver du `pull_request_target` ska den **aldrig** checka
+ut koden från ändringen den handlar om.
+</Callout>
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att läsa fler workflow-filer än du skriver, och de flesta ändringar du gör är små: lägga
+till ett steg, byta en version, sätta ett `if`.
+
+Det du bör göra tidigt är två saker som betalar sig länge: sätt `permissions: contents: read` överst,
+och byt ut molnhemligheter mot OIDC. Båda är några rader och tar bort hela klasser av problem.
+
+Egna actions, återanvändbara workflows, self-hosted runners och utrullningsmiljöer med godkännande kan
+vänta. De blir aktuella när pipelinen är din — och de bygger på filen du just läst.
+
+## Vanliga nybörjarförväxlingar
+
+`uses` och `run` är inte utbytbara. Det ena hämtar en färdig action, det andra kör ett skalkommando.
+
+Utan `actions/checkout` finns ingen kod på runnern. Katalogen är tom.
+
+`ubuntu-latest` är inte en version. Etiketten flyttar sig, och pekar just nu på Ubuntu 24.04.
+
+En tagg som `@v7` är inte låst. Bara en sha är det.
+
+Jobb körs parallellt om du inte skrivit `needs`. Ordningen i filen betyder ingenting.
+
+En matris med två listor blir alla kombinationer, inte två körningar.
+
+`vars` är inte `secrets`. Det ena visas i klartext, det andra maskeras.
+
+`GITHUB_TOKEN` är inte en secret du skapar. Den skapas per körning och upphör med den.
+
+OIDC är inte en hemlighet som roterar. Det är ingen hemlighet alls.
+
+## Prova själv
+
+Vi läser riktiga workflows i ett publikt repo. Det första kräver ingen inloggning.
+
+GitHubs egen CLI har sina workflows öppet. Lista dem:
+
+```bash
+G=https://api.github.com/repos/cli/cli
+curl -s "$G/contents/.github/workflows" \
+  | jq -r '.[].name'
+```
+
+Hämta nu en av dem i råformat och läs de första raderna:
+
+```bash
+R=https://raw.githubusercontent.com/cli/cli/trunk
+curl -s "$R/.github/workflows/codeql.yml" | head -20
+```
+
+Där står ett `on`-block med `push`, `pull_request`, `schedule` och `workflow_dispatch` — samma fyra
+triggers som avsnittet ovan — plus `paths-ignore` och ett `permissions`-block. Det är inte ett
+läromedelsexempel utan filen som faktiskt kör.
+
+Har du `gh` installerad och inloggad går det att se körningarna:
+
+```bash
+gh run list --repo cli/cli --limit 5
+```
+
+Varje rad visar status, slutresultat, vilket workflow det var, grenen, **vilken händelse som utlöste
+körningen** och hur lång tid den tog. Kolumnen med händelsen är den som svarar på "varför kördes den
+här".
+
+Titta slutligen på ett enskilt jobb genom att ta ett id ur listan:
+
+```bash
+gh run view <id> --repo cli/cli
+```
+
+Du får jobben och stegen, med tiden per steg. Där syns direkt vilket steg som är långsamt.
+
+Tre saker som kan förvirra. `raw.githubusercontent.com` vill ha grennamnet i sökvägen, och `cli/cli`
+använder `trunk` i stället för `main` — fel grennamn ger en tom `404`-sida utan förklaring. Utan
+inloggning har API:et en hastighetsgräns, och felet ser ut som ett behörighetsfel precis som
+API-delen beskrev. Och körningarna du ser är inte mina: listan flyttar sig varje gång någon pushar.
+
+<Callout type="kom-ihag">
+- Filen ligger i `.github/workflows/` och är YAML. Ett repo kan ha många.
+- `on` är triggern. `paths`-filter är vanligaste orsaken till att inget kördes.
+- `run` kör ett kommando, `uses` hämtar en färdig action. Utan `checkout` finns ingen kod.
+- `ubuntu-latest` är en flyttbar etikett — just nu Ubuntu 24.04.
+- `@v7` är en flyttbar tagg. En sha låser exakt kod, som en digest i Docker.
+- `needs` skapar ordning. Utan det körs jobb parallellt.
+- `secrets` maskeras, `vars` visas i klartext. Lägg inte konfiguration i `secrets`.
+- Sätt `permissions: contents: read` överst och höj där det behövs.
+- **OIDC tar bort molnhemligheten helt** — `id-token: write`, plus ett förtroende i molnet.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Ditt första workflow misslyckas med att filerna inte finns. Vad saknas?",
+      a: "Steget `actions/checkout`. Runnern startar med en tom katalog, och koden hämtas inte automatiskt. Utan det steget har jobbet ingenting att bygga.",
+    },
+    {
+      q: "Vad är skillnaden mellan `uses: actions/checkout@v7` och `uses: actions/checkout@3d3c42e...`?",
+      a: "Taggen är flyttbar — den följer med rättningar inom huvudversionen, men den som äger repot kan peka om den. En sha låser exakt den koden för alltid. Samma avvägning som tagg mot digest i Docker-delen. Lås tredjepartsactions som får se hemligheter.",
+    },
+    {
+      q: "Du har en matris med tre Node-versioner och två operativsystem. Hur många jobb körs?",
+      a: "Sex. Matrisen ger alla kombinationer av listorna, och varje kombination är ett eget jobb på en egen maskin. Det är därför en matris både breddar täckningen och gör pipelinen dyrare.",
+    },
+    {
+      q: "Varför är det en dålig idé att lägga AWS-regionen i `secrets`?",
+      a: "För att den inte är hemlig, och för att maskeringen kostar dig felsökbarhet. Ett maskerat värde syns som `***` i loggen, så du kan inte se vilken region jobbet faktiskt använde när något är fel. Använd `vars` för konfiguration.",
+    },
+    {
+      q: "Vad gör OIDC bättre än en lagrad molnnyckel?",
+      a: "Det finns ingen nyckel. GitHub utfärdar en signerad token för just den körningen, molnet kontrollerar påståendena — repo, gren, workflow — mot ett förtroende du satt upp, och lämnar tillbaka en behörighet som upphör när jobbet är klart. Inget värde kopieras, och inget finns kvar att stjäla.",
+    },
+    {
+      q: "En kollega vill byta `pull_request` mot `pull_request_target` för att komma åt en secret. Vad svarar du?",
+      a: "Att det öppnar repot för övertagande om workflowet checkar ut koden från ändringen. GitHubs dokumentation varnar uttryckligen för kombinationen: sådana workflows är privilegierade och kan ha skrivrättighet och tillgång till hemligheter. Använd `pull_request`, och om `pull_request_target` verkligen behövs får den aldrig checka ut den föreslagna koden.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- Ett workflow är en YAML-fil i `.github/workflows/`. Ett repo kan ha flera, med egna triggers.
+- `on` anger händelserna: `push`, `pull_request`, `schedule`, `workflow_dispatch`.
+- `paths`- och `paths-ignore`-filter är vanligaste orsaken till att ett workflow inte startade.
+- `runs-on` väljer maskinen. `ubuntu-latest` är en flyttbar etikett, just nu Ubuntu 24.04.
+- `run` kör ett skalkommando, `uses` hämtar en färdig action med `ägare/namn@version`.
+- Utan `actions/checkout` har jobbet ingen kod att arbeta med.
+- En tagg som `@v7` kan flyttas. En sha låser exakt kod — lås tredjepartsactions.
+- `needs` gör jobb sekventiella. Utan det körs de parallellt, oavsett ordning i filen.
+- En matris kör alla kombinationer av listorna, ett jobb per kombination.
+- Filer mellan jobb går via `upload-artifact` och `download-artifact`, kopplade på namnet.
+- `actions/cache` med en nyckel som hashar låsfilen ger ny cache först när beroendena ändras.
+- `secrets` maskeras i loggen, `vars` visas i klartext. Konfiguration hör hemma i `vars`.
+- `GITHUB_TOKEN` skapas per körning. Sätt `permissions: contents: read` och höj vid behov.
+- OIDC ersätter molnhemligheten med en kortlivad token: `id-token: write` plus förtroende i molnet.
+- `pull_request_target` kombinerad med utcheckning av den föreslagna koden kan ge bort repot.
+
+## Nästa del
+
+Pipelinen bygger, testar och rullar ut, och den gör det utan att bära på en molnnyckel. Frågan som
+återstår är vad som händer efter utrullningen.
+
+Nästa serie handlar om att se sitt system i drift: vad loggar, mätvärden och spårning är för något,
+och varför det inte räcker att pipelinen var grön.

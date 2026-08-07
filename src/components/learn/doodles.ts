@@ -957,4 +957,60 @@ export const DOODLES: Record<string, string> = {
     <text x="680" y="344">elastisk IP</text>
   </g>
 </svg>`,
+
+  /* ---- CI/CD 1.0 · Artefakt vs cache — STIL: HANDRITAD ---- */
+  "artefakten-och-cachen": `
+<svg viewBox="0 0 880 380" role="img" aria-label="Till vänster lämnas en låda vidare mellan två jobb med heldragna pilar. Till höger ställs en låda tillbaka på en hylla med streckade pilar.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M60 149 Q125 150 190 151 Q191 195 190 240 Q125 241 59 240 Q58 195 60 149 Z"/><path d="M194 195 Q200 196 206 195"/><path d="M199 189 L212 195 L199 201"/><path d="M218 168 Q247 166 275 168 Q276 195 276 223 Q247 224 218 222 Q216 195 218 168 Z"/><path d="M280 195 Q286 196 292 195"/><path d="M285 189 L298 195 L285 201"/><path d="M303 149 Q369 150 434 151 Q435 195 434 241 Q369 242 303 239 Q303 195 303 149 Z"/><path d="M540 148 Q660 146 790 148"/><path d="M542 160 Q660 158 788 160"/><path d="M544 160 Q542 184 546 206"/><path d="M786 159 Q788 184 784 206"/><path d="M607 85 Q668 84 727 87 Q730 115 728 144 Q668 145 608 144 Q608 115 607 85 Z"/><path d="M600 246 Q670 246 739 245 Q741 291 741 337 Q670 337 600 337 Q600 291 600 246 Z"/><path d="M636 240 Q634 208 636 176" stroke-dasharray="7 8"/><path d="M630 181 L636 168 L642 181"/><path d="M700 172 Q702 206 700 238" stroke-dasharray="7 8"/><path d="M694 231 L700 244 L706 231"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle">
+    <text x="125" y="200">jobb 1</text>
+    <text x="369" y="200">jobb 2</text>
+    <text x="670" y="296">jobb</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="247" y="364">artefakten</text>
+    <text x="665" y="364">cachen</text>
+  </g>
+</svg>`,
+
+  /* ---- CI/CD 1.1 · Matrisen — STIL: HANDRITAD ---- */
+  "matrisen-fyra-korningar": `
+<svg viewBox="0 0 880 380" role="img" aria-label="Ett jobb till vänster med fyra pilar ut till ett rutnät med fyra jobb, ett per kombination av Node-version och operativsystem.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M70 149 Q150 149 230 149 Q230 200 230 249 Q150 251 71 250 Q68 200 70 149 Z"/><path d="M430 79 Q510 77 589 78 Q592 126 591 173 Q510 174 430 175 Q428 126 430 79 Z"/><path d="M430 207 Q510 207 591 207 Q590 256 590 303 Q510 304 430 304 Q430 256 430 207 Z"/><path d="M620 77 Q700 76 779 77 Q781 126 779 173 Q700 174 620 174 Q618 126 620 77 Z"/><path d="M621 207 Q700 207 780 209 Q782 256 781 303 Q700 304 620 305 Q620 256 621 207 Z"/><path d="M232 186 Q330 150 420 126"/><path d="M413 120 L426 126 L413 132"/><path d="M232 194 Q330 176 420 176"/><path d="M413 170 L426 176 L413 182"/><path d="M232 206 Q330 214 420 240"/><path d="M413 234 L426 240 L413 246"/><path d="M232 214 Q330 240 420 290"/><path d="M413 284 L426 290 L413 296"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle">
+    <text x="150" y="206">ett jobb</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="17" fill="currentColor" text-anchor="middle">
+    <text x="510" y="116">22</text>
+    <text x="700" y="116">22</text>
+    <text x="510" y="246">24</text>
+    <text x="700" y="246">24</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13.5" fill="currentColor" text-anchor="middle" opacity="0.7">
+    <text x="510" y="148">ubuntu</text>
+    <text x="700" y="148">windows</text>
+    <text x="510" y="278">ubuntu</text>
+    <text x="700" y="278">windows</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="150" y="352">i filen</text>
+    <text x="605" y="352">fyra jobb</text>
+  </g>
+</svg>`,
+
+  /* ---- CI/CD 1.1 · Nyckeln som upphör — STIL: HANDRITAD ---- */
+  "nyckeln-som-upphor": `
+<svg viewBox="0 0 880 356" role="img" aria-label="Till vänster en heldragen nyckel som hänger på en ring. Till höger samma nyckel ritad med streckade linjer, inuti en streckad ram.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M141 125 Q183 127 184 170 Q183 213 139 215 Q97 213 96 170 Q97 127 141 125 Z"/><path d="M184 170 Q196 171 208 170"/><path d="M238 140 Q267 141 268 169 Q267 199 237 201 Q209 199 208 170 Q209 141 238 140 Z"/><path d="M265 158 Q341 156 416 158 Q418 170 416 181 Q341 182 266 181 Q265 170 265 158 Z"/><path d="M353 183 Q359 181 367 183 Q367 192 365 201 Q359 203 351 202 Q351 192 353 183 Z"/><path d="M378 181 Q385 182 393 182 Q394 192 392 201 Q385 202 377 203 Q376 192 378 181 Z"/><path d="M555 103 Q706 104 856 104 Q857 170 855 236 Q706 238 556 235 Q554 170 555 103 Z" stroke-dasharray="9 10" opacity="0.4"/><path d="M616 140 Q645 141 646 169 Q645 199 617 201 Q587 199 585 169 Q587 141 616 140 Z" stroke-dasharray="7 8" opacity="0.5"/><path d="M645 158 Q719 158 793 157 Q794 170 793 183 Q719 183 643 183 Q643 170 645 158 Z" stroke-dasharray="7 8" opacity="0.5"/><path d="M731 183 Q737 182 743 181 Q746 192 745 202 Q737 203 731 202 Q729 192 731 183 Z" stroke-dasharray="7 8" opacity="0.5"/><path d="M755 182 Q763 181 770 182 Q772 192 771 201 Q763 202 757 201 Q755 192 755 182 Z" stroke-dasharray="7 8" opacity="0.5"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="290" y="318">secret</text>
+    <text x="706" y="318">OIDC-token</text>
+  </g>
+</svg>`,
 };

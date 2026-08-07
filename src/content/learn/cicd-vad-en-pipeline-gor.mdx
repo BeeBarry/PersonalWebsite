@@ -1,0 +1,430 @@
+---
+title: 'Vad en pipeline gör åt dig'
+description: 'Kontinuerlig integrering, leverans och utrullning — och vad orden faktiskt betyder'
+category: 'cicd'
+part: 1
+partTitle: 'Grunderna'
+order: 1
+date: '2026-08-07'
+tags: ['Beginner', 'Overview']
+---
+
+## Var vi är
+
+Sex artiklar i den här hubben säger någon variant av *"filen granskas i en merge request och körs av
+en pipeline"*. Ingen av dem har förklarat vad pipelinen är.
+
+Det hålet fyller vi här. Docker-serien gav imagen, Terraform-serien beskrivningen, molndelarna
+platsen att köra på. Det som binder ihop dem är maskinen som bygger, testar och rullar ut utan att
+någon skriver kommandon för hand.
+
+Den här delen är verktygsoberoende. Orden och delarna nedan ser likadana ut i GitHub Actions, GitLab
+CI, Azure Pipelines och Jenkins. Nästa del öppnar en riktig fil.
+
+En sak om ordval: **pull request** i GitHub heter **merge request** i GitLab. Samma sak — en begäran
+om att få en gren granskad och sammanfogad — och hubben har hittills använt GitLabs ord.
+
+<Del titel="Orden" />
+
+## Vad kontinuerlig integrering är
+
+**Kontinuerlig integrering**, ofta CI, betyder att allas ändringar sätts ihop och kontrolleras ofta
+— i praktiken vid varje push.
+
+Namnet handlar inte om verktyget. Det handlar om ett arbetssätt: små ändringar som slås ihop dagligen
+i stället för stora sammanslagningar en gång i månaden.
+
+Det verktyget gör är att göra arbetssättet uthärdligt. Varje gång någon skickar upp kod byggs
+projektet och testerna körs, automatiskt, på en maskin som ingen har mixtrat med.
+
+Vinsten är att ett fel hittas medan ändringen är liten och färsk i minnet. Det är samma resonemang
+som mot långlivade grenar i Git-delen, med en maskin som håller efter dig.
+
+## Vad kontinuerlig leverans är
+
+**Kontinuerlig leverans**, CD, betyder att varje godkänt bygge är **redo** att rullas ut — paketerat,
+testat och lagt någonstans där utrullningen bara är ett knapptryck bort.
+
+Det är alltså inte en utrullning. Det är ett löfte om att den vore ofarlig att göra just nu.
+
+Skillnaden märks den dag något brådskar. Ett team med kontinuerlig leverans har alltid en färdig
+artefakt att skjuta ut; ett team utan har ett bygge att starta först, och ingen vet hur lång tid det
+tar.
+
+## Kontinuerlig leverans vs kontinuerlig utrullning
+
+Två saker som båda förkortas CD, och skillnaden är exakt ett moment.
+
+**Kontinuerlig leverans** slutar med en artefakt som är redo. En människa avgör när den går till
+produktion.
+
+**Kontinuerlig utrullning** — *continuous deployment* — tar bort den människan. Passerar bygget alla
+kontroller går det till produktion av sig självt.
+
+<Split
+  leftTitle="Leverans"
+  rightTitle="Utrullning"
+  caption="Samma pipeline. Skillnaden är om det finns en grind på slutet eller inte."
+>
+  <div slot="left">
+
+  Pipelinen bygger, testar och paketerar. Sedan stannar den.
+
+  Någon tittar på resultatet och trycker på knappen när det passar — efter en demo, före helgen,
+  när supporten är bemannad.
+
+  Rätt val medan teamet bygger förtroende för sina tester.
+
+  </div>
+  <div slot="right">
+
+  Pipelinen går hela vägen. Grön pipeline betyder att ändringen ligger i produktion några minuter
+  senare.
+
+  Kräver tester du faktiskt litar på, och ett sätt att backa snabbt när något ändå går fel.
+
+  Rätt val när utrullningarna är små, täta och tråkiga.
+
+  </div>
+</Split>
+
+De flesta team säger "CD" och menar leverans. Fråga vilket som gäller innan du antar något — det är
+skillnaden mellan att din ändring ligger i produktion i dag eller om tre veckor.
+
+## CI vs CD
+
+Ett par som skrivs ihop och gör olika saker.
+
+**CI** svarar på *fungerar den här ändringen?* Den bygger och testar, och lämnar ett besked.
+
+**CD** svarar på *hur kommer den härifrån till användarna?* Den paketerar, flyttar och installerar.
+
+CI utan CD är vanligt och helt rimligt: många team låter en maskin testa varje push men rullar ut för
+hand. CD utan CI är däremot en dålig idé — då automatiserar du utrullningen av något ingen kontrollerat.
+
+## Vad en pipeline är
+
+En **pipeline** är den beskrivna kedjan av arbete som körs automatiskt när något händer i repot.
+
+Beskrivningen ligger i en fil i repot, bredvid koden. Den granskas i en merge request och versioneras
+som all annan kod — samma idé som Terraform-filen och Kubernetes-manifestet.
+
+<Flow
+  caption="Varje steg får bara starta om det föregående lyckades. Det är kedjan som gör beskedet värt något."
+  steps={[
+    {
+      label: "Något händer",
+      note: "En push, en merge request, ett schema, en knapptryckning.",
+    },
+    {
+      label: "Bygg",
+      via: "hämtar koden",
+      note: "Beroenden installeras, projektet kompileras eller paketeras.",
+    },
+    {
+      label: "Test",
+      via: "på bygget",
+      note: "Enhetstester, linting, säkerhetsskanning. Faller något stannar kedjan här.",
+      accent: true,
+    },
+    {
+      label: "Artefakt",
+      via: "sparas",
+      note: "Det färdiga resultatet läggs undan: en image, ett paket, en mapp med filer.",
+    },
+    {
+      label: "Utrullning",
+      via: "automatiskt eller efter godkännande",
+      note: "Artefakten installeras i en miljö. Här går gränsen mellan leverans och utrullning.",
+    },
+  ]}
+/>
+
+Pipelinen kör inga magiska kommandon. Den kör i stort sett samma kommandon som du kör lokalt —
+`pnpm build`, `pytest`, `docker build` — fast på en ren maskin, i en bestämd ordning, varje gång.
+
+<Del titel="Delarna" />
+
+## Vad en trigger är
+
+En **trigger** är händelsen som startar pipelinen.
+
+De vanliga är fyra: en push till en gren, en öppnad eller uppdaterad merge request, ett schema, och
+en knapp någon trycker på för hand.
+
+Vilken trigger som gällde avgör ofta vad pipelinen ska göra. En merge request ska testas men inte
+rullas ut; en push till huvudgrenen ska göra båda.
+
+Det är också första felsökningsfrågan när en pipeline "inte kördes". Nio gånger av tio matchade
+triggern inte — fel gren, fel filsökväg, eller en händelse som inte var med i listan.
+
+## Vad ett jobb är
+
+Ett **jobb** är en samling arbete som körs på en maskin, från början till slut.
+
+Jobbet får en ren maskin, hämtar koden, gör sitt, och maskinen kastas. Nästa jobb börjar från
+ingenting igen.
+
+Flera jobb kan köra samtidigt. Det är därför en pipeline kan testa mot tre versioner av Node
+parallellt och bli klar på tiden det tar för den långsammaste.
+
+## Vad ett steg är
+
+Ett **steg** är ett enskilt kommando eller en färdig åtgärd inuti ett jobb.
+
+Stegen i ett jobb körs i tur och ordning, på samma maskin, och delar filsystem. Det ena stegets
+utdata ligger kvar för det nästa.
+
+Ett steg som misslyckas stoppar normalt resten av jobbet. Det är avsiktligt: det är ingen mening att
+köra tester på ett bygge som inte blev av.
+
+## Jobb vs steg
+
+Den vanligaste strukturmissen i en första pipeline.
+
+**Jobb** är isolerade från varandra. Eget filsystem, egen maskin, ingen delad disk — och de kan köra
+samtidigt.
+
+**Steg** delar allt. Samma maskin, samma katalog, i strikt ordning.
+
+Följden överraskar alla en gång: en fil som ett steg skapar finns kvar för nästa steg, men är **borta**
+i nästa jobb. Ska den vidare måste den skickas som en artefakt.
+
+## Vad en runner är
+
+En **runner** — ibland *agent* — är maskinen som kör jobbet.
+
+Den kan vara en virtuell maskin din CI-leverantör startar åt dig och kastar efteråt, eller en maskin
+ni driver själva. Det första är normalfallet och kräver ingenting av dig.
+
+Runnern kommer med en uppsättning förinstallerade verktyg. Att den har `git`, `docker` och ett par
+språkkörtider är varför en pipeline ofta fungerar utan att du installerat något. Att den **inte** har
+just ditt verktyg är varför den ibland inte gör det.
+
+Att jobbet får en ren maskin är hela poängen. En pipeline som fungerar bara på en runner någon
+handinstallerat saker på har förlorat sin viktigaste egenskap.
+
+## Vad en artefakt är
+
+En **artefakt** är det ett jobb producerar och som ska överleva jobbet: en image, ett paket, en mapp
+med byggd HTML, en testrapport.
+
+Artefakten laddas upp när jobbet är klart och kan hämtas ner av ett senare jobb, eller av en människa
+som vill titta på den.
+
+Det är artefakten som rullas ut. Inte källkoden, inte en ny körning av bygget — precis det paket som
+testerna godkände.
+
+## Artefakt vs cache
+
+Två sätt att flytta filer mellan körningar, och att blanda ihop dem ger konstiga fel.
+
+**Artefakten** är ett resultat du vill ha kvar. Den är en del av leveransen, och den ska vara
+förutsägbar och spårbar.
+
+**Cachen** är en genväg. Den innehåller sådant som går att skapa om — nedladdade beroenden, kompilerade
+mellanfiler — och finns bara för att spara tid.
+
+Skillnaden i praktiken: **din pipeline måste fungera utan cachen.** Töms den ska bygget bli
+långsammare, inte trasigt. Blir det trasigt har du lagt något i cachen som hörde hemma i en artefakt.
+
+<Doodle
+  name="artefakten-och-cachen"
+  caption="Vänstra lådan skickas vidare. Den högra ställs tillbaka på hyllan och kan saknas nästa gång."
+/>
+
+{/* DOODLE bortvald i steg 2: en bild om "bygg en gång, distribuera överallt" hade
+    upprepat `en-image-tre-miljoer` i kubernetes-config-secrets-probes, som visar
+    exakt samma sak med ConfigMap-lappar. Sektionen nedan ankrar i den i stället. */}
+
+<Del titel="Reglerna" />
+
+## Status vs slutresultat
+
+Två fält som båda ser ut att svara på "gick det bra", och bara det ena gör det.
+
+**Status** säger var körningen är: köad, igång, klar. Den svarar på *om* jobbet har kört färdigt.
+
+**Slutresultatet** — *conclusion* — säger hur det gick: lyckades, misslyckades, avbröts, eller
+hoppades över.
+
+Det tredje värdet är det som lurar. Ett steg med slutresultatet *överhoppat* är inte grönt i
+betydelsen "kontrollerat" — det betyder att villkoret för att köra det aldrig uppfylldes. En pipeline
+kan alltså se helt godkänd ut medan halva testsviten aldrig startade.
+
+## Bygg en gång, distribuera överallt
+
+Regeln som gör resten av kedjan värd något: **bygg artefakten en gång, och skicka samma artefakt
+genom alla miljöer.**
+
+Bygger du om per miljö testar du inte längre det som hamnar i produktion. Du testar något som liknar
+det, byggt vid ett annat tillfälle med kanske andra beroendeversioner.
+
+Det är samma resonemang som i Kubernetes-delen om konfiguration: en image genom test, stage och
+produktion, och det som skiljer miljöerna åt skjuts in vid start.
+
+Artefakten hör ihop med en commit. Kan du gå från en rad i produktionsloggen till exakt den commit
+som byggde den, har kedjan hållit hela vägen.
+
+## Vad en hemlighet i en pipeline är
+
+En **hemlighet** är ett värde pipelinen behöver men som inte får stå i filen: ett lösenord, en
+API-nyckel, en molnbehörighet.
+
+Hemligheter lagras i CI-verktyget och skjuts in som miljövariabler när jobbet kör. Filen i repot
+refererar till namnet, aldrig till värdet.
+
+<Callout type="fallgrop">
+**Loggen är publik oftare än du tror.** En hemlighet som skrivs ut i en logg är läckt — och det
+räcker att någon kör `echo` på fel variabel, eller att ett verktyg loggar sitt anrop med `-v`.
+
+CI-verktyg maskerar värden de känner igen, men bara exakt de strängarna. Är hemligheten base64-kodad
+eller inbakad i en URL går den rakt igenom.
+
+Den varaktiga lösningen är att pipelinen inte har någon hemlighet alls, utan bevisar vem den är och
+får en kortlivad nyckel. Hur det går till tar vi i nästa del.
+</Callout>
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att läsa pipelineresultat varje dag och skriva pipelines någon gång i halvåret. Det du gör
+mest är att svara på frågan *varför är den röd*, och att veta skillnaden mellan jobb och steg är det
+som gör svaret snabbt.
+
+Du kommer också att bli den som märker att en pipeline är grön av fel anledning. Överhoppade steg och
+tester som aldrig kördes ser likadant ut som godkända, tills någon tittar efter.
+
+Egna runners, avancerade cachestrategier och utrullningsmönster som blågrön utrullning kan vänta. De
+blir aktuella när pipelinen är din, och de bygger på samma fem delar.
+
+## Vanliga nybörjarförväxlingar
+
+CI är inte ett verktyg. Det är ett arbetssätt som ett verktyg gör uthärdligt.
+
+Kontinuerlig leverans är inte kontinuerlig utrullning. Den ena slutar med en färdig artefakt, den
+andra i produktion.
+
+Jobb och steg är inte samma sak. Steg delar maskin och filsystem, jobb gör det inte.
+
+En fil som ett jobb skapar finns inte i nästa jobb. Den måste skickas som en artefakt.
+
+Cachen är inte en artefakt. Pipelinen ska fungera även när cachen är tom.
+
+Ett överhoppat steg är inte ett godkänt steg. Det betyder att villkoret aldrig uppfylldes.
+
+En grön pipeline betyder inte att allt testades. Den betyder att inget som kördes misslyckades.
+
+Pipelinen kör inga särskilda kommandon. Den kör dina, på en ren maskin, i bestämd ordning.
+
+## Prova själv
+
+Du behöver inget CI-konto. Vi tittar på riktiga körningar i ett publikt repo via GitHubs öppna API.
+
+Varje commit i ett repo bär resultatet av de kontroller som kördes på den. Hämta dem för Astros
+huvudgren:
+
+```bash
+A=https://api.github.com/repos/withastro/astro
+curl -s "$A/commits/main/check-runs?per_page=100" \
+  -o checks.json
+jq '.total_count' checks.json
+```
+
+Du får ett trettiotal kontroller på en enda commit. Titta nu på hur de slutade:
+
+```bash
+jq -r '[.check_runs[].conclusion]|unique' checks.json
+```
+
+Där står `"success"` — och med stor sannolikhet också **`"skipped"`**. Räkna dem:
+
+```bash
+jq -r '[.check_runs[].conclusion]|group_by(.)|
+  map({(.[0]): length})' checks.json
+```
+
+När jag körde detta var 28 av 36 kontroller `success` och 8 `skipped`. Åtta kontroller **kördes
+aldrig**, och commiten är ändå grön. Det är exakt poängen med avsnittet om status och slutresultat.
+
+Jämför slutligen med hur långt de kommit:
+
+```bash
+jq -r '[.check_runs[].status]|unique' checks.json
+```
+
+Alla är `completed`. Statusen säger att de är färdiga, slutresultatet säger vad de kom fram till, och
+bara det ena av fälten svarar på om något faktiskt kontrollerades.
+
+Tre saker som kan förvirra. Utelämnar du `?per_page=100` får du bara de **trettio första** posterna,
+medan `total_count` fortsätter visa det verkliga antalet. Då summerar grupperna inte till totalen,
+och det ser ut som att räkningen är fel. GitHubs API har dessutom **två** sätt att svara på samma
+fråga. Det äldre, `commits/main/status`, kan svara `pending` med noll poster samtidigt som
+`check-runs` visar trettiosex avslutade — moderna kontroller rapporteras som *checks*, inte som
+*statuses*. Och siffrorna du får är inte mina: varje ny commit ger en ny uppsättning kontroller,
+vilket är hela poängen med att fråga i stället för att läsa.
+
+<Callout type="kom-ihag">
+- **CI** svarar på *fungerar ändringen*. **CD** svarar på *hur kommer den till användarna*.
+- Kontinuerlig **leverans** slutar med en färdig artefakt. Kontinuerlig **utrullning** går hela vägen.
+- **Steg** delar maskin och filsystem. **Jobb** gör det inte — filer emellan måste bli artefakter.
+- Pipelinen ska fungera med **tom cache**. Går den sönder utan cache låg fel sak där.
+- **Bygg en gång, distribuera överallt.** Bygger du om per miljö testade du inte det som körs.
+- Ett **överhoppat** steg är inte ett godkänt steg. Grön pipeline ≠ allt testat.
+- En hemlighet som hamnar i loggen är läckt. Maskeringen fångar bara exakta strängar.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "En kollega säger att teamet kör CD. Vad behöver du fråga innan du vet vad det betyder?",
+      a: "Om det är kontinuerlig leverans eller kontinuerlig utrullning. Leverans slutar med en artefakt som är redo, och en människa avgör när den går till produktion. Utrullning tar bort det momentet. Skillnaden avgör om din ändring är i produktion i dag eller om tre veckor.",
+    },
+    {
+      q: "Ett jobb skapar en fil. Nästa jobb hittar den inte. Varför?",
+      a: "Jobb är isolerade — eget filsystem, egen maskin, och maskinen kastas när jobbet är klart. Bara steg inom samma jobb delar filsystem. Ska filen vidare måste den laddas upp som en artefakt och hämtas ner i nästa jobb.",
+    },
+    {
+      q: "Vad är skillnaden mellan en artefakt och en cache?",
+      a: "Artefakten är ett resultat du vill ha kvar och som rullas ut. Cachen är en genväg för sådant som går att skapa om, och finns bara för att spara tid. Testet är enkelt: töm cachen — blir bygget bara långsammare är det rätt använt, går det sönder låg något där som hörde hemma i en artefakt.",
+    },
+    {
+      q: "Pipelinen är grön, men buggen kom ändå ut. Vad kontrollerar du först?",
+      a: "Om testerna faktiskt kördes. Ett steg med slutresultatet överhoppat ser grönt ut men betyder att villkoret för att köra det aldrig uppfylldes. Grön pipeline betyder bara att inget som kördes misslyckades.",
+    },
+    {
+      q: "Varför är det ett problem att bygga om artefakten inför varje miljö?",
+      a: "Då är det inte längre samma artefakt som testades och som körs i produktion. Beroenden kan ha ändrats mellan byggena. Bygg en gång och skicka samma artefakt genom alla miljöer — skillnaderna mellan miljöer skjuts in som konfiguration vid start.",
+    },
+    {
+      q: "Pipelinen startade inte alls när du pushade. Vad tittar du på först?",
+      a: "Triggern. Nästan alltid matchade den inte: fel gren, en filsökvägsfiltrering som uteslöt din ändring, eller en händelsetyp som inte fanns med i listan. Det är den vanligaste orsaken till att ingenting hände.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- Kontinuerlig integrering är ett arbetssätt: små ändringar, ihopslagna och kontrollerade ofta.
+- Kontinuerlig leverans betyder att varje godkänt bygge är redo att rullas ut.
+- Kontinuerlig utrullning tar bort människan på slutet. Båda förkortas CD — fråga vilket som menas.
+- CI svarar på om ändringen fungerar, CD på hur den når användarna. CD utan CI är en dålig idé.
+- Pipelinen är den beskrivna kedjan, i en fil i repot, granskad som all annan kod.
+- Triggern är händelsen som startar den, och den vanligaste orsaken till att inget hände.
+- Ett jobb kör på en egen ren maskin. Flera jobb kan köra samtidigt.
+- Ett steg är ett kommando i ett jobb. Steg delar maskin och filsystem, i ordning.
+- Runnern är maskinen. Att den är ren varje gång är hela poängen.
+- Artefakten är resultatet som ska överleva jobbet — och det är den som rullas ut.
+- Cachen är en genväg. Pipelinen måste fungera utan den.
+- Status säger hur långt körningen kommit, slutresultatet hur det gick. Överhoppat är inte godkänt.
+- Bygg en gång, distribuera överallt. Artefakten hör ihop med en commit.
+- Hemligheter lagras i verktyget, aldrig i filen — och en hemlighet i loggen är läckt.
+
+## Nästa del
+
+Nu vet du vad delarna heter. I nästa del öppnar vi en riktig fil i GitHub Actions och sätter ihop
+dem: triggern, jobben, matrisen och artefakterna.
+
+Och vi tar den fråga den här delen lämnade hängande: hur en pipeline loggar in i molnet utan att bära
+på en enda hemlighet.

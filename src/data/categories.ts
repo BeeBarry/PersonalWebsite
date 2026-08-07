@@ -55,6 +55,14 @@ export const categories: Category[] = [
         isVisible: true,
     },
     {
+        title: "CI/CD & pipelines",
+        description: "Från commit till drift — utan att någon kör kommandon för hand.",
+        icon: "mdi:cog-sync-outline",
+        slug: "cicd",
+        domain: "cloud",
+        isVisible: true,
+    },
+    {
         title: "Cybersecurity",
         description: "Säkerhet i moderna applikationer.",
         icon: "mdi:shield-lock-outline",

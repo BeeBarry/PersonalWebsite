@@ -849,6 +849,59 @@ def alla():
       + "\n" + txt([(680,262,"elastisk")],14.5)
       + "\n" + txt([(200,344,"publik IP"),(680,344,"elastisk IP")],18.5) + "\n</svg>")
 
+    # 43 — CI/CD 1.0 · Artefakt vs cache
+    # Vänster: heldragna pilar, lådan lämnas vidare. Höger: streckade pilar upp till
+    # hyllan och ner igen — cachen KAN saknas nästa gång, och streckat är hubbens
+    # tecken för härlett eller uteblivet.
+    hylla=('<path d="M540 148 Q660 146 790 148"/><path d="M542 160 Q660 158 788 160"/>'
+           '<path d="M544 160 Q542 184 546 206"/><path d="M786 159 Q788 184 784 206"/>')
+    D['artefakten-och-cachen']=(
+      '<svg viewBox="0 0 880 380" role="img" aria-label="Till vänster lämnas en låda vidare mellan '
+      'två jobb med heldragna pilar. Till höger ställs en låda tillbaka på en hylla med streckade '
+      'pilar.">\n'
+      + G % (f'<path d="{w(60,150,130,90)}"/>' + '<path d="M194 195 Q200 196 206 195"/>' + arrow(212,195)
+             + f'<path d="{w(218,168,58,54)}"/>'
+             + '<path d="M280 195 Q286 196 292 195"/>' + arrow(298,195)
+             + f'<path d="{w(304,150,130,90)}"/>'
+             + hylla + f'<path d="{w(608,86,120,58)}"/>'
+             + f'<path d="{w(600,246,140,90)}"/>'
+             + '<path d="M636 240 Q634 208 636 176" stroke-dasharray="7 8"/>' + arrow(636,168,"up")
+             + '<path d="M700 172 Q702 206 700 238" stroke-dasharray="7 8"/>' + arrow(700,244,"down"))
+      + "\n" + txt([(125,200,"jobb 1"),(369,200,"jobb 2"),(670,296,"jobb")],15)
+      + "\n" + txt([(247,364,"artefakten"),(665,364,"cachen")],18.5) + "\n</svg>")
+
+    # 44 — CI/CD 1.1 · Matrisen
+    rutor="".join(f'<path d="{w(x,y,160,96)}"/>' for x in (430,620) for y in (78,208))
+    fanpil="".join(f'<path d="M232 {a} Q330 {b} 420 {c}"/>' + arrow(426,c)
+                   for a,b,c in ((186,150,126),(194,176,176),(206,214,240),(214,240,290)))
+    D['matrisen-fyra-korningar']=(
+      '<svg viewBox="0 0 880 380" role="img" aria-label="Ett jobb till vänster med fyra pilar ut '
+      'till ett rutnät med fyra jobb, ett per kombination av Node-version och operativsystem.">\n'
+      + G % (f'<path d="{w(70,150,160,100)}"/>' + rutor + fanpil)
+      + "\n" + txt([(150,206,"ett jobb")],15)
+      + "\n" + txt([(510,116,"22"),(700,116,"22"),(510,246,"24"),(700,246,"24")],17)
+      + "\n" + txt([(510,148,"ubuntu"),(700,148,"windows"),
+                    (510,278,"ubuntu"),(700,278,"windows")],13.5,' opacity="0.7"')
+      + "\n" + txt([(150,352,"i filen"),(605,352,"fyra jobb")],18.5) + "\n</svg>")
+
+    # 45 — CI/CD 1.1 · Nyckeln som upphör
+    # Nyckeln är samma form på båda sidor. Bara linjen skiljer — heldragen mot
+    # streckad — så ögat läser skillnaden som livslängd, inte som två olika saker.
+    def nyckel(cx, dash=""):
+        return (f'<path d="{circ(cx,170,30)}"{dash}/>'
+                f'<path d="{w(cx+28,158,150,24)}"{dash}/>'
+                f'<path d="{w(cx+114,182,14,20)}"{dash}/>'
+                f'<path d="{w(cx+140,182,14,20)}"{dash}/>')
+    D['nyckeln-som-upphor']=(
+      '<svg viewBox="0 0 880 356" role="img" aria-label="Till vänster en heldragen nyckel som '
+      'hänger på en ring. Till höger samma nyckel ritad med streckade linjer, inuti en streckad '
+      'ram.">\n'
+      + G % (f'<path d="{circ(140,170,44)}"/>' + '<path d="M184 170 Q196 171 208 170"/>'
+             + nyckel(238)
+             + f'<path d="{w(556,104,300,132)}" stroke-dasharray="9 10" opacity="0.4"/>'
+             + nyckel(616, ' stroke-dasharray="7 8" opacity="0.5"'))
+      + "\n" + txt([(290,318,"secret"),(706,318,"OIDC-token")],18.5) + "\n</svg>")
+
     return D
 
 if __name__ == "__main__":
