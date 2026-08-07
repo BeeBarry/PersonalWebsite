@@ -1,0 +1,440 @@
+---
+title: 'När data blir kod'
+description: 'Injektion, XSS och CSRF — samma miss i tre skepnader'
+category: 'cybersecurity'
+part: 1
+order: 2
+date: '2026-08-07'
+tags: ['Beginner', 'Injektion', 'XSS']
+---
+
+## Var vi är
+
+Förra delen gav ramen: hot, sårbarhet, risk, och principerna. Den sa också att sårbarheten är den
+enda av de tre du kan laga med kod.
+
+Nu tar vi den vanligaste sårbarhetsklassen. Den har ett enda underliggande fel, och tre skepnader som
+ser helt olika ut: injektion, XSS och CSRF.
+
+Felet är alltid detsamma. **Något som skulle vara data behandlades som kod.** Håller du den meningen
+i huvudet blir resten av artikeln igenkänning i stället för memorering.
+
+<Del titel="Indata blir kod" />
+
+## Vad otillförlitlig indata är
+
+**Otillförlitlig indata** är allt som kommer in i systemet utifrån, oavsett hur det ser ut.
+
+Formulärfält är det uppenbara. Mindre uppenbart: frågesträngar, headers, cookies, filnamn på
+uppladdade filer, innehållet i en uppladdad fil, svaret från ett externt API, och rader ur en databas
+som någon annan skrev in.
+
+Det sista överraskar. Data som legat i din egen databas i tre år är fortfarande otillförlitlig om en
+användare skrev in den.
+
+Regeln är enkel och obekväm: **allt som inte din egen kod producerat är otillförlitligt**, och det är
+förtroendegränsen från förra delen uttryckt i praktiken.
+
+## Vad injektion är
+
+**Injektion** är när otillförlitlig data hamnar i något som tolkas — och lyckas ändra tolkningen.
+
+En SQL-fråga är text som databasen tolkar. Ett skalkommando är text som skalet tolkar. En HTML-sida
+är text som webbläsaren tolkar. I alla tre fallen finns en tolk, och en tolk går att lura.
+
+Injektion är fortfarande med på OWASP:s lista över de vanligaste problemen, på femte plats i 2025 års
+utgåva. Att den sjunkit beror inte på att den blivit ovanlig, utan på att ramverk gjort det lättare
+att göra rätt.
+
+## Hur SQL-injektion fungerar
+
+Anta att koden bygger sin fråga genom att slå ihop strängar:
+
+```
+SELECT * FROM anvandare WHERE namn = '<indata>'
+```
+
+Skriver användaren `lisa` blir frågan den avsedda. Men indatan är text som hamnar mitt i ett
+citattecken-par, och den kan innehålla citattecken själv.
+
+Skriver användaren `' OR '1'='1` blir den färdiga frågan:
+
+```
+SELECT * FROM anvandare WHERE namn = '' OR '1'='1'
+```
+
+Villkoret är nu sant för varje rad. Frågan var tänkt att hämta en användare och hämtar alla — och i
+*Prova själv* längre ner kör du precis det och ser det hända.
+
+<Doodle
+  name="injektionen-bryter-ut"
+  caption="Den övre lappen ryms i luckan. Den undre bär egna citattecken och tar sig ut ur den."
+/>
+
+## Vad en parametriserad fråga är
+
+En **parametriserad fråga** skickar frågans mall och värdena var för sig, i stället för att slå ihop
+dem till en sträng.
+
+```python
+cur.execute(
+    "SELECT * FROM anvandare WHERE namn = ?",
+    (namn,))
+```
+
+Frågetecknet är en platshållare. Databasen tar emot mallen först, planerar den, och får sedan värdet
+som ett värde — inte som text att tolka.
+
+Följden är att `' OR '1'='1` blir ett namn någon råkar heta. Ingen användare heter så, så frågan
+returnerar noll rader. Injektionen slutar inte bara fungera; den blir meningslös.
+
+Alla databasbibliotek har det här, och det heter ungefär samma sak överallt: *prepared statements*,
+*bound parameters*, *placeholders*.
+
+## Sammanslagning vs parameter
+
+Skillnaden på en rad kod, och på hela sårbarhetsklassen.
+
+<Split
+  leftTitle="Sammanslagning"
+  rightTitle="Parameter"
+  leftTone="bad"
+  rightTone="good"
+  caption="Samma indata. Den vänstra ger alla rader i tabellen, den högra noll."
+>
+  <div slot="left">
+
+  ```python
+  cur.execute(
+    "SELECT * FROM t WHERE namn = '%s'" % namn)
+  ```
+
+  Värdet blir en del av frågetexten. Databasen kan inte se var mallen slutar och värdet börjar.
+
+  Fungerar perfekt i test, där ingen skriver citattecken.
+
+  </div>
+  <div slot="right">
+
+  ```python
+  cur.execute(
+    "SELECT * FROM t WHERE namn = ?", (namn,))
+  ```
+
+  Mallen och värdet är åtskilda hela vägen. Databasen tolkar aldrig värdet som SQL.
+
+  Fungerar likadant oavsett vad användaren skriver.
+
+  </div>
+</Split>
+
+Lägg märke till att den säkra varianten inte är svårare. Den är kortare.
+
+## Varför escaping för hand inte räcker
+
+Den vanligaste felaktiga lösningen är att leta efter farliga tecken och ta bort eller ersätta dem.
+
+Det går sönder på tre sätt. Du missar ett tecken. Kodningen skiljer sig, så `%27` slinker förbi ett
+filter som letade efter `'`. Eller så tar filtret bort tecken ur legitim data, och `O'Brien` kan inte
+registrera sig.
+
+Det djupare problemet är att en svartlista måste ha rätt varje gång, medan en angripare bara behöver
+hitta ett undantag.
+
+**Parametrisering är inte ett bättre filter. Det tar bort behovet av filter**, eftersom värdet aldrig
+tolkas som kod.
+
+## Injektion utanför databasen
+
+Samma mönster finns överallt där något tolkar en sträng, och namnen skiljer sig bara efter tolken.
+
+Ett skalkommando som byggs ihop med användarens filnamn ger **kommandoinjektion** — ett semikolon i
+namnet startar ett kommando till. Lösningen är att anropa programmet med en lista av argument i
+stället för en kommandosträng.
+
+En mall som renderar användartext utan escaping kan ge **mallinjektion**. En sökväg som slås ihop med
+ett filnamn kan ge tillgång till filer utanför katalogen, eftersom `..` betyder något för filsystemet.
+
+Kontrollfrågan är alltid densamma: *finns det en tolk mellan min sträng och effekten?* Finns det en,
+ska värdet skickas bredvid mallen och inte i den.
+
+<Del titel="Utdata blir kod" />
+
+## Vad XSS är
+
+**XSS** — cross-site scripting — är injektion åt andra hållet: otillförlitlig data hamnar i en
+HTML-sida och tolkas av webbläsaren som kod.
+
+Skriver en användare `<script>...</script>` i ett kommentarsfält, och sidan skriver ut kommentaren
+som den är, kör webbläsaren skriptet hos alla som läser kommentaren.
+
+Skriptet kör med sidans rättigheter. Det kan läsa det inloggade sessionsvärdet, skicka anrop i
+användarens namn, eller rita en falsk inloggningsruta ovanpå den riktiga.
+
+Det är därför XSS är allvarligare än det låter. Angriparen kör inte kod på din server — den kör kod
+hos varje användare som besöker sidan.
+
+## Lagrad vs reflekterad XSS
+
+Två varianter som skiljer sig i hur skriptet når offret, och därför i hur illa det blir.
+
+**Reflekterad XSS** ligger i en länk. Angriparen får någon att klicka på en URL där skriptet ligger i
+frågesträngen, och sidan skriver tillbaka det i svaret. Träffar en person i taget.
+
+**Lagrad XSS** sparas i databasen — i en kommentar, ett profilnamn, ett produktomdöme. Den kör hos
+**alla** som ser innehållet, utan att någon behöver klicka på något särskilt.
+
+Lagrad är alltså den farligare av de två. Den är också den som bevisar poängen från början av
+artikeln: data ur din egen databas är fortfarande otillförlitlig.
+
+## Kontextberoende escaping
+
+**Escaping** är att göra om tecken som betyder något för tolken till tecken som bara betyder sig
+själva. `<` blir `&lt;`, så webbläsaren ritar ett mindre-än-tecken i stället för att börja en tagg.
+
+Det avgörande är att rätt escaping beror på **var** i dokumentet värdet hamnar. Samma sträng behöver
+olika behandling i brödtext, i ett attribut, inuti ett `<script>`-block och i en URL.
+
+Ett värde som är korrekt escapat för brödtext kan vara farligt i ett attribut. Det är därför
+"escapa allt" inte är en instruktion man kan följa manuellt.
+
+Moderna ramverk gör det åt dig, och de vet vilken kontext de skriver in i. Det du behöver veta är
+vilket kommando som **stänger av** skyddet — de heter saker som `dangerouslySetInnerHTML`, `v-html`
+eller `| safe` — och att varje sådan förekomst i en kodgranskning förtjänar en fråga.
+
+## Validering vs escaping
+
+Två skydd som ofta blandas ihop, och som inte kan ersätta varandra.
+
+**Validering** avgör om data är godtagbar: är det en giltig e-postadress, är talet mellan 1 och 100,
+finns id:t. Den sker när data kommer in.
+
+**Escaping** gör data ofarlig för en viss tolk. Den sker när data skickas ut — och rätt form beror på
+vart den skickas.
+
+En sträng kan vara helt giltig och ändå farlig. `O'Brien` är ett riktigt namn som bryter en
+sammanslagen SQL-fråga, och `<b>Hej</b>` kan vara ett fullt rimligt meddelande som ändå inte ska
+tolkas som HTML.
+
+Regeln: **validera vid inmatning, escapa vid utmatning.** Gör bara det ena och du har antingen ett
+system som avvisar riktiga namn, eller ett som kör andras kod.
+
+<Del titel="Förfrågan i ditt namn" />
+
+## Vad CSRF är
+
+**CSRF** — cross-site request forgery — utnyttjar att webbläsaren skickar med dina inloggningsuppgifter
+automatiskt.
+
+Är du inloggad på en tjänst har webbläsaren en cookie för den. Besöker du sedan en annan sida med ett
+formulär eller en bild som pekar mot tjänsten, **skickar webbläsaren med cookien ändå**. Den bryr sig
+inte om vilken sida som utlöste anropet.
+
+Angriparen behöver alltså inte stjäla något. Det räcker att få dig att besöka en sida medan du är
+inloggad någon annanstans — sedan går anropet iväg i ditt namn.
+
+Skyddet är att servern kräver något angriparens sida omöjligt kan känna till: en slumpad token som
+följer med formuläret och kontrolleras vid inskickning.
+
+## XSS vs CSRF
+
+De förväxlas ständigt, och riktningen är det som skiljer dem.
+
+**XSS** kör **angriparens kod** i **din** webbläsare. Angriparen får då i praktiken göra allt du kan
+göra på sajten, och kan läsa svaren.
+
+**CSRF** får **din** webbläsare att skicka **angriparens förfrågan**. Angriparen ser aldrig svaret —
+den kan bara utlösa en handling.
+
+Följden är att CSRF-skydd inte hjälper mot XSS. Har någon lyckats köra skript på din sida kan skriptet
+läsa CSRF-token och skicka den med. **XSS besegrar CSRF-skyddet**, vilket är ännu en anledning att
+ta XSS på allvar.
+
+<Doodle
+  name="xss-och-csrf"
+  caption="Samma webbläsare i mitten. Pilarna går åt motsatt håll — och bara den vänstra ser svaret."
+/>
+
+## Vad SameSite gör
+
+`SameSite` är en inställning på en cookie som säger när webbläsaren får skicka med den.
+
+Med `SameSite=Strict` skickas cookien bara när anropet kommer från samma sajt. Med `Lax` skickas den
+även när användaren klickar sig in utifrån, men inte vid formulärinskick från en annan sajt. Med
+`None` skickas den alltid, och kräver då `Secure`.
+
+Moderna webbläsare behandlar en cookie utan `SameSite` som `Lax`, vilket tar bort en stor del av de
+klassiska CSRF-angreppen på köpet.
+
+Det gör inte token-skyddet överflödigt. `SameSite` är webbläsarens beteende, och djupförsvarsprincipen
+från förra delen säger att du inte lägger hela skyddet i ett lager du inte kontrollerar.
+
+## Var skyddet hör hemma
+
+Alla tre sårbarheterna lagas på samma ställe i koden: **vid gränsen där data lämnar din kontroll och
+går in i en tolk.**
+
+Inte i frontend, som körs på angriparens maskin. Inte i ett filter som letar efter fula ord. Utan i
+det anrop som faktiskt skickar strängen vidare — till databasen, till HTML-strängen, till skalet.
+
+I praktiken betyder det tre vanor: parametriserade frågor alltid, ramverkets escaping påslagen alltid,
+och en fråga i varje granskning när någon stänger av något av dem.
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att skriva databasfrågor i varje projekt, och det enda du behöver göra rätt varje gång är
+att aldrig slå ihop en sträng. Det är en vana, inte ett beslut.
+
+Du kommer också att granska andras kod. Tre saker är värda en fråga varje gång: en fråga byggd med
+strängformatering, ett anrop som stänger av ramverkets escaping, och ett skalkommando byggt av något
+som kom utifrån.
+
+Innehållssäkerhetspolicy i detalj, prototypförorening och beroendeskanning kan vänta. De bygger på
+samma mening: data blev kod.
+
+## Vanliga nybörjarförväxlingar
+
+Data ur din egen databas är inte tillförlitlig. Den kom in utifrån en gång.
+
+Escaping för hand är inte ett skydd. En svartlista måste ha rätt varje gång, angriparen bara en.
+
+Parametrisering är inte ett filter. Den tar bort behovet av filter, eftersom värdet aldrig tolkas.
+
+Injektion är inte bara SQL. Samma mönster finns i skal, mallar och sökvägar — överallt där en tolk finns.
+
+XSS kör inte kod på din server. Den kör kod hos varje användare som besöker sidan.
+
+Validering ersätter inte escaping. Det ena avgör om data är godtagbar, det andra om den är ofarlig.
+
+CSRF-skydd hjälper inte mot XSS. Ett skript på sidan kan läsa token och skicka med den.
+
+`SameSite` ersätter inte CSRF-token. Det är webbläsarens beteende, inte ditt skydd.
+
+## Prova själv
+
+Vi kör en riktig injektion och lagar den, i en databas som ligger i minnet och försvinner efteråt.
+
+Skapa tabellen och kör den avsedda frågan:
+
+```bash
+sqlite3 :memory: "
+CREATE TABLE anvandare (id INT, namn TEXT, roll TEXT);
+INSERT INTO anvandare VALUES
+  (1,'lisa','user'),(2,'admin','admin');
+SELECT * FROM anvandare WHERE namn = 'lisa';"
+```
+
+Du får en rad: `1|lisa|user`. Kör nu **samma mall** med indatan `' OR '1'='1`, alltså precis vad
+sammanslagningen hade producerat:
+
+```bash
+sqlite3 :memory: "
+CREATE TABLE anvandare (id INT, namn TEXT, roll TEXT);
+INSERT INTO anvandare VALUES
+  (1,'lisa','user'),(2,'admin','admin');
+SELECT * FROM anvandare WHERE namn = '' OR '1'='1';"
+```
+
+Nu får du **båda** raderna, inklusive `2|admin|admin`. Frågan var skriven för att hämta en användare
+och hämtade hela tabellen.
+
+Kör slutligen båda varianterna i Python, med exakt samma elaka indata:
+
+```bash
+python3 - <<'PY'
+import sqlite3
+c = sqlite3.connect(":memory:")
+c.execute("CREATE TABLE t (id INT, namn TEXT)")
+c.executemany("INSERT INTO t VALUES (?,?)",
+              [(1, 'lisa'), (2, 'admin')])
+elak = "' OR '1'='1"
+q = "SELECT * FROM t WHERE namn = '%s'" % elak
+print("sammanslagen:", c.execute(q).fetchall())
+print("parametrerad:", c.execute(
+    "SELECT * FROM t WHERE namn = ?",
+    (elak,)).fetchall())
+PY
+```
+
+Utskriften säger allt:
+
+```
+sammanslagen: [(1, 'lisa'), (2, 'admin')]
+parametrerad: []
+```
+
+Samma indata, samma databas, samma tabell. Den ena raden kod ger bort hela tabellen, den andra
+returnerar noll rader — eftersom ingen användare heter `' OR '1'='1`.
+
+Tre saker som kan förvirra. `sqlite3 :memory:` skapar en databas som försvinner när kommandot är
+klart, så varje kommando ovan måste skapa tabellen på nytt — det är inte en upprepning av misstag.
+Ett riktigt angrepp skulle sällan skriva `' OR '1'='1` rakt av; det används här för att det är den
+kortaste formen som syns tydligt. Och den parametrerade varianten returnerar en **tom lista**, inte
+ett fel: injektionen misslyckas tyst, vilket är precis vad du vill.
+
+<Callout type="kom-ihag">
+- Ett enda fel i tre skepnader: **något som skulle vara data behandlades som kod**.
+- All data utifrån är otillförlitlig — även den som legat i din egen databas i tre år.
+- **Parametrisera alltid.** Mall och värde skickas var för sig, och värdet tolkas aldrig som SQL.
+- Escaping för hand är en svartlista. Den måste ha rätt varje gång; angriparen bara en.
+- Injektion finns överallt där en tolk finns: SQL, skal, mallar, sökvägar.
+- **Lagrad XSS** kör hos alla som ser innehållet. **Reflekterad** kräver en klickad länk.
+- Validera vid inmatning, escapa vid utmatning. Rätt escaping beror på var värdet hamnar.
+- XSS besegrar CSRF-skyddet. Ett skript på sidan kan läsa token och skicka med den.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Vad är det gemensamma felet bakom injektion, XSS och CSRF?",
+      a: "Att något som skulle vara data behandlades som kod, eller som en instruktion. I injektion tolkar databasen värdet som SQL, i XSS tolkar webbläsaren värdet som HTML och skript, och i CSRF tolkar servern en förfrågan som avsiktlig bara för att den bar rätt cookie.",
+    },
+    {
+      q: "Varför är en parametriserad fråga säkrare än att filtrera bort citattecken?",
+      a: "För att värdet aldrig blir en del av frågetexten. Databasen får mallen först och värdet separat, så det finns ingen tolkning att lura. Ett filter är en svartlista som måste ha rätt varje gång, medan angriparen bara behöver hitta ett undantag — en kodning, ett tecken du missade.",
+    },
+    {
+      q: "En kommentar i er databas skrevs för två år sedan. Är den tillförlitlig data?",
+      a: "Nej. Den kom in utifrån en gång och är fortfarande otillförlitlig. Det är precis så lagrad XSS fungerar: skriptet sparas i databasen och körs sedan hos alla som ser innehållet, utan att någon behöver klicka på en särskild länk.",
+    },
+    {
+      q: "Ni escapar all indata när den tas emot. Räcker det?",
+      a: "Nej, av två skäl. Rätt escaping beror på var värdet ska hamna — brödtext, attribut, skriptblock och URL kräver olika — och det vet du inte vid inmatningen. Dessutom förstör tidig escaping datan: den lagras felaktigt och blir fel om den senare används i ett annat sammanhang. Validera vid inmatning, escapa vid utmatning.",
+    },
+    {
+      q: "Vad är riktningsskillnaden mellan XSS och CSRF?",
+      a: "XSS kör angriparens kod i användarens webbläsare, med sidans rättigheter, och kan läsa svaren. CSRF får användarens webbläsare att skicka angriparens förfrågan — angriparen kan utlösa en handling men ser aldrig svaret.",
+    },
+    {
+      q: "Ni har CSRF-token på alla formulär. Skyddar det mot XSS?",
+      a: "Nej, och inte tvärtom heller. Har någon lyckats köra skript på sidan kan skriptet läsa CSRF-token ur formuläret och skicka med den. XSS besegrar alltså CSRF-skyddet, vilket är en anledning till att XSS är den allvarligare av de två.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- Ett fel i tre skepnader: data behandlades som kod.
+- Otillförlitlig indata är allt utifrån — formulär, headers, filnamn, externa API:er, gammal databasdata.
+- Injektion är när otillförlitlig data ändrar hur en tolk läser en sträng.
+- SQL-injektion fungerar genom att indatan bär egna citattecken och tar sig ut ur värdet.
+- En parametriserad fråga skickar mall och värde var för sig. Värdet tolkas aldrig som SQL.
+- Escaping för hand är en svartlista som går sönder på kodningar och legitima namn.
+- Samma mönster finns i skal, mallar och sökvägar. Finns en tolk, skicka värdet bredvid mallen.
+- XSS är injektion i HTML. Skriptet kör hos användaren, med sidans rättigheter.
+- Lagrad XSS kör hos alla som ser innehållet; reflekterad kräver en klickad länk.
+- Rätt escaping beror på kontexten. Ramverket vet det; leta efter kommandot som stänger av det.
+- Validera vid inmatning, escapa vid utmatning. Det ena ersätter inte det andra.
+- CSRF utnyttjar att webbläsaren skickar cookien automatiskt. Skyddet är en slumpad token.
+- XSS besegrar CSRF-skyddet, eftersom ett skript på sidan kan läsa token.
+- `SameSite` tar bort en stor del av klassisk CSRF, men är webbläsarens beteende — inte ditt skydd.
+- Skyddet hör hemma där strängen lämnar din kontroll och går in i en tolk.
+
+## Nästa del
+
+Därmed står Cyber-grunderna: ramen att tänka i, och den sårbarhetsklass du kommer att möta oftast.
+
+Nästa naturliga steg är det som skyddar identiteterna i stället för indatan: hur lösenord ska lagras,
+och varför hashning inte är kryptering. Och vad som egentligen händer med en session vid utloggning.

@@ -1,0 +1,431 @@
+---
+title: 'Att tänka som en angripare'
+description: 'Hot, sårbarhet och risk — och ramen som binder ihop hubbens alla varningar'
+category: 'cybersecurity'
+part: 1
+partTitle: 'Grunderna'
+order: 1
+date: '2026-08-07'
+tags: ['Beginner', 'Overview']
+---
+
+## Var vi är
+
+Den här hubben har varnat dig för säkerhetsproblem gång på gång. `chmod 777` i Linux-delen.
+Hemligheten som ligger kvar i Git-historiken. `.env`-filen som blir kvar i ett image-lager. Secreten
+som inte är krypterad. Hemligheten i pipelineloggen. `pull_request_target`.
+
+Varje varning stod för sig, som en fälla att undvika. Den här delen ger ramen de hör hemma i — så att
+du kan hitta nästa fälla själv, i kod ingen skrivit en varning om än.
+
+Vi tar orden, sättet att titta på ett system, och de fyra principerna som återkommer i allt
+säkerhetsarbete. Nästa del gör den vanligaste sårbarhetsklassen konkret.
+
+<Del titel="Orden" />
+
+## Vad ett hot är
+
+Ett **hot** är något som kan gå fel, uttryckt som vem som vill vad.
+
+*"Någon utifrån vill läsa våra kunders adresser."* *"En anställd som slutat vill komma åt systemet."*
+*"En bot vill använda vår server för att skicka skräppost."* Alla tre är hot.
+
+Hotet finns oavsett vad du byggt. Det beror på vad du har som är värt något — data, beräkningskraft,
+förtroende — inte på hur din kod ser ut.
+
+## Vad en sårbarhet är
+
+En **sårbarhet** är en konkret svaghet i ditt system som ett hot kan utnyttja.
+
+En fråga som slår ihop användarens text med SQL. En behörighet som är vidare än den behöver vara. En
+gammal version av ett bibliotek med ett känt fel. Ett lösenord i en konfigurationsfil.
+
+Sårbarheten är din. Den finns i något du byggt eller valt, och den är därför det enda av de tre orden
+du kan göra något åt direkt.
+
+## Vad en risk är
+
+En **risk** är kombinationen: hur troligt är det att ett hot utnyttjar en sårbarhet, och hur illa blir
+det då.
+
+Formuleringen brukar vara *sannolikhet gånger konsekvens*. Talet är sällan exakt, men uppdelningen
+gör diskussionen möjlig: ett osannolikt hot mot något oviktigt hamnar längst ner, ett troligt hot mot
+kunddata högst upp.
+
+Risk är också det enda av orden som en verksamhet kan besluta om. Utvecklaren lagar sårbarheter;
+organisationen bestämmer vilka risker den accepterar.
+
+## Hot vs sårbarhet vs risk
+
+Tre ord som används om vartannat i vardagligt tal, och som betyder helt olika saker i ett samtal om
+säkerhet.
+
+**Hotet** är utifrån och går inte att ta bort. Det finns någon som vill åt dina data, oavsett vad du
+gör.
+
+**Sårbarheten** är inifrån och går att laga. Den är den enda av de tre du kan åtgärda med kod.
+
+**Risken** är produkten av de två, plus konsekvensen. Den går att sänka — genom att laga sårbarheten,
+eller genom att göra konsekvensen mindre.
+
+Skillnaden är praktisk: *"vi har ett hot"* är inte ett problem att lösa. *"Vi har en sårbarhet som
+gör det här hotet troligt"* är det.
+
+<Doodle
+  name="hotet-och-sprickan"
+  caption="Molnet finns där oavsett. Det är sprickan i väggen du kan göra något åt."
+/>
+
+## Vad en exploit är
+
+En **exploit** är den konkreta metoden eller koden som utnyttjar en sårbarhet.
+
+Sårbarheten är att fönstret är olåst. Exploiten är att någon faktiskt tar sig in genom det.
+
+Skillnaden avgör hur bråttom det är. En sårbarhet utan känd exploit är ett problem att planera in; en
+sårbarhet med publicerad exploit är ett problem för i dag.
+
+## Sårbarhet vs exploit
+
+Den här skillnaden styr prioriteringsordningen, och den missas ofta i listan från en skanning.
+
+**Sårbarheten** är svagheten som finns i koden eller uppsättningen. Den beskrivs i en CVE — en
+offentlig post med ett id, som `CVE-2026-1234`.
+
+**Exploiten** är beviset att den går att använda. Den kan vara publik, användas aktivt i attacker,
+eller inte finnas alls.
+
+En skanning ger dig hundra sårbarheter. De som har en känd, aktivt använd exploit och sitter i något
+som är nåbart utifrån är de fem du börjar med.
+
+<Del titel="Att se sitt system som en angripare" />
+
+## Vad attackytan är
+
+**Attackytan** är summan av alla ställen där någon utifrån kan skicka något in i ditt system.
+
+Varje öppen port, varje HTTP-endpoint, varje formulärfält, varje filuppladdning, varje beroende du
+installerat, varje person med inloggning.
+
+Poängen med begreppet är att den går att **minska**. En stängd port är en sårbarhet som inte behöver
+lagas, och ett borttaget beroende är hundra möjliga fel du aldrig behöver läsa om.
+
+Det är också därför frågan *"behöver den här verkligen vara nåbar?"* är den billigaste
+säkerhetsåtgärd som finns.
+
+## Vad hotmodellering är
+
+**Hotmodellering** är att gå igenom sitt system i förväg och fråga vad som kan gå fel, innan någon
+visar dig det.
+
+Det låter formellt och behöver inte vara det. En timme med en whiteboard och rätt frågor fångar det
+mesta, och den timmen är billigast innan koden är skriven.
+
+Resultatet är en lista på hot, kopplade till var i systemet de gäller. Den listan blir sedan
+uppgifter, precis som buggar.
+
+## De fyra frågorna
+
+Hela hotmodelleringen ryms i fyra frågor, ställda i ordning.
+
+<Flow
+  caption="Ordningen spelar roll. Utan svar på den första blir den andra en gissningstävling."
+  steps={[
+    {
+      label: "Vad bygger vi?",
+      note: "Rita systemet. Komponenter, dataflöden och var data lagras — grovt räcker.",
+    },
+    {
+      label: "Vad kan gå fel?",
+      via: "per komponent och flöde",
+      note: "Vem vill åt vad? Vad händer om någon ljuger om vem de är, eller ändrar data på vägen?",
+      accent: true,
+    },
+    {
+      label: "Vad gör vi åt det?",
+      via: "per hot",
+      note: "Åtgärda, minska konsekvensen, flytta risken någon annanstans — eller acceptera medvetet.",
+    },
+    {
+      label: "Gjorde vi ett bra jobb?",
+      via: "efteråt",
+      note: "Gå igenom listan igen när systemet ändrats. En hotmodell blir gammal som all annan dokumentation.",
+    },
+  ]}
+/>
+
+Den fjärde frågan är den som oftast hoppas över, och den är anledningen till att en hotmodell från
+förra året sällan stämmer.
+
+## Vad en förtroendegräns är
+
+En **förtroendegräns** är en linje i systemet där data byter från något du litar på till något du
+inte litar på — eller tvärtom.
+
+Mellan internet och din lastbalanserare går en. Mellan din applikation och databasen går en. Mellan
+två tjänster i olika team går en.
+
+Vid varje sådan gräns ska något kontrolleras. Det är där validering, autentisering och behörigheter
+hör hemma — inte utspritt lite överallt, och inte bara i frontend.
+
+<Doodle
+  name="fortroendegransen"
+  caption="Pilen som korsar den streckade linjen är den enda som kontrolleras."
+/>
+
+{/* DOODLE bortvald i steg 2: en bild av attackytan som ett hus med många dörrar
+    hade upprepat `porten-ar-dorren` i natverk-metoder-statuskoder-headers, som
+    redan ritar ett hus med fyra portmärkta dörrar. Sektionen klarar sig i text. */}
+
+## Vad angriparen faktiskt vill
+
+Den vanligaste missen hos den som är ny är att föreställa sig angriparen som någon som vill "hacka
+systemet". Ingen vill det.
+
+De vill något konkret: pengar, data som går att sälja, beräkningskraft att gräva kryptovaluta med,
+en fot in i ett större nätverk, eller att ditt system slutar fungera.
+
+Skillnaden är praktisk. Frågar du *"hur kan någon hacka oss"* får du inga svar. Frågar du *"vad hos
+oss är värt pengar, och hur skulle jag komma åt det"* får du en lista.
+
+De flesta angrepp är dessutom inte riktade. De är automatiska, letar efter kända sårbarheter i allt
+som svarar, och bryr sig inte om vem du är.
+
+<Del titel="Principerna" />
+
+## Minsta privilegium
+
+**Minsta privilegium** betyder att varje identitet får precis de rättigheter den behöver, och inte
+en till.
+
+Applikationen som bara läser ska ha läsrätt. Pipelinen som rullar ut till test ska inte nå
+produktion. Rotanvändaren i AWS ska låsas in, och `chmod 777` ger alla på maskinen skrivrätt till
+något som antagligen bara du behövde ändra.
+
+Det är samma princip i alla de exemplen, och det är därför de känns igen. `permissions: contents:
+read` i CI/CD-delen är minsta privilegium, uttryckt i två rader YAML.
+
+Principen kostar bekvämlighet. Den betalar sig när något ändå går fel, för då är skadan begränsad
+till vad just den identiteten kunde göra.
+
+## Djupförsvar
+
+**Djupförsvar** betyder att lägga flera oberoende skydd efter varandra, så att ett enda misstag inte
+räcker.
+
+<Stack
+  caption="Varje lager antar att det ovanför kan ha svikit. Det är hela poängen — inget lager behöver vara perfekt."
+  ground="Data i vila, krypterad — det sista som återstår"
+  layers={[
+    {
+      label: "Nätverket",
+      note: "Bara det som måste vara nåbart är nåbart. En stängd port behöver aldrig lagas.",
+    },
+    {
+      label: "Autentisering",
+      note: "Vem är du? Antar att någon kommer att nå tjänsten som inte borde.",
+    },
+    {
+      label: "Behörighet",
+      note: "Vad får du göra? Antar att fel person kan ha loggat in.",
+      accent: true,
+    },
+    {
+      label: "Validering i koden",
+      note: "Antar att behörigheten kan ha varit för vid, och att indata är fientlig.",
+    },
+  ]}
+/>
+
+Det motsatta är att lita på ett enda skydd. En brandvägg som är den enda anledningen till att en
+databas utan lösenord är säker fungerar precis tills någon öppnar en port.
+
+## Förebygga vs upptäcka
+
+Två sorters arbete som ofta ställs mot varandra, och som svarar på olika frågor.
+
+<Split
+  leftTitle="Förebygga"
+  rightTitle="Upptäcka"
+  caption="Det ena minskar antalet incidenter. Det andra minskar hur länge de pågår."
+>
+  <div slot="left">
+
+  Parametriserade frågor, minsta privilegium, uppdaterade beroenden, stängda portar.
+
+  Billigast per krona och det du börjar med. En sårbarhet som inte finns kan inte utnyttjas.
+
+  Men det finns alltid en till, och du kommer aldrig att ha täckt allt.
+
+  </div>
+  <div slot="right">
+
+  Loggning, larm, granskningsspår — att över huvud taget märka att något hänt.
+
+  Det som avgör om ett intrång pågår i en timme eller i sju månader.
+
+  Kräver att någon läser signalerna, vilket är hela Observability-delen tillämpad på säkerhet.
+
+  </div>
+</Split>
+
+OWASP:s lista över de vanligaste problemen har en egen post för det senare — bristande loggning och
+larm — vilket säger något om hur ofta det glöms bort.
+
+## Säkerhet vs bekvämlighet
+
+Den avvägning varje beslut i den här artikeln landar i, och den som avgör om åtgärderna överlever.
+
+**Säkerhet** kostar alltid något: ett steg till vid inloggning, en behörighet att begära, ett
+godkännande att vänta på.
+
+**Bekvämlighet** är det som gör att folk faktiskt följer rutinen. Ett skydd som är för jobbigt kringgås
+— med ett delat lösenord i en chatt, eller en behörighet som sattes till allt för att felsökningen
+skulle gå fortare.
+
+Slutsatsen är inte att välja sida. Den är att **ett skydd som kringgås är sämre än ett svagare skydd
+som används**. Den billigaste säkerheten är den som inte märks: en parametriserad fråga, en kortlivad
+token, en stängd port.
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer sällan att göra en formell hotmodell. Det du gör varje vecka är att ställa de två frågorna
+i granskningar: *var kommer den här datan ifrån*, och *vad får den här identiteten göra?*
+
+Du kommer också att vara den som säger nej till en vid behörighet, eller ja till en tillfällig. Att
+kunna skilja på hot, sårbarhet och risk är det som gör det samtalet konkret i stället för
+principiellt.
+
+Formella ramverk, penetrationstester och efterlevnadskrav kan vänta. De blir dina när systemet är
+ditt — och de bygger på samma fyra principer.
+
+## Vanliga nybörjarförväxlingar
+
+Ett hot är inte en sårbarhet. Hotet finns utifrån och går inte bort; sårbarheten är din och går att laga.
+
+En sårbarhet är inte en exploit. Den ena är svagheten, den andra beviset att den går att använda.
+
+Säkerhet är inte en funktion att lägga till på slutet. Det är egenskaper hos beslut du redan fattat.
+
+De flesta angrepp är inte riktade mot dig. De är automatiska och letar efter kända fel i allt som svarar.
+
+Minsta privilegium handlar inte bara om människor. Det gäller varje tjänst, pipeline och identitet.
+
+En brandvägg är inte djupförsvar. Djupförsvar är flera oberoende lager som var för sig får svikta.
+
+Att förebygga ersätter inte att upptäcka. Du kommer att missa något, och då avgör loggarna hur länge.
+
+Ett skydd som alla kringgår är inte ett skydd. Det är en rutin på papper.
+
+## Prova själv
+
+Vi börjar med din egen attackyta. Fråga vad på din maskin som lyssnar efter anslutningar:
+
+```bash
+lsof -iTCP -sTCP:LISTEN -P -n
+```
+
+Du får en rad per lyssnande process, med programmets namn och adressen den lyssnar på. Räkna dem:
+
+```bash
+lsof -iTCP -sTCP:LISTEN -P -n | wc -l
+```
+
+När jag körde detta på en vanlig arbetsdator svarade den **23** — varav en rad är tabellrubriken, så
+tjugotvå lyssnande processer. Det är antagligen fler än du hade gissat, och de flesta är sådant du
+aldrig installerat medvetet.
+
+Nu det som avgör: hur många av dem är nåbara från nätverket?
+
+```bash
+lsof -iTCP -sTCP:LISTEN -P -n | awk '{print $9}' \
+  | grep -c '^\*:'
+```
+
+Adresser som börjar med `*:` lyssnar på **alla** gränssnitt, alltså även nätverkskortet. De som står
+som `127.0.0.1` eller `[::1]` lyssnar bara på maskinen själv. Av mina tjugotvå var åtta av den
+första sorten.
+
+Det är samma `0.0.0.0` mot `127.0.0.1` som Docker-delen tog upp — fast där ville du ha det första,
+och här är det attackyta.
+
+Leta slutligen efter hemligheter i din egen Git-historik, utan att skriva ut dem:
+
+```bash
+git log --all --oneline -S 'password' | wc -l
+```
+
+`-S` letar efter commits där antalet förekomster av strängen ändrades. Ett tal över noll betyder att
+ordet någon gång lagts till eller tagits bort — inte att du har en läcka, men att det är värt att
+titta.
+
+Tre saker som kan förvirra. Utan `sudo` ser `lsof` inte alla processer, så listan är ett golv och
+inte ett tak. `*:` betyder att processen lyssnar brett, men en brandvägg kan ändå blockera trafiken —
+det är alltså attack**yta**, inte bevis på exponering. Och `-S 'password'` träffar oftast variabelnamn
+och konfigurationsnycklar, inte lösenord; poängen är att Git-historiken går att söka i, precis som
+Git-delen varnade för.
+
+<Callout type="kom-ihag">
+- **Hot** kommer utifrån och går inte bort. **Sårbarhet** är din och går att laga. **Risk** är produkten.
+- En sårbarhet med publicerad, aktivt använd exploit är ett problem för i dag, inte för sprintplanen.
+- **Attackytan går att minska.** En stängd port är en sårbarhet som aldrig behöver lagas.
+- Hotmodellering är fyra frågor: vad bygger vi, vad kan gå fel, vad gör vi åt det, blev det bra?
+- Vid varje **förtroendegräns** ska något kontrolleras. Det är där validering hör hemma.
+- **Minsta privilegium** gäller varje identitet — människor, tjänster och pipelines.
+- **Djupförsvar**: flera oberoende lager, där varje antar att det ovanför kan ha svikit.
+- Ett skydd som kringgås är sämre än ett svagare skydd som faktiskt används.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "En kollega säger \"vi har ett hot mot vår databas\". Vad frågar du för att göra det till något att arbeta med?",
+      a: "Vilken sårbarhet hotet skulle utnyttja. Hotet finns oavsett vad ni gör och går inte att ta bort — det är sårbarheten som är er och som går att laga. Utan en utpekad svaghet är påståendet inte en uppgift.",
+    },
+    {
+      q: "En skanning ger 100 sårbarheter. Hur väljer du vilka fem du börjar med?",
+      a: "De som har en känd och helst aktivt använd exploit, och som sitter i något som är nåbart utifrån. Sårbarheten är svagheten, exploiten är beviset att den går att använda — och nåbarheten avgör om hotet över huvud taget kan komma åt den.",
+    },
+    {
+      q: "Vad är den billigaste säkerhetsåtgärden i artikeln, och varför?",
+      a: "Att minska attackytan — att stänga det som inte behöver vara nåbart. En port som är stängd, ett beroende som är borttaget eller en endpoint som inte finns är sårbarheter du aldrig behöver laga, uppdatera eller läsa rådgivningar om.",
+    },
+    {
+      q: "Varför räcker det inte att validera indata i frontend?",
+      a: "För att gränsen mellan det du litar på och det du inte litar på går vid servern, inte vid webbläsaren. Frontend körs på angriparens maskin och kan kringgås helt. Kontrollen hör hemma vid varje förtroendegräns, och den viktigaste är den där anropet kommer in.",
+    },
+    {
+      q: "Ni har en brandvägg framför en databas utan lösenord. Vad är problemet i djupförsvarstermer?",
+      a: "Det finns bara ett lager. Djupförsvar bygger på att varje lager antar att det ovanför kan ha svikit — här finns inget under brandväggen, så en enda felkonfigurerad regel räcker för att exponera databasen helt.",
+    },
+    {
+      q: "Ert team delar ett administratörslösenord i en chatt för att slippa begära behörigheter. Vad säger artikeln om det?",
+      a: "Att skyddet var för obekvämt och därför kringgicks, vilket gör det sämre än ett svagare skydd som faktiskt används. Åtgärden är inte att skälla, utan att göra den rätta vägen tillräckligt smidig — och samtidigt bryter delningen mot minsta privilegium, eftersom alla nu har allt.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- Hotet är vem som vill vad, och det finns oavsett vad du byggt.
+- Sårbarheten är den konkreta svagheten i ditt system. Den är den enda du kan laga med kod.
+- Risken är sannolikhet gånger konsekvens, och det är den en verksamhet kan besluta om.
+- Exploiten är metoden som utnyttjar sårbarheten. Publicerad exploit ändrar hur bråttom det är.
+- Attackytan är allt någon kan skicka något in i — och den går att minska.
+- Hotmodellering är fyra frågor, och den fjärde hoppas oftast över.
+- En förtroendegräns är där data byter från betrott till obetrott. Där ska något kontrolleras.
+- Angriparen vill något konkret. De flesta angrepp är automatiska och inte riktade mot dig.
+- Minsta privilegium: varje identitet får precis vad den behöver, inget mer.
+- Djupförsvar: flera oberoende lager, där varje antar att det ovanför kan ha svikit.
+- Förebygga minskar antalet incidenter, upptäcka minskar hur länge de pågår. Du behöver båda.
+- Ett skydd som kringgås är sämre än ett svagare skydd som används.
+
+## Nästa del
+
+Ramen står. Nu tar vi den vanligaste sårbarhetsklassen på riktigt, och den finns i två speglade
+former.
+
+Nästa del handlar om vad som händer när data blir kod: när användarens text hamnar i en SQL-fråga, och
+när den hamnar i en HTML-sida. Vi kör en riktig injektion i en databas — och samma anrop igen, gjort rätt.

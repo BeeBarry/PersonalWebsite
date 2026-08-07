@@ -976,6 +976,70 @@ def alla():
       + "\n" + txt([(796,108,"p95")],16)
       + "\n" + txt([(440,332,"svarstider, sorterade")],15,' opacity="0.62"') + "\n</svg>")
 
+    # 50 — Cyber 1.0 · Hotet och sprickan
+    # Molnet är streckat i konturen: det är en omständighet, inte ett föremål du
+    # äger. Väggen är heldragen — den är din, och det är sprickan du kan laga.
+    moln=(f'<path d="{circ(132,126,46)}" stroke-dasharray="8 9"/>'
+          f'<path d="{circ(190,112,38)}" stroke-dasharray="8 9"/>'
+          f'<path d="{circ(96,146,30)}" stroke-dasharray="8 9"/>')
+    spricka=('<path d="M620 98 L636 138 L612 174 L640 216 L616 254 L630 286"/>')
+    D['hotet-och-sprickan']=(
+      '<svg viewBox="0 0 880 380" role="img" aria-label="Ett streckat moln till vänster med en '
+      'streckad pil mot en heldragen tegelvägg till höger, där en spricka går genom väggen.">\n'
+      + G % (moln + rader(470,96,320,190,4,(576,682))
+             + spricka
+             + '<path d="M234 132 Q380 128 596 152" stroke-dasharray="8 9"/>' + arrow(602,154))
+      + "\n" + txt([(140,340,"hot"),(630,340,"sårbarhet")],18.5) + "\n</svg>")
+
+    # 51 — Cyber 1.0 · Förtroendegränsen
+    D['fortroendegransen']=(
+      '<svg viewBox="0 0 880 360" role="img" aria-label="En streckad lodrät linje delar bilden. En '
+      'pil från internet korsar linjen genom en kontrollpunkt in i appen. En andra pil från appen '
+      'till databasen korsar ingenting.">\n'
+      + G % ('<path d="M400 40 Q403 170 400 300" stroke-dasharray="9 10" opacity="0.5"/>'
+             + f'<path d="{w(70,140,200,90)}"/>'
+             + f'<path d="{w(490,78,180,84)}"/><path d="{w(490,206,180,84)}"/>'
+             + '<path d="M274 184 Q350 168 476 128"/>' + arrow(482,126)
+             + f'<path d="{circ(400,150,15)}"/>'
+             + '<path d="M580 166 Q582 184 580 198"/>' + arrow(580,204,"down"))
+      + "\n" + txt([(170,192,"internet"),(580,126,"app"),(580,254,"databas")],15)
+      + "\n" + txt([(170,330,"obetrott"),(580,330,"betrott")],18.5) + "\n</svg>")
+
+    # 52 — Cyber 1.1 · Injektionen bryter ut
+    # Luckan är streckad i BÅDA raderna och exakt lika bred. Det är jämförelsen:
+    # samma mall, och lappen nedtill är helt enkelt större än hålet den ska i.
+    def rad(y, sx, sw, mall_y):
+        return (f'<path d="{w(60,y,760,56)}"/>'
+                f'<path d="{w(330,y+8,150,40)}" stroke-dasharray="6 7" opacity="0.45"/>'
+                f'<path d="{w(sx,y+10,sw,36)}"/>')
+    D['injektionen-bryter-ut']=(
+      '<svg viewBox="0 0 880 392" role="img" aria-label="Två likadana remsor med en streckad lucka. '
+      'I den övre ryms lappen i luckan, i den undre är lappen bredare och sticker ut på båda '
+      'sidor.">\n'
+      + G % (rad(80,340,130,0) + rad(240,250,330,0))
+      + "\n" + txt([(405,113,"lisa")],15)
+      + "\n" + txt([(415,273,"' OR '1'='1")],15)
+      + "\n" + txt([(440,180,"avsedd indata"),(440,352,"indata som bryter ut")],18.5)
+      + "\n</svg>")
+
+    # 53 — Cyber 1.1 · XSS vs CSRF
+    # Vänster har en RETURPIL, höger har ingen. Det är hela skillnaden i bilden,
+    # och den motsvarar att angriparen ser svaret i det ena fallet men inte det andra.
+    D['xss-och-csrf']=(
+      '<svg viewBox="0 0 880 372" role="img" aria-label="Till vänster två pilar fram och tillbaka '
+      'mellan angripare och webbläsare. Till höger en streckad pil ner i webbläsaren och en pil '
+      'vidare till tjänsten, utan returpil.">\n'
+      + G % (f'<path d="{w(40,120,146,84)}"/><path d="{w(252,120,150,84)}"/>'
+             + '<path d="M192 146 Q216 145 240 146"/>' + arrow(246,146)
+             + '<path d="M246 180 Q216 181 192 180"/>' + arrow(186,180,"left")
+             + f'<path d="{w(468,120,150,84)}"/><path d="{w(688,120,150,84)}"/>'
+             + '<path d="M624 162 Q652 161 680 162"/>' + arrow(686,162)
+             + f'<path d="{w(486,20,120,52)}"/>'
+             + '<path d="M546 74 Q548 92 546 108" stroke-dasharray="7 8"/>' + arrow(546,114,"down"))
+      + "\n" + txt([(113,168,"angripare"),(327,168,"webbläsare"),
+                    (543,168,"webbläsare"),(763,168,"tjänsten"),(546,52,"angripare")],14)
+      + "\n" + txt([(220,336,"XSS"),(653,336,"CSRF")],18.5) + "\n</svg>")
+
     return D
 
 if __name__ == "__main__":

@@ -1077,4 +1077,70 @@ export const DOODLES: Record<string, string> = {
     <text x="440" y="332">svarstider, sorterade</text>
   </g>
 </svg>`,
+
+  /* ---- Cyber 1.0 · Hotet och sprickan — STIL: HANDRITAD ---- */
+  "hotet-och-sprickan": `
+<svg viewBox="0 0 880 380" role="img" aria-label="Ett streckat moln till vänster med en streckad pil mot en heldragen tegelvägg till höger, där en spricka går genom väggen.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M131 80 Q177 81 178 126 Q177 171 132 171 Q87 171 86 126 Q87 81 131 80 Z" stroke-dasharray="8 9"/><path d="M190 74 Q227 75 228 113 Q227 149 191 151 Q153 149 152 112 Q153 75 190 74 Z" stroke-dasharray="8 9"/><path d="M96 117 Q125 117 126 146 Q125 175 96 175 Q67 175 67 145 Q67 117 96 117 Z" stroke-dasharray="8 9"/><path d="M470 97 Q630 96 789 96 Q792 191 790 285 Q630 288 469 285 Q468 191 470 97 Z"/><path d="M472 144 Q630 142 788 144"/><path d="M472 191 Q630 190 788 191"/><path d="M472 238 Q630 238 788 238"/><path d="M576 98 Q577 191 576 284"/><path d="M682 98 Q683 191 682 284"/><path d="M620 98 L636 138 L612 174 L640 216 L616 254 L630 286"/><path d="M234 132 Q380 128 596 152" stroke-dasharray="8 9"/><path d="M589 148 L602 154 L589 160"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="140" y="340">hot</text>
+    <text x="630" y="340">sårbarhet</text>
+  </g>
+</svg>`,
+
+  /* ---- Cyber 1.0 · Förtroendegränsen — STIL: HANDRITAD ---- */
+  "fortroendegransen": `
+<svg viewBox="0 0 880 360" role="img" aria-label="En streckad lodrät linje delar bilden. En pil från internet korsar linjen genom en kontrollpunkt in i appen. En andra pil från appen till databasen korsar ingenting.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M400 40 Q403 170 400 300" stroke-dasharray="9 10" opacity="0.5"/><path d="M70 140 Q170 140 270 140 Q271 185 270 231 Q170 231 69 231 Q70 185 70 140 Z"/><path d="M489 78 Q580 77 671 78 Q671 120 671 162 Q580 163 490 162 Q489 120 489 78 Z"/><path d="M489 206 Q580 204 669 207 Q670 248 670 291 Q580 292 490 290 Q489 248 489 206 Z"/><path d="M274 184 Q350 168 476 128"/><path d="M469 120 L482 126 L469 132"/><path d="M400 135 Q415 135 416 149 Q415 165 399 166 Q385 165 385 150 Q385 135 400 135 Z"/><path d="M580 166 Q582 184 580 198"/><path d="M574 191 L580 204 L586 191"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle">
+    <text x="170" y="192">internet</text>
+    <text x="580" y="126">app</text>
+    <text x="580" y="254">databas</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="170" y="330">obetrott</text>
+    <text x="580" y="330">betrott</text>
+  </g>
+</svg>`,
+
+  /* ---- Cyber 1.1 · Injektionen bryter ut — STIL: HANDRITAD ---- */
+  "injektionen-bryter-ut": `
+<svg viewBox="0 0 880 392" role="img" aria-label="Två likadana remsor med en streckad lucka. I den övre ryms lappen i luckan, i den undre är lappen bredare och sticker ut på båda sidor.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M61 81 Q440 78 821 79 Q820 108 820 137 Q440 136 61 135 Q59 108 61 81 Z"/><path d="M331 88 Q405 87 480 87 Q482 108 480 129 Q405 130 330 128 Q328 108 331 88 Z" stroke-dasharray="6 7" opacity="0.45"/><path d="M340 90 Q405 88 470 89 Q471 108 470 126 Q405 126 340 125 Q338 108 340 90 Z"/><path d="M61 239 Q440 238 820 239 Q821 268 821 295 Q440 298 60 297 Q59 268 61 239 Z"/><path d="M330 247 Q405 248 480 248 Q481 268 481 288 Q405 289 330 288 Q329 268 330 247 Z" stroke-dasharray="6 7" opacity="0.45"/><path d="M251 249 Q415 250 581 251 Q581 268 580 286 Q415 287 250 285 Q249 268 251 249 Z"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle">
+    <text x="405" y="113">lisa</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle">
+    <text x="415" y="273">' OR '1'='1</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="440" y="180">avsedd indata</text>
+    <text x="440" y="352">indata som bryter ut</text>
+  </g>
+</svg>`,
+
+  /* ---- Cyber 1.1 · XSS vs CSRF — STIL: HANDRITAD ---- */
+  "xss-och-csrf": `
+<svg viewBox="0 0 880 372" role="img" aria-label="Till vänster två pilar fram och tillbaka mellan angripare och webbläsare. Till höger en streckad pil ner i webbläsaren och en pil vidare till tjänsten, utan returpil.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M41 121 Q113 119 185 120 Q188 162 186 204 Q113 205 41 204 Q39 162 41 121 Z"/><path d="M252 121 Q327 120 402 121 Q404 162 402 203 Q327 204 252 204 Q250 162 252 121 Z"/><path d="M192 146 Q216 145 240 146"/><path d="M233 140 L246 146 L233 152"/><path d="M246 180 Q216 181 192 180"/><path d="M199 174 L186 180 L199 186"/><path d="M467 121 Q543 120 617 119 Q619 162 619 204 Q543 204 467 204 Q467 162 467 121 Z"/><path d="M688 120 Q763 118 839 121 Q840 162 839 203 Q763 204 688 204 Q686 162 688 120 Z"/><path d="M624 162 Q652 161 680 162"/><path d="M673 156 L686 162 L673 168"/><path d="M486 19 Q546 20 607 20 Q608 46 606 72 Q546 74 485 72 Q484 46 486 19 Z"/><path d="M546 74 Q548 92 546 108" stroke-dasharray="7 8"/><path d="M540 101 L546 114 L552 101"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="middle">
+    <text x="113" y="168">angripare</text>
+    <text x="327" y="168">webbläsare</text>
+    <text x="543" y="168">webbläsare</text>
+    <text x="763" y="168">tjänsten</text>
+    <text x="546" y="52">angripare</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="220" y="336">XSS</text>
+    <text x="653" y="336">CSRF</text>
+  </g>
+</svg>`,
 };
