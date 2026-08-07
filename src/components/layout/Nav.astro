@@ -11,8 +11,15 @@ const items = site.navigation.filter(
 );
 ---
 
+{/* Under lg: ett rutnät om tre kolumner, INTE en scrollande rad. Fem poster
+    blir 3 + 2 och syns allihop utan att någon behöver dras i sidled.
+
+    En enda rad går inte att få till: 375 px ger 343 px innanför padding, och
+    ”Fältnoteringar” ensam mäter ~84 px vid 11 px halvfet. Fem poster hade
+    behövt 64 px var. Att korta ned etiketterna hade lösts på bekostnad av att
+    de säger vad de säger — två rader kostar 40 px och behåller orden. */}
 <nav
-  class="no-scrollbar flex gap-2 overflow-x-auto lg:flex-1 lg:flex-col lg:gap-2 lg:overflow-x-visible"
+  class="mt-2.5 grid grid-cols-3 gap-1.5 lg:mt-0 lg:flex lg:flex-1 lg:flex-col lg:gap-2"
 >
   {
     items.map((item) => {
@@ -24,18 +31,18 @@ const items = site.navigation.filter(
           href={item.href}
           aria-current={isActive ? "page" : undefined}
           class:list={[
-            // Under lg: en scrollbar rad (shrink-0 så posterna behåller sin
-            // bredd i stället för att wrappa till en ojämn 3+1-layout).
-            "group flex min-w-0 items-center justify-center rounded-xl border border-transparent px-4 py-3 transition-all max-lg:shrink-0 lg:px-3 lg:py-2.5 lg:justify-between",
+            // Under lg: en cell i rutnätet. Kompakt padding och centrerad
+            // text så de längsta etiketterna ryms i en tredjedels bredd.
+            "group flex min-w-0 items-center justify-center rounded-lg border border-transparent px-1.5 py-1.5 text-center transition-all lg:rounded-xl lg:px-3 lg:py-2.5 lg:justify-between lg:text-left",
             isActive
               ? "border-primary/20 bg-primary/10 lg:hover:bg-primary/15"
               : "hover:bg-muted/50",
           ]}
         >
-          <div class="flex flex-col">
+          <div class="flex min-w-0 flex-col max-lg:w-full">
             <span
               class:list={[
-                "text-[13px] font-bold leading-tight",
+                "truncate text-[11px] font-bold leading-tight lg:text-[13px]",
                 isActive
                   ? "text-primary"
                   : "text-muted-foreground group-hover:text-primary",

@@ -286,7 +286,7 @@ docker volume rm testvol
 ```
 
 Tre saker som kan förvirra: `docker volume inspect` visar en `Mountpoint` som ser ut som en vanlig
-sökväg, men på macOS och Windows finns den inte på din disk — den ligger inuti den Linux-maskin
+sökväg, men på macOS och Windows finns den inte på din disk. Den ligger inuti den Linux-maskin
 Docker Desktop kör i bakgrunden. `docker volume ls` visar dessutom volymer med långa hash-namn som du
 aldrig skapat; det är anonyma volymer från images som `postgres`. Och `docker volume rm` vägrar så
 länge någon container använder volymen, vilket är avsiktligt.

@@ -365,9 +365,8 @@ Låt det fönstret stå öppet och anropa `http://localhost:8080` i ett annat. D
 hela den externa kedjan — vilket är exakt varför `port-forward` är rätt verktyg för felsökning och
 fel verktyg för drift.
 
-Tre saker som kan förvirra: `port-forward` blockerar terminalen tills du avbryter med Ctrl+C, en
-LoadBalancer-Service i ett lokalt kluster kan bli stående på `<pending>` för alltid eftersom ingen
-molnleverantör finns, och i nyare Kubernetes-versioner har `endpoints` ersatts av `endpointslices` —
+Tre saker som kan förvirra: `port-forward` blockerar terminalen tills du avbryter med Ctrl+C. En LoadBalancer-Service i ett lokalt kluster kan bli stående på `<pending>` för alltid eftersom ingen
+molnleverantör finns. I nyare Kubernetes-versioner har `endpoints` ersatts av `endpointslices` —
 `kubectl get endpointslices` visar samma sak med mer detaljer.
 
 <Callout type="kom-ihag">
@@ -425,4 +424,4 @@ molnleverantör finns, och i nyare Kubernetes-versioner har `endpoints` ersatts 
 ## Nästa del
 
 I nästa del tar vi hand om det som ligger *inuti* poddarna: hur samma image kan köras i test och
-produktion med olika inställningar, och hur Kubernetes egentligen avgör om en pod mår bra.
+produktion med olika inställningar. Och hur Kubernetes egentligen avgör om en pod mår bra.

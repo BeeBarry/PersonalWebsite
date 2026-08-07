@@ -250,7 +250,7 @@ Klientvalidering är alltså inte onödig. Den är bara inte skydd.
 
 Så länge någon använder ditt API är formen på svaret ett löfte.
 
-Att byta namn på ett fält, ta bort det, eller ändra dess typ är en **brytande ändring**: klienter som
+Att byta namn på ett fält, ta bort det, eller ändra dess typ är en **brytande ändring**. Klienter som
 fungerade i går slutar fungera i dag utan att de ändrat något.
 
 Att *lägga till* ett fält är däremot normalt ofarligt, eftersom klienter som inte känner till det
@@ -330,8 +330,7 @@ representationer** — vilket är exakt vad avsnittet om API vs webbsida beskrev
 Titta slutligen på hur många fält svaret faktiskt innehåller, och fråga dig vilka av dem GitHub valt
 att ta med och vilka som ligger kvar i deras databas.
 
-Två saker som kan förvirra: utan inloggning tillåter GitHub omkring sextio anrop i timmen, och
-därefter får du `403` med ett meddelande om rate limit — det ser ut som ett behörighetsfel men är en
+Två saker som kan förvirra: utan inloggning tillåter GitHub omkring sextio anrop i timmen. Därefter får du `403` med ett meddelande om rate limit — det ser ut som ett behörighetsfel men är en
 hastighetsgräns. Och `curl` utan `-s` skriver ut en förloppsindikator som blandas med svaret.
 
 <Callout type="kom-ihag">

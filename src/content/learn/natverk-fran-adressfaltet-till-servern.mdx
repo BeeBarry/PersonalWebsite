@@ -225,7 +225,7 @@ Lägger du in en rad där pekar namnet dit du säger, oavsett vad DNS tycker. De
 att testa en sajt lokalt under sitt riktiga namn.
 
 Det är också en klassisk källa till förvirring: en gammal rad i `/etc/hosts` kan få *din* dator att
-bete sig helt annorlunda än alla andras, och ingenting i felsökningen pekar dit.
+bete sig helt annorlunda än alla andras. Ingenting i felsökningen pekar dit.
 
 ## HTTP vs HTTPS
 
@@ -290,8 +290,8 @@ Samma fel, samma orsak och samma lösning som portmappningen i Docker-serien.
 
 ## Vad det här betyder i ditt arbete
 
-Du kommer att felsöka anslutningar varje vecka: en container som inte når en databas, en app som
-inte når ett API, en kollega som inte når det du just rullat ut.
+Du kommer att felsöka anslutningar varje vecka. Det är en container som inte når en databas, en app som
+inte når ett API, eller en kollega som inte når det du just rullat ut.
 
 Det du gör i praktiken är att gå kedjan uppifrån och ner och avgöra var den brast. Skillnaden
 mellan `refused` och `timeout` gör hälften av jobbet, och `curl -v` gör resten.

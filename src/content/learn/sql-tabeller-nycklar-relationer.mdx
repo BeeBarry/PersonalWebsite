@@ -301,7 +301,7 @@ adressrad två.
 
 **`0`** betyder att vi vet, och att värdet är noll. Rabatten är angiven till ingenting.
 
-Blandas de ihop blir summeringar och filter fel på sätt som är svåra att upptäcka: `AVG(rabatt)`
+Blandas de ihop blir summeringar och filter fel på sätt som är svåra att upptäcka. `AVG(rabatt)`
 hoppar över `NULL` men räknar med `0`, vilket ger två helt olika medelvärden ur samma data.
 
 Bestäm vilket av de tre kolumnen faktiskt ska kunna innehålla, och skriv ner det i schemat.
@@ -313,8 +313,7 @@ Bestäm vilket av de tre kolumnen faktiskt ska kunna innehålla, och skriv ner d
 Du kommer att läsa scheman oftare än du designar dem, och det du gör mest är att lägga till en
 kolumn eller en tabell i något som redan finns.
 
-Två vanor från det här avsnittet betalar sig direkt: lägg villkoren i databasen även när koden redan
-kontrollerar, och fråga alltid vad `NULL` ska betyda i en ny kolumn innan du tillåter den.
+Två vanor från det här avsnittet betalar sig direkt: lägg villkoren i databasen även när koden redan kontrollerar. Och fråga alltid vad `NULL` ska betyda i en ny kolumn innan du tillåter den.
 
 Normalformer, partitionering och replikering kan vänta. Normalisering är för övrigt bara det
 formella namnet på regeln du just lärt dig — varje faktum på ett ställe — och du klarar dig länge på

@@ -255,7 +255,7 @@ fil du kan versionshantera, i stället för i ett kommando någon måste komma i
 Du kommer att köra `docker compose up` varje morgon och `docker build` varje gång du ändrat något
 som ska paketeras. De två kommandona bär det mesta av vardagen.
 
-Du kommer också att läsa andras Dockerfiles och Compose-filer i merge requests, och det är där de
+Du kommer också att läsa andras Dockerfiles och Compose-filer i merge requests. Det är där de
 fyra begreppen betalar sig: du behöver kunna se på en rad om den rör imagen eller containern,
 bygget eller körningen.
 
@@ -307,7 +307,7 @@ docker images
 ```
 
 Två saker som kan förvirra: `docker ps` utan `-a` är den vanligaste anledningen till att folk tror
-att en container "försvann", och första körningen tar längre tid eftersom imagen hämtas — därefter
+att en container "försvann". Första körningen tar längre tid eftersom imagen hämtas — därefter
 går den på en bråkdel av tiden.
 
 <Callout type="kom-ihag">

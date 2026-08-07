@@ -250,7 +250,7 @@ Det finns ett fjärde: `terraform destroy` river allt som beskrivningen äger. D
 **State** är Terraforms anteckning om de resurser den hanterar.
 
 När `apply` skapat resursgruppen skriver Terraform ner vad den gjorde i en fil som heter
-`terraform.tfstate`: vilka resurser som finns, vilka id:n de har hos leverantören och de värden
+`terraform.tfstate`. Där står vilka resurser som finns, vilka id:n de har hos leverantören och de värden
 Terraform behöver för att jämföra dem med konfigurationen.
 
 En befintlig resurs kan också tas in i state med import. Filen skapas och läses av Terraform, och du

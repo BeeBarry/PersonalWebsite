@@ -212,7 +212,7 @@ komma åt något från din dator är `ports` det enda som gör skillnad.
 <Callout type="fallgrop">
 Applikationen inuti containern måste lyssna på `0.0.0.0`, inte på `127.0.0.1`. Många ramverk lyssnar
 på `127.0.0.1` som standard i utvecklingsläge, och då släpps bara trafik som redan är inne i
-containern fram — portmappningen ser ut att vara trasig fast felet ligger i appen.
+containern fram. Portmappningen ser ut att vara trasig fast felet ligger i appen.
 
 Symtomet är typiskt: containern körs, loggen ser glad ut, och webbläsaren säger *tom svarsfil*.
 </Callout>

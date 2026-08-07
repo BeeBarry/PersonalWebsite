@@ -2,6 +2,12 @@
 // Persistent vänster-sidebar (Breeze-arkitektur): varumärke, navigation,
 // sociala länkar + temaväxlare. På mobil blir den en topprad (border-b),
 // på desktop en kolumn till vänster (border-r) medan main scrollar höger.
+//
+// MOBILHÖJDEN är den styrande begränsningen. Tidigare låg tre block under
+// varandra — märke, nav, och en rad med sociala ikoner + temaväxlare — vilket
+// åt ~150 px av 812 innan sidans innehåll ens började. Nu ligger märke,
+// sociala ikoner och temaväxlare på SAMMA rad, och navigationen på nästa.
+// Två rader i stället för tre, och padding nedskuren från 20 till 12 px.
 import site from "../../config/site";
 import Nav from "./Nav.astro";
 import ThemeToggle from "./ThemeToggle.astro";
@@ -10,19 +16,43 @@ import { Icon } from "astro-icon/components";
 ---
 
 <aside
-  class="flex w-full flex-col border-b border-border bg-muted/20 p-5 lg:w-[14.5rem] lg:shrink-0 lg:border-r lg:border-b-0 lg:p-7"
+  class="flex w-full flex-col border-b border-border bg-muted/20 px-4 py-2.5 lg:w-[14.5rem] lg:shrink-0 lg:border-r lg:border-b-0 lg:p-7"
 >
-  <Brand />
+  {/* Toppraden på mobil: lettermärket till vänster, ikonerna till höger i
+      samma baslinje. På desktop faller den isär igen — märket överst, och
+      ikonerna hamnar i sin egen rad längst ned (blocket sist i filen). */}
+  <div class="flex items-center justify-between gap-3 lg:block">
+    <Brand />
 
-  <Nav />
-
-  <div class="mt-5 flex items-center justify-between lg:mt-8">
-    <div class="flex gap-1 lg:gap-3.5">
+    <div class="flex items-center gap-0.5 lg:hidden">
       {
         site.social.map((item) => (
           <a
             href={item.href}
-            class="p-2 text-muted-foreground transition-colors hover:text-primary lg:p-0"
+            class="p-1.5 text-muted-foreground transition-colors hover:text-primary"
+            aria-label={item.name}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Icon name={item.icon} size={16} />
+          </a>
+        ))
+      }
+      <ThemeToggle />
+    </div>
+  </div>
+
+  <Nav />
+
+  {/* Desktopens egen rad. Dold på mobil, där samma innehåll redan ligger
+      uppe hos märket. */}
+  <div class="mt-8 hidden items-center justify-between lg:flex">
+    <div class="flex gap-3.5">
+      {
+        site.social.map((item) => (
+          <a
+            href={item.href}
+            class="text-muted-foreground transition-colors hover:text-primary"
             aria-label={item.name}
             target="_blank"
             rel="noopener noreferrer"

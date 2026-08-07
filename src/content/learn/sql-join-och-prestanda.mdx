@@ -318,8 +318,7 @@ frågemönstret tydligare.
 Du kommer att skriva `JOIN` i många frågor som hämtar data från flera tabeller. N+1 är ett
 frågemönster att känna igen och förebygga när listor och relationer växer.
 
-Två vanor räcker långt: kör `EXPLAIN` på frågor som känns långsamma i stället för att gissa, och
-logga antalet databasfrågor per API-anrop så att N+1 syns medan tabellerna fortfarande är små.
+Två vanor räcker långt: kör `EXPLAIN` på frågor som känns långsamma i stället för att gissa. Och logga antalet databasfrågor per API-anrop så att N+1 syns medan tabellerna fortfarande är små.
 
 Query planners, partitionering och replikering kan vänta. De blir aktuella när ett index inte längre
 räcker — och då är `EXPLAIN` fortfarande verktyget du börjar med.

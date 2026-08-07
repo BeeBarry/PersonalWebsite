@@ -21,9 +21,15 @@ const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
           punkter större än brödtexten. Bild 64→80, rubrik 24→28, certifikat
           12→13 — steget till avsnittsrubrikerna (10px mono) och brödtexten
           (14px) är nu entydigt. */}
-      <div class="flex items-start gap-4">
+      {/* MOBIL: bild och rubrik på en rad, certifikaten på egen rad under —
+          alla tre med samma vänsterkant. Tidigare låg certifikaten indragna
+          under rubriken i bildens högerspalt, vilket gav blocket tre olika
+          vänsterkanter och en ragg som lästes som slarv. Bilden är dessutom
+          nedskalad till 64 px på mobil; 80 px tvingade rubriken att brytas
+          till tre rader. */}
+      <div class="flex items-start gap-3.5 sm:gap-4">
         <div
-          class="h-20 w-20 shrink-0 overflow-hidden rounded-full ring-1 ring-border"
+          class="h-16 w-16 shrink-0 overflow-hidden rounded-full ring-1 ring-border sm:h-20 sm:w-20"
         >
           <Image
             src={profilePic}
@@ -34,31 +40,38 @@ const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
             loading="eager"
           />
         </div>
-        <div class="min-w-0 pt-1">
+        <div class="min-w-0 pt-0.5 sm:pt-1">
           {/* Rollen är sidans h1 — mb-0 nollar h1:ns basmarginal från @layer base,
               och text-foreground i stället för accent: accentfärg på stor fet
               text blir skrikig och tappar kontrast. */}
           <h1
-            class="mb-0 text-[1.75rem] leading-tight font-extrabold tracking-tight text-foreground"
+            class="mb-0 text-[1.5rem] leading-tight font-extrabold tracking-tight text-foreground sm:text-[1.75rem]"
           >
             {site.hero.role}
           </h1>
-          {/* Certifikat: leverantörslogga (Iconify) + officiellt namn.
-              Mindre och dämpade så de läses som meriter under rollen. */}
-          <ul class="mt-2.5 flex flex-wrap gap-x-5 gap-y-1.5">
-            {
-              site.certs.map((c) => (
-                <li class="inline-flex items-center gap-1.5">
-                  <Icon name={c.icon} class="h-[19px] w-[19px] shrink-0" />
-                  <span class="text-[13px] font-medium text-foreground/80">
-                    {c.name}
-                  </span>
-                </li>
-              ))
-            }
-          </ul>
         </div>
       </div>
+
+      {/* Certifikaten ligger i EGET block under bild+rubrik, på alla bredder.
+          Indragna i rubrikens spalt gav de hero:t tre olika vänsterkanter, och
+          på mobil bröts de dessutom mitt i namnet.
+
+          De renderas EN gång. Två listor med samma ikoner fick astro-icon att
+          växla till sprite-läge (<symbol> + <use>), och då tappar rot-SVG:n sin
+          viewBox — Azure-logotypen klipptes till en blå parallellogram oavsett
+          vilken storlek den sattes i. En lista, ett korrekt renderat märke. */}
+      <ul class="mt-4 flex flex-col gap-2 sm:mt-3.5 sm:flex-row sm:flex-wrap sm:gap-x-5 sm:gap-y-1.5">
+        {
+          site.certs.map((c) => (
+            <li class="inline-flex items-center gap-2">
+              <Icon name={c.icon} class="h-[18px] w-auto shrink-0 sm:h-[19px]" />
+              <span class="text-[12.5px] leading-snug font-medium text-foreground/80 sm:text-[13px]">
+                {c.name}
+              </span>
+            </li>
+          ))
+        }
+      </ul>
 
       <!-- Ingång till Teknik-guiden (HR-fliken) — riktad till rekryterare.
            Indraget till hero-textens vänsterkant (bildens 4rem + gap 1rem) och
@@ -69,10 +82,15 @@ const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
           fast den är en sidoingång för en av flera besökartyper, inte sidans
           budskap. Högerkanten är den lugnaste platsen på en vänsterläst sida:
           den syns, men först efter rubrik och meriter. */}
-      <div class="mt-4 flex justify-end">
+      {/* På mobil går den i full bredd med innehållet vänsterställt — samma
+          kant som allt annat i hero:t. Högerställd på en 375 px-skärm lämnade
+          den en kil tomrum till vänster som gjorde blocket snett. Från sm och
+          uppåt är högerkanten fortfarande rätt plats: där finns bredd nog att
+          den läser som en sidoingång. */}
+      <div class="mt-4 flex sm:justify-end">
         <a
           href="/for-hr/"
-          class="group inline-flex items-center gap-2 rounded-full border border-border bg-muted/10 py-1.5 pr-2.5 pl-3 transition-colors hover:border-primary/40 hover:bg-muted/20"
+          class="group flex w-full items-center gap-2 rounded-full border border-border bg-muted/10 py-2 pr-2.5 pl-3 transition-colors hover:border-primary/40 hover:bg-muted/20 sm:inline-flex sm:w-auto sm:py-1.5"
         >
           <Icon
             name="mdi:account-group-outline"
@@ -201,10 +219,20 @@ const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
 
           break-inside: avoid håller en grupp samlad; utan den kunde en rubrik
           hamna sist i en spalt och sina poster först i nästa. */}
-      <div class="columns-1 gap-x-6 sm:columns-2 lg:columns-3">
+      {/* Två spalter redan på mobil. En spalt gav femton poster staplade
+          vertikalt och en sektion som var 780 px hög på en 375 px-skärm —
+          posterna är korta (ikon + ett ord), så halva radbredden räcker gott
+          och sektionen blir hälften så hög. */}
+      {/* MOBIL: grupperna ligger kvar i full bredd, men POSTERNA inom varje
+          grupp går i två kolumner. Ett tvåspaltsflöde över hela sektionen
+          testades först och balanserade illa — grupperna är 5, 5, 8, 4 och 6
+          poster långa, så spalt ett fick 18 och spalt två 10, med ett stort
+          tomrum nere till höger. Att dela varje grupp för sig ger jämna
+          kolumner och halverar ändå sektionens höjd. */}
+      <div class="columns-1 gap-x-4 sm:columns-2 sm:gap-x-6 lg:columns-3">
         {
           site.stackGroups.map((group) => (
-            <div class="mb-7 break-inside-avoid last:mb-0">
+            <div class="mb-6 break-inside-avoid last:mb-0 sm:mb-7">
               {/* Gruppnamnet är en ETIKETT, inte innehåll — det körs därför i
                   sajtens etikettidiom (mono, versaler, dämpad), samma som
                   ”Verktyg & tekniker” en nivå upp. Förut låg det på
@@ -224,10 +252,10 @@ const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
                   sektionen. Det lyfter dessutom de enfärgade ikonerna, som
                   ärver currentColor — nRF, Zephyr, SQL och protokollen var
                   tidigare lika dämpade som brödtext. */}
-              <ul class="space-y-2.5">
+              <ul class="grid grid-cols-2 gap-x-3 gap-y-2 sm:block sm:space-y-2.5">
                 {group.items.map((t) => (
                   <li class="flex items-center gap-2 text-[12.5px] text-foreground/90">
-                    <Icon name={t.icon} class="h-[18px] w-[18px] shrink-0" />
+                    <Icon name={t.icon} class="h-[16px] w-auto shrink-0" />
                     <span class="truncate">{t.name}</span>
                   </li>
                 ))}
