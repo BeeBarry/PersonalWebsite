@@ -73,6 +73,7 @@ const learn = defineCollection({
       "git",
       "api",
       "sql",
+      "embedded",
     ]),
     image: z.object({ url: z.string(), alt: z.string() }).optional(),
     // Serienumreringen är tvånivåig: DEL.STEG (1.0, 1.1, 2.0 …). `part` är delen

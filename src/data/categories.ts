@@ -97,6 +97,16 @@ export const categories: Category[] = [
         domain: "web",
         isVisible: true,
     },
+    // Enda kategorin i domänen embedded. Utan den döljer domänfiltret på
+    // learn-hub hela domänen, eftersom det bara listar domäner med artiklar.
+    {
+        title: "IoT & Embedded",
+        description: "När datorn är liten, batteridriven och sitter någon annanstans.",
+        icon: "mdi:chip",
+        slug: "embedded",
+        domain: "embedded",
+        isVisible: true,
+    },
     {
         title: "Git & versionshantering",
         description: "Ögonblicksbilder, grenar och konflikter — utan magi.",
