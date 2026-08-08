@@ -1,0 +1,471 @@
+---
+title: 'CoAP och MQTT'
+description: 'Varför uppkopplade enheter sällan pratar HTTP — och vad de gör i stället'
+category: 'embedded'
+part: 1
+order: 2
+date: '2026-08-08'
+tags: ['Beginner', 'MQTT', 'CoAP']
+---
+
+## Var vi är
+
+Förra delen slutade med strömbudgeten: enheten sover 899 sekunder och är vaken en, och varje
+förlängd vaken sekund kostar batteritid.
+
+Nu ska den säga något. Ett mätvärde var kvart, eller ett larm när något händer. Och den ska kunna ta
+emot ett kommando — trots att den sitter bakom en router någon annan äger.
+
+Den första reflexen från webben är att låta enheten göra ett `POST` till ett API. Nätverksserien och
+API-serien har ju redan gett dig allt som behövs för det.
+
+Nästan ingen gör så, och skälen har mindre med protokollteori att göra än med radiotid och riktning.
+Zoomen ligger på de två protokoll du möter oftast. Zigbee, LoRaWAN och NB-IoT ligger utanför.
+
+<Del titel="Varför inte HTTP" />
+
+## Vad overheaden kostar
+
+Ett HTTP-anrop bär mycket mer än sitt innehåll, och för fyra byte temperatur är förhållandet absurt.
+
+Innan en enda byte nyttolast skickas krävs en TCP-handskakning och sedan en TLS-handskakning — de
+tre respektive fyra turer nätverksdelen och TLS-delen gick igenom. Först därefter kommer headers.
+
+Storleksordningen går att mäta. Svarets headers från ett vanligt API:
+
+```
+svar-headers: 1091 byte
+```
+
+Drygt tusen byte metadata, för ett svar vars innehåll är en textrad. Lägg till anropets egna headers,
+handskakningarna, och att radion måste vara på under hela utbytet.
+
+För en enhet på mobilnät multipliceras det med tusen enheter och fyra gånger i timmen. Kostnaden är
+inte processorcykler — det är sändningstid och därmed batteri.
+
+## Vem som ringer vem
+
+HTTP är byggt för att klienten frågar och servern svarar. En sensor vänder på båda rollerna.
+
+Sensorn vill **säga något** utan att någon frågat: ett mätvärde, ett larm. Och den vill kunna **ta
+emot** ett kommando — öppna ventilen, byt intervall — utan att först ha frågat om det finns ett.
+
+Med HTTP blir lösningen att enheten pollar: frågar med jämna mellanrum om det finns något nytt.
+Vilket betyder att radion går igång även när svaret är nej, vilket det nästan alltid är.
+
+## Varför NAT stänger dörren
+
+Enheten sitter oftast bakom en router som gör **NAT**, och har därmed ingen adress som går att nå
+utifrån.
+
+Det spelar ingen roll hur gärna din server vill skicka ett kommando. Det finns ingen väg in — precis
+som din laptop hemma inte går att ansluta till från internet utan att någon öppnat en port.
+
+Slutsatsen styr båda protokollen i den här delen: **enheten måste öppna anslutningen**, och den
+anslutningen måste kunna bära trafik åt båda hållen. MQTT löser det genom att hålla anslutningen
+öppen. CoAP genom att göra varje utbyte så litet att det inte spelar roll.
+
+<Doodle
+  name="dorren-oppnas-inifran"
+  caption="Utifrån in går inte. Öppnar enheten själv bär samma väg åt båda hållen."
+/>
+
+<Del titel="MQTT" />
+
+## Vad MQTT är
+
+**MQTT** är ett protokoll där enheter skickar meddelanden till en central **broker**, som
+vidarebefordrar dem till dem som vill ha dem.
+
+Brokern är navet. Ingen enhet pratar med en annan enhet — alla pratar med brokern, och den håller
+reda på vem som är intresserad av vad.
+
+Anslutningen är en TCP-anslutning som **hålls öppen**. Det löser NAT-problemet: eftersom enheten
+öppnade den kan brokern skicka tillbaka genom samma anslutning när som helst.
+
+Priset är att anslutningen måste hållas vid liv, med små `PINGREQ`-paket. För en enhet med
+nätanslutning är det billigt. För en enhet på ett litet batteri är det ofta för dyrt, och där blir
+nästa protokoll intressant.
+
+## Vad ett topic är
+
+Ett **topic** är en hierarkisk sträng som beskriver vad meddelandet handlar om.
+
+```
+hus/kok/temperatur
+hus/vardagsrum/temperatur
+hus/kok/fukt
+```
+
+Snedstrecken är en hierarki men inte en sökväg — det finns inget filsystem bakom. Strängen är bara en
+etikett brokern matchar mot.
+
+Prenumeranter kan använda jokertecken. `hus/+/temperatur` matchar en nivå och ger alla rummens
+temperaturer; `hus/#` matchar allt under `hus`.
+
+Det är därför namngivningen är det första designbeslutet i ett MQTT-system. En bra topic-struktur gör
+att nya prenumeranter kan plocka precis det de behöver, utan att någon ändrar i enheterna.
+
+## Publish/subscribe vs request/response
+
+Den grundläggande skillnaden mot allt du sett i API-serien.
+
+**Request/response** kopplar ihop två parter i tiden. Klienten frågar, servern svarar, och båda måste
+vara igång samtidigt.
+
+**Publish/subscribe** kopplar isär dem. Enheten publicerar och bryr sig inte om vem som lyssnar —
+kanske ingen, kanske fem. Brokern står emellan.
+
+Det gör systemet lättare att bygga ut. En ny tjänst som vill ha temperaturdata prenumererar på
+topicet, och ingen enhet behöver ändras eller ens veta om det.
+
+Priset är att avsändaren inte får något svar. Publicerade du något som ingen lyssnade på? Du vet
+inte, och det är en avsiktlig egenskap.
+
+## QoS 0 vs 1 vs 2
+
+MQTT har tre leveransgarantier, och valet är en avvägning mellan säkerhet och radiotid.
+
+**QoS 0 — högst en gång.** Meddelandet skickas och glöms. Inget svar, inga omsändningar. Ett paket.
+
+**QoS 1 — minst en gång.** Brokern kvitterar. Uteblir kvittot skickas meddelandet om, vilket betyder
+att mottagaren kan få det två gånger. Två paket.
+
+**QoS 2 — exakt en gång.** En fyrvägs handskakning som garanterar att meddelandet levereras precis
+en gång. Fyra paket.
+
+Tumregeln: QoS 0 för mätvärden som kommer igen om en kvart ändå. QoS 1 för larm och kommandon. QoS 2
+nästan aldrig.
+
+## Vad retained betyder
+
+Ett **retained**-meddelande sparas av brokern och skickas direkt till varje ny prenumerant.
+
+Utan det får en ny prenumerant vänta till nästa publicering. Prenumererar en instrumentpanel på
+`hus/kok/temperatur` och sensorn skickar var femtonde minut, kan panelen stå tom i fjorton minuter.
+
+Med retained får den senast kända värdet omedelbart. Ett per topic — det är det senaste, inte en
+historik.
+
+## Vad Last Will är
+
+**Last Will and Testament** är ett meddelande enheten lämnar hos brokern vid anslutning, som brokern
+publicerar om anslutningen dör oväntat.
+
+Enheten talar alltså om i förväg vad som ska sägas om den tystnar: typiskt `hus/kok/status` med
+innehållet `offline`.
+
+Det löser ett verkligt problem. En enhet som tappar strömmen kan inte meddela att den försvann, och
+brokern är den enda som märker det. Utan LWT ser en död sensor likadan ut som en som bara inte har
+något nytt att säga.
+
+<Del titel="CoAP" />
+
+## Vad CoAP är
+
+**CoAP**, Constrained Application Protocol, är HTTP:s idéer krympta till UDP och några byte.
+
+Det har metoder — `GET`, `POST`, `PUT`, `DELETE`. Det har resurser med sökvägar. Det har
+svarskoder som `2.05` och `4.04`, med samma logik som HTTP:s klasser.
+
+Skillnaden är storleken och transporten. Ett CoAP-huvud är **fyra byte**, och det går över UDP, så
+det finns ingen handskakning att göra först.
+
+En komplett förfrågan mot en publik testserver:
+
+```
+skickar: 10 byte -> 40017d34b568656c6c6f
+svar   : 11 byte, kod 2.05, payload "world"
+```
+
+Tio byte ut, elva in. Hela utbytet är mindre än ett enda `User-Agent`-huvud.
+
+<Doodle
+  name="paketen-i-storlek"
+  caption="Samma mätvärde, tre protokoll. Skillnaden är vad som åker med."
+/>
+
+## CoAP vs HTTP
+
+Samma modell, olika förutsättningar — och det är avsiktligt.
+
+**HTTP** går över TCP, har textbaserade headers, och förutsätter att en handskakning och några hundra
+byte metadata är försumbara.
+
+**CoAP** går över UDP, har binära fyrabyteshuvuden, och förutsätter motsatsen.
+
+Likheten är inte en tillfällighet. CoAP är gjort för att en gateway ska kunna översätta rakt av: en
+`GET /temperatur` i CoAP blir en `GET /temperatur` i HTTP, och svarskoden `2.05` motsvarar `200`.
+
+Det du förlorar med UDP är TCP:s garantier. Inget säkerställer att paketet kom fram — vilket leder
+till nästa två begrepp.
+
+## Vad observe gör
+
+**Observe** låter en klient prenumerera på en CoAP-resurs, så att servern skickar ett nytt svar varje
+gång värdet ändras.
+
+Utan det hade CoAP ärvt HTTP:s pollningsproblem: fråga om och om igen efter något som sällan ändras.
+Med observe registrerar klienten sig en gång och får uppdateringar när de finns.
+
+Det är MQTT:s prenumerationsidé, inbyggd i en request/response-modell. Skillnaden är att det inte
+finns någon broker — servern på enheten håller själv reda på vem som lyssnar.
+
+## Confirmable vs non-confirmable
+
+Eftersom UDP inte garanterar leverans lägger CoAP tillbaka valet i ditt knä, per meddelande.
+
+**Confirmable (CON)** kräver en kvittering. Uteblir den skickas meddelandet om, med växande
+väntetid. Det är CoAP:s motsvarighet till MQTT:s QoS 1.
+
+**Non-confirmable (NON)** skickas och glöms. Ingen kvittering, ingen omsändning — som QoS 0.
+
+Valet görs per meddelande, inte per anslutning. Ett mätvärde kan gå som NON och ett larm som CON,
+i samma session.
+
+Det första exemplet ovan var CON: byten `40` i början betyder version 1, typ 0 — confirmable.
+
+<Del titel="Valet" />
+
+## MQTT vs CoAP
+
+Den avvägning som avgör vilket du väljer, och den handlar om anslutningen.
+
+**MQTT** håller en TCP-anslutning öppen. Det ger omedelbara kommandon i båda riktningar och en broker
+som kopplar isär avsändare från mottagare. Det kostar att hålla anslutningen vid liv.
+
+**CoAP** har ingen anslutning alls. Varje utbyte är fristående över UDP, vilket gör att enheten kan
+vakna, skicka tio byte och somna igen. Det kostar att kommandon in inte kan komma medan enheten sover.
+
+Tumregeln: **kan enheten hålla en anslutning öppen — MQTT. Måste den sova mellan varje meddelande —
+CoAP.**
+
+En sensor på nätström i en fastighet väljer MQTT. En batteridriven mätare som vaknar var kvart väljer
+CoAP eller något som liknar det.
+
+## Varför många system kör båda
+
+I praktiken är valet sällan ett antingen–eller, och det är värt att veta innan man börjar argumentera.
+
+Ett vanligt upplägg: enheterna pratar CoAP mot en lokal gateway som sitter på nätström, och
+gatewayen pratar MQTT vidare mot molnet. Enheterna får sova, och backend får en broker.
+
+Det är samma mönster som en reverse proxy i webbvärlden. Det billiga protokollet närmast enheten, det
+bekväma närmast systemet, och en översättning i mitten.
+
+## Fallgropen: QoS 2 på batteri
+
+<Callout type="fallgrop">
+QoS 2 låter som det rimliga valet. Exakt en gång är ju vad man vill ha, och de andra två låter som
+kompromisser.
+
+För en batteridriven enhet är det fel. QoS 2 kräver **fyra** paket per meddelande i stället för ett,
+och varje paket betyder att radion måste vara på och vänta på svar.
+
+Fråga i stället vad som händer om meddelandet kommer två gånger. Är det ett mätvärde med tidsstämpel
+gör en dubblett ingen skada — mottagaren skriver över samma post. Då räcker QoS 1, och ofta QoS 0.
+
+Det generella rådet: **gör mottagaren idempotent i stället för att göra transporten dyr.** Det är
+samma slutsats som API-serien drog om `PUT`, en helt annan nivå ner i stacken.
+</Callout>
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Kommer du från webben är det största skiftet att **anslutningen är en kostnad**. I ett API är den
+gratis och alltid tillgänglig; här är den det dyraste du gör.
+
+Det som är värt din tid nu är topic-strukturen om du bygger MQTT, och CON-mot-NON om du bygger CoAP.
+Båda är beslut som är svåra att ändra när tusen enheter redan är ute.
+
+DTLS, LoRaWAN, Zigbee, Thread och Matter kan vänta. De blir dina när radiolänken inte är wifi eller
+mobilnät — och de bygger alla på samma avvägning mellan energi och garantier.
+
+## Vanliga nybörjarförväxlingar
+
+MQTT är inte ett meddelandeköverktyg som Kafka. Brokern lagrar inte en historik, bara det senast
+retainade per topic.
+
+Ett topic är inte en sökväg. Snedstrecken är en hierarki i namnet, inte i något filsystem.
+
+QoS 2 är inte "bättre". Det är fyra paket i stället för ett, och nästan alltid fel på batteri.
+
+Retained är inte en kö. Det är **ett** sparat meddelande per topic, det senaste.
+
+CoAP är inte "HTTP över UDP" rakt av. Huvudet är binärt och fyra byte, och det finns begrepp som
+observe som HTTP saknar.
+
+En publicering får inget svar. Vet du inte om någon lyssnade är det avsiktligt, inte ett fel.
+
+Last Will skickas inte av enheten. Den lämnas hos brokern i förväg, och brokern publicerar den när
+anslutningen dör.
+
+## Prova själv
+
+Båda protokollen är små nog att skriva för hand. Övningarna använder publika testservrar och behöver
+inga bibliotek — bara `python3`.
+
+Börja med CoAP. Fyra byte huvud plus sökvägen:
+
+```python
+import socket, binascii
+
+req = bytes([0x40, 0x01, 0x7d, 0x34])   # CON, GET, id
+req += bytes([0xB5]) + b"hello"         # Uri-Path
+
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+s.settimeout(6)
+s.sendto(req, ("coap.me", 5683))
+data, _ = s.recvfrom(1024)
+
+hexa = binascii.hexlify(req).decode()
+kod = "%d.%02d" % (data[1] >> 5, data[1] & 0x1f)
+nytta = data[data.find(b'\xff') + 1:]
+
+print("skickade:", len(req), hexa)
+print("fick    :", len(data), "byte")
+print("kod     :", kod)
+print("payload :", nytta.decode())
+```
+
+```
+skickade: 10 40017d34b568656c6c6f
+fick    : 11 byte
+kod     : 2.05
+payload : world
+```
+
+**Tio byte ut, elva in.** Där är hela argumentet, mätt. Koden `2.05` är CoAP:s motsvarighet till
+`200 OK` — första siffran är klassen, precis som i nätverksdelen.
+
+Nu MQTT, mot en publik broker:
+
+```python
+import socket
+
+def rl(n):
+    o = b''
+    while True:
+        d, n = n % 128, n // 128
+        o += bytes([d | (0x80 if n else 0)])
+        if not n:
+            return o
+
+def pkt(typ, vh, pl=b''):
+    return bytes([typ]) + rl(len(vh + pl)) + vh + pl
+
+CONN = b'\x00\x04MQTT\x04\x02\x00\x3c'
+CID = b'\x00\x09lk-demo-1'
+BROKER = ("test.mosquitto.org", 1883)
+
+s = socket.create_connection(BROKER, 10)
+s.sendall(pkt(0x10, CONN, CID))
+print("CONNACK:", s.recv(4).hex())
+
+pub = pkt(0x30, b'\x00\x10lk/embedded/demo', b'21.5')
+s.sendall(pub)
+print("PUBLISH:", len(pub), "byte")
+print(pub.hex())
+s.close()
+```
+
+```
+CONNACK: 20020000
+PUBLISH: 24 byte
+301600106c6b2f656d6265646465642f64656d6f32312e35
+```
+
+`20020000` är brokerns kvittens: paket 0x20, längd 2, och sista byten `00` som betyder *accepterad*.
+Publiceringen är 24 byte, varav 16 är topic-namnet och 4 är mätvärdet.
+
+Jämför de två med ett vanligt API-svar:
+
+```bash
+curl -s -o /dev/null \
+  -w "svar-headers: %{size_header} byte\n" \
+  https://api.github.com/zen
+```
+
+Drygt tusen byte — bara svarets headers, för ett innehåll på en textrad. Och det innan TCP- och
+TLS-handskakningarna ens räknats med.
+
+Tre saker som kan förvirra. `coap.me` och `test.mosquitto.org` är publika testservrar utan
+autentisering; skicka aldrig något dit du inte vill att andra ser. UDP-anropet kan tappas bort utan
+att något sägs — får du `timeout` är det inte nödvändigtvis ett fel i koden, utan hela poängen med
+att CoAP låter dig välja CON. Och `size_header` mäter **svarets** headers, inte anropets. Siffran
+varierar några byte mellan anrop, eftersom headers innehåller ett anrops-id och räknare — jag fick
+1090, 1091 och 1094 på tre försök.
+
+<Callout type="kom-ihag">
+- HTTP:s kostnad är handskakningar och headers, inte innehållet. Radion måste vara på hela tiden.
+- Enheten sitter bakom NAT. Den måste öppna anslutningen — servern kan inte ringa upp.
+- **MQTT** har en broker och en öppen TCP-anslutning. Kommandon kan komma när som helst.
+- Ett **topic** är en hierarkisk etikett. Prenumeranter kan använda `+` och `#`.
+- **QoS 0** är ett paket, **QoS 1** två, **QoS 2** fyra. Nästan alltid 0 eller 1.
+- **Retained** ger nya prenumeranter det senaste värdet direkt. Ett per topic.
+- **Last Will** lämnas i förväg och publiceras av brokern när enheten tystnar.
+- **CoAP** är HTTP:s idéer på UDP med fyra byte huvud. Tio byte för en hel förfrågan.
+- **CON** kvitteras och skickas om. **NON** skickas och glöms. Valet görs per meddelande.
+- Håller enheten en anslutning öppen — MQTT. Sover den mellan meddelandena — CoAP.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Varför är HTTP dyrt för en batteridriven sensor?",
+      a: "Kostnaden ligger i radiotiden, inte i beräkningen. Ett anrop kräver TCP-handskakning, TLS-handskakning och sedan flera hundra byte headers innan ett fyra byte stort mätvärde skickas. Radion måste vara på under hela utbytet, och det är den som tömmer batteriet.",
+    },
+    {
+      q: "Enheten sitter bakom NAT. Vad följer av det för hur protokollet måste fungera?",
+      a: "Att enheten måste öppna anslutningen — servern har ingen väg in. MQTT löser det genom att hålla TCP-anslutningen öppen så att brokern kan skicka tillbaka genom den. CoAP löser det genom att göra varje utbyte så litet att enheten kan vakna, skicka och somna.",
+    },
+    {
+      q: "Vad är skillnaden mellan publish/subscribe och request/response?",
+      a: "Request/response kopplar ihop två parter i tiden — båda måste vara igång samtidigt. Publish/subscribe kopplar isär dem: enheten publicerar till en broker och vet inte om någon lyssnar. Det gör systemet lätt att bygga ut, men avsändaren får inget svar.",
+    },
+    {
+      q: "När ska du välja QoS 2?",
+      a: "Nästan aldrig, särskilt inte på batteri. QoS 2 kräver fyra paket per meddelande mot QoS 0:s ett, och varje paket betyder radiotid. Fråga i stället vad en dubblett skulle kosta — är mottagaren idempotent räcker QoS 1, och ofta QoS 0.",
+    },
+    {
+      q: "Vad gör `observe` i CoAP, och vad ersätter det?",
+      a: "Klienten registrerar sig på en resurs och får ett nytt svar varje gång värdet ändras, i stället för att fråga om och om igen. Det är MQTT:s prenumerationsidé inbyggd i en request/response-modell — men utan broker, eftersom servern på enheten själv håller reda på vem som lyssnar.",
+    },
+    {
+      q: "Din enhet går på nätström i en fastighet och ska kunna ta emot kommandon direkt. MQTT eller CoAP?",
+      a: "MQTT. Den öppna TCP-anslutningen gör att brokern kan skicka ett kommando när som helst, och kostnaden för att hålla den vid liv spelar ingen roll när enheten har ström. CoAP passar bättre när enheten måste sova mellan meddelandena.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- HTTP:s kostnad är handskakningar och headers. Svarets headers ensamma kan vara över tusen byte.
+- Kostnaden är radiotid, inte processorcykler. Varje vaken sekund syns i batteribudgeten.
+- HTTP förutsätter att klienten frågar. En sensor vill säga något och kunna ta emot kommandon.
+- Bakom NAT finns ingen väg in. Enheten måste öppna anslutningen.
+- MQTT skickar allt via en broker över en TCP-anslutning som hålls öppen.
+- Ett topic är en hierarkisk etikett, inte en sökväg. `+` matchar en nivå, `#` allt under.
+- Publish/subscribe kopplar isär avsändare och mottagare i tiden. Avsändaren får inget svar.
+- QoS 0 är ett paket, QoS 1 två med kvittens, QoS 2 fyra med handskakning.
+- Retained ger nya prenumeranter det senaste värdet direkt — ett per topic, ingen historik.
+- Last Will lämnas hos brokern i förväg och publiceras när anslutningen dör oväntat.
+- CoAP är HTTP:s modell på UDP: metoder, sökvägar och svarskoder i ett fyrabyteshuvud.
+- En hel CoAP-förfrågan kan vara tio byte, och svaret elva.
+- Observe låter klienten få uppdateringar utan att fråga om igen.
+- CON kvitteras och skickas om, NON gör det inte. Valet görs per meddelande.
+- Öppen anslutning möjlig — MQTT. Enheten måste sova — CoAP.
+- Många system kör båda, med en gateway som översätter i mitten.
+
+## Nästa del
+
+Därmed står grunderna för uppkopplade enheter: vad som är annorlunda när datorn är liten, och hur den
+säger något utan att bränna batteriet.
+
+En tråd härifrån löper genom hela hubben. Observability-delen handlade om att se sitt system i drift —
+och en flotta sensorer är samma problem med en extra svårighet: du kan inte logga in på dem, och
+loggen får inte kosta mer radiotid än mätvärdet.
+
+Nästa naturliga steg är därför vad som händer på andra sidan brokern. Datan ska tas emot, lagras och
+larmas på, och där är du tillbaka i serier du redan läst: SQL, Observability och molnet.
