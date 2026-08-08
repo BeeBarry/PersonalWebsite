@@ -1476,4 +1476,25 @@ export const DOODLES: Record<string, string> = {
     <text x="390" y="378">kvar att köra ligger ovanför</text>
   </g>
 </svg>`,
+
+  /* ---- Docker 1.4 · Skalet i vägen vidarebefordrar inte SIGTERM ---- */
+  "signalen-till-pid-ett": `
+<svg viewBox="0 0 880 320" role="img" aria-label="Två paneler med samma inkommande pil märkt SIGTERM. I den vänstra träffar den en låda märkt sh, och pilen vidare till appen är streckad och överkryssad. I den högra träffar den appen direkt.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M40 176 Q80 174 118 176"/><path d="M111 170 L124 176 L111 182"/><path d="M129 143 Q173 142 217 144 Q217 176 217 207 Q173 209 130 208 Q128 176 129 143 Z"/><path d="M222 176 Q248 174 274 176" stroke-dasharray="6 7" opacity="0.5"/><path d="M267 170 L280 176 L267 182"/><path d="M236 160 L262 192"/><path d="M262 160 L236 192"/><path d="M289 144 Q336 144 383 143 Q385 176 384 208 Q336 208 287 208 Q287 176 289 144 Z" stroke-dasharray="7 8" opacity="0.45"/><path d="M560 176 Q600 174 638 176"/><path d="M631 170 L644 176 L631 182"/><path d="M650 144 Q698 144 745 145 Q746 176 747 209 Q698 208 651 208 Q649 176 650 144 Z"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="12" fill="currentColor" text-anchor="middle" opacity="0.7">
+    <text x="76" y="164">SIGTERM</text>
+    <text x="596" y="164">SIGTERM</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="middle">
+    <text x="173" y="184">sh</text>
+    <text x="386" y="184">app</text>
+    <text x="698" y="184">app</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="17" fill="currentColor" text-anchor="middle">
+    <text x="230" y="268">shell-form · 10 s</text>
+    <text x="698" y="268">exec-form · 0 s</text>
+  </g>
+</svg>`,
 };

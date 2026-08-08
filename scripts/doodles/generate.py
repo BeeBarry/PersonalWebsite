@@ -1543,6 +1543,30 @@ def alla():
       + "\n" + txt([(108,254,"databasen")],13,' opacity="0.7"')
       + "\n" + txt([(390,378,"kvar att köra ligger ovanför")],13,' opacity="0.45"') + "\n</svg>")
 
+    # 75 — Docker 1.4 · Signalen till PID 1
+    # Pilen in är IDENTISK i båda panelerna — det är bara vad den träffar som
+    # skiljer. Skalet ritas som en extra låda i vägen, och pilen vidare därifrån
+    # är streckad och överkryssad: den vidarebefordran som aldrig sker.
+    def mottagare(x, mellanlada):
+        p = f'<path d="M{x} 176 Q{x+40} 174 {x+78} 176"/>' + arrow(x+84,176)
+        if mellanlada:
+            p += (f'<path d="{w(x+90,144,86,64)}"/>'
+                  f'<path d="M{x+182} 176 Q{x+208} 174 {x+234} 176" stroke-dasharray="6 7" '
+                  f'opacity="0.5"/>' + arrow(x+240,176)
+                  + f'<path d="M{x+196} 160 L{x+222} 192"/><path d="M{x+222} 160 L{x+196} 192"/>'
+                  + f'<path d="{w(x+248,144,96,64)}" stroke-dasharray="7 8" opacity="0.45"/>')
+        else:
+            p += f'<path d="{w(x+90,144,96,64)}"/>'
+        return p
+    D['signalen-till-pid-ett']=(
+      '<svg viewBox="0 0 880 320" role="img" aria-label="Två paneler med samma inkommande pil märkt '
+      'SIGTERM. I den vänstra träffar den en låda märkt sh, och pilen vidare till appen är streckad '
+      'och överkryssad. I den högra träffar den appen direkt.">\n'
+      + G % (mottagare(40, True) + mottagare(560, False))
+      + "\n" + txt([(76,164,"SIGTERM"),(596,164,"SIGTERM")],12,' opacity="0.7"',"middle")
+      + "\n" + txt([(173,184,"sh"),(386,184,"app"),(698,184,"app")],14)
+      + "\n" + txt([(230,268,"shell-form · 10 s"),(698,268,"exec-form · 0 s")],17) + "\n</svg>")
+
     return D
 
 if __name__ == "__main__":
