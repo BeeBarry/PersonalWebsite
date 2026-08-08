@@ -1594,6 +1594,97 @@ def alla():
       + "\n" + txt([(145,318,"known_hosts"),(675,80,"rotlagret")],13,' opacity="0.62"')
       + "\n" + txt([(220,120,"TOFU"),(660,318,"CA")],17) + "\n</svg>")
 
+    # 77 — Embedded 1.0 · Flash och RAM
+    # PROPORTIONEN är hela bilden: flashstapeln är fyra gånger RAM-stapeln, och
+    # det skrafferade i RAM är bara en liten del. Rita dem lika stora och
+    # artikelns poäng — att RAM tar slut först — försvinner helt.
+    def stapel(x, y, bredd, hojd, delar):
+        p = [f'<path d="{w(x,y,bredd,hojd)}"/>']
+        ack = y
+        for h, skraffa in delar[:-1]:
+            ack += h
+            p.append(f'<path d="M{x+2} {ack:.0f} Q{x+bredd/2:.0f} {ack-1:.0f} {x+bredd-2} {ack:.0f}"/>')
+        ack = y
+        for h, skraffa in delar:
+            if skraffa:
+                p.append(markerad(x+4, ack+3, bredd-8, h-6, 20))
+            ack += h
+        return "".join(p)
+    flash = stapel(120, 70, 210, 260, [(150, False), (70, True), (40, False)])
+    ram   = stapel(560, 200, 210, 130, [(34, True), (56, False), (40, True)])
+    D['flash-och-ram']=(
+      '<svg viewBox="0 0 880 400" role="img" aria-label="En hög stapel till vänster märkt flash och '
+      'en betydligt lägre till höger märkt RAM, båda uppdelade i skiktade fält.">\n'
+      + G % (flash + ram)
+      + "\n" + txt([(116,150,"programmet"),(116,262,"const-data"),(116,316,"ledigt")],13,
+                   ' opacity="0.7"',"end")
+      + "\n" + txt([(786,225,"variabler"),(786,268,"ledigt"),(786,318,"stacken")],13,
+                   ' opacity="0.7"',"start")
+      + "\n" + txt([(225,368,"flash · 256 kB"),(665,368,"RAM · 64 kB")],18.5) + "\n</svg>")
+
+    # 78 — Embedded 1.0 · Vaken en sekund
+    # Linjen måste vara PÅTAGLIGT lång och platt för att toppen ska läsa som
+    # försumbar. En kort linje med en topp ser ut som en normal graf; en linje
+    # som fyller hela bredden med en enda spik säger "899 mot 1" utan siffror.
+    spik = ('<path d="M60 300 Q220 298 372 300"/>'
+            '<path d="M372 300 L380 118 L392 118 L400 300"/>'
+            '<path d="M400 300 Q600 302 820 300"/>')
+    matt = ('<path d="M372 336 Q376 340 372 344"/><path d="M400 344 Q396 340 400 336"/>'
+            '<path d="M372 340 Q386 339 400 340"/>')
+    D['vaken-en-sekund']=(
+      '<svg viewBox="0 0 880 400" role="img" aria-label="En nästan helt vågrät linje över hela '
+      'bilden med en enda smal hög topp en bit in.">\n'
+      + G % (spik + matt)
+      + "\n" + txt([(386,104,"vaken")],14,' opacity="0.8"')
+      + "\n" + txt([(200,286,"deep sleep"),(640,286,"deep sleep")],13,' opacity="0.55"')
+      + "\n" + txt([(440,348,"1 sekund")],12,' opacity="0.6"',"start")
+      + "\n" + txt([(440,382,"strömförbrukning över en kvart")],13,' opacity="0.5"') + "\n</svg>")
+
+    # 79 — Embedded 1.1 · Paketen i storlek
+    # Kuverten måste ha SAMMA form och skilja sig bara i storlek — det är
+    # proportionen som är argumentet. Ritas de olika (ett brev, en låda, en säck)
+    # läser ögat "olika sorters saker" i stället för "samma sak, olika mycket".
+    def kuvert(cx, cy, b, h):
+        return (f'<path d="{w(cx-b/2,cy-h/2,b,h)}"/>'
+                f'<path d="M{cx-b/2:.0f} {cy-h/2:.0f} Q{cx:.0f} {cy:.0f} '
+                f'{cx+b/2:.0f} {cy-h/2:.0f}"/>')
+    D['paketen-i-storlek']=(
+      '<svg viewBox="0 0 880 400" role="img" aria-label="Tre kuvert av samma form i kraftigt olika '
+      'storlek, märkta CoAP tio byte, MQTT tjugofyra byte och HTTP drygt tusen byte.">\n'
+      + G % (kuvert(110, 262, 46, 30) + kuvert(300, 254, 74, 48)
+             + kuvert(620, 196, 300, 190))
+      + "\n" + txt([(110,318,"CoAP"),(300,318,"MQTT"),(620,318,"HTTP")],18.5)
+      + "\n" + txt([(110,344,"10 byte"),(300,344,"24 byte"),
+                    (620,344,"~1 100 byte headers")],13,' opacity="0.62"') + "\n</svg>")
+
+    # 80 — Embedded 1.1 · Dörren öppnas inifrån
+    # Väggen är samma i båda panelerna. Skillnaden är enbart pilens RIKTNING och
+    # att den högra pilen är dubbelriktad — det är hela NAT-poängen. Ritas väggen
+    # med en dörr som "öppnas" blir det en berättelse om tillstånd, inte om vem
+    # som initierar, och då är bilden fel.
+    def vagg(x):
+        return (f'<path d="M{x} 96 Q{x+3} 200 {x} 304"/>'
+                + f'<g stroke-width="1.1" opacity="0.45">{hatch(x-9,100,18,200,22)}</g>')
+    vanster = (f'<path d="{w(40,168,104,58)}"/>' + vagg(268)
+               + f'<path d="{w(330,168,104,58)}"/>'
+               + '<path d="M320 196 Q300 194 286 196" stroke-dasharray="6 7"/>'
+               + arrow(280,196,"left")
+               + '<path d="M254 180 L282 212"/><path d="M282 180 L254 212"/>')
+    hoger = (f'<path d="{w(500,168,104,58)}"/>' + vagg(728)
+             + f'<path d="{w(790,168,80,58)}"/>'
+             + '<path d="M610 190 Q668 188 722 190"/>' + arrow(728,190)
+             + '<path d="M722 208 Q668 210 612 208"/>' + arrow(606,208,"left"))
+    D['dorren-oppnas-inifran']=(
+      '<svg viewBox="0 0 880 372" role="img" aria-label="Två paneler med en skrafferad vägg. I den '
+      'vänstra stoppas en streckad pil utifrån av väggen och är överkryssad. I den högra går en '
+      'dubbelriktad pil genom väggen, initierad inifrån.">\n'
+      + G % (vanster + hoger)
+      + "\n" + txt([(92,202,"enheten"),(382,202,"servern"),
+                    (552,202,"enheten"),(830,202,"broker")],13,' opacity="0.72"')
+      + "\n" + txt([(268,80,"NAT"),(728,80,"NAT")],13,' opacity="0.5"')
+      + "\n" + txt([(237,346,"servern ringer upp"),(665,346,"enheten ringer upp")],17)
+      + "\n</svg>")
+
     return D
 
 if __name__ == "__main__":

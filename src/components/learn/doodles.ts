@@ -1519,4 +1519,87 @@ export const DOODLES: Record<string, string> = {
     <text x="660" y="318">CA</text>
   </g>
 </svg>`,
+
+  /* ---- Embedded 1.0 · Flash rymmer programmet, RAM tar slut forst ---- */
+  "flash-och-ram": `
+<svg viewBox="0 0 880 400" role="img" aria-label="En hög stapel till vänster märkt flash och en betydligt lägre till höger märkt RAM, båda uppdelade i skiktade fält.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M120 70 Q225 69 331 71 Q331 200 330 330 Q225 332 119 329 Q120 200 120 70 Z"/><path d="M122 220 Q225 219 328 220"/><path d="M122 290 Q225 289 328 290"/><g stroke-width="1.1" opacity="0.42"><path d="M144 287 L124 267"/><path d="M164 287 L124 247"/><path d="M184 287 L124 227"/><path d="M204 287 L140 223"/><path d="M224 287 L160 223"/><path d="M244 287 L180 223"/><path d="M264 287 L200 223"/><path d="M284 287 L220 223"/><path d="M304 287 L240 223"/><path d="M324 287 L260 223"/><path d="M326 269 L280 223"/><path d="M326 249 L300 223"/><path d="M326 229 L320 223"/></g><path d="M561 199 Q665 198 769 201 Q771 265 770 329 Q665 331 560 329 Q559 265 561 199 Z"/><path d="M562 234 Q665 233 768 234"/><path d="M562 290 Q665 289 768 290"/><g stroke-width="1.1" opacity="0.42"><path d="M584 231 L564 211"/><path d="M604 231 L576 203"/><path d="M624 231 L596 203"/><path d="M644 231 L616 203"/><path d="M664 231 L636 203"/><path d="M684 231 L656 203"/><path d="M704 231 L676 203"/><path d="M724 231 L696 203"/><path d="M744 231 L716 203"/><path d="M764 231 L736 203"/><path d="M766 213 L756 203"/></g><g stroke-width="1.1" opacity="0.42"><path d="M584 327 L564 307"/><path d="M604 327 L570 293"/><path d="M624 327 L590 293"/><path d="M644 327 L610 293"/><path d="M664 327 L630 293"/><path d="M684 327 L650 293"/><path d="M704 327 L670 293"/><path d="M724 327 L690 293"/><path d="M744 327 L710 293"/><path d="M764 327 L730 293"/><path d="M766 309 L750 293"/></g>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="end" opacity="0.7">
+    <text x="116" y="150">programmet</text>
+    <text x="116" y="262">const-data</text>
+    <text x="116" y="316">ledigt</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="start" opacity="0.7">
+    <text x="786" y="225">variabler</text>
+    <text x="786" y="268">ledigt</text>
+    <text x="786" y="318">stacken</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="225" y="368">flash · 256 kB</text>
+    <text x="665" y="368">RAM · 64 kB</text>
+  </g>
+</svg>`,
+
+  /* ---- Embedded 1.0 · Vakenperioden ar hela strombudgeten ---- */
+  "vaken-en-sekund": `
+<svg viewBox="0 0 880 400" role="img" aria-label="En nästan helt vågrät linje över hela bilden med en enda smal hög topp en bit in.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M60 300 Q220 298 372 300"/><path d="M372 300 L380 118 L392 118 L400 300"/><path d="M400 300 Q600 302 820 300"/><path d="M372 336 Q376 340 372 344"/><path d="M400 344 Q396 340 400 336"/><path d="M372 340 Q386 339 400 340"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="middle" opacity="0.8">
+    <text x="386" y="104">vaken</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.55">
+    <text x="200" y="286">deep sleep</text>
+    <text x="640" y="286">deep sleep</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="12" fill="currentColor" text-anchor="start" opacity="0.6">
+    <text x="440" y="348">1 sekund</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.5">
+    <text x="440" y="382">strömförbrukning över en kvart</text>
+  </g>
+</svg>`,
+
+  /* ---- Embedded 1.1 · Samma matvarde, tre protokoll ---- */
+  "paketen-i-storlek": `
+<svg viewBox="0 0 880 400" role="img" aria-label="Tre kuvert av samma form i kraftigt olika storlek, märkta CoAP tio byte, MQTT tjugofyra byte och HTTP drygt tusen byte.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M86 248 Q110 246 133 247 Q135 262 133 278 Q110 278 86 277 Q85 262 86 248 Z"/><path d="M87 247 Q110 262 133 247"/><path d="M264 231 Q300 230 336 230 Q337 254 338 277 Q300 280 263 279 Q262 254 264 231 Z"/><path d="M263 230 Q300 254 337 230"/><path d="M470 102 Q620 100 769 100 Q771 196 769 290 Q620 291 469 290 Q469 196 470 102 Z"/><path d="M470 101 Q620 196 770 101"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="110" y="318">CoAP</text>
+    <text x="300" y="318">MQTT</text>
+    <text x="620" y="318">HTTP</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="110" y="344">10 byte</text>
+    <text x="300" y="344">24 byte</text>
+    <text x="620" y="344">~1 100 byte headers</text>
+  </g>
+</svg>`,
+
+  /* ---- Embedded 1.1 · Bakom NAT maste enheten oppna anslutningen ---- */
+  "dorren-oppnas-inifran": `
+<svg viewBox="0 0 880 372" role="img" aria-label="Två paneler med en skrafferad vägg. I den vänstra stoppas en streckad pil utifrån av väggen och är överkryssad. I den högra går en dubbelriktad pil genom väggen, initierad inifrån.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M41 168 Q92 167 144 168 Q144 197 144 225 Q92 227 40 225 Q40 197 41 168 Z"/><path d="M268 96 Q271 200 268 304"/><g stroke-width="1.1" opacity="0.45"><path d="M277 296 L259 278"/><path d="M277 274 L259 256"/><path d="M277 252 L259 234"/><path d="M277 230 L259 212"/><path d="M277 208 L259 190"/><path d="M277 186 L259 168"/><path d="M277 164 L259 146"/><path d="M277 142 L259 124"/><path d="M277 120 L259 102"/></g><path d="M331 169 Q382 167 434 168 Q434 197 434 227 Q382 228 329 227 Q329 197 331 169 Z"/><path d="M320 196 Q300 194 286 196" stroke-dasharray="6 7"/><path d="M293 190 L280 196 L293 202"/><path d="M254 180 L282 212"/><path d="M282 180 L254 212"/><path d="M501 169 Q552 166 604 167 Q604 197 603 226 Q552 226 501 225 Q499 197 501 169 Z"/><path d="M728 96 Q731 200 728 304"/><g stroke-width="1.1" opacity="0.45"><path d="M737 296 L719 278"/><path d="M737 274 L719 256"/><path d="M737 252 L719 234"/><path d="M737 230 L719 212"/><path d="M737 208 L719 190"/><path d="M737 186 L719 168"/><path d="M737 164 L719 146"/><path d="M737 142 L719 124"/><path d="M737 120 L719 102"/></g><path d="M789 167 Q830 168 869 169 Q870 197 871 225 Q830 227 789 227 Q789 197 789 167 Z"/><path d="M610 190 Q668 188 722 190"/><path d="M715 184 L728 190 L715 196"/><path d="M722 208 Q668 210 612 208"/><path d="M619 202 L606 208 L619 214"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.72">
+    <text x="92" y="202">enheten</text>
+    <text x="382" y="202">servern</text>
+    <text x="552" y="202">enheten</text>
+    <text x="830" y="202">broker</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.5">
+    <text x="268" y="80">NAT</text>
+    <text x="728" y="80">NAT</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="17" fill="currentColor" text-anchor="middle">
+    <text x="237" y="346">servern ringer upp</text>
+    <text x="665" y="346">enheten ringer upp</text>
+  </g>
+</svg>`,
 };
