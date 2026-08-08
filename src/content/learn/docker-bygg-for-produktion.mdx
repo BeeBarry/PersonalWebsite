@@ -1,0 +1,520 @@
+---
+title: 'Bygg för produktion'
+description: 'Multi-stage, ENTRYPOINT och digest — de fyra djup del 1.1 sköt upp'
+category: 'docker'
+part: 1
+order: 5
+date: '2026-08-08'
+tags: ['Beginner', 'Multi-stage', 'ENTRYPOINT']
+---
+
+## Var vi är
+
+De fyra första delarna räcker för att köra ett system på en maskin: containern, imagen, nätverket
+och lagringen.
+
+Del 1.1 namngav fyra djup den sköt upp: multi-stage builds, `ENTRYPOINT`, digest och
+sårbarhetsskanning. Motiveringen var att de blir aktuella *"när imagen ska till produktion och någon
+ställer krav på storlek och innehåll"*.
+
+Det är nu. Den här delen tar de fyra, och de hänger ihop bättre än listan antyder: alla handlar om
+att göra imagen mindre, mer förutsägbar och tråkigare att attackera.
+
+Zoomen ligger fortfarande på en Dockerfile. Bygg i en pipeline tas i CI/CD-serien.
+
+<Del titel="Bygget i två steg" />
+
+## Vad ett multi-stage build är
+
+Ett **multi-stage build** är en Dockerfile med flera `FROM`-rader, där bara den sista blir din image.
+
+Varje `FROM` startar ett nytt **steg**. Stegen kan använda olika basimages, och ett senare steg kan
+plocka färdiga filer ur ett tidigare — men allt annat i det tidigare steget kastas.
+
+Problemet det löser är att bygga och köra kräver olika saker. För att kompilera behöver du en
+kompilator, ett paketverktyg och utvecklingsberoenden. För att köra behöver du resultatet.
+
+I ett enstegsbygge hamnar allt i samma image, och du skickar kompilatorn till produktion.
+
+## Byggsteget vs slutsteget
+
+Två `FROM` i samma fil, med rakt motsatta krav.
+
+**Byggsteget** får vara stort och rörigt. Det innehåller verktygen, källkoden och alla beroenden.
+Ingen kör det, och ingen laddar ner det.
+
+**Slutsteget** ska innehålla så lite som möjligt: körtiden och det som byggdes. Det är det som
+distribueras, startas och skannas.
+
+```dockerfile
+FROM node:22-alpine AS bygg
+WORKDIR /app
+COPY package.json tsconfig.json ./
+RUN npm install
+COPY src ./src
+RUN npx tsc
+
+FROM node:22-alpine
+WORKDIR /app
+COPY --from=bygg /app/dist ./dist
+USER node
+CMD ["node", "dist/index.js"]
+```
+
+`AS bygg` namnger det första steget så att det andra kan peka på det. Utan namn går det att referera
+med nummer, men namnet är det som gör filen läsbar om ett år.
+
+## Vad `COPY --from` gör
+
+`COPY --from=bygg` kopierar filer från ett **annat steg** i stället för från byggkontexten.
+
+Det är hela bryggan mellan stegen, och det är den enda. Ingenting annat följer med: inte
+`node_modules`, inte källkoden, inte lagren där `npm install` körde.
+
+Att det stämmer går att kontrollera på den färdiga imagen. `docker history` på exemplet ovan visar
+fyra instruktioner — `WORKDIR`, `COPY`, `USER`, `CMD`. Raderna `RUN npm install` och `RUN npx tsc`
+finns inte, eftersom de hörde till ett steg som kastades.
+
+## Vad du faktiskt tjänar
+
+Skillnaden är mätbar, och exemplet ovan ger den här:
+
+```
+lk-enkel   207MB
+lk-multi   161MB
+node       161MB
+```
+
+De 46 megabyten är `node_modules` med TypeScript i. Men det intressanta är den tredje raden:
+**slutimagen är exakt lika stor som basimagen.** Bygget lämnade inget spår alls.
+
+Vinsten växer med språket. En Go-binär i ett tomt slutsteg ger en image på några megabyte i stället
+för åttahundra, eftersom kompilatorn inte behövs för att köra resultatet.
+
+Storleken är inte bara nedladdningstid. Färre filer i imagen är färre saker som kan ha en känd
+sårbarhet, och det leder till nästa halva av artikeln.
+
+## Vad en distroless-image är
+
+En **distroless-image** innehåller körtiden och ingenting annat — inget skal, ingen pakethanterare,
+inga systemverktyg.
+
+Det är slutsteget draget till sin spets. Basimagen `alpine` har 18 installerade paket; en distroless
+har noll, och saknar därmed även `sh`.
+
+Priset är felsökningen. Utan skal fungerar inte `docker exec ... sh`, och du får förlita dig på
+loggar och på en särskild felsökningsvariant av imagen.
+
+Det är ett rimligt nästa steg när slutsteget redan är minimalt, och ett dåligt första steg.
+
+<Del titel="Vad som startar" />
+
+## Vad `ENTRYPOINT` gör
+
+`ENTRYPOINT` anger kommandot som **alltid** körs när containern startar.
+
+Skillnaden mot `CMD` handlar om vad som händer när någon skickar med argument till `docker run`, och
+den syns bäst i fyra körningar.
+
+## `ENTRYPOINT` vs `CMD`
+
+Den distinktion del 1.1 sköt upp, och den är enklare än sitt rykte.
+
+**`CMD` är ett förslag.** Skickar du argument till `docker run` **ersätts** hela kommandot.
+
+**`ENTRYPOINT` är ett åtagande.** Skickar du argument **läggs de till** efter kommandot.
+
+```
+docker run lk-cmd            → fran CMD
+docker run lk-cmd echo hejsan → hejsan
+docker run lk-entry            → fran ENTRYPOINT
+docker run lk-entry hejsan     → fran ENTRYPOINT hejsan
+```
+
+Rad två är hela poängen: `CMD` försvann spårlöst. Rad fyra också: `ENTRYPOINT` blev kvar och tog
+emot argumentet.
+
+Det ger det vanliga produktionsmönstret — `ENTRYPOINT` för programmet, `CMD` för dess
+standardargument:
+
+```dockerfile
+ENTRYPOINT ["node", "server.js"]
+CMD ["--port", "3000"]
+```
+
+Nu startar `docker run bilden` servern på port 3000, och `docker run bilden --port 8080` startar
+samma server på en annan port. Ingen kan råka byta ut själva programmet.
+
+## exec-form vs shell-form
+
+Två sätt att skriva samma instruktion, och skillnaden avgör om din applikation får stänga ner
+ordentligt.
+
+**Exec-form** är en JSON-lista: `CMD ["node", "app.js"]`. Kommandot körs direkt.
+
+**Shell-form** är en rad text: `CMD node app.js`. Docker kör den genom `/bin/sh -c`.
+
+Sedan blir det intressant. Är shell-formens kommando **ett enkelt kommando** ersätter skalet sig
+självt med processen, och ingen skillnad märks. Är det **sammansatt** — med `&&`, en pipe eller en
+variabel — måste skalet stanna kvar:
+
+```
+1 /bin/sh -c node /app.js && true
+8 node /app.js
+```
+
+Nu är `sh` process nummer 1 och din applikation nummer 8.
+
+## Varför PID 1 spelar roll
+
+`docker stop` skickar `SIGTERM` till **process 1** i containern, väntar tio sekunder, och skickar
+sedan `SIGKILL`.
+
+Är din applikation PID 1 får den signalen och kan stänga ner: avsluta pågående anrop, stänga
+databaskopplingar, skriva klart. Ligger ett skal däremellan får skalet signalen och skickar den inte
+vidare.
+
+Skillnaden är mätbar:
+
+```
+exec-form  : stop = 0s   loggen säger "fick SIGTERM"
+shell-form : stop = 10s  loggen är tom
+```
+
+Tio sekunder per container vid varje utrullning, och en applikation som alltid dödas mitt i arbetet.
+
+<Callout type="fallgrop">
+En andra regel gäller **bara** PID 1: kärnan tillämpar inga standardåtgärder för signaler på den.
+En process som saknar `SIGTERM`-hanterare **ignorerar** signalen som PID 1, även i exec-form.
+
+Testar du det här med `sleep` ser du därför tio sekunder i båda formerna, och drar slutsatsen att
+exec-form inte hjälper. Den gör det — du testade bara med en process som ändå inte lyssnar.
+
+Använd `ENTRYPOINT ["node", "server.js"]` i exec-form **och** se till att applikationen har en
+`SIGTERM`-hanterare. Båda behövs.
+</Callout>
+
+<Doodle
+  name="signalen-till-pid-ett"
+  caption="Samma signal. Skalet i vägen skickar den inte vidare."
+/>
+
+<Del titel="Vem som kör, och vad du hämtar" />
+
+## Vad `USER` gör
+
+`USER` byter vilken användare instruktionerna efter den — och containerns process — körs som.
+
+Utan `USER` kör allt som **root**. Det syns direkt:
+
+```
+utan USER : uid=0(root) gid=0(root)
+med  USER : uid=1000(node) gid=1000(node)
+```
+
+Utskriften från `id` är längre än så och listar även grupperna; raderna ovan är klippta.
+
+`node:22-alpine` levereras med en färdig användare som heter `node`, och de flesta officiella
+images gör detsamma. En egen skapas med `RUN adduser -D app` följt av `USER app`.
+
+Lägg `USER` **sist**, efter alla `RUN` som behöver installera något. Annars saknar bygget rättigheter
+mitt i.
+
+## Root i containern vs root på värden
+
+Den här förväxlingen avgör hur allvarligt det är att köra som root i en container.
+
+**Root i containern** är begränsad av containerns namnrymder. Den ser bara containerns filsystem och
+processer.
+
+**Root på värden** äger maskinen.
+
+Problemet är att de två är **samma uid — noll** — om inte user namespaces är påslaget. Hittar någon
+en väg ut ur containern, genom en monterad volym eller ett kärnfel, står de utanför som uid 0.
+
+`USER node` gör att den vägen ut leder till uid 1000 i stället, som inte äger något på värden. Det
+kostar en rad och tar bort hela klassen.
+
+Det är samma minsta-privilegium-resonemang som Azure-delens roller och API-delens scopes, en nivå
+längre ner.
+
+## Vad en digest är
+
+En **digest** är en hash av imagens innehåll: `sha256:` följt av 64 hexadecimala tecken.
+
+Den identifierar exakt **en** image. Ändras en enda byte blir digesten en annan, och samma digest
+kan aldrig peka på något annat innehåll.
+
+```
+node@sha256:16e22a550f3863206a3f701448c45f7912
+c6896a62de43add43bb9c86130c3e2
+```
+
+Digesten är en rad i terminalen; den är bruten här. Du hämtar den ur en image du redan har med
+`docker inspect`, och du använder den i `FROM` i stället för en tagg.
+
+## Tagg vs digest
+
+Del 1.1 slog fast att `latest` inte är ett löfte. Det gäller varje tagg — och digesten är svaret.
+
+**En tagg** är ett namn som pekar på en image. Den som äger repositoryt kan peka om den när som
+helst, och `node:22-alpine` betyder något annat i dag än i fjol.
+
+**En digest** är innehållet självt. Den går inte att peka om, eftersom namnet **är** en hash av det
+den pekar på.
+
+Avvägningen är densamma som mellan en flyttbar tagg och en sha i CI/CD-delen. Taggen ger dig
+säkerhetsrättningar automatiskt; digesten ger dig ett bygge som är identiskt om ett år.
+
+Praktiskt: använd tagg i utveckling, digest när ett bygge måste gå att återskapa exakt — och lås alltid
+det som får se hemligheter.
+
+## Vad sårbarhetsskanning är
+
+**Sårbarhetsskanning** jämför paketen i din image mot en databas över kända sårbarheter.
+
+Verktygen — `docker scout`, Trivy, Grype — listar varje paket med en känd CVE, och de flesta sitter
+i **basimagen**, inte i din kod. Det är därför en ombyggnad mot en nyare bas ofta åtgärdar en hel
+lista på en gång.
+
+Skanningen kräver ett verktyg, men attackytan går att uppskatta utan. `apk list --installed` på
+`node:22-alpine` ger **18 paket**. Det är antalet saker som kan ha en sårbarhet, och multi-stage
+plus distroless finns för att hålla det talet lågt.
+
+Cyber-delen gav prioriteringsordningen: en lista på hundra sårbarheter betas inte av uppifrån, utan
+efter vad som är nåbart och har en känd exploit.
+
+## Fallgropen: allt hamnar i imagen
+
+<Callout type="fallgrop">
+Del 1.1 varnade för `.env` i ett lager. Multi-stage gör den fällan värre på ett sätt som inte syns.
+
+Kopierar du in en hemlighet i **byggsteget** ligger den kvar i det stegets lager. De lagren finns
+i byggcachen på maskinen som byggde, även om de inte följer med slutimagen.
+
+Slutimagen är alltså ren, och hemligheten är ändå läckt till byggservern.
+
+Rätt verktyg är `RUN --mount=type=secret`, som gör hemligheten tillgänglig **under** en instruktion
+utan att skriva den till något lager. I en pipeline hämtas den i stället vid start, som CI/CD-delen
+beskriver med OIDC.
+</Callout>
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att skriva en multi-stage Dockerfile per tjänst och sedan låta den vara. Det du gör oftare
+är att **läsa** någon annans och avgöra vad som faktiskt hamnar i slutimagen.
+
+Det som är värt din tid nu är `ENTRYPOINT` i exec-form plus en `SIGTERM`-hanterare. Det är två rader
+som gör skillnaden mellan en utrullning som tar sekunder och en som tar tio sekunder per container
+och alltid avbryter något.
+
+Imagesignering, SBOM, byggcache i en pipeline och att bygga för flera arkitekturer kan vänta. De blir
+dina när någon ställer krav på leveranskedjan — och de bygger alla på lagermodellen från del 1.1.
+
+## Vanliga nybörjarförväxlingar
+
+Ett multi-stage build ger inte flera images. Bara det sista steget blir din image; resten kastas.
+
+`COPY --from` kopierar inte från byggkontexten. Den hämtar ur ett annat steg i samma fil.
+
+`ENTRYPOINT` och `CMD` är inte varandras synonymer. Argument **ersätter** `CMD` och **läggs till**
+efter `ENTRYPOINT`.
+
+Shell-form skapar inte alltid ett extra skal. Ett enkelt kommando ersätts av processen; ett
+sammansatt gör det inte.
+
+Exec-form räcker inte ensamt för en ren avstängning. Applikationen måste också hantera `SIGTERM` —
+PID 1 ignorerar signaler den saknar hanterare för.
+
+Root i en container är inte ofarligt för att det är "bara i containern". Det är samma uid noll som på
+värden.
+
+En tagg är inte en version. Den kan pekas om. Digesten kan det inte.
+
+## Prova själv
+
+Övningarna bygger små images från `node:22-alpine`. Skapa en tom mapp och arbeta där.
+
+Börja med skillnaden mellan `CMD` och `ENTRYPOINT`:
+
+```bash
+cat > Dockerfile.cmd <<'EOF'
+FROM node:22-alpine
+CMD ["echo", "fran CMD"]
+EOF
+
+cat > Dockerfile.entry <<'EOF'
+FROM node:22-alpine
+ENTRYPOINT ["echo", "fran E"]
+EOF
+
+docker build -q -t lk-cmd -f Dockerfile.cmd .
+docker build -q -t lk-entry -f Dockerfile.entry .
+docker run --rm lk-cmd
+docker run --rm lk-cmd echo hejsan
+docker run --rm lk-entry
+docker run --rm lk-entry hejsan
+```
+
+```
+fran CMD
+hejsan
+fran E
+fran E hejsan
+```
+
+**Rad två är beviset.** Argumentet ersatte `CMD` helt, medan `ENTRYPOINT` på rad fyra fick argumentet
+tillagt efter sig.
+
+Ta nu signalen. Skapa `app.js` med en hanterare:
+
+```javascript
+process.on('SIGTERM', () => {
+  console.log('fick SIGTERM');
+  process.exit(0);
+});
+setInterval(() => {}, 1000);
+```
+
+Bygg samma app i två former:
+
+```bash
+cat > Dockerfile.a <<'EOF'
+FROM node:22-alpine
+COPY app.js /app.js
+CMD ["node", "/app.js"]
+EOF
+
+cat > Dockerfile.b <<'EOF'
+FROM node:22-alpine
+COPY app.js /app.js
+CMD node /app.js && true
+EOF
+
+docker build -q -t lk-a -f Dockerfile.a .
+docker build -q -t lk-b -f Dockerfile.b .
+```
+
+Kör och stoppa den ena i taget, och ta tid:
+
+```bash
+docker run -d --name kort lk-a && sleep 1
+time docker stop kort
+docker logs kort && docker rm kort
+```
+
+Stoppet tar under en sekund och loggen säger `fick SIGTERM`. Kör om med `lk-b` i stället:
+**tio sekunder, och tom logg.** Skalet fick signalen och skickade den aldrig vidare.
+
+Titta på vem som är process 1 i den andra:
+
+```bash
+docker run -d --name kort lk-b && sleep 1
+docker exec kort ps -o pid,args | head -3
+docker rm -f kort
+```
+
+```
+    1 /bin/sh -c node /app.js && true
+    8 node /app.js
+```
+
+Kontrollera slutligen att byggsteget inte följer med. Bygg exemplet från avsnittet om multi-stage och
+fråga efter dess historik:
+
+```bash
+docker history lk-multi \
+  --format '{{.CreatedBy}}' | head -4
+```
+
+Där står `CMD`, `USER`, `COPY /app/dist` och `WORKDIR`. **Varken `npm install` eller `npx tsc`
+finns med** — de hörde till ett steg som kastades.
+
+Städa efter dig:
+
+```bash
+docker rmi lk-cmd lk-entry lk-a lk-b
+docker rmi lk-enkel lk-multi
+```
+
+Tre saker som kan förvirra. `time` är inbyggt i skalet och skriver olika beroende på vilket du kör:
+zsh ger en rad som slutar med `10.216 total`, bash ger tre rader där `real` är den som gäller.
+Containernamnet måste dessutom vara minst två tecken — `--name k` avvisas med *Invalid container
+name*. Enstegsvarianten av multi-stage-exemplet skriver en varning
+om `MODULE_TYPELESS_PACKAGE_JSON` som multi-stage-varianten inte gör — det beror på att slutimagen
+saknar `package.json`, inte på något du gjort fel. Och prövar du signalexemplet med `sleep` i stället
+för Node får du tio sekunder i **båda** formerna, av skälet i fallgropen ovan.
+
+<Callout type="kom-ihag">
+- **Multi-stage**: flera `FROM`, bara det sista steget blir din image.
+- `COPY --from=steg` är den enda bryggan mellan stegen. Allt annat kastas.
+- I exemplet blev slutimagen **lika stor som basimagen** — bygget lämnade inget spår.
+- Argument **ersätter** `CMD` och **läggs till** efter `ENTRYPOINT`.
+- Mönstret i produktion: `ENTRYPOINT` för programmet, `CMD` för standardargumenten.
+- **Exec-form**, alltid. Shell-form lägger ett skal i vägen när kommandot är sammansatt.
+- PID 1 ignorerar signaler den saknar hanterare för. Exec-form **och** `SIGTERM`-hantering behövs.
+- `USER` sist i filen. Root i containern är samma uid noll som på värden.
+- En **tagg** kan pekas om. En **digest** är innehållet, och kan det inte.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Vad händer med byggsteget i ett multi-stage build?",
+      a: "Det kastas. Bara det sista `FROM`-steget blir din image, och det enda som följer med från tidigare steg är det du uttryckligen hämtar med `COPY --from`. Du kan kontrollera det med `docker history` — byggstegets instruktioner finns inte i den färdiga imagen.",
+    },
+    {
+      q: "Du kör `docker run bilden --port 8080`. Vad krävs för att programmet ska starta med den flaggan i stället för att bytas ut?",
+      a: "Att programmet står i `ENTRYPOINT` och standardargumenten i `CMD`. Argument från kommandoraden ersätter `CMD` men läggs till efter `ENTRYPOINT`. Står programmet i `CMD` byts hela kommandot ut mot `--port 8080`, vilket inte är ett program.",
+    },
+    {
+      q: "Din container tar alltid tio sekunder att stoppa. Vad är den troligaste orsaken?",
+      a: "Att `SIGTERM` aldrig når applikationen, så `docker stop` väntar ut sin frist och skickar `SIGKILL`. Antingen ligger ett skal som PID 1 på grund av shell-form med ett sammansatt kommando, eller så saknar applikationen en `SIGTERM`-hanterare — och PID 1 ignorerar signaler den inte lyssnar på.",
+    },
+    {
+      q: "Varför spelar det roll att containern kör som root, när root i containern ändå är isolerad?",
+      a: "För att det är samma uid noll som på värden, om inte user namespaces är påslaget. Isoleringen håller så länge den håller — men vid en monterad volym eller ett kärnfel står angriparen utanför som uid 0. `USER node` gör att samma väg ut leder till uid 1000, som inte äger något.",
+    },
+    {
+      q: "När använder du en digest i stället för en tagg i `FROM`?",
+      a: "När bygget måste gå att återskapa exakt, och när imagen får se hemligheter. Taggen kan pekas om av den som äger repositoryt; digesten är en hash av innehållet och kan inte peka på något annat. Priset är att du inte får säkerhetsrättningar automatiskt.",
+    },
+    {
+      q: "En skanning visar tjugo sårbarheter i din image, men din kod är tre filer. Hur går det ihop?",
+      a: "De flesta sitter i basimagen, inte i din kod. `node:22-alpine` har 18 installerade paket innan du lagt till något. Därför åtgärdar en ombyggnad mot en nyare bas ofta hela listan, och därför är ett minimalt slutsteg det billigaste sättet att sänka antalet.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- Ett multi-stage build har flera `FROM`. Bara det sista steget blir din image.
+- `AS namn` namnger ett steg. `COPY --from=namn` hämtar filer ur det.
+- Byggsteget får vara stort. Slutsteget ska innehålla körtiden och resultatet.
+- I exemplet gick 207 MB till 161 MB — exakt basimagens storlek.
+- `docker history` bevisar det: byggstegets instruktioner finns inte i slutimagen.
+- En distroless-image saknar skal och pakethanterare. Minimal attackyta, svårare felsökning.
+- Argument till `docker run` ersätter `CMD` och läggs till efter `ENTRYPOINT`.
+- Produktionsmönstret är `ENTRYPOINT` för programmet och `CMD` för standardargumenten.
+- Exec-form är en JSON-lista. Shell-form körs genom `/bin/sh -c`.
+- Ett enkelt shell-form-kommando ersätts av processen. Ett sammansatt lämnar `sh` som PID 1.
+- `docker stop` skickar `SIGTERM` till PID 1 och `SIGKILL` tio sekunder senare.
+- PID 1 ignorerar signaler den saknar hanterare för. Exec-form räcker inte ensamt.
+- `USER` byter användare och hör hemma sist. Utan den kör allt som root.
+- Root i containern är samma uid noll som på värden om user namespaces är av.
+- En digest är `sha256:` plus 64 tecken och identifierar exakt ett innehåll.
+- Taggen kan pekas om, digesten inte. Tagg i utveckling, digest när bygget ska gå att återskapa.
+- De flesta sårbarheter sitter i basimagen. Färre paket är färre möjliga CVE:er.
+- En hemlighet i byggsteget läcker till byggcachen även om slutimagen är ren.
+
+## Nästa del
+
+Därmed står Docker-serien: containern, imagen, nätverket, lagringen — och nu en image som går att
+skicka till produktion utan att skämmas.
+
+Allt hittills har handlat om **en** maskin. Compose startar tre containrar på din laptop, och den
+här delen gjorde imagen redo för en server.
+
+Kubernetes-serien tar vid där den frågan tar slut: vad händer när en maskin inte längre räcker?
