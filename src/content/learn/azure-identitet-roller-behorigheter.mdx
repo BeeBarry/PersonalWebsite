@@ -124,7 +124,7 @@ Det är bokstavligt. En rolldefinition är ett JSON-objekt med två fält som be
 ```
 
 `Reader` tillåter alltså varje operation vars namn slutar på `/read`, och drar inte ifrån något.
-Azure levererar över 900 sådana inbyggda roller, och du kan skriva egna.
+Azure levererar flera hundra sådana inbyggda roller, och du kan skriva egna.
 
 ## Vad en rolltilldelning är
 
@@ -376,7 +376,9 @@ Börja med att fråga hur många inbyggda roller som finns:
 az role definition list --query "length(@)" -o tsv
 ```
 
-Svaret är i storleksordningen `922`. Talet växer över tid, så din siffra blir troligen högre.
+Svaret är några hundra. Din siffra blir inte samma som någon annans, och det av två skäl: Azure
+lägger till inbyggda roller över tid, och kommandot räknar dessutom in **egna** rolldefinitioner i
+just din prenumeration. Vill du ha enbart de inbyggda lägger du till `--custom-role-only false`.
 
 Titta nu på den enklaste rollen:
 
@@ -428,8 +430,8 @@ Microsoft.KeyVault/vaults/secrets/readMetadata/action
 Byt `.dataActions` mot `.actions` i samma kommando och du får ingenting tillbaka — listan är tom.
 Rollen ger rätt att läsa hemligheten men inte att röra valvet, alltså motsatsen till vad Owner ger.
 
-Tre saker som kan förvirra. Utan `--name` skriver `az role definition list` ut alla 900-plus
-rollerna och fyller terminalen; avbryt med `q` om utskriften öppnas i en sidvisare. Rollens JSON har
+Tre saker som kan förvirra. Utan `--name` skriver `az role definition list` ut varenda roll och
+fyller terminalen; avbryt med `q` om utskriften öppnas i en sidvisare. Rollens JSON har
 sex fält även när fem är tomma, så `"condition": null` betyder inget annat än att ingen villkorsregel
 är satt. Och kommandona läser från prenumerationen du är inloggad mot — har du flera byter du med
 `az account set --subscription "<namn>"`.
