@@ -1,0 +1,563 @@
+---
+title: 'Resurser och gränser'
+description: 'Hur mycket minne och processorkraft en pod får ta — och vad som händer när den tar mer'
+category: 'kubernetes'
+part: 1
+order: 4
+date: '2026-08-08'
+tags: ['Beginner', 'Resurser', 'QoS']
+---
+
+## Var vi är
+
+Förra delen gav podden sina inställningar och lärde Kubernetes fråga om den mår bra. Probe-svaret
+avgör om podden får trafik, och omstartsstormen visade vad som händer när frågan ställs fel.
+
+Kvar står frågan proben inte kan svara på: hur mycket av nodens minne och processorkraft podden får
+ta. Utan ett svar konkurrerar alla poddar på noden fritt, och den som tar för mycket drar ner
+grannarna med sig.
+
+Den här delen handlar om två tal per container och vad klustret gör med dem. Zoomen ligger på en
+enskild pod på en nod — automatisk skalning och kostnad ligger utanför.
+
+<Del titel="Anspråket" />
+
+## Vad en request är
+
+En **request** är den mängd processorkraft eller minne en container reserverar på förhand.
+
+Talet är inte en mätning av vad containern använder. Det är ett anspråk du gör i manifestet, och
+Kubernetes behandlar det som sant.
+
+Schemaläggaren använder requesten för att välja nod. Har ingen nod så mycket ledigt kvar placeras
+podden inte alls.
+
+## Vad en limit är
+
+En **limit** är taket för hur mycket en container får ta.
+
+Limiten sätts på samma två resurser som requesten, i samma enheter, och gäller per container — inte
+per pod. Har podden två containrar har var och en sitt eget tak.
+
+Limiten påverkar inte var podden hamnar. Den träder i kraft först när containern kör.
+
+## Request vs limit
+
+Två tal som skrivs bredvid varandra och gör helt olika jobb.
+
+**Requesten** är vad podden får räkna med. Den läses av schemaläggaren, före start, och avgör vilken
+nod podden hamnar på.
+
+**Limiten** är vad podden aldrig kommer förbi. Den läses av kubelet, under körning, och avgör vad
+som händer när containern tar för mycket.
+
+Därför kan en pod med hög request stå `Pending` för evigt utan att ha kört en rad kod. En pod med
+låg limit gör tvärtom: den startar direkt och dör en minut senare.
+
+## Hur processorkraft mäts
+
+Processorkraft mäts i **millicores**, skrivet med suffixet `m`.
+
+`1000m` är en hel processorkärna. `500m` är en halv, och `100m` är en tiondel. Du kan också skriva
+`0.5` i stället för `500m` — det är samma tal.
+
+Måttet är en andel av tid, inte en utpekad kärna. `500m` betyder att containern får hälften av en
+kärnas tid, inte att den bundits till kärna nummer två.
+
+## Hur minne mäts
+
+Minne mäts i byte, normalt skrivet med ett suffix: `128Mi`, `1Gi`, `512M`.
+
+Till skillnad från processorkraft går minne inte att dela på tid. En byte är antingen allokerad
+eller inte, och det är den skillnaden som gör att de två resurserna behandlas olika vid taket.
+
+Skriv alltid ut suffixet. Ett `memory: 128` utan enhet betyder 128 **byte**, vilket är en
+storleksordning ingen container kan starta i.
+
+## `Mi` vs `M`
+
+Två suffix som skiljer sig med knappt fem procent, och som blandas ihop i nästan varje manifest.
+
+**`Mi`** är mebibyte — 1024 × 1024 byte. Det är samma enhet som operativsystemet och `docker stats`
+räknar i.
+
+**`M`** är megabyte — 1000 × 1000 byte. Det är enheten hårddisktillverkare säljer i.
+
+`128Mi` är alltså 134 217 728 byte och `128M` är 128 000 000 byte. Skillnaden spelar sällan roll i
+sig, men den gör att talen i manifestet inte stämmer med talen i övervakningen. Välj `Mi` och håll
+dig till det.
+
+## Var talen står i manifestet
+
+Resurserna står under `resources` inuti varje container, bredvid `image` och `ports`.
+
+```yaml
+spec:
+  containers:
+    - name: api
+      image: registry.example.com/searchapi:v3
+      resources:
+        requests:
+          cpu: "100m"
+          memory: "128Mi"
+        limits:
+          cpu: "500m"
+          memory: "256Mi"
+```
+
+Fyra tal, två per resurs. Fältet är valfritt — utelämnar du det startar podden ändå, och det är
+precis det som gör utelämnandet farligt.
+
+Lisa lägger till blocket i sitt Deployment-manifest. Det hör hemma i samma fil som resten, granskat
+i en pull request, precis som konfigurationen i förra delen.
+
+<Del titel="Taket" />
+
+## Vad som händer när processortaket nås
+
+Når containern sitt CPU-tak blir den **strypt**. Kärnan låter den köra färre mikrosekunder per
+tidsperiod, och applikationen fortsätter — långsammare.
+
+Ingenting kraschar. Podden står kvar som `Running` med noll omstarter, och det enda som syns utåt är
+att svaren tar längre tid.
+
+Det gör CPU-strypning till den svåraste av de två att upptäcka. Det finns inget felmeddelande att
+söka efter, bara en applikation som blivit trög utan att någon ändrat något.
+
+## Vad OOMKilled är
+
+**OOMKilled** är statusen en container får när den försökt använda mer minne än sin limit och
+dödats av kärnan. Förkortningen står för *out of memory*.
+
+Minne går inte att strypa. Kärnan kan inte ge containern nittio procent av en byte, så den enda
+åtgärden som finns är att avsluta processen.
+
+<Flow
+  caption="Fyra steg, och bara det första kommer från din kod. Resten gör kärnan och kubelet åt dig."
+  steps={[
+    {
+      label: "Containern allokerar",
+      note: "Processen ber om mer minne än `limits.memory` tillåter.",
+    },
+    {
+      label: "Kärnan dödar processen",
+      via: "SIGKILL",
+      note: "Samma signal som `kill -9` i Linux-delen. Den går inte att fånga.",
+      accent: true,
+    },
+    {
+      label: "Containern får status OOMKilled",
+      note: "Exitkoden blir **137** — 128 plus signalnummer 9.",
+    },
+    {
+      label: "Kubelet startar om",
+      note: "Om `restartPolicy` tillåter det. Annars stannar podden där.",
+    },
+  ]}
+/>
+
+<Callout type="fallgrop">
+`OOMKilled` syns inte alltid i `kubectl get pods`. Startar kubelet om containern hamnar statusen
+snabbt på `CrashLoopBackOff` i stället, och `OOMKilled` finns då kvar bara i det förra tillståndet:
+
+```bash
+kubectl get pod api-7f9c \
+  -o jsonpath='{..terminated.reason}'
+```
+
+Exitkoden ljuger dessutom när det inte är huvudprocessen som dör. Dödar kärnan ett barn till
+huvudprocessen får containern den kodens exitvärde — ofta `1` — och `OOMKilled` står kvar medan
+`137` aldrig syns.
+</Callout>
+
+## CPU stryps vs minne dödas
+
+Den viktigaste asymmetrin i hela avsnittet, och orsaken till att de två talen inte går att sätta
+med samma tumregel.
+
+**Processorkraft är komprimerbar.** Överskrids taket får containern mindre av den, långsammare. Den
+fortsätter köra.
+
+**Minne är inte komprimerbart.** Överskrids taket finns ingen mellannivå, och containern dödas.
+
+Konsekvensen för hur du sätter talen: en för låg CPU-limit ger en trög tjänst, en för låg
+minneslimit ger en tjänst som dör. Den ena felmarginalen är bekväm, den andra är inte det.
+
+<Doodle
+  name="tva-tak-en-container"
+  caption="Vid CPU-taket viker kurvan av och fortsätter. Vid minnestaket tar den slut."
+/>
+
+<Del titel="Vad klustret gör med talen" />
+
+## Schemaläggaren räknar requests
+
+Schemaläggaren är den del av control plane som väljer nod åt en ny pod. Den räknar **requests**, och
+den räknar aldrig faktisk förbrukning.
+
+En nod med 8 kärnor och 7,6 GiB minne har det som kapacitet. Från den drar schemaläggaren summan av
+alla requests som redan lovats bort på noden, och jämför resten mot den nya poddens request.
+
+Att poddarna på noden bara använder en bråkdel av vad de reserverat ändrar ingenting. Reservationen
+är utlovad, och utlovat utrymme är upptaget utrymme.
+
+<Doodle
+  name="reserverat-inte-anvant"
+  caption="Den streckade ramen är reserverad. Skrafferingen är använd. Schemaläggaren ser bara ramen."
+/>
+
+## Pending och Insufficient memory
+
+`Pending` betyder att podden är accepterad av klustret men ännu inte placerad på någon nod.
+
+Får ingen nod plats stannar podden där tills något ändras. Orsaken står inte i podden utan bland
+dess händelser:
+
+```bash
+kubectl describe pod for-stor
+```
+
+Längst ner, under `Events`, står raden som förklarar allt:
+
+```
+0/1 nodes are available: 1 Insufficient memory.
+```
+
+Siffran före snedstrecket är hur många noder som gick att använda. `0/1` betyder att den enda noden
+prövades och underkändes. Meddelandet namnger dessutom vilken resurs som tog slut.
+
+## Överbokning
+
+**Överbokning** betyder att summan av allas limits på en nod är större än nodens kapacitet.
+
+Det är tillåtet, och det är vanligt. Kubernetes skriver till och med ut det själv:
+
+```bash
+kubectl describe node docker-desktop
+```
+
+```
+Allocated resources:
+  (Total limits may be over 100 percent,
+   i.e., overcommitted.)
+```
+
+Överbokningen fungerar så länge alla inte toppar samtidigt. Gör de det tar nodens minne slut på
+riktigt, och då börjar kubelet **vräka** poddar för att rädda noden. Vilka som ryker först avgörs av
+nästa begrepp.
+
+## Vad en QoS-klass är
+
+En **QoS-klass** är den prioritetsstämpel Kubernetes sätter på varje pod utifrån hur dess requests
+och limits är satta.
+
+Du sätter aldrig klassen själv. Den räknas fram ur talen, och du läser av den:
+
+```bash
+kubectl get pod api-7f9c \
+  -o jsonpath='{.status.qosClass}'
+```
+
+Klassen styr vräkningsordningen när noden får slut på minne. Den styr inte hur mycket podden får
+ta — det gör limiten.
+
+## Guaranteed vs Burstable vs BestEffort
+
+Tre klasser, och regeln för vilken du hamnar i är strängare än den ser ut.
+
+**Guaranteed** kräver att *varje* container i podden har både `cpu` och `memory` satta, och att
+request är lika med limit för båda. Missar du ett enda av de fyra talen faller podden ur klassen.
+
+**Burstable** är podden som har minst en request satt men inte uppfyller kraven ovan. De flesta
+poddar hamnar här.
+
+**BestEffort** är podden utan ett enda tal. Den vräks först, och den får inget skydd alls.
+
+Fällan sitter i första regeln: en pod med `requests.memory` lika med `limits.memory` men utan
+CPU-tal blir **Burstable**, inte Guaranteed. Talen måste vara kompletta, inte bara lika.
+
+<Split
+  leftTitle="Utan resources"
+  rightTitle="Med resources"
+  leftTone="bad"
+  rightTone="good"
+  caption="Samma image, samma applikation. Skillnaden är vem som står först i kön när noden tar slut."
+>
+  <div slot="left">
+
+  ```yaml
+  containers:
+    - name: api
+      image: searchapi:v3
+  ```
+
+  Klassen blir `BestEffort`. Podden placeras var som helst, eftersom den inte begär något.
+
+  När noden får slut på minne är den första som vräks — även om den knappt använder något.
+
+  </div>
+  <div slot="right">
+
+  ```yaml
+  containers:
+    - name: api
+      image: searchapi:v3
+      resources:
+        requests:
+          cpu: "100m"
+          memory: "128Mi"
+        limits:
+          memory: "256Mi"
+  ```
+
+  Klassen blir `Burstable`. Podden får sin plats reserverad och ett tak den inte passerar.
+
+  Den vräks först när alla `BestEffort` redan är borta.
+
+  </div>
+</Split>
+
+## Vad en ResourceQuota är
+
+En **ResourceQuota** är ett tak för hur mycket ett helt namnrum får begära tillsammans.
+
+Ett **namnrum** är en namngiven avdelning i klustret som objekt hör till, och det är den gräns
+`kubectl get pods` visar dig ett utsnitt av. Team och miljöer får ofta varsitt.
+
+```yaml
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: team-kvot
+  namespace: kvot-test
+spec:
+  hard:
+    requests.memory: "1Gi"
+    limits.memory: "2Gi"
+```
+
+Kvoten har en följdverkan som förvånar: finns den, blir talen **obligatoriska**. En pod utan
+`requests.memory` går inte längre att skapa i namnrummet, eftersom Kubernetes annars inte kan räkna
+den mot taket.
+
+```
+pods "naken" is forbidden: failed quota:
+must specify limits.memory, requests.memory
+```
+
+Det är oftast så resurstal införs i ett team på riktigt. Ingen övertalar alla att skriva dem — någon
+lägger en kvot på namnrummet, och därefter går det inte att låta bli.
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att skriva `resources`-blocket en gång per tjänst och sedan justera det ett par gånger om
+året. Det du gör oftare är att läsa `OOMKilled` i en podd som inte startar, och veta att svaret är
+`limits.memory` och inte applikationskoden.
+
+Det som är värt din tid nu är asymmetrin: minne dödar, processorkraft bromsar. Den avgör åt vilket
+håll du ska fela när du gissar ett tal, och du kommer att gissa i början.
+
+Vräkningsordning, `LimitRange`, automatisk skalning och rätt dimensionering över tid kan vänta. De
+blir dina den dag du äger en nodpool och en budget — och de bygger alla på samma fyra tal.
+
+## Vanliga nybörjarförväxlingar
+
+En request är inte en mätning. Den är ett anspråk du skriver själv, och Kubernetes tror på det utan
+att kontrollera det mot verkligheten.
+
+En limit påverkar inte var podden hamnar. Schemaläggaren läser bara requesten.
+
+`OOMKilled` betyder inte att noden fick slut på minne. Det betyder oftast att containern passerade
+sitt eget tak, medan noden hade gott om plats kvar.
+
+Att en pod är `Running` betyder inte att den mår bra. En strypt container kör vidare, bara
+långsammare, och ingen status ändras.
+
+Lika request och limit ger inte `Guaranteed` av sig självt. Både `cpu` och `memory` måste vara satta
+på varje container i podden.
+
+`Mi` och `M` är inte samma sak. Skillnaden är liten men gör att manifestet och övervakningen visar
+olika tal.
+
+## Prova själv
+
+Övningarna nedan kräver ett kluster. Ett slängbart duger — slå på Kubernetes i Docker Desktop under
+Settings → Kubernetes, som i del 1.0.
+
+Börja med att fråga vad poddarna faktiskt använder:
+
+```bash
+kubectl top pods
+```
+
+Du får med stor sannolikhet ett fel:
+
+```
+error: Metrics API not available
+```
+
+**Det är inte ett fel i installationen.** `kubectl top` läser från en komponent som heter
+metrics-server, och den ingår inte i ett vanligt kluster. Utan den kan Kubernetes fördela resurser
+men inte visa dig förbrukningen — vilket är värt att fästa: klustret behöver inte mäta för att
+kunna begränsa.
+
+Sätt nu ett minnestak som garanterat spricker. Spara som `oom.yaml`:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: oom-direkt
+spec:
+  restartPolicy: Never
+  containers:
+    - name: c
+      image: busybox:1.37
+      command: ["sh","-c","tail /dev/zero"]
+      resources:
+        requests: { memory: "20Mi", cpu: "50m" }
+        limits:   { memory: "20Mi", cpu: "50m" }
+```
+
+`tail /dev/zero` läser ett oändligt flöde av nollor och buffrar dem, så minnet tar slut på ett par
+sekunder. Kör och titta:
+
+```bash
+kubectl apply -f oom.yaml
+kubectl get pod oom-direkt
+```
+
+```
+NAME         READY   STATUS      RESTARTS   AGE
+oom-direkt   0/1     OOMKilled   0          7s
+```
+
+Fråga sedan efter exitkoden och QoS-klassen:
+
+```bash
+kubectl get pod oom-direkt \
+  -o jsonpath='{..terminated.exitCode}'
+kubectl get pod oom-direkt \
+  -o jsonpath='{.status.qosClass}'
+```
+
+`137` och `Guaranteed`. Klassen blev Guaranteed just för att manifestet satte alla fyra talen lika —
+ta bort `cpu` ur båda och kör om, så blir samma pod `Burstable`.
+
+Byt nu till processorkraft. Spara som `cpu.yaml`:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: cpu-stryps
+spec:
+  containers:
+    - name: c
+      image: busybox:1.37
+      command: ["sh","-c","while true; do :; done"]
+      resources:
+        requests: { cpu: "100m" }
+        limits:   { cpu: "100m" }
+```
+
+Kör den, vänta tjugo sekunder och läs kärnans egen bokföring inifrån containern:
+
+```bash
+kubectl apply -f cpu.yaml
+kubectl exec cpu-stryps -- cat /sys/fs/cgroup/cpu.stat
+```
+
+```
+nr_periods 207
+nr_throttled 207
+throttled_usec 3194351
+```
+
+Strypt i varenda period. Fråga ändå efter podden:
+
+```bash
+kubectl get pod cpu-stryps
+```
+
+Den står som `Running` med noll omstarter. **Där är asymmetrin, i två utskrifter:** samma sorts
+överskridande dödade den ena podden och saktade bara ner den andra.
+
+Tre saker som kan förvirra. Filen `cpu.stat` finns bara på cgroup v2 — på ett äldre system heter
+motsvarigheten `cpu.cfs_quota_us` och ligger under `/sys/fs/cgroup/cpu/`. Utelämnar du
+`restartPolicy: Never` i det första exemplet hinner statusen bli `CrashLoopBackOff` innan du hunnit
+titta. Och `tail /dev/zero` fyller minnet snabbt — vänta med att köra den mot ett kluster du delar
+med någon annan.
+
+Städa efter dig:
+
+```bash
+kubectl delete pod oom-direkt cpu-stryps
+```
+
+<Callout type="kom-ihag">
+- **Requesten** reserverar och väljer nod. **Limiten** är taket och gäller först vid körning.
+- Processorkraft mäts i millicores: `1000m` är en hel kärna. Minne mäts i byte — skriv ut suffixet.
+- **CPU stryps, minne dödas.** Det är asymmetrin allt annat följer av.
+- `OOMKilled` med exitkod `137` betyder att containern passerade sin egen `limits.memory`.
+- Schemaläggaren räknar **requests**, aldrig faktisk förbrukning. Därför går noder att överboka.
+- `Guaranteed` kräver att både `cpu` och `memory` är satta och lika i varje container.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Vad är skillnaden mellan en request och en limit?",
+      a: "Requesten är vad containern reserverar. Schemaläggaren läser den före start och väljer nod utifrån den. Limiten är taket, och kubelet tillämpar den under körning. En pod kan stå `Pending` på grund av sin request utan att limiten någonsin fått betydelse.",
+    },
+    {
+      q: "En container passerar sin `limits.cpu`. Vad händer med podden?",
+      a: "Ingenting synligt. Containern stryps — kärnan ger den färre mikrosekunder per period — och applikationen kör vidare, långsammare. Podden står kvar som `Running` utan omstarter, vilket är det som gör strypning svår att upptäcka.",
+    },
+    {
+      q: "Din pod visar `CrashLoopBackOff`. Hur tar du reda på om orsaken var minnet?",
+      a: "Statusen har hunnit skrivas över, så du läser det förra tillståndet: `kubectl get pod <namn> -o jsonpath='{.status.containerStatuses[0].lastState.terminated.reason}'`. Står det `OOMKilled` var det minnestaket. Exitkoden är `137` när det var huvudprocessen som dödades.",
+    },
+    {
+      q: "Du sätter `requests.memory` och `limits.memory` till samma värde, men lämnar cpu tomt. Vilken QoS-klass får podden?",
+      a: "`Burstable`. `Guaranteed` kräver att både `cpu` och `memory` är satta, och lika, i varje container i podden. Ett saknat tal räcker för att falla ur klassen.",
+    },
+    {
+      q: "Poddarna på en nod använder tio procent av sitt minne. En ny pod får ändå `Insufficient memory`. Hur går det ihop?",
+      a: "Schemaläggaren räknar requests, inte förbrukning. Det reserverade utrymmet är utlovat och därmed upptaget, oavsett hur lite av det som används. Lösningen är att sänka requesterna så de speglar verkligheten, inte att vänta på att förbrukningen ska gå ner.",
+    },
+    {
+      q: "Varför börjar poddar utan `resources` plötsligt nekas när någon lagt en ResourceQuota på namnrummet?",
+      a: "Kvoten är ett tak för summan av namnrummets requests och limits. En pod utan tal går inte att räkna mot det taket, så Kubernetes avvisar den med `must specify limits.memory, requests.memory`. Kvoten gör talen obligatoriska.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- En request reserverar processorkraft eller minne. Den är ett anspråk, inte en mätning.
+- En limit är taket, per container, och den gäller först när containern kör.
+- Requesten väljer nod. Limiten avgör vad som händer vid taket. De görs av olika delar av klustret.
+- Processorkraft mäts i millicores — `1000m` är en hel kärna, och måttet är tid, inte en viss kärna.
+- Minne mäts i byte. `Mi` är 1024-baserat, `M` är 1000-baserat. Välj `Mi` och håll dig till det.
+- Vid CPU-taket stryps containern och fortsätter köra. Vid minnestaket dödas den.
+- `OOMKilled` med exitkod `137` betyder överskriden `limits.memory`, inte att noden är full.
+- Startas containern om göms `OOMKilled` i `lastState`, och statusen blir `CrashLoopBackOff`.
+- Schemaläggaren räknar requests. Därför kan en nod vara full av reservationer och nästan tom i drift.
+- Överbokning är tillåtet: summan av limits får överstiga kapaciteten.
+- QoS-klassen räknas fram ur talen och styr vräkningsordningen, inte hur mycket podden får ta.
+- `Guaranteed` kräver alla fyra talen. `BestEffort` är podden utan tal, och den vräks först.
+- En ResourceQuota tar hela namnrummet — och gör resurstalen obligatoriska i det.
+
+## Nästa del
+
+Därmed står Kubernetes-grunderna: poddarna, vägen in, konfigurationen och nu de tal som avgör hur
+mycket varje pod får ta.
+
+En fråga lämnar den här delen obesvarad med flit: *vilka* tal du ska skriva. `128Mi` och `100m` är
+gissningar tills någon mäter, och den strypta podden syntes ju inte i någon status.
+
+Nästa serie handlar om att se sitt system i drift — vad loggar, mätvärden och spårning är, och
+varför en pod som är `Running` inte betyder att allt är bra.

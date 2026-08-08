@@ -1,16 +1,16 @@
 ---
 // FAQ — en spalt, grupperad efter var i rekryteringen frågan dyker upp.
 //
-// Tidigare låg de elva frågorna i ett tvåspaltigt grid. Det fungerar inte för
+// Tidigare låg frågorna i ett tvåspaltigt grid. Det fungerar inte för
 // ett dragspel: när en post fälls ut växer bara den ena spalten, och grannen
 // lämnar ett par hundra pixlar hål. `align-items:start` gjorde hålet synligt i
 // stället för att sträcka grannen — men båda utfallen är fel. En spalt läser
 // dessutom som det FAQ är: en fråga i taget.
 //
-// Grupperingen ersätter den kategorietikett som förut stod på var och en av de
-// elva raderna. Samma information, en gång per grupp i stället för elva gånger,
-// och ordningen i faqCategories är HR:s egen väg genom en rekrytering:
-// Vanligast → Annonsen → Screening → CV & nivåer.
+// Grupperingen ersätter den kategorietikett som förut stod på var och en av
+// raderna. Samma information, en gång per grupp i stället för på varje fråga.
+// Ordningen i faqCategories är HR:s väg genom en rekrytering, med "Teknik i
+// praktiken" som en snabb uppslagspunkt när ett begrepp behöver redas ut.
 //
 // EN gemensam [data-hr-accordion] runt alla grupper (inte en per grupp) —
 // annars kan fyra frågor stå öppna samtidigt. hrGuide.ts letar heads med
@@ -26,13 +26,30 @@ import { hrFaq, hrFaqCategories, cardById, typo } from "../../data/hr";
 const groups = hrFaqCategories
   .map((cat) => ({ cat, items: hrFaq.filter((f) => f.cat === cat) }))
   .filter((g) => g.items.length > 0);
+const totalRows = groups.reduce((total, group) => total + group.items.length, 0);
 ---
 
 <div data-hr-faq>
+  <div class="hr-chips hr-faq__chips" role="group" aria-label="Visa frågor för" data-hr-faq-filters>
+    <button class="hr-chip is-active" type="button" data-hr-faq-filter="Alla" aria-pressed="true">
+      Alla
+    </button>
+    {
+      groups.map((group) => (
+        <button class="hr-chip" type="button" data-hr-faq-filter={group.cat} aria-pressed="false">
+          {group.cat}
+        </button>
+      ))
+    }
+  </div>
+  <p class="hr-count" data-hr-faq-count aria-live="polite" aria-atomic="true" hidden>
+    {totalRows} av {totalRows} frågor visas
+  </p>
+
   <div class="hr-faq" data-hr-accordion>
     {
       groups.map((g) => (
-        <section class="hr-faq__group">
+        <section class="hr-faq__group" data-hr-faq-group={g.cat}>
           <h3 class="hr-faq__grouptitle">
             <span>{g.cat}</span>
             <span class="hr-faq__groupcount">{g.items.length}</span>
@@ -49,7 +66,7 @@ const groups = hrFaqCategories
               });
               const open = item.id === "f1";
               return (
-                <div class="hr-acc__item">
+                <div class="hr-acc__item" data-hr-faq-item>
                   <button
                     type="button"
                     class="hr-acc__head"

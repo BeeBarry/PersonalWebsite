@@ -1,12 +1,13 @@
 ---
-// Ordlista — 16 begrepp, en mening styck. Sök + kategori-filter + sorterings-
+// Ordlista — korta, fristående begrepp. Sök + kategori-filter + sorterings-
 // växel (A–Ö med bokstavsavdelare / Vanligast först = datafil-ordning) sköts av
-// hrGuide.ts. Medvetet ingen A–Ö-rail (för få termer). Renderas A–Ö server-side
-// (graceful utan JS); data-hr-order bär datafil-ordningen för "Vanligast först".
+// hrGuide.ts. Sök och kategori-filter ersätter en A–Ö-rail. Renderas A–Ö
+// server-side (graceful utan JS); data-hr-order bär datafil-ordningen för
+// "Vanligast först".
 //
 // Layouten är ett KORTRUTNÄT, inte tvåspaltiga rader. Rader i två CSS-kolumner
 // kan aldrig linjera med varandra — varje definition är olika lång, så
-// underlinjerna hamnade på sexton olika höjder och listan såg trasig ut. Ett
+// underlinjerna hamnade på olika höjder och listan såg trasig ut. Ett
 // grid ger lika höga kort per rad och en rak kant hela vägen ner.
 //
 // Kortets uppbyggnad (kategori → term → definition) speglar .hrcard i Slå

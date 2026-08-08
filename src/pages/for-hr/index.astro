@@ -1,5 +1,5 @@
 ---
-// Teknik-guiden — HR-fliken. Fyra inre flikar (Slå upp, Annonsen, Frågor,
+// Teknik-guiden — HR-fliken. Fyra inre flikar (Slå upp, Tolkningar, Frågor,
 // Ordlista) som styrs av den sticky .hr-nav i innehållsflödet — inte av ett
 // sidhuvud, så navigeringen syns där blicken redan är. Kort-sidorna
 // (/for-hr/[card]) använder istället HrTabBar, som bär tillbaka-knapp och
@@ -39,7 +39,7 @@ const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
         gör den visuellt överordnad panelernas chips-rader. */}
     <nav class="hr-nav" data-hr-tablist aria-label="Guidens delar">
       <a href="/for-hr/" class="hr-nav__tab is-active" data-hr-tab="bib" aria-current="page">Slå upp</a>
-      <a href="/for-hr/?flik=ovs" class="hr-nav__tab" data-hr-tab="ovs">Annonsen</a>
+      <a href="/for-hr/?flik=ovs" class="hr-nav__tab" data-hr-tab="ovs">Tolkningar</a>
       <a href="/for-hr/?flik=faq" class="hr-nav__tab" data-hr-tab="faq">Frågor</a>
       <a href="/for-hr/?flik=ord" class="hr-nav__tab" data-hr-tab="ord">Ordlista</a>
     </nav>
@@ -69,10 +69,10 @@ const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
         hidden
       >
         <div class="hr-panel__head">
-          <h2 class="hr-panel__title" id="hr-h-ovs">Annonsen, rad för rad</h2>
+          <h2 class="hr-panel__title" id="hr-h-ovs">Så kan utvecklare tolka det du säger</h2>
           <p class="hr-panel__intro">
-            Vanliga formuleringar i tech-annonser — vad de faktiskt betyder, vad
-            du ska leta efter och var det brukar gå fel.
+            Formuleringar från annonser, telefonavstämningar och intervjuer —
+            hur de kan uppfattas av utvecklare och när ett förtydligande hjälper.
           </p>
         </div>
         <Translate />
@@ -88,7 +88,7 @@ const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
         <div class="hr-panel__head">
           <h2 class="hr-panel__title" id="hr-h-faq">Frågor och svar</h2>
           <p class="hr-panel__intro">
-            Elva frågor som återkommer i tech-rekrytering, med korta svar och
+            Frågor som återkommer i tech-rekrytering, med korta svar och
             länkar vidare till korten.
           </p>
         </div>
@@ -105,7 +105,7 @@ const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
         <div class="hr-panel__head">
           <h2 class="hr-panel__title" id="hr-h-ord">Ordlista</h2>
           <p class="hr-panel__intro">
-            Sexton begrepp du hör på avstämningar och intervjuer — förklarade
+            Begrepp du hör på avstämningar och intervjuer — förklarade
             med en mening var.
           </p>
         </div>

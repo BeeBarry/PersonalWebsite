@@ -1092,6 +1092,293 @@ def alla():
       + G % (gren(50, False) + gren(490, True))
       + "\n" + txt([(220,296,"squash"),(660,296,"merge-commit")],18.5) + "\n</svg>")
 
+    # 56 — K8s 1.3 · Två tak, en container
+    # Båda panelerna har samma tak och samma stigande kurva fram till det. Det som
+    # SKILJER är enda gången ögat behöver stanna: kurvan viker av och fortsätter,
+    # eller tar slut i ett kryss. Den streckade fortsättningen är gemensam — det är
+    # "vad containern ville", alltså det uteblivna, i båda fallen.
+    def tak(x, doda):
+        ty, bx = 132, x + 196          # taknivå, brytpunkt
+        p = (f'<path d="M{x} {ty} Q{x+170} {ty-2} {x+340} {ty}"/>'
+             f'<path d="M{x+12} 292 Q{x+112} 286 {bx} {ty+9}"/>'
+             f'<path d="M{bx} {ty+9} Q{bx+26} {ty-22} {bx+52} {ty-52}" '
+             f'stroke-dasharray="7 8" opacity="0.4"/>')
+        if doda:
+            p += (f'<path d="M{bx-16} {ty-7} L{bx+16} {ty+25}"/>'
+                  f'<path d="M{bx+16} {ty-7} L{bx-16} {ty+25}"/>')
+        else:
+            p += f'<path d="M{bx} {ty+9} Q{x+266} {ty+12} {x+336} {ty+10}"/>'
+        return p
+    D['tva-tak-en-container']=(
+      '<svg viewBox="0 0 880 372" role="img" aria-label="Två paneler med samma vågräta tak. Till '
+      'vänster viker den stigande kurvan av under taket och fortsätter. Till höger slutar den i '
+      'ett kryss vid taket. I båda fallen fortsätter en streckad linje upp genom taket.">\n'
+      + G % (tak(40, False) + tak(480, True))
+      + "\n" + txt([(42,116,"limit"),(482,116,"limit")],14,' opacity="0.7"',"start")
+      + "\n" + txt([(210,336,"cpu · stryps"),(650,336,"minne · dödas")],18.5) + "\n</svg>")
+
+    # 57 — K8s 1.3 · Reserverat, inte använt
+    # Poängen är att den streckade ramen är STÖRRE än skrafferingen inuti den, och
+    # att det ändå är ramen som tar slut. Skrafferingen ligger i botten av varje
+    # fack, så den läses som en nivå och inte som en andra låda.
+    #
+    # Två omritningar: (1) tre fack à 152 px sprack ut ur noden — facken räknas nu
+    # ur nodens innermått. (2) Etiketterna låg 14 px från ramen, under luftkravet.
+    # De ligger i stället som en teckenförklaring ÖVER bilden, där de har hela
+    # radavståndet fritt och dessutom förklarar de två streckens betydelse en gång
+    # för alla i stället för att peka på ett enskilt fack.
+    NX, NW, NB = 60, 760, 22           # nodens vänsterkant, bredd, inre marginal
+    FW = (NW - 4 * NB) // 3            # fackbredd ur innermåttet, aldrig tvärtom
+    def fack(i):
+        x = NX + NB + i * (FW + NB)
+        return (f'<path d="{w(x,118,FW,122)}" stroke-dasharray="8 9" opacity="0.55"/>'
+                + markerad(x + 8, 206, FW - 16, 30, 22))
+    forklaring=('<path d="M60 60 Q78 59 96 60" stroke-dasharray="8 9" opacity="0.55"/>'
+                + f'<g stroke-width="1.1" opacity="0.42">{hatch(340,50,36,20,14)}</g>')
+    D['reserverat-inte-anvant']=(
+      '<svg viewBox="0 0 880 340" role="img" aria-label="En nod med tre streckade fack som fyller '
+      'den helt. I botten av varje fack ligger en liten skrafferad nivå som upptar en bråkdel av '
+      'facket. Över bilden förklaras streckad ram som reserverat och skraffering som använt.">\n'
+      + G % (forklaring + f'<path d="{w(NX,96,NW,166)}"/>'
+             + "".join(fack(i) for i in range(3)))
+      + "\n" + txt([(106,65,"reserverat"),(386,65,"använt")],13,' opacity="0.62"',"start")
+      + "\n" + txt([(440,306,"noden")],18.5) + "\n</svg>")
+
+    # 58 — TF 1.2 · Modulens två slitsar
+    # Lådan är heldragen och STÄNGD: inget streck visar vad som finns inuti, för
+    # det är precis vad anroparen inte får se. Den överkryssade streckade pilen
+    # måste peka mot lådans mitt — pekar den mot kanten läses den som "in i
+    # lådan" i stället för "in till det inre", och poängen tappas.
+    lada = f'<path d="{w(330,120,220,150)}"/>'
+    inpil = ('<path d="M96 168 Q212 166 320 168"/>' + arrow(326,168) +
+             '<path d="M96 226 Q212 228 320 226"/>' + arrow(326,226))
+    utpil = ('<path d="M556 196 Q676 194 792 196"/>' + arrow(798,196))
+    # Lådan lämnas TOM. Ett försök att antyda innehållet med en liten streckad
+    # cirkel läste som en smuts på pappret, och motsade dessutom hela poängen:
+    # anroparen ser inte in. Frånvaron är bilden.
+    nekad = ('<path d="M440 348 Q438 300 440 250" stroke-dasharray="7 8" opacity="0.5"/>'
+             + arrow(440,244,"up")
+             + '<path d="M424 292 L456 320"/><path d="M456 292 L424 320"/>')
+    D['modulens-tva-slitsar']=(
+      '<svg viewBox="0 0 880 400" role="img" aria-label="En stängd låda med två heldragna pilar in '
+      'från vänster och en heldragen pil ut åt höger. Underifrån går en streckad pil mot lådans '
+      'inre, överkryssad.">\n'
+      + G % (lada + inpil + utpil + nekad)
+      + "\n" + txt([(92,162,"prefix"),(92,220,"roll")],14,' opacity="0.7"',"end")
+      + "\n" + txt([(802,190,"namn")],14,' opacity="0.7"',"start")
+      + "\n" + txt([(440,104,"modules/namn")],18.5)
+      + "\n" + txt([(440,378,"local.namn")],14,' opacity="0.62"') + "\n</svg>")
+
+    # 59 — TF 1.2 · Gardinen, inte kassaskapet
+    # Gardinen hänger FRAMFÖR terminalen och skymmer den. Filen bredvid har inget
+    # framför sig alls — det är frånvaron av skydd som är bilden, inte en symbol
+    # för det. Därför får filen inte heller något lås eller kryss.
+    skarm = (f'<path d="{w(80,120,300,170)}"/>'
+             '<path d="M80 158 Q230 156 380 158"/>')
+    gardin = ('<path d="M64 112 Q230 109 396 112"/>'
+              + "".join(f'<path d="M{x} 118 Q{x+7} 200 {x} 282" stroke-width="1.4" '
+                        f'opacity="0.55"/>' for x in range(96, 381, 36)))
+    fil = ('<path d="M540 118 Q634 116 706 118 L748 162 Q751 226 748 290 '
+           'Q634 293 542 291 Q538 204 540 118 Z"/>'
+           '<path d="M706 118 Q705 146 708 162 Q728 164 748 162"/>'
+           + "".join(f'<path d="M568 {y} Q638 {y-2} 712 {y}" stroke-width="1.3" '
+                     f'opacity="0.6"/>' for y in (206, 236, 266)))
+    D['gardinen-inte-kassaskapet']=(
+      '<svg viewBox="0 0 880 400" role="img" aria-label="Till vänster en terminal med en gardin '
+      'hängande framför sig. Till höger en fil med tre synliga textrader och ingenting framför.">\n'
+      + G % (skarm + gardin + fil)
+      + "\n" + txt([(230,148,"&lt;sensitive&gt;")],15,' opacity="0.75"')
+      + "\n" + txt([(230,344,"utskriften"),(644,344,"terraform.tfstate")],18.5) + "\n</svg>")
+
+    # 60 — Azure 1.2 · Tre delar, en tilldelning
+    # Medvetet INGEN hierarki och inga staplade lådor: Azure 1.1 har redan en
+    # Stack över hanteringsgrupp → prenumeration → resursgrupp, och en andra
+    # lådstapel hade lästs som en upprepning. Den här visar sammanfogningen —
+    # tre strömmar som möts i en punkt — vilket är en form hubben inte har än.
+    def gren(y, etikett_y):
+        return f'<path d="M196 {y} Q300 {y} 372 {etikett_y}"/>'
+    knut = (gren(96,190) + gren(196,196) + gren(296,202)
+            + f'<path d="{circ(404,196,26)}"/>'
+            + '<path d="M432 196 Q548 194 664 196"/>' + arrow(670,196))
+    D['tre-delar-en-tilldelning']=(
+      '<svg viewBox="0 0 880 372" role="img" aria-label="Tre linjer märkta principal, roll och '
+      'scope löper ihop i en ring, och ur ringen går en pil ut till en ruta märkt behörighet.">\n'
+      + G % (knut + f'<path d="{w(676,164,150,64)}"/>')
+      + "\n" + txt([(188,102,"principal"),(188,202,"roll"),(188,302,"scope")],15,
+                   ' opacity="0.8"',"end")
+      # Etiketten låg först på y=332 — 104 px under lådan, vilket läste som en
+      # fristående text i stället för som lådans namn. 34 px under underkanten
+      # ger luft nog utan att bandet mellan dem bryts.
+      + "\n" + txt([(751,262,"behörighet")],18.5) + "\n</svg>")
+
+    # 61 — Azure 1.2 · Fickan som är tom
+    # Nyckeln till vänster ritas TVÅ gånger — i appen och i filen — för det är
+    # hela poängen: en hemlighet finns alltid på minst två ställen. Till höger
+    # finns den på noll, och tokenet är streckat eftersom det upphör.
+    nyckel = lambda cx,cy: (f'<path d="{circ(cx,cy,11)}"/>'
+                            f'<path d="M{cx+11} {cy} Q{cx+34} {cy+1} {cx+56} {cy}"/>'
+                            f'<path d="M{cx+42} {cy} Q{cx+43} {cy+9} {cx+42} {cy+16}"/>'
+                            f'<path d="M{cx+54} {cy} Q{cx+55} {cy+8} {cx+54} {cy+14}"/>')
+    vanster = (f'<path d="{w(56,120,300,140)}"/>' + nyckel(104,168)
+               + f'<path d="{w(120,296,172,62)}" stroke-width="1.4" opacity="0.7"/>'
+               + nyckel(150,326))
+    hoger = (f'<path d="{w(524,120,300,140)}"/>'
+             + f'<path d="{w(556,150,84,52)}" stroke-dasharray="7 8" opacity="0.45"/>'
+             + '<path d="M700 300 Q702 268 700 238" stroke-dasharray="7 8" opacity="0.6"/>'
+             + arrow(700,232,"up")
+             + f'<path d="{w(646,300,108,44)}" stroke-dasharray="7 8" opacity="0.6"/>')
+    D['fickan-som-ar-tom']=(
+      '<svg viewBox="0 0 880 400" role="img" aria-label="Till vänster en app med en nyckel i, och '
+      'samma nyckel en gång till i en fil under. Till höger en app med en tom streckad ficka och '
+      'en streckad pil upp från ett streckat token.">\n'
+      + G % (vanster + hoger)
+      + "\n" + txt([(206,246,"appen"),(674,246,"appen")],14,' opacity="0.62"')
+      + "\n" + txt([(206,342,"och i filen")],14,' opacity="0.62"')
+      + "\n" + txt([(700,330,"token")],14,' opacity="0.62"')
+      + "\n" + txt([(598,180,"tom")],13,' opacity="0.45"')
+      + "\n" + txt([(206,384,"tjänstprincipal"),(674,384,"managed identity")],18.5) + "\n</svg>")
+
+    # 62 — AWS 1.2 · Lappen på vem
+    # Pilen är IDENTISK i båda panelerna — det är hela poängen: samma åtkomst,
+    # olika ställe att skriva den på. Bara lappens placering får skilja, annars
+    # börjar ögat leta efter en skillnad i flödet som inte finns.
+    def lapp(x, y):
+        return (f'<path d="{w(x,y,66,44)}" stroke-width="1.4" opacity="0.75"/>'
+                + f'<g stroke-width="1.1" opacity="0.4">{hatch(x+6,y+6,54,32,16)}</g>')
+    def par(x, pa_resursen):
+        p = (f'<path d="{circ(x+40,196,26)}"/>'
+             f'<path d="M{x+18} 232 Q{x+40} 214 {x+62} 232"/>'
+             f'<path d="M{x+76} 196 Q{x+156} 194 {x+234} 196"/>' + arrow(x+240,196)
+             + f'<path d="{w(x+252,164,88,64)}"/>')
+        return p + (lapp(x+270, 250) if pa_resursen else lapp(x+8, 250))
+    D['lappen-pa-vem']=(
+      '<svg viewBox="0 0 880 372" role="img" aria-label="Två paneler med samma pil från en person '
+      'till en behållare. I den vänstra sitter en skrafferad lapp under personen, i den högra '
+      'under behållaren.">\n'
+      + G % (par(60, False) + par(500, True))
+      + "\n" + txt([(100,318,"policyn"),(830,318,"policyn")],13,' opacity="0.62"')
+      + "\n" + txt([(230,352,"identitetsbaserad"),(670,352,"resursbaserad")],18.5) + "\n</svg>")
+
+    # 63 — AWS 1.2 · Rollens två policyer
+    # Dörren och fönstret sitter på SAMMA låda. Två separata lådor hade lästs som
+    # två roller — och förväxlingen artikeln vill rätta är just att de tror att
+    # rollen bara har en policy.
+    rollada = f'<path d="{w(300,110,280,180)}"/>'
+    dorr = ('<path d="M300 168 Q298 200 300 232"/>'
+            '<path d="M300 168 Q330 166 358 168 Q360 200 358 232 Q330 234 300 232"/>'
+            '<path d="M348 202 Q351 200 348 198"/>'
+            '<path d="M150 200 Q222 198 292 200"/>' + arrow(298,200))
+    fonster = ('<path d="M520 156 Q550 154 578 156 Q580 186 578 214 Q550 216 520 214 '
+               'Q518 186 520 156 Z"/>'
+               '<path d="M549 156 Q551 186 549 214"/>'
+               '<path d="M520 185 Q550 183 578 185"/>'
+               '<path d="M588 200 Q660 198 730 200" stroke-dasharray="7 8"/>' + arrow(736,200))
+    D['rollens-tva-policyer']=(
+      '<svg viewBox="0 0 880 372" role="img" aria-label="En låda märkt rollen med en dörr på '
+      'vänster sida och ett fönster på höger. En heldragen pil går in genom dörren, en streckad '
+      'pil ut genom fönstret.">\n'
+      + G % (rollada + dorr + fonster)
+      + "\n" + txt([(146,194,"vem")],14,' opacity="0.7"',"end")
+      + "\n" + txt([(742,194,"vad")],14,' opacity="0.7"',"start")
+      + "\n" + txt([(440,90,"rollen")],18.5)
+      + "\n" + txt([(220,330,"förtroendepolicy"),(672,330,"behörighetspolicy")],15,
+                   ' opacity="0.75"') + "\n</svg>")
+
+    # 64 — Cyber 1.2 · Envägsmuren
+    # Muren släpper igenom ÅT ETT HÅLL: den framåtgående pilen korsar den obehindrat,
+    # returpilen tar stopp. Att rita muren som ogenomtränglig åt båda håll hade sagt
+    # "ingenting kommer fram", vilket är fel — hashen kommer ju fram.
+    # Nyckelsymbolen mellan pilarna ströks: i 544 px renderad bredd blev den en
+    # klubba, och de dubbelriktade pilarna säger redan "vändbar" på egen hand.
+    kryptering = (f'<path d="{w(40,146,120,68)}"/><path d="{w(250,146,120,68)}"/>'
+                  '<path d="M164 166 Q205 164 244 166"/>' + arrow(250,166)
+                  + '<path d="M246 198 Q205 200 166 198"/>' + arrow(160,198,"left"))
+    mur = (f'<path d="{w(630,124,18,104)}"/>'
+           + f'<g stroke-width="1.1" opacity="0.5">{hatch(633,127,12,98,14)}</g>')
+    # Krysset ligger PÅ muren, inte bredvid returpilens spets — det är muren som
+    # stoppar, och läggs krysset i mellanrummet läses det som att pilen tog slut
+    # av sig själv. Tidigare version klämde in mur, spets och kryss på 37 px.
+    hashning = (f'<path d="{w(460,146,120,68)}"/><path d="{w(700,146,120,68)}"/>'
+                + '<path d="M584 164 Q639 162 694 164"/>' + arrow(700,164)
+                + mur
+                + '<path d="M696 202 Q682 203 668 202" stroke-dasharray="6 7"/>'
+                + arrow(662,202,"left")
+                + '<path d="M625 188 L653 216"/><path d="M653 188 L625 216"/>')
+    D['envagsmuren']=(
+      '<svg viewBox="0 0 880 340" role="img" aria-label="Till vänster två lådor med pilar åt båda '
+      'håll och en nyckel emellan. Till höger går en pil genom en skrafferad mur men returpilen '
+      'stoppas av den och är överkryssad.">\n'
+      + G % (kryptering + hashning)
+      + "\n" + txt([(100,256,"klartext"),(310,256,"chiffer"),
+                    (520,256,"klartext"),(760,256,"hash")],13,' opacity="0.62"')
+      + "\n" + txt([(205,308,"kryptering"),(640,308,"hashning")],18.5) + "\n</svg>")
+
+    # 65 — Cyber 1.2 · Biljetten och listan
+    # Vänsterpanelen har en LISTA att stryka i, högerpanelen har ingen. Frånvaron
+    # av listan är hela poängen — inte att biljetten ser annorlunda ut. Därför får
+    # den högra biljetten bara två extra rader, inte en egen form.
+    biljett = lambda x,y,rader_: (f'<path d="{w(x,y,104,58)}"/>'
+        + "".join(f'<path d="M{x+16} {y+18+i*16} Q{x+52} {y+16+i*16} {x+88} {y+18+i*16}" '
+                  f'stroke-width="1.2" opacity="0.55"/>' for i in range(rader_)))
+    lista = (rader(258, 118, 168, 132, 4)
+             + '<path d="M266 184 Q342 182 418 184"/>')
+    vanster = (biljett(60, 160, 1) + '<path d="M170 188 Q212 186 250 188"/>' + arrow(256,188)
+               + lista)
+    hoger = (biljett(600, 160, 2)
+             + '<path d="M584 188 Q656 190 720 188" stroke-dasharray="6 7" opacity="0.6"/>'
+             + '<path d="M636 172 L668 204"/><path d="M668 172 L636 204"/>')
+    D['biljetten-och-listan']=(
+      '<svg viewBox="0 0 880 340" role="img" aria-label="Till vänster en biljett med en pil till en '
+      'lista där en rad är överstruken. Till höger en biljett med text i och ingen lista alls, med '
+      'en överkryssad streckad linje tvärs över.">\n'
+      + G % (vanster + hoger)
+      + "\n" + txt([(112,254,"id"),(342,272,"listan hos servern"),
+                    (652,254,"allt står i den")],13,' opacity="0.62"')
+      + "\n" + txt([(240,314,"session"),(652,314,"token")],18.5) + "\n</svg>")
+
+    # 66 — Obs 1.2 · Vattenfallet och staketet
+    # Staketet MÅSTE vara många och identiska — det är antalet som är diagnosen,
+    # inte längden. Åtta pinnar räckte inte för att läsa som "för många"; med
+    # arton blir formen självförklarande innan man läst en etikett.
+    # Första försöket la de korta spannen på EN rad. Vid 544 px renderad bredd
+    # blev de 11 px långa med 10 px mellanrum och lästes som en streckad linje —
+    # och streckat betyder "uteblivet" i formspråket, alltså raka motsatsen.
+    # En trappa är dessutom vad ett riktigt vattenfall visar: varje fråga väntar
+    # på den förra, så de kan inte ligga på samma rad.
+    stapel = lambda x,y,bredd,tj=2: (f'<path d="M{x} {y} Q{x+bredd/2:.0f} {y-1} {x+bredd} {y}" '
+                                     f'stroke-width="{tj}"/>')
+    trappa = "".join(stapel(158+i*52, 186+i*16, 62, 3) for i in range(10))
+    vattenfall = (stapel(80, 104, 720) + stapel(122, 146, 656) + trappa
+                  + stapel(150, 372, 640))
+    D['vattenfallet-och-staketet']=(
+      '<svg viewBox="0 0 880 440" role="img" aria-label="Ett vattenfallsdiagram med två breda '
+      'staplar överst, sedan tio korta staplar i en trappa nedåt höger, och en bred stapel '
+      'underst.">\n'
+      + G % vattenfall
+      + "\n" + txt([(78,94,"GET /orders"),(120,136,"handler")],13,' opacity="0.62"',"start")
+      + "\n" + txt([(148,362,"rendering")],13,' opacity="0.62"',"start")
+      + "\n" + txt([(700,196,"10 × SELECT")],14,' opacity="0.75"',"start")
+      + "\n" + txt([(460,420,"tiden går åt höger")],13,' opacity="0.45"') + "\n</svg>")
+
+    # 67 — Obs 1.2 · Kedjan som bryts
+    # De två spåren ritas på OLIKA höjd, inte bara med ett glapp emellan. Ligger
+    # de på samma linje läser ögat dem som ett spår med ett hål — och poängen är
+    # att verktyget ser två separata spår som inte vet om varandra.
+    def spar(x, y, n, etikett_x):
+        p = "".join(f'<path d="{w(x+i*116, y, 84, 46)}"/>' for i in range(n))
+        p += "".join(f'<path d="M{x+84+i*116} {y+23} Q{x+96+i*116} {y+22} {x+108+i*116} {y+23}"/>'
+                     + arrow(x+114+i*116, y+23) for i in range(n-1))
+        return p
+    brott = ('<path d="M400 152 Q432 176 464 200" stroke-dasharray="7 8" opacity="0.45"/>'
+             '<path d="M414 158 L446 190"/><path d="M446 158 L414 190"/>')
+    D['kedjan-som-bryts']=(
+      '<svg viewBox="0 0 880 320" role="img" aria-label="Tre sammanlänkade lådor uppe till vänster '
+      'och två nere till höger. Den streckade pilen mellan grupperna är överkryssad.">\n'
+      + G % (spar(60, 84, 3, 0) + brott + spar(524, 196, 2, 0))
+      + "\n" + txt([(222,72,"trace A"),(640,184,"trace B")],13,' opacity="0.62"')
+      + "\n" + txt([(222,180,"frontend → api"),(640,292,"→ lager → db")],13,' opacity="0.5"')
+      + "\n</svg>")
+
     return D
 
 if __name__ == "__main__":

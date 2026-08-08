@@ -1,6 +1,6 @@
 // Teknik-guidens klientlogik: inre flikar (segmented control + ?flik=-djuplänk),
-// bibliotekssök & typfilter, dragspel (Översätt/FAQ) och ordlistans
-// sök/kategori/sortering med bokstavsavdelare. Rent DOM-arbete på
+// bibliotekssök & typfilter, områdesfilter för Tolkningar och Frågor, dragspel
+// och ordlistans sök/kategori/sortering med bokstavsavdelare. Rent DOM-arbete på
 // server-renderat innehåll — utan JS visas Bibliotek och allt är läsbart.
 // Idempotent + rebindas på astro:page-load (View Transitions), som sajtens
 // övriga script (domainFilter.ts, stickyBar.ts).
@@ -145,7 +145,136 @@ function initLibrary(root: HTMLElement) {
   apply();
 }
 
-// Dragspel (Annonsen + Frågor): en öppen i taget per accordion.
+// Tolkningar: välj ett område och visa bara de rader som hör till det. Grupper
+// döljs som hela sektioner, så rubrik och innehåll aldrig skiljs åt. När ett
+// filter väljs öppnas första raden i området för att undvika ett tomt läsläge.
+function initTranslate(root: HTMLElement) {
+  const translate = root.querySelector<HTMLElement>("[data-hr-translate]");
+  if (!translate) return;
+
+  const chips = Array.from(
+    translate.querySelectorAll<HTMLButtonElement>("[data-hr-translate-filter]"),
+  );
+  const groups = Array.from(
+    translate.querySelectorAll<HTMLElement>("[data-hr-translate-group]"),
+  );
+  const count = translate.querySelector<HTMLElement>("[data-hr-translate-count]");
+  const rows = Array.from(
+    translate.querySelectorAll<HTMLElement>("[data-hr-translate-row]"),
+  );
+  if (!chips.length || !groups.length) return;
+
+  const setOpen = (head: HTMLButtonElement, open: boolean) => {
+    head.setAttribute("aria-expanded", String(open));
+    const body = head.parentElement?.querySelector<HTMLElement>(
+      "[data-hr-acc-body]",
+    );
+    if (body) body.hidden = !open;
+    const sign = head.querySelector<HTMLElement>(".hr-acc__sign");
+    if (sign) sign.textContent = open ? "−" : "+";
+  };
+
+  const apply = (filter: string, openFirst: boolean) => {
+    let shown = 0;
+    let firstVisibleHead: HTMLButtonElement | undefined;
+    groups.forEach((group) => {
+      const visible = filter === "Alla" || group.dataset.hrTranslateGroup === filter;
+      group.hidden = !visible;
+      if (!visible) return;
+      shown += group.querySelectorAll("[data-hr-translate-row]").length;
+      firstVisibleHead ??= group.querySelector<HTMLButtonElement>("[data-hr-acc-head]") ?? undefined;
+    });
+    if (count) {
+      count.textContent = `${shown} av ${rows.length} tolkningar visas`;
+      count.hidden = filter === "Alla";
+    }
+    if (!openFirst || !firstVisibleHead) return;
+    translate
+      .querySelectorAll<HTMLButtonElement>("[data-hr-acc-head]")
+      .forEach((head) => setOpen(head, head === firstVisibleHead));
+  };
+
+  chips.forEach((chip) =>
+    chip.addEventListener("click", () => {
+      const filter = chip.dataset.hrTranslateFilter ?? "Alla";
+      chips.forEach((item) => {
+        const active = item === chip;
+        item.classList.toggle("is-active", active);
+        item.setAttribute("aria-pressed", String(active));
+      });
+      apply(filter, filter !== "Alla");
+    }),
+  );
+
+  apply("Alla", false);
+}
+
+// Frågor: samma avgränsade områdesfilter som Tolkningar. Att dölja hela
+// sektionen håller rubrik och frågor ihop, och första frågan öppnas när ett
+// område väljs så att filtret alltid landar i ett meningsfullt läsläge.
+function initFaq(root: HTMLElement) {
+  const faq = root.querySelector<HTMLElement>("[data-hr-faq]");
+  if (!faq) return;
+
+  const chips = Array.from(
+    faq.querySelectorAll<HTMLButtonElement>("[data-hr-faq-filter]"),
+  );
+  const groups = Array.from(
+    faq.querySelectorAll<HTMLElement>("[data-hr-faq-group]"),
+  );
+  const count = faq.querySelector<HTMLElement>("[data-hr-faq-count]");
+  const rows = Array.from(
+    faq.querySelectorAll<HTMLElement>("[data-hr-faq-item]"),
+  );
+  if (!chips.length || !groups.length) return;
+
+  const setOpen = (head: HTMLButtonElement, open: boolean) => {
+    head.setAttribute("aria-expanded", String(open));
+    const body = head.parentElement?.querySelector<HTMLElement>(
+      "[data-hr-acc-body]",
+    );
+    if (body) body.hidden = !open;
+    const sign = head.querySelector<HTMLElement>(".hr-acc__sign");
+    if (sign) sign.textContent = open ? "−" : "+";
+  };
+
+  const apply = (filter: string, openFirst: boolean) => {
+    let shown = 0;
+    let firstVisibleHead: HTMLButtonElement | undefined;
+    groups.forEach((group) => {
+      const visible = filter === "Alla" || group.dataset.hrFaqGroup === filter;
+      group.hidden = !visible;
+      if (!visible) return;
+      shown += group.querySelectorAll("[data-hr-faq-item]").length;
+      firstVisibleHead ??=
+        group.querySelector<HTMLButtonElement>("[data-hr-acc-head]") ?? undefined;
+    });
+    if (count) {
+      count.textContent = `${shown} av ${rows.length} frågor visas`;
+      count.hidden = filter === "Alla";
+    }
+    if (!openFirst || !firstVisibleHead) return;
+    faq
+      .querySelectorAll<HTMLButtonElement>("[data-hr-acc-head]")
+      .forEach((head) => setOpen(head, head === firstVisibleHead));
+  };
+
+  chips.forEach((chip) =>
+    chip.addEventListener("click", () => {
+      const filter = chip.dataset.hrFaqFilter ?? "Alla";
+      chips.forEach((item) => {
+        const active = item === chip;
+        item.classList.toggle("is-active", active);
+        item.setAttribute("aria-pressed", String(active));
+      });
+      apply(filter, filter !== "Alla");
+    }),
+  );
+
+  apply("Alla", false);
+}
+
+// Dragspel (Tolkningar + Frågor): en öppen i taget per accordion.
 function initAccordions(root: HTMLElement) {
   const accordions = Array.from(
     root.querySelectorAll<HTMLElement>("[data-hr-accordion]"),
@@ -411,6 +540,8 @@ function bindHrGuide() {
 
   initTabs(root);
   initLibrary(root);
+  initTranslate(root);
+  initFaq(root);
   initAccordions(root);
   initGlossary(root);
   initSwitcher(root);

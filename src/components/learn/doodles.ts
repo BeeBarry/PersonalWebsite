@@ -1120,4 +1120,221 @@ export const DOODLES: Record<string, string> = {
     <text x="660" y="296">merge-commit</text>
   </g>
 </svg>`,
+
+  /* ---- K8s 1.3 · CPU stryps vs minne dödas ---- */
+  "tva-tak-en-container": `
+<svg viewBox="0 0 880 372" role="img" aria-label="Två paneler med samma vågräta tak. Till vänster viker den stigande kurvan av under taket och fortsätter. Till höger slutar den i ett kryss vid taket. I båda fallen fortsätter en streckad linje upp genom taket.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M40 132 Q210 130 380 132"/><path d="M52 292 Q152 286 236 141"/><path d="M236 141 Q262 110 288 80" stroke-dasharray="7 8" opacity="0.4"/><path d="M236 141 Q306 144 376 142"/><path d="M480 132 Q650 130 820 132"/><path d="M492 292 Q592 286 676 141"/><path d="M676 141 Q702 110 728 80" stroke-dasharray="7 8" opacity="0.4"/><path d="M660 125 L692 157"/><path d="M692 125 L660 157"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="start" opacity="0.7">
+    <text x="42" y="116">limit</text>
+    <text x="482" y="116">limit</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="210" y="336">cpu · stryps</text>
+    <text x="650" y="336">minne · dödas</text>
+  </g>
+</svg>`,
+
+  /* ---- K8s 1.3 · Schemaläggaren räknar requests, inte förbrukning ---- */
+  "reserverat-inte-anvant": `
+<svg viewBox="0 0 880 340" role="img" aria-label="En nod med tre streckade fack som fyller den helt. I botten av varje fack ligger en liten skrafferad nivå som upptar en bråkdel av facket. Över bilden förklaras streckad ram som reserverat och skraffering som använt.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M60 60 Q78 59 96 60" stroke-dasharray="8 9" opacity="0.55"/><g stroke-width="1.1" opacity="0.42"><path d="M354 70 L340 56"/><path d="M368 70 L348 50"/><path d="M376 64 L362 50"/></g><path d="M59 96 Q440 95 820 96 Q822 179 821 261 Q440 264 60 261 Q58 179 59 96 Z"/><path d="M81 118 Q194 118 307 117 Q307 179 306 240 Q194 242 83 240 Q80 179 81 118 Z" stroke-dasharray="8 9" opacity="0.55"/><g stroke-width="1.1" opacity="0.42"><path d="M112 236 L90 214"/><path d="M134 236 L104 206"/><path d="M156 236 L126 206"/><path d="M178 236 L148 206"/><path d="M200 236 L170 206"/><path d="M222 236 L192 206"/><path d="M244 236 L214 206"/><path d="M266 236 L236 206"/><path d="M288 236 L258 206"/><path d="M298 224 L280 206"/></g><path d="M329 118 Q440 117 552 117 Q552 179 551 241 Q440 240 328 239 Q326 179 329 118 Z" stroke-dasharray="8 9" opacity="0.55"/><g stroke-width="1.1" opacity="0.42"><path d="M358 236 L336 214"/><path d="M380 236 L350 206"/><path d="M402 236 L372 206"/><path d="M424 236 L394 206"/><path d="M446 236 L416 206"/><path d="M468 236 L438 206"/><path d="M490 236 L460 206"/><path d="M512 236 L482 206"/><path d="M534 236 L504 206"/><path d="M544 224 L526 206"/></g><path d="M574 119 Q686 118 799 119 Q799 179 798 240 Q686 240 575 241 Q573 179 574 119 Z" stroke-dasharray="8 9" opacity="0.55"/><g stroke-width="1.1" opacity="0.42"><path d="M604 236 L582 214"/><path d="M626 236 L596 206"/><path d="M648 236 L618 206"/><path d="M670 236 L640 206"/><path d="M692 236 L662 206"/><path d="M714 236 L684 206"/><path d="M736 236 L706 206"/><path d="M758 236 L728 206"/><path d="M780 236 L750 206"/><path d="M790 224 L772 206"/></g>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="start" opacity="0.62">
+    <text x="106" y="65">reserverat</text>
+    <text x="386" y="65">använt</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="440" y="306">noden</text>
+  </g>
+</svg>`,
+
+  /* ---- TF 1.2 · En modul lämnar bara ut det den deklarerat ---- */
+  "modulens-tva-slitsar": `
+<svg viewBox="0 0 880 400" role="img" aria-label="En stängd låda med två heldragna pilar in från vänster och en heldragen pil ut åt höger. Underifrån går en streckad pil mot lådans inre, överkryssad.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M331 121 Q440 120 549 121 Q550 195 550 269 Q440 272 331 270 Q330 195 331 121 Z"/><path d="M96 168 Q212 166 320 168"/><path d="M313 162 L326 168 L313 174"/><path d="M96 226 Q212 228 320 226"/><path d="M313 220 L326 226 L313 232"/><path d="M556 196 Q676 194 792 196"/><path d="M785 190 L798 196 L785 202"/><path d="M440 348 Q438 300 440 250" stroke-dasharray="7 8" opacity="0.5"/><path d="M434 257 L440 244 L446 257"/><path d="M424 292 L456 320"/><path d="M456 292 L424 320"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="end" opacity="0.7">
+    <text x="92" y="162">prefix</text>
+    <text x="92" y="220">roll</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="start" opacity="0.7">
+    <text x="802" y="190">namn</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="440" y="104">modules/namn</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="440" y="378">local.namn</text>
+  </g>
+</svg>`,
+
+  /* ---- TF 1.2 · sensitive döljer utskriften, inte lagringen ---- */
+  "gardinen-inte-kassaskapet": `
+<svg viewBox="0 0 880 400" role="img" aria-label="Till vänster en terminal med en gardin hängande framför sig. Till höger en fil med tre synliga textrader och ingenting framför.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M81 120 Q230 118 381 120 Q382 205 381 289 Q230 290 81 291 Q78 205 81 120 Z"/><path d="M80 158 Q230 156 380 158"/><path d="M64 112 Q230 109 396 112"/><path d="M96 118 Q103 200 96 282" stroke-width="1.4" opacity="0.55"/><path d="M132 118 Q139 200 132 282" stroke-width="1.4" opacity="0.55"/><path d="M168 118 Q175 200 168 282" stroke-width="1.4" opacity="0.55"/><path d="M204 118 Q211 200 204 282" stroke-width="1.4" opacity="0.55"/><path d="M240 118 Q247 200 240 282" stroke-width="1.4" opacity="0.55"/><path d="M276 118 Q283 200 276 282" stroke-width="1.4" opacity="0.55"/><path d="M312 118 Q319 200 312 282" stroke-width="1.4" opacity="0.55"/><path d="M348 118 Q355 200 348 282" stroke-width="1.4" opacity="0.55"/><path d="M540 118 Q634 116 706 118 L748 162 Q751 226 748 290 Q634 293 542 291 Q538 204 540 118 Z"/><path d="M706 118 Q705 146 708 162 Q728 164 748 162"/><path d="M568 206 Q638 204 712 206" stroke-width="1.3" opacity="0.6"/><path d="M568 236 Q638 234 712 236" stroke-width="1.3" opacity="0.6"/><path d="M568 266 Q638 264 712 266" stroke-width="1.3" opacity="0.6"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.75">
+    <text x="230" y="148">&lt;sensitive&gt;</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="230" y="344">utskriften</text>
+    <text x="644" y="344">terraform.tfstate</text>
+  </g>
+</svg>`,
+
+  /* ---- Azure 1.2 · Principal, roll och scope möts i en tilldelning ---- */
+  "tre-delar-en-tilldelning": `
+<svg viewBox="0 0 880 372" role="img" aria-label="Tre linjer märkta principal, roll och scope löper ihop i en ring, och ur ringen går en pil ut till en ruta märkt behörighet.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M196 96 Q300 96 372 190"/><path d="M196 196 Q300 196 372 196"/><path d="M196 296 Q300 296 372 202"/><path d="M405 169 Q429 171 431 197 Q429 221 403 223 Q379 221 377 195 Q379 171 405 169 Z"/><path d="M432 196 Q548 194 664 196"/><path d="M657 190 L670 196 L657 202"/><path d="M676 163 Q751 164 826 165 Q827 196 826 229 Q751 230 676 229 Q676 196 676 163 Z"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="end" opacity="0.8">
+    <text x="188" y="102">principal</text>
+    <text x="188" y="202">roll</text>
+    <text x="188" y="302">scope</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="751" y="262">behörighet</text>
+  </g>
+</svg>`,
+
+  /* ---- Azure 1.2 · Tjänstprincipal vs managed identity ---- */
+  "fickan-som-ar-tom": `
+<svg viewBox="0 0 880 400" role="img" aria-label="Till vänster en app med en nyckel i, och samma nyckel en gång till i en fil under. Till höger en app med en tom streckad ficka och en streckad pil upp från ett streckat token.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M56 119 Q206 118 356 121 Q357 190 356 260 Q206 260 57 261 Q54 190 56 119 Z"/><path d="M105 157 Q115 157 115 168 Q115 179 104 178 Q93 179 93 169 Q93 157 105 157 Z"/><path d="M115 168 Q138 169 160 168"/><path d="M146 168 Q147 177 146 184"/><path d="M158 168 Q159 176 158 182"/><path d="M120 296 Q206 294 291 295 Q293 327 292 358 Q206 358 120 359 Q120 327 120 296 Z" stroke-width="1.4" opacity="0.7"/><path d="M149 314 Q161 315 162 326 Q161 337 149 338 Q139 337 139 327 Q139 315 149 314 Z"/><path d="M161 326 Q184 327 206 326"/><path d="M192 326 Q193 335 192 342"/><path d="M204 326 Q205 334 204 340"/><path d="M524 120 Q674 119 825 120 Q824 190 825 259 Q674 260 525 259 Q524 190 524 120 Z"/><path d="M556 151 Q598 149 639 150 Q642 176 639 202 Q598 204 557 202 Q555 176 556 151 Z" stroke-dasharray="7 8" opacity="0.45"/><path d="M700 300 Q702 268 700 238" stroke-dasharray="7 8" opacity="0.6"/><path d="M694 245 L700 232 L706 245"/><path d="M645 300 Q700 299 754 301 Q755 322 754 344 Q700 346 646 344 Q645 322 645 300 Z" stroke-dasharray="7 8" opacity="0.6"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="206" y="246">appen</text>
+    <text x="674" y="246">appen</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="206" y="342">och i filen</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="700" y="330">token</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.45">
+    <text x="598" y="180">tom</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="206" y="384">tjänstprincipal</text>
+    <text x="674" y="384">managed identity</text>
+  </g>
+</svg>`,
+
+  /* ---- AWS 1.2 · Identitetsbaserad vs resursbaserad policy ---- */
+  "lappen-pa-vem": `
+<svg viewBox="0 0 880 372" role="img" aria-label="Två paneler med samma pil från en person till en behållare. I den vänstra sitter en skrafferad lapp under personen, i den högra under behållaren.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M100 171 Q125 171 125 197 Q125 221 100 222 Q75 221 74 197 Q75 171 100 171 Z"/><path d="M78 232 Q100 214 122 232"/><path d="M136 196 Q216 194 294 196"/><path d="M287 190 L300 196 L287 202"/><path d="M313 165 Q356 162 401 163 Q401 196 400 227 Q356 229 313 229 Q310 196 313 165 Z"/><path d="M68 251 Q101 250 134 249 Q135 272 135 293 Q101 296 68 294 Q67 272 68 251 Z" stroke-width="1.4" opacity="0.75"/><g stroke-width="1.1" opacity="0.4"><path d="M90 288 L74 272"/><path d="M106 288 L74 256"/><path d="M122 288 L90 256"/><path d="M128 278 L106 256"/><path d="M128 262 L122 256"/></g><path d="M540 171 Q565 171 567 196 Q565 221 539 221 Q515 221 514 197 Q515 171 540 171 Z"/><path d="M518 232 Q540 214 562 232"/><path d="M576 196 Q656 194 734 196"/><path d="M727 190 L740 196 L727 202"/><path d="M753 164 Q796 163 839 164 Q840 196 841 227 Q796 229 753 227 Q751 196 753 164 Z"/><path d="M771 251 Q803 248 835 250 Q836 272 837 293 Q803 295 770 294 Q769 272 771 251 Z" stroke-width="1.4" opacity="0.75"/><g stroke-width="1.1" opacity="0.4"><path d="M792 288 L776 272"/><path d="M808 288 L776 256"/><path d="M824 288 L792 256"/><path d="M830 278 L808 256"/><path d="M830 262 L824 256"/></g>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="100" y="318">policyn</text>
+    <text x="830" y="318">policyn</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="230" y="352">identitetsbaserad</text>
+    <text x="670" y="352">resursbaserad</text>
+  </g>
+</svg>`,
+
+  /* ---- AWS 1.2 · Förtroendepolicy släpper in, behörighetspolicy tillåter ---- */
+  "rollens-tva-policyer": `
+<svg viewBox="0 0 880 372" role="img" aria-label="En låda märkt rollen med en dörr på vänster sida och ett fönster på höger. En heldragen pil går in genom dörren, en streckad pil ut genom fönstret.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M301 109 Q440 109 579 111 Q580 200 580 291 Q440 292 300 291 Q299 200 301 109 Z"/><path d="M300 168 Q298 200 300 232"/><path d="M300 168 Q330 166 358 168 Q360 200 358 232 Q330 234 300 232"/><path d="M348 202 Q351 200 348 198"/><path d="M150 200 Q222 198 292 200"/><path d="M285 194 L298 200 L285 206"/><path d="M520 156 Q550 154 578 156 Q580 186 578 214 Q550 216 520 214 Q518 186 520 156 Z"/><path d="M549 156 Q551 186 549 214"/><path d="M520 185 Q550 183 578 185"/><path d="M588 200 Q660 198 730 200" stroke-dasharray="7 8"/><path d="M723 194 L736 200 L723 206"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="end" opacity="0.7">
+    <text x="146" y="194">vem</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="start" opacity="0.7">
+    <text x="742" y="194">vad</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="440" y="90">rollen</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.75">
+    <text x="220" y="330">förtroendepolicy</text>
+    <text x="672" y="330">behörighetspolicy</text>
+  </g>
+</svg>`,
+
+  /* ---- Cyber 1.2 · Kryptering går åt två håll, hashning åt ett ---- */
+  "envagsmuren": `
+<svg viewBox="0 0 880 340" role="img" aria-label="Till vänster två lådor med pilar åt båda håll och en nyckel emellan. Till höger går en pil genom en skrafferad mur men returpilen stoppas av den och är överkryssad.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M40 146 Q100 145 161 145 Q160 180 160 215 Q100 216 40 213 Q38 180 40 146 Z"/><path d="M251 146 Q310 146 370 147 Q371 180 369 213 Q310 215 249 214 Q250 180 251 146 Z"/><path d="M164 166 Q205 164 244 166"/><path d="M237 160 L250 166 L237 172"/><path d="M246 198 Q205 200 166 198"/><path d="M173 192 L160 198 L173 204"/><path d="M461 146 Q520 144 579 147 Q581 180 580 214 Q520 214 460 215 Q459 180 461 146 Z"/><path d="M700 147 Q760 146 820 146 Q822 180 820 214 Q760 214 699 215 Q699 180 700 147 Z"/><path d="M584 164 Q639 162 694 164"/><path d="M687 158 L700 164 L687 170"/><path d="M629 124 Q639 124 648 125 Q650 176 648 228 Q639 229 631 228 Q629 176 629 124 Z"/><g stroke-width="1.1" opacity="0.5"><path d="M645 223 L633 211"/><path d="M645 209 L633 197"/><path d="M645 195 L633 183"/><path d="M645 181 L633 169"/><path d="M645 167 L633 155"/><path d="M645 153 L633 141"/><path d="M645 139 L633 127"/></g><path d="M696 202 Q682 203 668 202" stroke-dasharray="6 7"/><path d="M675 196 L662 202 L675 208"/><path d="M625 188 L653 216"/><path d="M653 188 L625 216"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="100" y="256">klartext</text>
+    <text x="310" y="256">chiffer</text>
+    <text x="520" y="256">klartext</text>
+    <text x="760" y="256">hash</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="205" y="308">kryptering</text>
+    <text x="640" y="308">hashning</text>
+  </g>
+</svg>`,
+
+  /* ---- Cyber 1.2 · Session vs token, och vad utloggning kan stryka ---- */
+  "biljetten-och-listan": `
+<svg viewBox="0 0 880 340" role="img" aria-label="Till vänster en biljett med en pil till en lista där en rad är överstruken. Till höger en biljett med text i och ingen lista alls, med en överkryssad streckad linje tvärs över.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M60 161 Q112 158 165 160 Q165 189 164 217 Q112 218 61 218 Q58 189 60 161 Z"/><path d="M76 178 Q112 176 148 178" stroke-width="1.2" opacity="0.55"/><path d="M170 188 Q212 186 250 188"/><path d="M243 182 L256 188 L243 194"/><path d="M257 118 Q342 116 426 118 Q426 184 425 249 Q342 250 258 251 Q256 184 257 118 Z"/><path d="M260 151 Q342 150 424 151"/><path d="M260 184 Q342 183 424 184"/><path d="M260 217 Q342 216 424 217"/><path d="M266 184 Q342 182 418 184"/><path d="M599 160 Q652 159 704 161 Q705 189 703 219 Q652 219 599 217 Q599 189 599 160 Z"/><path d="M616 178 Q652 176 688 178" stroke-width="1.2" opacity="0.55"/><path d="M616 194 Q652 192 688 194" stroke-width="1.2" opacity="0.55"/><path d="M584 188 Q656 190 720 188" stroke-dasharray="6 7" opacity="0.6"/><path d="M636 172 L668 204"/><path d="M668 172 L636 204"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="112" y="254">id</text>
+    <text x="342" y="272">listan hos servern</text>
+    <text x="652" y="254">allt står i den</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="240" y="314">session</text>
+    <text x="652" y="314">token</text>
+  </g>
+</svg>`,
+
+  /* ---- Obs 1.2 · N+1 syns som ett staket i vattenfallet ---- */
+  "vattenfallet-och-staketet": `
+<svg viewBox="0 0 880 440" role="img" aria-label="Ett vattenfallsdiagram med två breda staplar överst, sedan tio korta staplar i en trappa nedåt höger, och en bred stapel underst.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M80 104 Q440 103 800 104" stroke-width="2"/><path d="M122 146 Q450 145 778 146" stroke-width="2"/><path d="M158 186 Q189 185 220 186" stroke-width="3"/><path d="M210 202 Q241 201 272 202" stroke-width="3"/><path d="M262 218 Q293 217 324 218" stroke-width="3"/><path d="M314 234 Q345 233 376 234" stroke-width="3"/><path d="M366 250 Q397 249 428 250" stroke-width="3"/><path d="M418 266 Q449 265 480 266" stroke-width="3"/><path d="M470 282 Q501 281 532 282" stroke-width="3"/><path d="M522 298 Q553 297 584 298" stroke-width="3"/><path d="M574 314 Q605 313 636 314" stroke-width="3"/><path d="M626 330 Q657 329 688 330" stroke-width="3"/><path d="M150 372 Q470 371 790 372" stroke-width="2"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="start" opacity="0.62">
+    <text x="78" y="94">GET /orders</text>
+    <text x="120" y="136">handler</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="start" opacity="0.62">
+    <text x="148" y="362">rendering</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="start" opacity="0.75">
+    <text x="700" y="196">10 × SELECT</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.45">
+    <text x="460" y="420">tiden går åt höger</text>
+  </g>
+</svg>`,
+
+  /* ---- Obs 1.2 · Bruten kontextspridning ger två spår ---- */
+  "kedjan-som-bryts": `
+<svg viewBox="0 0 880 320" role="img" aria-label="Tre sammanlänkade lådor uppe till vänster och två nere till höger. Den streckade pilen mellan grupperna är överkryssad.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M59 85 Q102 82 143 83 Q146 107 144 130 Q102 130 60 130 Q60 107 59 85 Z"/><path d="M177 84 Q218 83 259 85 Q262 107 259 130 Q218 131 176 129 Q175 107 177 84 Z"/><path d="M292 84 Q334 84 375 85 Q376 107 377 131 Q334 131 293 130 Q290 107 292 84 Z"/><path d="M144 107 Q156 106 168 107"/><path d="M161 101 L174 107 L161 113"/><path d="M260 107 Q272 106 284 107"/><path d="M277 101 L290 107 L277 113"/><path d="M400 152 Q432 176 464 200" stroke-dasharray="7 8" opacity="0.45"/><path d="M414 158 L446 190"/><path d="M446 158 L414 190"/><path d="M524 196 Q566 194 609 196 Q610 219 608 241 Q566 243 524 241 Q523 219 524 196 Z"/><path d="M639 196 Q682 196 723 195 Q726 219 724 242 Q682 244 641 243 Q640 219 639 196 Z"/><path d="M608 219 Q620 218 632 219"/><path d="M625 213 L638 219 L625 225"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="222" y="72">trace A</text>
+    <text x="640" y="184">trace B</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.5">
+    <text x="222" y="180">frontend → api</text>
+    <text x="640" y="292">→ lager → db</text>
+  </g>
+</svg>`,
 };

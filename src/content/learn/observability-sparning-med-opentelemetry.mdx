@@ -1,0 +1,412 @@
+---
+title: 'Spårning med OpenTelemetry'
+description: 'Från ett långsamt anrop i grafen till det exakta databasanropet som orsakade det'
+category: 'observability'
+part: 1
+order: 3
+date: '2026-08-08'
+tags: ['Beginner', 'OpenTelemetry', 'Tracing']
+---
+
+## Var vi är
+
+Förra delen gjorde mätvärdena konkreta: en counter som bara växer, ett histogram som ger dig p95, och
+ett larm som är värt att väcka någon för.
+
+Mätvärdet säger att *något* är långsamt. Det säger aldrig *vad*. Ett p95 på nio sekunder pekar ut ett
+problem och lämnar dig med hela systemet att leta i.
+
+Den här delen tar det sista steget: hur du får ut spår ur en applikation, hur de hålls ihop mellan
+tjänster, och hur du läser dem för att hitta raden som kostade tid. Del 1.0 definierade *trace* och
+*span* — här handlar det om att få dem att uppstå.
+
+<Del titel="Att få ut data" />
+
+## Vad instrumentering är
+
+**Instrumentering** är koden som får en applikation att rapportera vad den gör.
+
+Ingen applikation skickar spår av sig själv. Något måste starta ett span när arbetet börjar, avsluta
+det när arbetet är klart, och skicka iväg resultatet.
+
+Instrumenteringen är alltså inte en inställning du slår på i ett övervakningsverktyg. Det är kod som
+kör inuti din process, och det är därför den kostar något.
+
+## Automatisk vs manuell instrumentering
+
+Två sätt att få spann, och de flesta system använder båda.
+
+**Automatisk instrumentering** kopplar in sig i bibliotek du redan använder — HTTP-servern,
+databasdrivrutinen, HTTP-klienten. Du lägger till ett paket och får spann för varje inkommande
+anrop, varje fråga och varje utgående anrop, utan att röra din egen kod.
+
+**Manuell instrumentering** är spann du skapar själv, runt något bara du vet är intressant: en
+prisberäkning, ett anrop till en betalleverantör, en loop som ibland är dyr.
+
+Börja med den automatiska. Den ger tre fjärdedelar av värdet för nästan ingen ansträngning, och den
+visar var du sedan bör lägga de manuella.
+
+## Vad ett OpenTelemetry-SDK gör
+
+**SDK:t** är biblioteket som kör i din process och tillverkar spännen.
+
+Det gör tre saker: skapar spann, håller reda på vilket som är aktivt just nu, och buffrar färdiga
+spann för att skicka iväg dem i klumpar i stället för ett i taget.
+
+Buffringen är värd att känna till, för den förklarar en vanlig förvirring: ett spann syns inte
+direkt. Standardbeteendet är att skicka en batch med några sekunders mellanrum, så en kort
+testkörning som avslutas snabbt kan hinna dö innan något skickats.
+
+## Vad en collector gör
+
+**Collectorn** är en fristående process som tar emot spann från dina applikationer och skickar dem
+vidare.
+
+Den sitter mellan applikationerna och lagringen, och den gör tre sorters jobb: tar emot, bearbetar
+och exporterar. Bearbetningen är poängen — den kan lägga till attribut, ta bort känsliga fält, sampla
+bort en del, och skicka samma data till två system samtidigt.
+
+I Kubernetes kör collectorn ofta som en egen Deployment i klustret, med en Service framför precis som
+alla andra tjänster.
+
+## Direkt export vs collector
+
+Två sätt att få ut data ur applikationen, och valet märks först när något ska ändras.
+
+**Direkt export** låter varje applikation skicka till lagringen själv. Färre rörliga delar, och det
+är rätt val när du har en tjänst och vill komma igång.
+
+**Via collector** låter applikationerna skicka till en lokal adress, och collectorn avgör resten. Ett
+byte av leverantör blir då en ändring på ett ställe i stället för en omdeployering av varje tjänst.
+
+Regeln som följer: **en tjänst — direkt. Flera tjänster — collector.** Adressen till lagringen och
+dess API-nyckel hör hemma på ett ställe, inte i varje applikations konfiguration.
+
+## Vad OTLP är
+
+**OTLP**, OpenTelemetry Protocol, är formatet spännen skickas i.
+
+Det är protokollet som gör OpenTelemetry värt namnet. Din applikation instrumenteras en gång och
+talar OTLP, och lagringen kan sedan bytas mellan Jaeger, Tempo, Honeycomb eller något annat utan att
+en rad i applikationen ändras.
+
+Det var precis det som saknades tidigare, när varje leverantör hade sin egen agent och sitt eget
+bibliotek. Ett byte av verktyg innebar att instrumentera om allt.
+
+<Del titel="Att hålla ihop resan" />
+
+## Vad kontextspridning är
+
+**Kontextspridning** är att skicka med spårens identitet i varje anrop mellan tjänster.
+
+Utan den vet tjänst B ingenting om att den anropades av A. Den skapar ett eget spår, och de två
+delarna av samma resa hamnar som två orelaterade poster i lagringen.
+
+Spridningen sker i en HTTP-header. Standarden heter W3C Trace Context, och headern heter
+`traceparent`.
+
+## Så läser du en traceparent
+
+Headern är en enda rad med fyra fält, åtskilda av bindestreck.
+
+```
+00-6dac81e3facc84cb0e94c210cb1a813f-07321ab48080e9b6-01
+```
+
+`00` är versionen. Sedan kommer **trace-id** på 32 hexadecimala tecken, **span-id** på 16, och till
+sist två tecken flaggor där `01` betyder att spåret ska samlas in.
+
+Trace-id:t är detsamma genom hela resan. Span-id:t byts av varje tjänst — det är avsändarens eget
+span, och det blir mottagarens förälder.
+
+## Vad parent span-id gör
+
+**Parent span-id** är pekaren som gör spåret till ett träd i stället för en lista.
+
+När tjänst B tar emot en `traceparent` läser den ut avsändarens span-id och sparar det som förälder
+till sitt eget nya span. Behåller den trace-id:t hamnar båda i samma spår, på rätt plats i trädet.
+
+Det är hela mekaniken. Två fält som följer med i en header, och ett träd faller ut i andra änden.
+
+## När kedjan bryts
+
+En bruten kedja är det vanligaste felet i en nyuppsatt spårning, och den ser inte ut som ett fel.
+
+Missar en tjänst att skicka `traceparent` vidare får nästa tjänst inget att ansluta till. Den startar
+ett nytt trace-id, och resan delas i två spår som inget verktyg kan sätta ihop igen.
+
+Symptomet är att spåren *ser* kompletta ut, men slutar för tidigt. Du ser frontend och API:et, och
+sedan är det slut — trots att du vet att API:et anropade tre tjänster till.
+
+Vanliga orsaker: en HTTP-klient som inte är instrumenterad, ett meddelande som passerar en kö utan att
+headern följer med, och en proxy som filtrerar bort okända headers.
+
+<Doodle
+  name="kedjan-som-bryts"
+  caption="Samma resa, två spår. Det andra vet inte att det hör till det första."
+/>
+
+<Del titel="Att välja vad som sparas" />
+
+## Vad sampling är
+
+**Sampling** är att spara en andel av spåren i stället för alla.
+
+Ett system med tiotusen anrop i sekunden producerar mer spårdata än loggar och mätvärden
+tillsammans. Att spara allt är dyrt, och det mesta av det är anrop som gick bra på 30 millisekunder.
+
+Sampling görs per **trace**, aldrig per span. Sparas halva spåret är det värdelöst — poängen var ju
+hela resan.
+
+## Head sampling vs tail sampling
+
+Två tidpunkter att bestämma sig på, med rakt motsatta styrkor.
+
+**Head sampling** beslutar när spåret börjar, innan något hänt. Det är billigt, eftersom data som
+väljs bort aldrig skickas — men beslutet fattas utan att veta om anropet blev långsamt eller
+misslyckades.
+
+**Tail sampling** beslutar när spåret är klart, i collectorn. Då går det att behålla *alla* spår som
+tog över en sekund eller slutade i fel, och kasta en stor del av de lyckade.
+
+Priset för tail sampling är att collectorn måste hålla varje spår i minnet tills det är komplett, och
+gissa när det är det. Head sampling är enklare och räcker länge; tail sampling är vad du vill ha den
+dag felen är sällsynta och du behöver just dem.
+
+## Vad ett vattenfall visar
+
+Ett **vattenfall** är den vanliga vyn över ett spår: en rad per span, placerad i tiden.
+
+Radens vänsterkant är när spannet började, dess längd är hur länge det tog, och indraget visar vem
+som är förälder till vem.
+
+Tre mönster går att läsa direkt ur formen. En **bred rad högst upp med ett brett barn** betyder att
+tiden gick åt i det barnet. **Rader som ligger omlott** betyder parallellt arbete. Och ett **glapp**
+mellan att en rad slutar och nästa börjar är tid som ingen mäter — ofta kö, GC eller en tråd som
+väntade.
+
+## Så syns N+1 i ett vattenfall
+
+Det här är den vanligaste upptäckten, och den syns som en form innan du läst en enda etikett.
+
+N+1 blir en **trappa**: en kort, nästan identisk fråga per rad i listan, var och en påbörjad först
+när den förra är klar. Tio rader ger tio steg, femhundra rader ger femhundra.
+
+Varje enskilt spann är snabbt — två millisekunder — och det är antalet som är problemet. Trappans
+lutning är dessutom informationen: låg och lång betyder många billiga frågor efter varandra, vilket
+är precis vad ett `JOIN` hade gjort på en gång.
+
+SQL-delen beskrev N+1 i teorin: en fråga för listan, sedan en fråga per rad. Vattenfallet är
+samma sak, sedd i produktion, där du inte behövde misstänka något i förväg för att hitta det.
+
+<Doodle
+  name="vattenfallet-och-staketet"
+  caption="Varje fråga väntar på den förra, så de faller som en trappa. Formen är diagnosen."
+/>
+
+## Span-attribut vs loggrad
+
+När du vet något värt att spara — vilken kund, vilket produkt-id, hur många rader — finns två
+ställen att lägga det.
+
+**Ett span-attribut** hänger på spannet och följer med resan. Det går att filtrera på i
+spårningsverktyget: *visa alla spår där `customer.tier = "enterprise"` tog över en sekund.*
+
+**En loggrad** är en fristående händelse. Den syns i loggverktyget och kopplas till spåret bara om du
+skrivit ut trace-id:t i den.
+
+Tumregeln: hör informationen till **det här steget** blir det ett attribut. Är det en händelse med
+egen betydelse — *"betalningen avvisades"* — blir det en logg, med trace-id:t utskrivet.
+
+Attribut är dessutom billigare. En loggrad är en rad text som ska lagras och indexeras; ett attribut
+följer med ett spann som ändå skickas.
+
+## Fallgropen: spår utan attribut
+
+<Callout type="fallgrop">
+Automatisk instrumentering ger dig spann med generiska namn: `GET /api/orders/:id`, `SELECT orders`.
+Det räcker för att se *var* tiden gick, och inte alls för att se *för vem*.
+
+Utan attribut kan du konstatera att någon fick ett långsamt svar. Du kan inte svara på om det var
+alla kunder eller en enda, om det gällde ett visst produktfilter, eller varför just den frågan
+returnerade 40 000 rader.
+
+Lägg till en handfull attribut på de spann som betyder något. Men akta kardinaliteten — del 1.0
+förklarade varför ett unikt värde per anrop är förödande i ett mätvärde. I ett span är det däremot
+oftast rätt: spår lagras som enskilda poster, inte som tidsserier.
+</Callout>
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att slå på automatisk instrumentering en gång per tjänst, och sedan lägga till manuella
+spann några gånger om året när något är svårt att förstå. Det du gör ofta är att **läsa** ett
+vattenfall när någon säger att systemet är långsamt.
+
+Det som är värt din tid nu är formerna. Staketet betyder N+1, glappet betyder väntan, och det breda
+barnet betyder att du hittat rätt. De tre täcker de flesta gånger du öppnar ett spår.
+
+Collector-konfiguration, tail sampling-regler, egna processorer och samplingskostnad i stor skala kan
+vänta. De blir dina den dag spårdata syns på fakturan — och de bygger alla på trace-id, span-id och
+föräldrapekaren.
+
+## Vanliga nybörjarförväxlingar
+
+Instrumentering är inte en inställning i övervakningsverktyget. Det är kod som kör i din process.
+
+Automatisk instrumentering ersätter inte manuell. Den ger ramen; de intressanta spannen skriver du.
+
+Sampling görs per spår, inte per span. Halva spåret är inte halva värdet — det är inget värde alls.
+
+Ett spann syns inte direkt. SDK:t buffrar och skickar i klumpar, så en kort körning kan avslutas
+innan något gått iväg.
+
+Trace-id ändras inte mellan tjänster. Det är span-id som byts, och det gamla blir det nyas förälder.
+
+Ett brutet spår ser inte trasigt ut. Det ser kort ut, och det är därför felet får leva länge.
+
+Ett trace-id i loggen är inte spårning. Det är kopplingen mellan de två — nyttig, men inte samma sak
+som ett träd med tider.
+
+## Prova själv
+
+Övningen kräver bara `python3`. Den startar två små HTTP-servrar och visar hur `traceparent` färdas
+mellan dem — samma mekanik som ett riktigt SDK använder, utan något installerat.
+
+Spara som `trace.py`:
+
+```python
+import http.server, threading, secrets
+import urllib.request as u
+
+def tp(trace_id=None):
+    t = trace_id or secrets.token_hex(16)
+    return f"00-{t}-{secrets.token_hex(8)}-01"
+
+class B(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        h = self.headers.get("traceparent", "(saknas)")
+        print(f"  B tog emot: {h}")
+        self.send_response(200); self.end_headers()
+    def log_message(self, *a): pass
+
+class A(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        h = self.headers.get("traceparent") or tp()
+        print(f"  A skickar : {h}")
+        vidare = tp(h.split("-")[1])
+        u.urlopen(u.Request("http://localhost:5002/",
+            headers={"traceparent": vidare})).read()
+        self.send_response(200); self.end_headers()
+    def log_message(self, *a): pass
+
+for port, h in ((5001, A), (5002, B)):
+    s = http.server.HTTPServer(("", port), h)
+    threading.Thread(target=s.serve_forever,
+                     daemon=True).start()
+
+u.urlopen("http://localhost:5001/").read()
+```
+
+Kör den:
+
+```bash
+python3 trace.py
+```
+
+```
+  A skickar : 00-6dac81e3facc84cb0e94c210cb1a813f-
+07321ab48080e9b6-01
+  B tog emot: 00-6dac81e3facc84cb0e94c210cb1a813f-
+ab2345d146ae3da0-01
+```
+
+Läs de två raderna sida vid sida. **Trace-id:t är identiskt** — `6dac81e3…` i båda. **Span-id:t är
+olika** — `07321ab4…` mot `ab2345d1…`. Dina värden blir andra, eftersom de slumpas.
+
+Det är hela kontextspridningen. Ett fält som följer med oförändrat, ett som byts, och en förälder som
+går att räkna ut i andra änden.
+
+Bryt nu kedjan med flit. Ändra raden i klassen `A` så att headern inte skickas vidare:
+
+```python
+        u.urlopen("http://localhost:5002/").read()
+```
+
+Kör igen. Nu skriver B ut `(saknas)`, och i ett riktigt system hade B startat ett eget trace-id.
+Spåret hade sett komplett ut och slutat vid A.
+
+Tre saker som kan förvirra. Raderna ovan är brutna på två rader för att få plats här — i terminalen
+kommer varje `traceparent` på **en** rad, 55 tecken lång. Portarna 5001 och 5002 måste vara lediga;
+är de upptagna får du `Address already in use` och byter siffror. Och skriptet avslutas direkt när
+anropet är klart, eftersom servrarna kör som daemon-trådar — det är avsiktligt, inte en krasch.
+
+<Callout type="kom-ihag">
+- **Instrumentering** är kod i din process. Automatisk först, manuell där den automatiska inte når.
+- Ett **SDK** tillverkar och buffrar spann. Ett spann syns därför inte direkt.
+- En **collector** tar emot, bearbetar och exporterar. En tjänst — direkt. Flera — collector.
+- **OTLP** är formatet som gör att lagringen kan bytas utan att applikationen ändras.
+- `traceparent` bär version, **trace-id**, **span-id** och flaggor. Trace-id:t ändras aldrig.
+- Ett **brutet spår** ser inte trasigt ut. Det ser kort ut.
+- **Sampling görs per spår.** Head är billigt, tail behåller de långsamma och de trasiga.
+- I ett vattenfall betyder **trappan N+1**, glappet väntan, och det breda barnet att du hittat rätt.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Varför räcker inte automatisk instrumentering?",
+      a: "Den ger spann för det som går genom kända bibliotek — HTTP in, HTTP ut, databasfrågor. Den vet ingenting om din prisberäkning eller din dyra loop. Den ger ramen billigt, och visar var du sedan bör lägga manuella spann.",
+    },
+    {
+      q: "Vad ändras och vad ändras inte i en `traceparent` mellan två tjänster?",
+      a: "Trace-id:t följer med oförändrat genom hela resan — det är det som binder ihop spåret. Span-id:t byts av varje tjänst, och avsändarens span-id blir mottagarens föräldrapekare. Det är de två fälten som gör spåret till ett träd.",
+    },
+    {
+      q: "Ditt spår slutar vid API:et, trots att du vet att det anropar tre tjänster. Vad är troligast?",
+      a: "Kedjan är bruten — `traceparent` skickas inte vidare. Nästa tjänst startar då ett eget trace-id och hamnar i ett separat spår. Vanliga orsaker är en oinstrumenterad HTTP-klient, en kö som inte bär headern vidare, eller en proxy som filtrerar okända headers.",
+    },
+    {
+      q: "Varför görs sampling per spår och inte per span?",
+      a: "Ett halvt spår är värdelöst. Poängen med spårningen är hela resan genom systemet, så beslutet måste gälla alla spann i samma trace. Sparas bara några av dem går trädet inte att bygga.",
+    },
+    {
+      q: "När är tail sampling värt sin kostnad?",
+      a: "När felen är sällsynta. Head sampling beslutar innan något hänt och slumpar därför bort de långsamma anropen lika ofta som de snabba. Tail sampling beslutar efteråt och kan behålla allt som tog över en sekund eller misslyckades — priset är att collectorn måste hålla varje spår i minnet tills det är komplett.",
+    },
+    {
+      q: "Du ser tio korta, nästan identiska spann som faller som en trappa under ett brett föräldraspan. Vad är det?",
+      a: "N+1. En fråga för listan och sedan en fråga per rad, precis som SQL-delen beskrev. Varje enskilt spann är snabbt, och det är antalet som kostar. Formen syns innan du läst en enda etikett.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- Instrumentering är kod som kör i din process. Ingen applikation rapporterar av sig själv.
+- Automatisk instrumentering kopplar in sig i kända bibliotek. Manuell är spann du skriver.
+- SDK:t skapar och buffrar spann, så de syns inte direkt efter en kort körning.
+- Collectorn tar emot, bearbetar och exporterar — och samlar leverantörsvalet på ett ställe.
+- En tjänst klarar sig med direkt export. Flera tjänster vill ha en collector.
+- OTLP är formatet som gör att lagringen kan bytas utan att applikationen instrumenteras om.
+- Kontextspridning sker i headern `traceparent`, enligt W3C Trace Context.
+- Headern bär version, trace-id (32 tecken), span-id (16 tecken) och flaggor.
+- Trace-id:t är detsamma hela resan. Span-id:t byts, och blir nästa spanns förälder.
+- Ett brutet spår ser komplett ut men slutar för tidigt. Det är det svåraste felet att upptäcka.
+- Sampling görs per spår. Head är billigt och blint; tail är dyrare och behåller det intressanta.
+- I vattenfallet betyder trappan N+1, glappet väntan, och det breda barnet att du hittat rätt.
+- Hör informationen till steget blir det ett span-attribut. Är det en egen händelse blir det en logg.
+
+## Nästa del
+
+Därmed står Observability-grunderna: de tre signalerna, mätvärdena, och nu spåren som binder ihop
+dem.
+
+Något har hänt med resten av hubben på vägen hit. Två artiklar som stod för sig själva hänger nu
+ihop med den här. SQL-delens N+1 är trappan du just lärde dig känna igen. Och Kubernetes-delen om
+resurser handlar om en strypt container som inte syns i någon status — men som syns direkt som ett
+glapp i ett vattenfall.
+
+Läs om dem med spårningen i bakhuvudet. Det är samma två problem, sedda från det håll där du
+faktiskt upptäcker dem.

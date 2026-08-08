@@ -83,15 +83,25 @@ export interface HrFaqItem {
 }
 
 export interface HrTranslateRow {
+  /** Annonsflikens logiska område. */
+  cat: string;
+  /** Om formuleringen är skriven eller sagd i ett rekryteringssamtal. */
+  source: "Annonsen" | "Samtal";
   /** Frasen annonsen säger. */
   say: string;
   /** Ev. kort-id att djuplänka till. */
   card?: string;
+  /** Hur formuleringen kan uppfattas av kandidaten. */
   means: string;
-  /** "Leta efter". */
+  /** Frågan formuleringen kan väcka hos kandidaten. */
   look: string;
-  /** Varningsremsa. */
+  /** När ett förtydligande hjälper annonsen. */
   watch: string;
+}
+
+export interface HrTranslateCategory {
+  title: string;
+  sub: string;
 }
 
 export interface HrGlossaryTerm {
@@ -109,6 +119,7 @@ const content = hrContent as unknown as {
   cards: HrCard[];
   faqCategories: string[];
   faq: HrFaqItem[];
+  translateCategories: HrTranslateCategory[];
   translate: HrTranslateRow[];
   glossaryCategories: string[];
   glossary: HrGlossaryTerm[];
@@ -117,6 +128,7 @@ const content = hrContent as unknown as {
 export const hrCards: HrCard[] = content.cards;
 export const hrFaq: HrFaqItem[] = content.faq;
 export const hrFaqCategories: string[] = content.faqCategories;
+export const hrTranslateCategories: HrTranslateCategory[] = content.translateCategories;
 export const hrTranslate: HrTranslateRow[] = content.translate;
 export const hrGlossary: HrGlossaryTerm[] = content.glossary;
 export const hrGlossaryCategories: string[] = content.glossaryCategories;
@@ -238,7 +250,7 @@ export function updatedLabel(): string {
   return `uppdaterad ${month} ${y ?? ""}`.trim();
 }
 
-// Metaraden i biblioteket: "3 kort klara · 10 på gång · 11 frågor · uppdaterad
+// Metaraden i biblioteket: "3 kort klara · 10 på gång · frågor · uppdaterad
 // juli 2026". Räknar klara kort separat — "13 kort" lovade mer än guiden håller.
 export function hrMetaLine(): string {
   const done = doneCards().length;

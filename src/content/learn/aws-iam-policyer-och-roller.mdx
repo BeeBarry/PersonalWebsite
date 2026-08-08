@@ -1,0 +1,503 @@
+---
+title: 'IAM — policyer och roller'
+description: 'Vem får göra vad i AWS, och varför en roll är bättre än en nyckel'
+category: 'aws'
+part: 1
+order: 3
+date: '2026-08-08'
+tags: ['Beginner', 'IAM', 'Policy']
+---
+
+## Var vi är
+
+Förra delen ställde applikationen någonstans — en instans, en container eller en funktion — och
+notan gick att förklara.
+
+Kvar står frågan AWS gör svårare än de flesta moln: vem får göra vad? Azure svarar med färdiga
+roller du väljer i en lista. AWS svarar med ett dokument du skriver själv, vilket ger mer kontroll
+och fler sätt att göra fel.
+
+Den här delen går igenom dokumentet, vad det sitter på, och vem som vinner när två dokument säger
+olika. Zoomen ligger på ett enskilt konto — organisationer och SCP:er ligger utanför.
+
+<Del titel="Dokumentet" />
+
+## Vad en IAM-policy är
+
+En **IAM-policy** är ett JSON-dokument som räknar upp vad som är tillåtet eller förbjudet.
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "s3:GetObject",
+      "Resource": "arn:aws:s3:::shop-bilder/*"
+    }
+  ]
+}
+```
+
+`Version` är policyspråkets datum, inte din version av filen. Den ska stå där, och den ska stå som
+`2012-10-17`.
+
+Allt annat ligger i `Statement`, som är en lista. Ett dokument kan innehålla många satser, och varje
+sats prövas för sig.
+
+## Effect, Action och Resource
+
+Tre fält bär hela satsen, och var och en svarar på en fråga.
+
+**`Effect`** är `Allow` eller `Deny` — inget tredje värde finns.
+
+**`Action`** är operationen: `s3:GetObject`. Den kan vara en sträng eller en lista.
+
+**`Resource`** är vad operationen gäller, angivet som en ARN — samma adressform som del 1.0 tog upp.
+
+Saknas `Resource` i en identitetsbaserad policy är dokumentet ogiltigt. AWS kräver att du säger
+*vad*, inte bara *vilken operation*.
+
+## Hur en action är uppbyggd
+
+En **action** är tjänstens prefix, ett kolon, och operationens namn: `s3:GetObject`.
+
+Prefixet är kort och fast — `s3`, `ec2`, `iam`, `sts`. Namnet efter kolonet motsvarar ett anrop i
+tjänstens API, vilket är varför de nästan alltid börjar med ett verb: `Get`, `List`, `Put`,
+`Delete`, `Create`.
+
+Antalet är större än det låter. AWS publicerar listan öppet, och den innehåller **21 799 actions**
+fördelade på **474 tjänster**. Bara S3 har 180 stycken, och EC2 har 793.
+
+`s3:*` betyder alltså inte "läs och skriv filer". Det betyder 180 operationer, varav flera ändrar vem
+som får läsa hinken.
+
+## Vad en Condition gör
+
+`Condition` är ett frivilligt fält som gör satsen villkorad.
+
+```json
+{
+  "Effect": "Allow",
+  "Action": "s3:GetObject",
+  "Resource": "arn:aws:s3:::shop-bilder/*",
+  "Condition": {
+    "Bool": { "aws:SecureTransport": "true" }
+  }
+}
+```
+
+Satsen ovan tillåter läsning, men bara över HTTPS. Villkoret prövas vid varje anrop, mot värden AWS
+känner till om anropet: avsändarens IP, tiden, om anropet var krypterat, vilka taggar resursen har.
+
+`Condition` är det som gör att en bred behörighet ändå kan vara snäv. Det är också det fält som är
+lättast att skriva så att det aldrig matchar, och då märks felet först när någon inte kommer åt
+något.
+
+## Identitetsbaserad vs resursbaserad policy
+
+Samma tillåtelse kan skrivas på två ställen, och skillnaden finns inte i Azure.
+
+**En identitetsbaserad policy** sitter på den som gör något — en användare, en grupp eller en roll.
+Den säger *"den här identiteten får läsa den hinken"*.
+
+**En resursbaserad policy** sitter på saken det görs mot — en S3-hink, en SQS-kö, en KMS-nyckel. Den
+säger *"den här hinken får läsas av den identiteten"*, och den har ett `Principal`-fält som pekar ut
+vem.
+
+Två saker följer av det. En resursbaserad policy kan ge åtkomst **över kontogränser** utan att någon
+rör den andra sidan, vilket identitetsbaserade inte kan ensamma. Och när något oväntat är åtkomligt
+räcker det inte att läsa identitetens policyer — svaret kan sitta på resursen.
+
+<Doodle
+  name="lappen-pa-vem"
+  caption="Samma pil i båda. Skillnaden är vilken av de två som bär lappen."
+/>
+
+<Del titel="Vem den sitter på" />
+
+## Vad en IAM-användare är
+
+En **IAM-användare** är en identitet med långlivade inloggningsuppgifter, avsedd för en människa
+eller ett system som inte kan hämta tillfälliga.
+
+Användaren finns tills någon tar bort den, och dess uppgifter gäller tills någon byter dem. Det är
+den egenskapen som gör den bekväm, och det är samma egenskap som gör den till ett problem.
+
+## Vad en åtkomstnyckel är
+
+En **åtkomstnyckel** är ett par: ett `AKIA…`-id och en hemlighet.
+
+Paret ger full tillgång till allt användaren får göra, från var som helst, utan utgångsdatum. Det
+finns ingen session att avsluta och ingen klocka som tickar.
+
+Nyckeln hamnar därför i `~/.aws/credentials`, i en miljövariabel, i en CI-inställning — och ibland i
+ett repo. En läckt åtkomstnyckel är det vanligaste allvarliga AWS-tillbudet, och den fungerar tills
+någon upptäcker och inaktiverar den.
+
+## Vad en roll är
+
+En **roll** är en identitet utan egna inloggningsuppgifter, som andra tillfälligt får anta.
+
+Rollen har behörigheter precis som en användare. Det den saknar är ett sätt att logga in som sig
+själv: den existerar bara när någon annan antagit den, och då i form av tillfälliga uppgifter som går
+ut.
+
+## Användare vs roll
+
+Den distinktion bryggan från förra delen utlovade, och den som avgör hur du bygger.
+
+**En användare** *är* någon, hela tiden. Nyckeln finns, ligger någonstans och gäller tills den byts.
+
+**En roll** *antas* av någon, en stund. Uppgifterna skapas vid behov och upphör av sig själva.
+
+Regeln som följer: **roll som förstahandsval, användare bara när ingenting annat går.** Kör koden på
+en EC2-instans, i en container eller i en Lambda-funktion finns alltid en roll att använda. Då ska
+ingen nyckel skapas.
+
+Det är samma slutsats som Azure-serien landar i med managed identity. AWS kom fram till den först,
+och kallar mekaniken något annat.
+
+## Behörighetspolicy vs förtroendepolicy
+
+En roll bär **två** policyer, och de svarar på olika frågor. Det är den vanligaste förvirringen i
+hela IAM.
+
+**Behörighetspolicyn** svarar på *vad rollen får göra* när den väl antagits. Den ser ut som vilken
+policy som helst.
+
+**Förtroendepolicyn** svarar på *vem som får anta rollen*. Den sitter på rollen, har ett
+`Principal`-fält, och dess `Action` är alltid `sts:AssumeRole`.
+
+```json
+{
+  "Effect": "Allow",
+  "Principal": { "Service": "ec2.amazonaws.com" },
+  "Action": "sts:AssumeRole"
+}
+```
+
+Den här förtroendepolicyn säger: EC2-tjänsten får anta rollen. Ingen behörighet alls följer av det —
+vad rollen sedan får göra står i den andra policyn.
+
+Felsökningsordningen följer av uppdelningen. Får du `AccessDenied` **när du antar** rollen är det
+förtroendepolicyn. Får du det **efteråt** är det behörighetspolicyn.
+
+<Doodle
+  name="rollens-tva-policyer"
+  caption="Dörren avgör vem som kommer in. Fönstret avgör vad hen når därifrån."
+/>
+
+## Vad AssumeRole gör
+
+`sts:AssumeRole` är anropet som växlar in din identitet mot rollens.
+
+Svaret är tre värden: ett nyckel-id, en hemlighet och ett **sessionstoken**. Tillsammans är de en
+tillfällig uppsättning uppgifter som slutar fungera när sessionen går ut, normalt efter en timme.
+
+Sessionstokenet är det som skiljer tillfälliga uppgifter från en åtkomstnyckel. Saknas det tredje
+värdet har du inte antagit en roll — du använder en långlivad nyckel.
+
+## Vad en instansprofil är
+
+En **instansprofil** är omslaget som kopplar en roll till en EC2-instans.
+
+Du skapar rollen, sätter en förtroendepolicy som släpper in `ec2.amazonaws.com`, och kopplar den till
+instansen via profilen. Applikationen på instansen hämtar sedan tillfälliga uppgifter från instansens
+egna metadatatjänst, utan att någon lagt en fil någonstans.
+
+Det är AWS motsvarighet till en managed identity i Azure-delen: plattformen håller nyckeln, koden
+hämtar en kortlivad token, och det finns ingen hemlighet att rotera.
+
+<Del titel="Vem som vinner" />
+
+## Utvärderingen i tre steg
+
+När två dokument säger olika avgörs frågan av en fast ordning. Den är kort, och den är värd att kunna
+utantill.
+
+<Flow
+  caption="Tre steg, och bara det mellersta kan öppna. De andra två stänger."
+  steps={[
+    {
+      label: "Allt är förbjudet",
+      note: "Utgångsläget för varje anrop. AWS kallar det **implicit deny**.",
+    },
+    {
+      label: "En Allow öppnar",
+      via: "någon tillämplig policy",
+      note: "Räcker att **en** sats i **ett** dokument tillåter operationen.",
+      accent: true,
+    },
+    {
+      label: "En Deny stänger igen",
+      via: "var som helst",
+      note: "En enda explicit `Deny` upphäver varje `Allow`. Det går inte att väga upp.",
+    },
+  ]}
+/>
+
+Ordningen har en praktisk konsekvens: `Deny` är absolut. Ger du ett team `s3:*` och lägger en `Deny`
+på en enskild hink kommer ingen åt den hinken, oavsett hur många andra policyer som säger `Allow`.
+
+Ett undantag finns. Kontots **root-användare** har full åtkomst och påverkas inte av
+identitetsbaserade policyer. Det är därför rådet är att låsa in root och aldrig arbeta som den.
+
+## Explicit deny vs implicit deny
+
+Två sätt att bli nekad, med samma felmeddelande och helt olika åtgärd.
+
+**Implicit deny** är frånvaro. Ingen policy sade `Allow`, så svaret blev nej. Åtgärden är att lägga
+till en behörighet.
+
+**Explicit deny** är närvaro. Någon policy sade `Deny`, och det slår allt. Åtgärden är att hitta det
+dokumentet — att lägga till fler `Allow` gör ingenting.
+
+Felmeddelandet skiljer dem inte åt, och det är därför felsökning av IAM ofta börjar i fel ände. Fråga
+alltid först: *finns det ett `Deny` någonstans?* Är svaret nej är det en saknad `Allow`.
+
+## Fallgropen: stjärnan i Resource
+
+<Callout type="fallgrop">
+`"Resource": "*"` är den vanligaste överbehörigheten i AWS, och den ser harmlös ut eftersom den ofta
+kommer från ett exempel i en snabbstartsguide.
+
+Kombinerad med `"Action": "s3:*"` ger den 180 operationer på varje hink i kontot — inklusive de som
+ändrar hinkens egen policy. En applikation som skulle läsa bilder kan då göra sig själv till
+administratör av all lagring.
+
+Skriv ut ARN:en. `arn:aws:s3:::shop-bilder/*` är lika lätt att skriva och begränsar skadan till en
+hink.
+</Callout>
+
+<Split
+  leftTitle="Från snabbstarten"
+  rightTitle="Utskriven ARN"
+  leftTone="bad"
+  rightTone="good"
+  caption="Båda får applikationen att fungera. Bara den ena begränsar vad ett misstag kan förstöra."
+>
+  <div slot="left">
+
+  ```json
+  {
+    "Effect": "Allow",
+    "Action": "s3:*",
+    "Resource": "*"
+  }
+  ```
+
+  180 operationer på varje hink i kontot, inklusive `s3:PutBucketPolicy`.
+
+  Fungerar direkt, och ingen kommer någonsin tillbaka för att snäva in den.
+
+  </div>
+  <div slot="right">
+
+  ```json
+  {
+    "Effect": "Allow",
+    "Action": ["s3:GetObject"],
+    "Resource": "arn:aws:s3:::shop-bilder/*"
+  }
+  ```
+
+  En operation, en hink. Behöver applikationen mer märks det direkt, och då lägger du till just det.
+
+  </div>
+</Split>
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att läsa policyer oftare än du skriver dem, och när du skriver är det oftast en kopia du
+snävar in. Det som gör dig snabb är att kunna läsa en sats och säga vad den tillåter, på vad.
+
+Det som är värt din tid nu är felsökningsordningen. `AccessDenied` har tre möjliga orsaker —
+förtroendepolicyn, en saknad `Allow`, eller ett `Deny` — och de kräver helt olika åtgärder.
+
+Behörighetsgränser, SCP:er i en organisation, ABAC med taggar och åtkomstanalys kan vänta. De blir
+dina den dag du äger ett konto — och de bygger alla på `Effect`, `Action` och `Resource`.
+
+## Vanliga nybörjarförväxlingar
+
+En policy är inte en roll. Policyn är dokumentet; rollen är identiteten det sitter på. Samma policy
+kan sitta på flera identiteter.
+
+En roll har inte en policy utan två. Förtroendepolicyn styr vem som får anta den, behörighetspolicyn
+vad den får göra sedan.
+
+`s3:*` är inte "läs och skriv". Det är 180 operationer, varav några ändrar vem som får läsa.
+
+Fler `Allow` löser inte ett `Deny`. En explicit `Deny` går inte att väga upp — den måste tas bort.
+
+`AccessDenied` betyder inte alltid att en behörighet saknas. Det kan lika gärna vara ett `Deny`
+någon annanstans, och felmeddelandet skiljer dem inte åt.
+
+Tillfälliga uppgifter är inte en nyckel med kortare liv. De har ett tredje värde, ett sessionstoken,
+och utan det har du inte antagit en roll.
+
+En resursbaserad policy syns inte i identitetens behörigheter. Är något åtkomligt du inte förstår —
+titta på resursen.
+
+## Prova själv
+
+Övningarna kräver **varken AWS-konto eller AWS CLI**, precis som i del 1.0. Allt nedan är publika
+adresser.
+
+AWS publicerar hela listan över IAM-actions öppet — det är den filen policygeneratorn i konsolen
+läser. Hämta den:
+
+```bash
+U=https://awspolicygen.s3.amazonaws.com/js/policies.js
+curl -s "$U" -o pol.js
+sed 's/^app.PolicyEditorConfig=//' pol.js > pol.json
+```
+
+Filen är ett JavaScript-uttryck, inte JSON, så `sed`-raden klipper bort tilldelningen framför
+klammern. Räkna nu:
+
+```bash
+jq '.serviceMap | length' pol.json
+jq '[.serviceMap[].Actions[]] | length' pol.json
+```
+
+**474** tjänster och **21 799** actions. Se sedan hur många av dem `s3:*` faktiskt betyder:
+
+```bash
+jq '.serviceMap["Amazon S3"].Actions | length' pol.json
+```
+
+`180`. Titta på några av dem:
+
+```bash
+jq -r '.serviceMap["Amazon S3"].Actions[0:3][]' \
+  pol.json
+```
+
+```
+AbortMultipartUpload
+AllowVendedLogDeliveryForResource
+AssociateAccessGrantsIdentityCenter
+```
+
+Listan är sorterad i bokstavsordning, så det är `A`-operationerna du får. Alla tre börjar med ett
+verb, vilket är mönstret — men `Get` och `Put` ligger längre ner.
+
+Fråga slutligen vilken tjänst som har flest:
+
+```bash
+jq '.serviceMap | map_values(.Actions|length)
+    | to_entries | max_by(.value)' pol.json
+```
+
+Amazon EC2, med **793**.
+
+Gör nu ett osignerat anrop mot AWS och se vad som händer:
+
+```bash
+Q="Action=GetCallerIdentity&Version=2011-06-15"
+curl -s "https://sts.amazonaws.com/?$Q"
+```
+
+```xml
+<Error>
+  <Type>Sender</Type>
+  <Code>MissingAuthenticationToken</Code>
+  <Message>Request is missing Authentication
+  Token</Message>
+</Error>
+```
+
+Statuskoden är **403**, inte 401:
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" \
+  "https://sts.amazonaws.com/?$Q"
+```
+
+Det är värt att stanna vid. Enligt nätverksdelen borde en saknad inloggning ge `401`. AWS svarar
+`403` ändå — **det finns inget anonymt läge att bli utslängd från.** Varje anrop måste bära en
+identitet, och ett anrop utan identitet är inte obehörigt utan ogiltigt.
+
+Tre saker som kan förvirra. Filen `policies.js` är cirka 680 kB, så `jq` utan filter fyller
+terminalen. Talen växer när AWS lägger till tjänster, så dina siffror blir troligen högre än de ovan.
+Och `serviceMap` använder tjänsternas visningsnamn som nycklar — `"Amazon S3"`, inte `"s3"` — medan
+`StringPrefix` inuti varje post är det som används i en policy.
+
+Städa efter dig:
+
+```bash
+rm pol.js pol.json
+```
+
+<Callout type="kom-ihag">
+- En **IAM-policy** är ett JSON-dokument med satser av `Effect`, `Action` och `Resource`.
+- En **action** är `tjänst:Operation`. AWS har 21 799 av dem, och `s3:*` betyder 180.
+- **Identitetsbaserad** policy sitter på den som gör. **Resursbaserad** sitter på det som görs mot.
+- En **roll** antas tillfälligt och har inga egna uppgifter. En **användare** har en nyckel som gäller.
+- En roll bär **två** policyer: förtroendepolicyn släpper in, behörighetspolicyn tillåter.
+- Utvärderingen: allt förbjudet → en `Allow` öppnar → en `Deny` stänger, och `Deny` vinner alltid.
+- `"Resource": "*"` är den vanligaste överbehörigheten. Skriv ut ARN:en i stället.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Vad betyder `\"Action\": \"s3:*\"` egentligen?",
+      a: "Alla 180 operationer i S3, inte bara läsa och skriva objekt. Bland dem finns `s3:PutBucketPolicy`, som ändrar vem som får läsa hinken. En applikation med `s3:*` kan alltså ge sig själv och andra ny åtkomst.",
+    },
+    {
+      q: "Vad är skillnaden mellan en IAM-användare och en roll?",
+      a: "Användaren är någon hela tiden och har långlivade uppgifter som gäller tills de byts. Rollen antas tillfälligt och ger uppgifter som går ut, normalt efter en timme. Kör koden i AWS ska den använda en roll — då finns ingen nyckel att läcka.",
+    },
+    {
+      q: "En roll har två policyer. Vilken gör vad?",
+      a: "Förtroendepolicyn säger vem som får anta rollen — dess `Action` är `sts:AssumeRole` och den har ett `Principal`. Behörighetspolicyn säger vad rollen får göra efteråt. Får du `AccessDenied` när du antar rollen är det den första; får du det efteråt är det den andra.",
+    },
+    {
+      q: "Du lägger till en policy med `Allow` men får fortfarande `AccessDenied`. Vad är den troliga orsaken?",
+      a: "Ett explicit `Deny` någon annanstans. En `Deny` upphäver varje `Allow` och går inte att väga upp med fler tillåtelser — dokumentet måste hittas och ändras. Fråga alltid först om det finns ett `Deny`, innan du letar efter en saknad `Allow`.",
+    },
+    {
+      q: "En S3-hink är läsbar från ett annat konto, men inget i det kontots policyer nämner den. Hur?",
+      a: "Via en resursbaserad policy på hinken själv. Den har ett `Principal`-fält som pekar ut vem som får läsa, och den syns inte när du granskar identitetens behörigheter. Åtkomst över kontogränser går bara att ge på det sättet.",
+    },
+    {
+      q: "Ett osignerat anrop mot AWS ger `403`, inte `401`. Varför?",
+      a: "Det finns inget anonymt läge i AWS. Varje anrop måste bära en identitet, så ett anrop utan sådan är inte en obesvarad inloggning utan en ogiltig begäran. Svaret blir `MissingAuthenticationToken` med statuskod 403.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- En IAM-policy är ett JSON-dokument. `Version` ska vara `2012-10-17` och satserna ligger i
+  `Statement`.
+- Varje sats har `Effect` (`Allow` eller `Deny`), `Action` och `Resource`.
+- En action är `tjänst:Operation`. AWS publicerar 21 799 av dem över 474 tjänster.
+- `s3:*` är 180 operationer, varav flera ändrar vem som får läsa.
+- `Condition` gör satsen villkorad — på HTTPS, IP, tid eller taggar.
+- Identitetsbaserade policyer sitter på den som gör. Resursbaserade sitter på det som görs mot.
+- Bara resursbaserade policyer kan ge åtkomst över kontogränser på egen hand.
+- En IAM-användare har en långlivad åtkomstnyckel utan utgångsdatum.
+- En roll har inga egna uppgifter. Den antas, och ger tillfälliga uppgifter med sessionstoken.
+- Roll som förstahandsval. Kör koden i AWS ska ingen åtkomstnyckel skapas.
+- En roll bär två policyer: förtroendepolicyn släpper in, behörighetspolicyn tillåter.
+- En instansprofil kopplar rollen till en EC2-instans. Det är AWS managed identity.
+- Utvärderingen: implicit deny → en `Allow` öppnar → en explicit `Deny` stänger och vinner alltid.
+- Root-användaren är undantaget, och det är därför den ska låsas in.
+- `"Resource": "*"` är den vanligaste överbehörigheten. Skriv ut ARN:en.
+
+## Nästa del
+
+Därmed står AWS-grunderna: kontot och adressen, vad applikationen kör på, och vem som får röra den.
+
+Förtroendepolicyn har en tillämpning som är värd att följa upp direkt. Den kan nämligen släppa in
+något som inte är en AWS-tjänst alls: en pipeline hos GitHub, som bevisar vem den är med en signerad
+token i stället för en nyckel.
+
+Det är precis vad CI/CD-delen om GitHub Actions beskriver från andra hållet. Läs den med `Principal`
+och `sts:AssumeRole` i bakhuvudet, så hänger de två ihop: OIDC är förtroendepolicyn, sedd från
+pipelinens sida.

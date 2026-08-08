@@ -1,0 +1,505 @@
+---
+title: 'Identitet, roller och behörigheter'
+description: 'Vem får göra vad i Azure — och hur en app loggar in utan att bära på en hemlighet'
+category: 'azure'
+part: 1
+order: 3
+date: '2026-08-08'
+tags: ['Beginner', 'Entra ID', 'RBAC']
+---
+
+## Var vi är
+
+Förra delen ställde applikationen någonstans: en virtuell maskin, en webbtjänst eller ett kluster.
+Den kör, och notan går att förklara.
+
+Två frågor står kvar. Vem får ändra på den — och hur når den själv databasen utan att ett lösenord
+ligger i en fil någonstans?
+
+Den här delen svarar på båda, och de har samma svar. Zoomen ligger på behörigheter inuti en
+prenumeration; organisationsdesign och villkorlig åtkomst ligger utanför.
+
+<Del titel="Vem du är" />
+
+## Vad Entra ID är
+
+**Microsoft Entra ID** är katalogen över identiteter som en Azure-prenumeration litar på. Tjänsten
+hette Azure Active Directory tidigare, och båda namnen förekommer fortfarande i dokumentation.
+
+Förra delen konstaterade att varje prenumeration litar på **en** tenant. Entra ID är innehållet i
+den tenanten: användarna, grupperna och applikationernas identiteter.
+
+Entra ID är inte samma sak som Active Directory på en server i ett företagsnätverk. Den äldre
+produkten hanterar domänanslutna Windows-maskiner. Entra ID är byggt för moln och webbprotokoll, och
+de två är olika system med snarlika namn.
+
+## Autentisering vs auktorisering
+
+Två ord som börjar likadant och betyder helt olika saker. Hela resten av artikeln vilar på
+skillnaden.
+
+**Autentisering** svarar på *vem är du.* Det är inloggningen, och Entra ID sköter den.
+
+**Auktorisering** svarar på *vad får du göra.* Det är rollerna, och Azure Resource Manager sköter
+dem.
+
+De är två separata steg, och du kan klara det ena men falla på det andra. Du är inloggad i portalen
+och ser ändå en tom prenumerationslista: autentiseringen lyckades, auktoriseringen gav dig
+ingenting.
+
+Det är samma uppdelning som `401` och `403` i nätverksdelen. `401` betyder att du inte bevisat vem
+du är; `403` att du bevisat det och ändå inte får.
+
+## Vad en principal är
+
+En **principal** är det som en behörighet kan ges till.
+
+Fyra sorter finns: en **användare**, en **grupp**, en **tjänstprincipal** och en **managed
+identity**. För Azure är de fyra utbytbara — en roll ges till en principal, oavsett vilken sort det
+är.
+
+Att gruppen räknas som principal är poängen med den. Behörigheten ges till gruppen en gång, och
+medlemskapet avgör sedan vem som får. Ingen behöver leta rätt på tolv tilldelningar när någon byter
+team.
+
+## Vad en tjänstprincipal är
+
+En **tjänstprincipal** är en identitet för ett program i stället för en människa.
+
+Den behöver ett sätt att bevisa vem den är, och det är där problemet börjar: antingen en
+klienthemlighet — ett långt lösenord — eller ett certifikat. Båda är filer eller strängar som måste
+förvaras någonstans, distribueras till det som ska använda dem, och bytas innan de går ut.
+
+Ett bygge i en pipeline som ska nå Azure är det klassiska fallet. Det är också klassiskt att
+hemligheten gick ut på en fredag.
+
+## Vad en managed identity är
+
+En **managed identity** är en tjänstprincipal som plattformen skapar och sköter nycklarna åt.
+
+Du slår på den för en resurs — en webbtjänst, en virtuell maskin, ett kluster. Azure skapar då en
+identitet åt just den resursen, och resursen kan hämta en kortlivad token från plattformen inifrån
+sig själv.
+
+Det finns ingen hemlighet att kopiera, ingen att lägga i en variabel och ingen att byta. Tokenet
+lever i minuter och förnyas av plattformen.
+
+Två varianter finns. En **systemtilldelad** identitet hör till en enda resurs och tas bort med den.
+En **användartilldelad** är ett eget objekt som flera resurser kan dela, och den överlever dem.
+
+## Tjänstprincipal vs managed identity
+
+Den viktigaste distinktionen i avsnittet, och den enda som ändrar hur du bygger.
+
+**En tjänstprincipal** bevisar sig med något du förvarar. Hemligheten finns på minst två ställen —
+i Entra ID och där appen läser den — och den går ut.
+
+**En managed identity** bevisar sig med något plattformen håller. Hemligheten finns på noll ställen
+du kan läsa, och den byts utan att någon gör något.
+
+Regeln som följer: **kör koden i Azure? Använd managed identity.** Kör den utanför — på en byggserver
+hos någon annan, eller på din laptop — behöver du en tjänstprincipal, och då är hemlighetshanteringen
+ditt problem.
+
+<Doodle
+  name="fickan-som-ar-tom"
+  caption="Nyckeln till vänster måste bytas. Tokenet till höger finns bara i minuter."
+/>
+
+<Del titel="Vad du får göra" />
+
+## Vad en roll är
+
+En **roll** är en namngiven lista över operationer som är tillåtna.
+
+Det är bokstavligt. En rolldefinition är ett JSON-objekt med två fält som betyder något:
+`actions` räknar upp vad som är tillåtet, och `notActions` drar ifrån undantagen.
+
+```json
+{
+  "roleName": "Reader",
+  "actions": ["*/read"],
+  "notActions": []
+}
+```
+
+`Reader` tillåter alltså varje operation vars namn slutar på `/read`, och drar inte ifrån något.
+Azure levererar över 900 sådana inbyggda roller, och du kan skriva egna.
+
+## Vad en rolltilldelning är
+
+En **rolltilldelning** är kopplingen som ger en roll verkan. Den består av exakt tre delar, och var
+och en svarar på en fråga.
+
+**Principalen** svarar på *vem*. **Rolldefinitionen** svarar på *får göra vad*. **Scopet** svarar på
+*och var*.
+
+Saknas en av de tre finns ingen behörighet. Det är därför *"jag har Contributor"* är ett ofullständigt
+påstående — Contributor **var**?
+
+<Doodle
+  name="tre-delar-en-tilldelning"
+  caption="Tre pilar in, en tilldelning ut. Tas en av dem bort finns ingen behörighet."
+/>
+
+## Roll vs rolltilldelning
+
+Två ord som används om vartannat i vardagligt tal, med en skillnad som märks när något ska felsökas.
+
+**Rollen** är mallen. `Contributor` finns en gång i hela Azure och ser likadan ut för alla.
+
+**Tilldelningen** är instansen. *Lisa har Contributor på resursgruppen `rg-shop-prod`* är en
+tilldelning, och den finns bara på det stället.
+
+Du ändrar därför nästan aldrig en roll. Du lägger till och tar bort tilldelningar, och när ingen
+inbyggd roll passar skapar du en egen rolldefinition — inte en ändring av `Contributor`.
+
+## Reader, Contributor och Owner
+
+Tre roller täcker det mesta, och skillnaden mellan de två sista är exakt en sak.
+
+**Reader** får läsa allt inom sitt scope och ändra ingenting.
+
+**Contributor** får skapa, ändra och ta bort resurser — men inte ge någon annan behörighet.
+
+**Owner** får allt Contributor får, och dessutom ge behörighet.
+
+Skillnaden går att läsa rakt ur definitionerna. Både `Contributor` och `Owner` har
+`actions: ["*"]`. Det som skiljer står i `notActions`:
+
+```json
+"notActions": [
+  "Microsoft.Authorization/*/Delete",
+  "Microsoft.Authorization/*/Write",
+  "Microsoft.Authorization/elevateAccess/Action"
+]
+```
+
+`Owner` har en tom `notActions`. Contributor har raderna ovan, och det är den mittersta som gör att
+du kan bygga hela systemet men inte bjuda in en kollega.
+
+<Callout type="varfor" title="Varför uppdelningen finns">
+Den som kan ge behörighet kan ge sig själv vilken behörighet som helst. Skiljer man
+*ändra resurser* från *ändra vem som får ändra resurser* blir ett kapat utvecklarkonto en
+begränsad skada i stället för en total.
+
+Det är minsta privilegium i praktiken: Contributor räcker för att arbeta, och kräver att någon
+annan öppnar dörren för nästa person.
+</Callout>
+
+## actions vs dataActions
+
+En uppdelning som förvånar första gången, och som förklarar felet *"jag är Owner och får ändå inte
+läsa hemligheten"*.
+
+**`actions`** styr operationer på resursen: skapa valvet, läsa dess inställningar, ta bort det.
+
+**`dataActions`** styr operationer på innehållet: läsa själva hemligheten som ligger i valvet.
+
+Rollen `Key Vault Secrets User` har tomma `actions` och två `dataActions`:
+
+```
+Microsoft.KeyVault/vaults/secrets/getSecret/action
+Microsoft.KeyVault/vaults/secrets/readMetadata/action
+```
+
+Rollen ger alltså rätt att läsa hemligheten och ingenting annat. Owner har tvärtom `actions: ["*"]`
+och inga `dataActions`, och kommer därför inte åt innehållet.
+
+Det är förra delens *control plane vs data plane*, uttryckt i behörighetssystemet. Owner äger lådan.
+Att öppna den är en annan roll.
+
+## Vad ett scope är
+
+Ett **scope** är den del av Azure en tilldelning gäller för, angiven som ett resurs-ID.
+
+Fyra nivåer finns, och de är samma hierarki som förra delen ritade upp: hanteringsgrupp,
+prenumeration, resursgrupp, enskild resurs.
+
+```
+/subscriptions/1234…/resourceGroups/rg-shop-prod
+```
+
+Scopet är alltså inte ett abstrakt begrepp. Det är en sträng, och den pekar ut en nod i trädet.
+
+## Hur behörigheten ärvs nedåt
+
+En tilldelning gäller på sitt scope **och allt under det**.
+
+Ger du Lisa `Contributor` på `rg-shop-prod` gäller det varje resurs i den resursgruppen — även de
+som skapas i morgon. Ger du henne det på prenumerationen gäller det varje resursgrupp i den.
+
+Arvet går bara nedåt. `Contributor` på en enskild databas ger ingenting på resursgruppen runt
+omkring, och det är den vanligaste orsaken till att någon ser en resurs men inte kan lista sina egna
+resursgrupper.
+
+Tilldelningarna är dessutom **additiva**. Har Lisa `Reader` på prenumerationen och `Contributor` på
+en resursgrupp gäller det generösare av dem där de överlappar.
+
+Att neka något som redan getts kräver en egen konstruktion som heter *deny assignment*, och den
+skapas i praktiken bara av plattformen själv. Den behöver du inte nu — poängen är att RBAC bygger på
+att lägga till, inte att dra ifrån.
+
+<Del titel="Valvet" />
+
+## Vad Key Vault är
+
+**Azure Key Vault** är en tjänst för att lagra hemligheter, nycklar och certifikat, med åtkomst
+styrd av roller.
+
+Valvet löser inte att hemligheter finns. Det löser var de bor: på ett ställe, med behörighetskontroll
+och en logg över vem som hämtat vad, i stället för utspridda i appinställningar och `.env`-filer.
+
+## Hur appen når valvet utan hemlighet
+
+Här går de två halvorna av artikeln ihop, och kedjan har fyra led.
+
+<Flow
+  caption="Ingen hemlighet passerar dina händer, och inget värde ligger kvar i appens konfiguration."
+  steps={[
+    {
+      label: "Webbtjänsten får en managed identity",
+      note: "Ett klick, eller tre rader Terraform. Azure skapar identiteten åt resursen.",
+    },
+    {
+      label: "Identiteten får en roll på valvet",
+      via: "rolltilldelning",
+      note: "`Key Vault Secrets User`, med scopet satt till valvet. Inte bredare.",
+      accent: true,
+    },
+    {
+      label: "Appen hämtar en token inifrån sig själv",
+      note: "Från plattformen. Tokenet lever i minuter och förnyas automatiskt.",
+    },
+    {
+      label: "Appen läser hemligheten ur valvet",
+      note: "Med tokenet. Anropet loggas, och behörigheten går att ta bort i efterhand.",
+    },
+  ]}
+/>
+
+Notera vad som *inte* finns i kedjan: ingen fil, ingen appinställning, inget värde någon behöver
+kopiera vid uppsättningen. Det som ska bytas ut byts av plattformen.
+
+## Fallgropen: hemligheten flyttade bara
+
+<Callout type="fallgrop">
+Ett valv med en klienthemlighet i appinställningarna för att nå valvet har inte löst någonting. Du
+har lagt till ett steg och behållit problemet.
+
+Kännetecknet är en inställning som heter något i stil med `KEYVAULT_CLIENT_SECRET`. Finns den är
+kedjan bruten i första ledet, och det är där du ska titta — inte i valvet.
+</Callout>
+
+<Split
+  leftTitle="Valv med hemlighet"
+  rightTitle="Valv med identitet"
+  leftTone="bad"
+  rightTone="good"
+  caption="Båda hämtar ur valvet. Bara den ena har ett värde som går ut och måste bytas."
+>
+  <div slot="left">
+
+  ```
+  AZURE_CLIENT_ID=...
+  AZURE_CLIENT_SECRET=hemligt
+  KEYVAULT_URI=https://kv-shop...
+  ```
+
+  Hemligheten står i appinställningarna, syns för alla med läsrätt på webbtjänsten, och går ut om
+  två år.
+
+  Valvet skyddar de andra hemligheterna. Den här ligger utanför det.
+
+  </div>
+  <div slot="right">
+
+  ```
+  KEYVAULT_URI=https://kv-shop...
+  ```
+
+  Inget mer. Identiteten sitter på resursen, och tokenet hämtas inifrån.
+
+  Går någon vidare till ett annat team tas rolltilldelningen bort, och åtkomsten upphör samma
+  minut.
+
+  </div>
+</Split>
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att be någon annan om en rolltilldelning oftare än du skapar en, och du kommer att läsa
+felmeddelanden som säger att du saknar behörighet. Det som gör dig snabb är att kunna ställa rätt
+följdfråga: *vilken roll, på vilket scope?*
+
+Det som är värt din tid nu är regeln om managed identity. Väljer du den i den första versionen av en
+tjänst slipper du hemlighetsrotation för alltid; lägger du till den efteråt är det en ombyggnad.
+
+Villkorlig åtkomst, PIM, egna rolldefinitioner och behörighetsdesign över flera prenumerationer kan
+vänta. De blir dina den dag du äger en tenant — och de bygger alla på principal, roll och scope.
+
+## Vanliga nybörjarförväxlingar
+
+Entra ID är inte Active Directory. De har snarlika namn och löser olika problem, i olika miljöer.
+
+Att vara inloggad är inte att ha behörighet. Autentiseringen kan lyckas och lämna dig med en tom
+lista — det är auktoriseringen som saknas.
+
+`Contributor` är inte `Owner` minus lite. Båda har `actions: ["*"]`, och skillnaden står helt i
+`notActions`.
+
+Owner ger inte åtkomst till innehållet i ett valv. `actions` styr resursen, `dataActions` styr
+datan, och Owner har inga `dataActions`.
+
+En roll är inte en rolltilldelning. Rollen är mallen och finns en gång. Tilldelningen är instansen
+och finns på ett scope.
+
+Behörighet ärvs inte uppåt. `Contributor` på en resurs ger ingenting på resursgruppen omkring den.
+
+En managed identity är inte en annan sorts inloggning. Det är en tjänstprincipal där plattformen
+äger nyckeln i stället för du.
+
+## Prova själv
+
+Övningarna är **läsande** och rör ingenting i din prenumeration. De kräver `az` och en inloggning:
+
+```bash
+az login
+az account show --query name -o tsv
+```
+
+Börja med att fråga hur många inbyggda roller som finns:
+
+```bash
+az role definition list --query "length(@)" -o tsv
+```
+
+Svaret är i storleksordningen `922`. Talet växer över tid, så din siffra blir troligen högre.
+
+Titta nu på den enklaste rollen:
+
+```bash
+az role definition list --name "Reader" \
+  --query "[0].permissions[0]" -o json
+```
+
+```json
+{
+  "actions": [
+    "*/read"
+  ],
+  "condition": null,
+  "conditionVersion": null,
+  "dataActions": [],
+  "notActions": [],
+  "notDataActions": []
+}
+```
+
+**Där är hela rollen.** Sex fält, varav fem är tomma. Allt som slutar på `/read` är tillåtet.
+
+Ställ sedan de två stora mot varandra:
+
+```bash
+az role definition list --name "Contributor" \
+  --query "[0].permissions[0].notActions"
+az role definition list --name "Owner" \
+  --query "[0].permissions[0].notActions"
+```
+
+Owner svarar med `[]`. Contributor svarar med en lista där `Microsoft.Authorization/*/Write` står
+med. Det är den raden — och ingenting annat — som gör att en Contributor inte kan bjuda in någon.
+
+Ta slutligen `dataActions` på orden:
+
+```bash
+az role definition list \
+  --name "Key Vault Secrets User" \
+  --query "[0].permissions[0].dataActions" -o tsv
+```
+
+```
+Microsoft.KeyVault/vaults/secrets/getSecret/action
+Microsoft.KeyVault/vaults/secrets/readMetadata/action
+```
+
+Byt `.dataActions` mot `.actions` i samma kommando och du får ingenting tillbaka — listan är tom.
+Rollen ger rätt att läsa hemligheten men inte att röra valvet, alltså motsatsen till vad Owner ger.
+
+Tre saker som kan förvirra. Utan `--name` skriver `az role definition list` ut alla 900-plus
+rollerna och fyller terminalen; avbryt med `q` om utskriften öppnas i en sidvisare. Rollens JSON har
+sex fält även när fem är tomma, så `"condition": null` betyder inget annat än att ingen villkorsregel
+är satt. Och kommandona läser från prenumerationen du är inloggad mot — har du flera byter du med
+`az account set --subscription "<namn>"`.
+
+<Callout type="kom-ihag">
+- **Autentisering** är vem du är. **Auktorisering** är vad du får göra. Två steg, två system.
+- En **roll** är en lista över tillåtna operationer: `actions` minus `notActions`.
+- En **rolltilldelning** är tre delar: principal, roll och scope. Saknas en finns ingen behörighet.
+- Contributor och Owner har båda `actions: ["*"]`. Skillnaden står helt i `notActions`.
+- `actions` styr resursen, `dataActions` styr innehållet. Owner har inga `dataActions`.
+- Behörighet ärvs **nedåt** i hierarkin, aldrig uppåt, och tilldelningar är additiva.
+- Kör koden i Azure — använd **managed identity**. Då finns ingen hemlighet att byta.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Du är inloggad i portalen men prenumerationslistan är tom. Vad är fel?",
+      a: "Autentiseringen lyckades — Entra ID släppte in dig. Auktoriseringen saknas: du har ingen rolltilldelning på någon prenumeration. Det är samma uppdelning som `401` mot `403` i nätverksdelen.",
+    },
+    {
+      q: "Vad skiljer Contributor från Owner, mekaniskt?",
+      a: "Båda har `actions: [\"*\"]`. Owner har tom `notActions`, medan Contributor undantar bland annat `Microsoft.Authorization/*/Write`. Contributor kan alltså bygga hela systemet men inte ge någon annan behörighet.",
+    },
+    {
+      q: "Du är Owner på prenumerationen och får ändå inte läsa en hemlighet i Key Vault. Hur går det ihop?",
+      a: "Owner styr resursen via `actions`, inte innehållet. Att läsa hemligheten kräver en `dataActions`-behörighet, som ligger i en roll som `Key Vault Secrets User`. Det är control plane mot data plane, uttryckt i RBAC.",
+    },
+    {
+      q: "Lisa har Contributor på en enskild databas. Varför ser hon inte resursgruppen den ligger i?",
+      a: "Behörighet ärvs nedåt, aldrig uppåt. En tilldelning på resursen gäller resursen och det under den — inte behållaren omkring. Ska hon se resursgruppen behöver hon en tilldelning på den nivån.",
+    },
+    {
+      q: "När räcker det inte med en managed identity?",
+      a: "När koden inte kör i Azure. En byggserver hos någon annan, ett skript på din laptop eller ett system i ett annat moln kan inte hämta en token från plattformen, och behöver en tjänstprincipal med hemlighet eller certifikat — som då måste förvaras och bytas.",
+    },
+    {
+      q: "En webbtjänst har `AZURE_CLIENT_SECRET` i appinställningarna för att nå Key Vault. Vad är problemet?",
+      a: "Hemligheten har flyttat, inte försvunnit. Valvet skyddar allt utom nyckeln till valvet, som nu ligger läsbar för alla med åtkomst till webbtjänstens konfiguration och går ut ett bestämt datum. Med managed identity behövs bara valvets adress.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- Entra ID är katalogen över identiteter som prenumerationen litar på. Det är inte Active Directory.
+- Autentisering svarar på vem du är. Auktorisering svarar på vad du får göra.
+- En principal är det en behörighet kan ges till: användare, grupp, tjänstprincipal eller managed
+  identity.
+- En tjänstprincipal bevisar sig med en hemlighet eller ett certifikat som du förvarar och byter.
+- En managed identity låter plattformen äga nyckeln. Tokenet lever i minuter.
+- Kör koden i Azure, använd managed identity. Kör den utanför, använd en tjänstprincipal.
+- En roll är `actions` minus `notActions` — en lista över tillåtna operationer, inget mer.
+- En rolltilldelning är principal, roll och scope. Alla tre behövs.
+- Rollen är mallen och finns en gång. Tilldelningen är instansen och finns på ett scope.
+- Contributor och Owner har samma `actions`. `Microsoft.Authorization/*/Write` är hela skillnaden.
+- `actions` styr resursen, `dataActions` styr innehållet i den.
+- Scopet är ett resurs-ID, och behörigheten ärvs nedåt till allt under det.
+- Tilldelningar är additiva. Det generösare vinner där två överlappar.
+- Key Vault samlar hemligheterna på ett ställe med roller och logg — men löser inget om nyckeln till
+  valvet ligger i appinställningarna.
+
+## Nästa del
+
+Därmed står Azure-grunderna: var en resurs bor, vad den ska köra på, och vem som får röra den.
+
+En tanke i den här delen är större än Azure. `Contributor` finns för att den som kan ge behörighet
+kan ge sig själv allt. En managed identity finns för att en hemlighet som aldrig skapas heller inte
+kan läcka. Båda är samma princip, tillämpad två gånger.
+
+Den principen har ett namn och en egen serie. Nästa steg är att vända på perspektivet: vad ser någon
+som letar efter vägen in, och vilka antaganden i ditt system håller inte när någon prövar dem med
+flit?

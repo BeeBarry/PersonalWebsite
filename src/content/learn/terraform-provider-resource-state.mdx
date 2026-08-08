@@ -353,8 +353,11 @@ till — och att aldrig hårdkoda något du kan referera.
 När fler än en person eller pipeline arbetar mot samma miljö behöver teamet en delad state-lösning
 med lämplig åtkomst och, när backenden stöder det, låsning.
 
-Moduler, variabler, `for_each` och workspaces kan vänta. De är sätt att slippa upprepa block, och de
-bygger alla på de tre blocktyperna i den här delen.
+Variabler, outputs och moduler är nästa steg och kommer i del 1.2. De är sätt att slippa upprepa
+block, och de bygger alla på de tre blocktyperna i den här delen.
+
+`for_each`, workspaces och state-migrering kan vänta längre än så. De blir aktuella först när du
+förvaltar flera miljöer samtidigt.
 
 ## Vanliga nybörjarförväxlingar
 

@@ -1,67 +1,99 @@
 ---
-// Annonsen — annons-översättaren. Dragspel, en rad öppen i taget (rad 0 öppen
-// från start); hrGuide.ts sköter toggling.
-//
-// EN spalt. Tidigare stod citatet och betydelsen sida vid sida i ett grid som
-// tre element måste hålla synkat — kolumnrubrikerna, radens huvud och radens
-// utfällda kropp — plus en fjärde regel för pilen i rännan och en femte för
-// +/− som egen kolumn. Det var mycket maskineri för att säga "det här betyder
-// det här", och den utfällda raden lämnade en tom halva till vänster.
-//
-// Staplat gör samma sak utan maskineriet: citatet i mono med citattecken,
-// betydelsen i brödtext direkt under. Den typografiska kontrasten bär
-// relationen — samma grepp som en ordlista använder mellan term och
-// definition. Inget grid, inga kolumnrubriker, ingen tom halva.
+// Tolkningar — snabb avkodning för rekryteraren. Fyra grupper skiljer på det
+// som står i annonsen och det som sägs i telefon eller intervju. I varje rad
+// kommer själva formuleringen först, sedan hur den kan läsas av en utvecklare.
+// Det utfällda svaret skiljer på en legitim kandidatfråga och de fall där ett
+// förtydligande hjälper. En gemensam accordion håller en rad öppen i taget,
+// även mellan grupper; hrGuide.ts sköter toggling och filtrering.
 import Icon from "../site/Icon.astro";
-import { hrTranslate, cardById, typo } from "../../data/hr";
+import { hrTranslate, hrTranslateCategories, cardById, typo } from "../../data/hr";
+
+const groups = hrTranslateCategories
+  .map((group) => ({
+    ...group,
+    items: hrTranslate.filter((row) => row.cat === group.title),
+  }))
+  .filter((group) => group.items.length > 0);
+const totalRows = groups.reduce((total, group) => total + group.items.length, 0);
+const labelFor = (source: "Annonsen" | "Samtal") =>
+  source === "Samtal" ? "I samtalet" : "I annonsen";
 ---
 
 <div data-hr-translate>
-  <div class="hr-acc" data-hr-accordion>
+  <div class="hr-chips hr-tr__chips" role="group" aria-label="Visa tolkningar för" data-hr-translate-filters>
+    <button class="hr-chip is-active" type="button" data-hr-translate-filter="Alla" aria-pressed="true">
+      Alla
+    </button>
     {
-      hrTranslate.map((row, i) => {
-        const card = row.card ? cardById(row.card) : undefined;
-        return (
-          <div class="hr-acc__item">
-            <button
-              type="button"
-              class="hr-acc__head"
-              data-hr-acc-head
-              aria-expanded={i === 0 ? "true" : "false"}
-            >
-              <span class="hr-tr__said">
-                <span class="hr-tr__say">”{typo(row.say)}”</span>
-                <span class="hr-tr__means">{typo(row.means)}</span>
-              </span>
-              <span class="hr-acc__sign" aria-hidden="true">{i === 0 ? "−" : "+"}</span>
-            </button>
+      groups.map((group) => (
+        <button class="hr-chip" type="button" data-hr-translate-filter={group.title} aria-pressed="false">
+          {group.title}
+        </button>
+      ))
+    }
+  </div>
+  <p class="hr-count" data-hr-translate-count aria-live="polite" aria-atomic="true" hidden>
+    {totalRows} av {totalRows} tolkningar visas
+  </p>
 
-            <div class="hr-acc__body" data-hr-acc-body hidden={i !== 0}>
-              {/* Två sorters råd, samma uppbyggnad — bara etiketten och
-                  vänsterkanten skiljer dem åt. */}
-              <div class="hr-tr__block">
-                <p class="hr-tr__blocklabel">Leta efter</p>
-                <p class="hr-tr__blocktext">{typo(row.look)}</p>
-              </div>
+  <div class="hr-tr__groups" data-hr-accordion>
+    {
+      groups.map((group) => (
+        <section class="hr-tr__group" data-hr-translate-group={group.title}>
+          <h3 class="hr-tr__grouptitle">
+            <span>{group.title}</span>
+            <span class="hr-tr__groupcount">{group.items.length}</span>
+          </h3>
+          <p class="hr-tr__groupsub">{group.sub}</p>
 
-              <div class="hr-tr__block hr-tr__block--watch">
-                <p class="hr-tr__blocklabel">
-                  <Icon name="AlertTriangle" size={12} />
-                  Fallgropen
-                </p>
-                <p class="hr-tr__blocktext">{typo(row.watch)}</p>
-              </div>
+          <div class="hr-acc">
+            {group.items.map((row) => {
+              const card = row.card ? cardById(row.card) : undefined;
+              const open = row.say === "Fullstackutvecklare";
+              return (
+                <div class="hr-acc__item" data-hr-translate-row>
+                  <button
+                    type="button"
+                    class="hr-acc__head"
+                    data-hr-acc-head
+                    aria-expanded={open ? "true" : "false"}
+                  >
+                    <span class="hr-tr__said">
+                      <span class="hr-tr__say">
+                        <span class="hr-tr__label">{labelFor(row.source)}</span>
+                        ”{typo(row.say)}”
+                      </span>
+                      <span class="hr-tr__means">{typo(row.means)}</span>
+                    </span>
+                    <span class="hr-acc__sign" aria-hidden="true">{open ? "−" : "+"}</span>
+                  </button>
 
-              {card && (
-                <a class="hr-tr__cardlink" href={`/for-hr/${card.id}/`}>
-                  Öppna kortet {card.title}
-                  <Icon name="ArrowRight" size={13} />
-                </a>
-              )}
-            </div>
+                  <div class="hr-acc__body" data-hr-acc-body hidden={!open}>
+                    <div class="hr-tr__decode">
+                      <div class="hr-tr__block">
+                        <p class="hr-tr__blocklabel">Kandidaten kan fråga sig</p>
+                        <p class="hr-tr__blocktext">{typo(row.look)}</p>
+                      </div>
+
+                      <div class="hr-tr__block hr-tr__block--watch">
+                        <p class="hr-tr__blocklabel">Förtydliga om</p>
+                        <p class="hr-tr__blocktext">{typo(row.watch)}</p>
+                      </div>
+                    </div>
+
+                    {card && (
+                      <a class="hr-tr__cardlink" href={`/for-hr/${card.id}/`}>
+                        Öppna kortet {card.title}
+                        <Icon name="ArrowRight" size={13} />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        );
-      })
+        </section>
+      ))
     }
   </div>
 </div>

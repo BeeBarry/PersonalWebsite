@@ -1,0 +1,579 @@
+---
+title: 'Variabler, outputs och moduler'
+description: 'Sluta hårdkoda — och få samma beskrivning att sätta upp både test och produktion'
+category: 'terraform'
+part: 1
+order: 3
+date: '2026-08-08'
+tags: ['Beginner', 'Variabler', 'Moduler']
+---
+
+## Var vi är
+
+Förra delen öppnade `main.tf` och gick igenom de tre blocktyperna: `terraform`, `provider` och
+`resource`. Filen fungerar, och `plan` visar vad som ska hända.
+
+Den har en svaghet. Varje värde står inskrivet i klartext — `rg-shop-prod`, `swedencentral`,
+`B1`. Ska Lisa sätta upp en testmiljö bredvid är enda vägen att kopiera filen och byta ord, och
+från den stunden finns två beskrivningar som ska hållas lika för hand.
+
+Den här delen tar bort de inskrivna värdena och gör beskrivningen återanvändbar. Zoomen ligger på en
+mapp med `.tf`-filer — delade miljöer och state i molnet ligger utanför.
+
+<Del titel="Variabeln" />
+
+## Vad en variabel är
+
+En **variabel** är ett namngivet värde som skickas in i beskrivningen utifrån.
+
+Variabeln deklareras i ett `variable`-block och används sedan med prefixet `var.`:
+
+```hcl
+variable "miljo" {
+  type    = string
+  default = "dev"
+}
+```
+
+Blocket säger att variabeln finns. Det säger inte vilket värde den har — det gör källorna längre
+ner. Deklarationen läggs av tradition i en egen fil, `variables.tf`, men Terraform bryr sig inte om
+vilken `.tf`-fil den står i.
+
+## `type` och `default`
+
+`type` är löftet om vad värdet får vara: `string`, `number`, `bool`, `list`, `map` eller `object`.
+Skickar någon in fel sort avbryter Terraform innan något hänt.
+
+`default` är värdet som gäller när ingen annan källa satt något. Ett block med `default` är alltså
+frivilligt att fylla i.
+
+Ett block **utan** `default` är obligatoriskt. Saknas värdet frågar Terraform efter det i
+terminalen — och i en pipeline, där ingen kan svara, avbryter den i stället:
+
+```
+Error: No value for required variable
+```
+
+Skriv alltid `description` också. Den syns i felmeddelanden och i genererad dokumentation, och den
+är det enda stället där avsikten med värdet får plats.
+
+## Var värdet kommer ifrån
+
+Samma variabel kan få sitt värde från fem håll, och alla fem används i praktiken.
+
+Ordningen nedan är den Terraform faktiskt tillämpar. Den översta källan vinner.
+
+<Stack
+  caption="Fem källor till ett värde. Den översta vinner — och nummer två och tre står inte i den ordning de flesta gissar."
+  ground="Variabeln är odefinierad — Terraform frågar, eller avbryter"
+  layers={[
+    {
+      label: "-var på kommandoraden",
+      note: "`terraform apply -var 'miljo=prod'`. Slår allt, och används mest i felsökning.",
+      accent: true,
+    },
+    {
+      label: "*.auto.tfvars",
+      note: "Läses automatiskt, och slår `terraform.tfvars`.",
+    },
+    {
+      label: "terraform.tfvars",
+      note: "Filen du normalt skriver. **Slår miljövariabeln** — tvärtemot vad de flesta gissar.",
+    },
+    {
+      label: "TF_VAR_miljo",
+      note: "Miljövariabel. Vanlig i pipelines, men förlorar mot en fil som råkar ligga kvar.",
+    },
+    {
+      label: "default i variable-blocket",
+      note: "Sista utvägen. Gäller när ingen annan källa satt något.",
+    },
+  ]}
+/>
+
+Den tredje raden är den som orsakar mest förlorad tid. Sätter du `TF_VAR_miljo=prod` i en pipeline
+och det ligger en `terraform.tfvars` med `miljo = "test"` i repot, vinner filen. Miljövariabeln
+ignoreras utan ett ord.
+
+## Vad en `.tfvars`-fil är
+
+En **`.tfvars`-fil** innehåller värden, inte deklarationer. Den är ren tilldelning, en rad per
+variabel:
+
+```hcl
+projekt = "shop"
+miljo   = "test"
+```
+
+Heter filen `terraform.tfvars` eller slutar på `.auto.tfvars` läser Terraform den av sig själv.
+Heter den något annat pekar du ut den: `-var-file=prod.tfvars`.
+
+Det är så en beskrivning betjänar flera miljöer. En `main.tf`, och en `.tfvars` per miljö.
+
+<Callout type="fallgrop">
+`.tfvars` är den vanligaste platsen för en läckt hemlighet i ett Terraform-repo. Filen ser ut som
+konfiguration och hamnar därför i Git utan att någon reagerar.
+</Callout>
+
+<Split
+  leftTitle="Hemligheten i filen"
+  rightTitle="Hemligheten utanför"
+  leftTone="bad"
+  rightTone="good"
+  caption="Samma variabel, samma resultat vid körning. Skillnaden är om värdet finns i historiken."
+>
+  <div slot="left">
+
+  ```hcl
+  # terraform.tfvars — committad
+  db_losenord = "sommar2026"
+  ```
+
+  Värdet ligger i repot och i varje klon av det.
+
+  Som i Docker-delen: raderar du raden i morgon ligger den kvar i historiken, och hemligheten är
+  läckt.
+
+  </div>
+  <div slot="right">
+
+  ```bash
+  export TF_VAR_db_losenord="$(...)"
+  terraform apply
+  ```
+
+  Värdet kommer från miljön och når aldrig repot.
+
+  Lägg `*.tfvars` i `.gitignore` och committa en `exempel.tfvars` med tomma värden i stället.
+
+  </div>
+</Split>
+
+<Del titel="Värdena inuti och ut" />
+
+## Vad en local är
+
+En **local** är ett namngivet uttryck som bara finns inuti beskrivningen.
+
+```hcl
+locals {
+  prefix = "${var.projekt}-${var.miljo}"
+}
+```
+
+Med `projekt = "shop"` och `miljo = "test"` blir `local.prefix` värdet `shop-test`. Uttrycket
+beräknas en gång och används sedan var som helst i mappen.
+
+Blocket heter `locals` i plural, men referensen skrivs `local.prefix` i singular. Det är
+inkonsekvent och det stavas fel av alla första gången.
+
+## Variabel vs local
+
+Två sätt att namnge ett värde, med rakt motsatta riktningar.
+
+**En variabel** tar emot. Värdet kommer utifrån, och den som kör bestämmer det.
+
+**En local** räknar ut. Värdet kommer inifrån, av andra värden i samma beskrivning, och går inte att
+sätta utifrån.
+
+Kontrollfrågan: *ska den som kör kunna bestämma det här?* Ja → variabel. Nej, det följer av något
+annat → local.
+
+Därför är `miljo` en variabel och `prefix` en local. Ingen ska kunna sätta prefixet till något som
+motsäger miljön.
+
+## Vad en output är
+
+En **output** är ett värde beskrivningen lämnar ifrån sig efter `apply`.
+
+```hcl
+output "resursgruppens_namn" {
+  value = module.rg_namn.namn
+}
+```
+
+Värdena skrivs ut när `apply` är klar, och går att hämta när som helst efteråt:
+
+```bash
+terraform output
+terraform output -raw resursgruppens_namn
+```
+
+`-raw` ger värdet utan citattecken, vilket är det du vill ha när utdatan ska in i ett annat
+kommando.
+
+## Variabel vs output
+
+De två utgör beskrivningens två ändar, och förväxlas eftersom båda deklareras i egna block.
+
+**Variabeln** är ingången. Den tar emot ett värde innan Terraform gör något.
+
+**Outputen** är utgången. Den lämnar ifrån sig ett värde som Terraform räknat fram, ofta ett som
+inte gick att veta i förväg — en genererad IP-adress, ett tilldelat namn.
+
+En beskrivning utan outputs fungerar. Den är bara stum: nästa steg i kedjan, som en pipeline eller
+en annan modul, har inget att läsa.
+
+## Vad `sensitive` gör
+
+`sensitive = true` markerar att ett värde inte ska skrivas ut.
+
+```hcl
+output "db_losenord" {
+  value     = random_password.db.result
+  sensitive = true
+}
+```
+
+Terraform ersätter då värdet med `<sensitive>` i planer och i utskriften efter `apply`. Markeringen
+smittar dessutom vidare: ett annat värde som byggs av det känsliga blir också dolt.
+
+## `sensitive` vs krypterat
+
+Markeringen gör en sak, och det är inte den man tror.
+
+**`sensitive`** döljer värdet i **utskriften**. Det är allt.
+
+**Kryptering** skulle göra värdet oläsbart där det lagras. Det gör `sensitive` inte.
+
+Värdet står i klartext i `terraform.tfstate`, och vem som helst med läsrätt på state kan hämta det —
+eller be Terraform om det direkt:
+
+```bash
+terraform output -raw db_losenord
+```
+
+Det är samma avgränsning som i Kubernetes-delen: en Secret är base64-kodad, inte krypterad.
+Skyddet ligger i vem som kommer åt lagringen, aldrig i markeringen.
+
+<Doodle
+  name="gardinen-inte-kassaskapet"
+  caption="Gardinen hänger framför utskriften. Filen bredvid är öppen."
+/>
+
+<Del titel="Modulen" />
+
+## Vad en modul är
+
+En **modul** är en mapp med `.tf`-filer som anropas från en annan mapp.
+
+Modulen har egna `variable`-block för det som ska in, och egna `output`-block för det som ska ut.
+Anropet ser ut som vilket block som helst:
+
+```hcl
+module "rg_namn" {
+  source = "./modules/namn"
+  prefix = local.prefix
+  roll   = "rg"
+}
+```
+
+`prefix` och `roll` är inte påhittade fältnamn. De är exakt de variabler modulen deklarerat, och
+skickar du in något den inte känner till avbryter Terraform.
+
+## Rotmodulen
+
+**Rotmodulen** är mappen du står i när du kör `terraform apply`.
+
+Det låter som en formalitet, men det förklarar en sak som annars är förvirrande: din vanliga
+`main.tf` *är* redan en modul. Det finns ingen skillnad i sort mellan den och `./modules/namn` —
+bara i vem som anropar vem.
+
+Därför fungerar `variable` och `output` likadant i båda. Du har använt modulmekaniken sedan förra
+delen utan att den hetat något.
+
+## Var modulen hämtas ifrån
+
+`source` säger var modulens filer ligger, och den tar fler sorters adress än en sökväg.
+
+```hcl
+source = "./modules/namn"
+source = "hashicorp/subnets/cidr"
+source = "git::https://git.example.se/tf-nat.git"
+```
+
+En lokal sökväg börjar med `./` eller `../`. Utan den punkten tolkar Terraform strängen som en modul
+i Terraform Registry, vilket ger ett förvånande felmeddelande om en modul du aldrig hört talas om.
+
+`terraform init` hämtar moduler, precis som den hämtar providers. Ändrar du `source` måste `init`
+köras om.
+
+## Hur värden går in i och ut ur en modul
+
+En modul är stängd. Det enda som kommer in är dess variabler, och det enda som kommer ut är dess
+outputs.
+
+Modulen ovan räknar internt fram `local.namn`. Utifrån går det värdet att läsa som
+`module.rg_namn.namn`, eftersom modulen deklarerat det som output. Försöker du nå något den inte
+deklarerat får du:
+
+```
+Error: Unsupported attribute
+This object does not have an attribute
+named "prefix".
+```
+
+Det är inte en begränsning som råkat uppstå. Det är hela poängen med en modul: den som anropar
+behöver bara känna till in- och utgångarna, aldrig hur de hänger ihop inuti.
+
+<Doodle
+  name="modulens-tva-slitsar"
+  caption="Två slitsar in, en ut. Den streckade pilen når aldrig fram."
+/>
+
+## Modul vs kopierad mapp
+
+Båda ger dig två miljöer. Bara den ena håller dem lika.
+
+**En kopierad mapp** är två fullständiga beskrivningar. En rättning måste göras på två ställen, och
+den dag någon glömmer det andra stället har miljöerna glidit isär — samma drift som Terraform fanns
+till för att förhindra.
+
+**En modul** är en beskrivning som anropas två gånger med olika värden. Rättningen sker på ett
+ställe och slår igenom i båda.
+
+Priset är ett steg av indirektion: den som läser anropet ser inte längre vad som skapas utan att
+öppna modulen. Det priset är värt att betala när samma sak sätts upp mer än två gånger, och sällan
+innan dess.
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att skriva `variable`- och `output`-block i varje Terraform-repo du rör, och du kommer att
+*anropa* färdiga moduler långt innan du skriver egna. Att läsa ett `module`-block och veta vilka
+värden det tar är den färdighet som betalar sig först.
+
+Det som är värt din tid nu är företrädesordningen. Frågan *"varför fick variabeln fel värde"* är den
+vanligaste i en Terraform-pipeline, och svaret är nästan alltid att en fil slog en miljövariabel.
+
+Modulversionering, `for_each` över moduler, `moved`-block och publicering i ett privat registry kan
+vänta. De blir dina den dag flera team använder samma modul — och de bygger alla på in- och
+utgångarna ovan.
+
+## Vanliga nybörjarförväxlingar
+
+Ett `variable`-block sätter inget värde. Det deklarerar att variabeln finns, och `default` gäller
+först när ingen annan källa sagt något.
+
+`TF_VAR_miljo` vinner inte över `terraform.tfvars`. Filen slår miljövariabeln, och det är motsatt
+den ordning de flesta antar.
+
+`locals` heter så i blocket men `local.` i referensen. Pluralen finns bara på ena stället.
+
+En local går inte att sätta utifrån. Vill du att den som kör ska kunna bestämma värdet ska det vara
+en variabel.
+
+`sensitive = true` krypterar ingenting. Värdet står i klartext i state, och `-raw` skriver ut det.
+
+En modul är ingen resurs. Den skapar inget i sig — den innehåller block som gör det, och en modul
+utan resursblock skapar ingenting alls.
+
+Din egen `main.tf` är redan en modul. Rotmodulen skiljer sig inte i sort från de du anropar.
+
+## Prova själv
+
+Övningen använder providern `random`. Den skapar värden lokalt och pratar inte med något moln, så
+den fungerar oavsett om du är inloggad någonstans.
+
+**Det valet är medvetet.** Ett `apply` mot Azure hade gett olika resultat beroende på om just din
+maskin råkar ha en giltig inloggning. Då går ett fel i filen inte att skilja från ett fel i din
+session.
+
+Skapa en tom mapp och fyra filer. Först `main.tf`:
+
+```hcl
+terraform {
+  required_providers {
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.6"
+    }
+  }
+}
+
+locals {
+  prefix = "${var.projekt}-${var.miljo}"
+}
+
+module "rg_namn" {
+  source = "./modules/namn"
+  prefix = local.prefix
+  roll   = "rg"
+}
+
+resource "random_password" "db" {
+  length = 16
+}
+```
+
+Sedan `variables.tf`:
+
+```hcl
+variable "projekt" {
+  type        = string
+  description = "Projektets korta namn"
+}
+
+variable "miljo" {
+  type    = string
+  default = "dev"
+}
+```
+
+Sedan `outputs.tf`:
+
+```hcl
+output "resursgruppens_namn" {
+  value = module.rg_namn.namn
+}
+
+output "db_losenord" {
+  value     = random_password.db.result
+  sensitive = true
+}
+```
+
+Och `terraform.tfvars`:
+
+```hcl
+projekt = "shop"
+miljo   = "test"
+```
+
+Modulen är en enda fil, `modules/namn/main.tf`. Uppdelningen i `variables.tf` och `outputs.tf` är en
+läsvana, inte ett krav — Terraform läser mappens alla `.tf`-filer som en enhet:
+
+```hcl
+variable "prefix" { type = string }
+variable "roll"   { type = string }
+
+locals {
+  namn = "${var.roll}-${var.prefix}"
+}
+
+output "namn" {
+  value = local.namn
+}
+```
+
+Kör:
+
+```bash
+terraform init
+terraform apply -auto-approve
+```
+
+```
+Outputs:
+
+db_losenord = <sensitive>
+resursgruppens_namn = "rg-shop-test"
+```
+
+Namnet blev `rg-shop-test`, inte `rg-shop-dev`. **Där ser du företrädesordningen:**
+`terraform.tfvars` slog `default = "dev"`.
+
+Pröva nu det motintuitiva steget. Sätt miljövariabeln och fråga igen:
+
+```bash
+TF_VAR_miljo=prod terraform console <<< 'var.miljo'
+```
+
+Svaret är `"test"`. Filen vann över miljövariabeln. Lägg till flaggan och kör om:
+
+```bash
+terraform console -var 'miljo=prod' <<< 'var.miljo'
+```
+
+Nu blir svaret `"prod"`. Kommandoraden slår allt.
+
+Ta slutligen `sensitive` på orden:
+
+```bash
+terraform output db_losenord
+terraform output -raw db_losenord
+grep -o '"result": "..........' terraform.tfstate
+```
+
+Första raden ger `<sensitive>`. De två andra ger samma lösenord i klartext. Markeringen döljer
+utskriften, inte lagringen.
+
+Tre saker som kan förvirra. `terraform console` läser normalt från tangentbordet — `<<<` matar in en
+rad och avslutar, och utan det hamnar du i ett interaktivt läge du lämnar med `exit`. Tar du bort
+`terraform.tfvars` frågar Terraform efter `projekt` i terminalen, eftersom den saknar `default`. Och
+`random_password` får `id = none` i utskriften, vilket ser trasigt ut men är normalt — providern
+lagrar värdet, inte ett id.
+
+Städa efter dig:
+
+```bash
+terraform destroy -auto-approve
+```
+
+<Callout type="kom-ihag">
+- En **variabel** tar emot ett värde utifrån. En **local** räknar ut ett inifrån.
+- Ett `variable`-block utan `default` är obligatoriskt. Utan värde avbryter Terraform.
+- Företrädesordningen: `-var` › `*.auto.tfvars` › `terraform.tfvars` › `TF_VAR_` › `default`.
+- **Filen slår miljövariabeln.** Det är den ordning som kostar mest tid att upptäcka själv.
+- En **output** är beskrivningens utgång, och det enda en modul lämnar ifrån sig.
+- `sensitive` döljer utskriften. Värdet står i klartext i state.
+- En **modul** är en mapp som anropas. Din egen `main.tf` är redan en — rotmodulen.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Vad är skillnaden mellan en variabel och en local?",
+      a: "Variabeln tar emot ett värde utifrån, och den som kör bestämmer det. En local räknar ut ett värde av andra värden i samma beskrivning och går inte att sätta utifrån. Kontrollfrågan är om den som kör ska kunna bestämma värdet.",
+    },
+    {
+      q: "Du sätter `TF_VAR_miljo=prod` i pipelinen, men resurserna får ändå test-namn. Varför?",
+      a: "Det ligger en `terraform.tfvars` i repot som sätter `miljo`, och filen har högre företräde än miljövariabeln. Miljövariabeln ignoreras utan varning. Antingen tar du bort värdet ur filen, eller skickar `-var` på kommandoraden, som slår båda.",
+    },
+    {
+      q: "Ett `variable`-block saknar `default` och ingen skickar in ett värde. Vad händer?",
+      a: "Terraform frågar efter värdet i terminalen. I en pipeline finns ingen som kan svara, och då avbryter den i stället med `Error: No value for required variable`. Ett block utan `default` är alltså obligatoriskt.",
+    },
+    {
+      q: "Du har markerat en output som `sensitive`. Är värdet skyddat?",
+      a: "Bara i utskriften. Terraform visar `<sensitive>` i planer och efter `apply`, men värdet står i klartext i `terraform.tfstate` och kommer ut med `terraform output -raw`. Skyddet ligger i vem som kommer åt state — samma avgränsning som att en Kubernetes-Secret är kodad, inte krypterad.",
+    },
+    {
+      q: "Modulen räknar internt fram `local.namn`. Du skriver `module.min_modul.prefix` och får ett fel. Varför?",
+      a: "En modul lämnar bara ifrån sig det den deklarerat i ett `output`-block. `prefix` är en variabel in i modulen, inte en utgång ur den, så attributet finns inte utifrån. Felet blir `Unsupported attribute`.",
+    },
+    {
+      q: "När är en modul bättre än att kopiera mappen?",
+      a: "När samma sak ska sättas upp mer än ett par gånger. Kopian ger två beskrivningar som måste rättas på två ställen och som glider isär. Modulen ger en beskrivning som anropas flera gånger. Priset är ett steg av indirektion, och det är sällan värt det för två miljöer som ändå skiljer sig åt.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- En variabel deklareras i ett `variable`-block och används med `var.`-prefix.
+- `type` är löftet om vad värdet får vara. `default` gör variabeln frivillig.
+- Utan `default` är variabeln obligatorisk — Terraform frågar, eller avbryter i en pipeline.
+- Fem källor kan sätta värdet, och den högsta vinner.
+- Ordningen är `-var` › `*.auto.tfvars` › `terraform.tfvars` › `TF_VAR_` › `default`.
+- En `.tfvars`-fil innehåller värden, inte deklarationer. En fil per miljö är det vanliga upplägget.
+- `.tfvars` i Git är den vanligaste läckan i ett Terraform-repo.
+- En local räknar ut ett värde inifrån. Blocket heter `locals`, referensen `local.`.
+- En output är beskrivningens utgång och det enda en modul lämnar ifrån sig.
+- `sensitive` döljer värdet i utskriften. Det står kvar i klartext i state.
+- En modul är en mapp med `.tf`-filer som anropas via ett `module`-block och en `source`.
+- Rotmodulen är mappen du står i. Din egen `main.tf` är redan en modul.
+- En modul är stängd: in via dess variabler, ut via dess outputs, inget annat.
+- En modul håller två miljöer lika. En kopierad mapp låter dem glida isär.
+
+## Nästa del
+
+Beskrivningen är nu återanvändbar: ett värde per miljö, en modul per sak som upprepas.
+
+Kvar står frågan förra delen bara nuddade vid. State ligger fortfarande som en fil på din egen dator.
+Kör en kollega eller en pipeline `apply` mot samma miljö finns det plötsligt två sanningar om vad
+som existerar.
+
+Nästa steg är därför pipelinen — och den serien finns redan: hur en `plan` granskas i en pull request
+och ett `apply` körs först efter sammanslagning, utan att någon nyckel ligger i repot.

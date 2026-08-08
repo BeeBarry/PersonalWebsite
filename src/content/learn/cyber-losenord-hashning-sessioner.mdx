@@ -1,0 +1,427 @@
+---
+title: 'Lösenord, hashning och sessioner'
+description: 'Hur ett lösenord ska lagras, varför hashning inte är kryptering, och vad utloggning egentligen gör'
+category: 'cybersecurity'
+part: 1
+order: 3
+date: '2026-08-08'
+tags: ['Beginner', 'Hashning', 'Sessioner']
+---
+
+## Var vi är
+
+Förra delen handlade om indata som blir kod: en sträng som lämnar sin ruta och tolkas som SQL eller
+HTML. Skyddet var att aldrig blanda data med instruktioner.
+
+Den här delen byter håll. I stället för att skydda systemet mot det användaren skickar in, skyddar
+den användarens identitet — lösenordet som lagras, och beviset på att någon är inloggad.
+
+Zoomen ligger på vad du lagrar och vad du skickar tillbaka. Protokoll som OAuth och OpenID Connect
+ligger utanför.
+
+Azure-delen definierade skillnaden mellan **autentisering** och **auktorisering** — vem du är, mot
+vad du får göra. Allt nedan handlar om det första.
+
+<Del titel="Lösenordet" />
+
+## Varför lösenord aldrig lagras som de skrevs
+
+Ett lösenord i klartext i en databas är läckt i samma sekund som databasen är det.
+
+Det är inte det enda problemet. Människor återanvänder lösenord, så en läcka från din tjänst blir en
+läcka från deras bank. Din databas blir en risk för system du inte känner till.
+
+Slutsatsen är att du inte ska kunna se lösenordet ens själv. Kan din supportavdelning läsa upp ett
+lösenord för en kund är lagringen fel byggd.
+
+## Vad en hashfunktion är
+
+En **hashfunktion** tar in text av valfri längd och ger ut ett värde av fast längd, på ett sätt som
+inte går att räkna baklänges.
+
+Två egenskaper bär hela användningen. Samma indata ger **alltid** samma utdata, vilket gör att du kan
+jämföra. Och en enda ändrad bokstav ger ett **helt annat** resultat, vilket gör att du inte kan gissa
+dig närmare.
+
+Inloggningen fungerar därför utan att systemet vet lösenordet: det hashar det som skrevs in och
+jämför med det lagrade värdet. Stämmer de var lösenordet rätt.
+
+## Hashning vs kryptering
+
+De två blandas ihop dagligen, och skillnaden är riktningen.
+
+**Kryptering** går åt två håll. Med nyckeln får du tillbaka originalet — det är hela poängen, och
+därför krypterar man saker man senare vill läsa.
+
+**Hashning** går åt ett håll. Det finns ingen nyckel och ingen väg tillbaka, ens för den som byggde
+systemet.
+
+Ett lösenord ska hashas, inte krypteras. Krypterar du det finns en nyckel någonstans, och den som
+kommer åt både databasen och nyckeln har alla lösenord i klartext.
+
+<Doodle
+  name="envagsmuren"
+  caption="Krypteringen har en dörr åt båda hållen. Muren har ingen."
+/>
+
+## Hashning vs kodning
+
+En tredje sak som ser likadan ut i en databas: en sträng av obegripliga tecken.
+
+**Kodning** byter representation. Base64 gör om bytes till text så de överlever ett protokoll, och
+vem som helst kan koda tillbaka utan nyckel och utan lösenord.
+
+**Hashning** förstör information med flit. Ingenting kan tas tillbaka.
+
+Det är samma avgränsning som i Kubernetes-delen: en Secret är base64-**kodad**, inte krypterad och
+definitivt inte hashad. Ser du `=` på slutet av en sträng är det ett tecken på kodning, inte på
+skydd.
+
+## Vad ett salt är
+
+Ett **salt** är ett slumpmässigt värde som läggs till lösenordet innan det hashas, och som lagras i
+klartext bredvid resultatet.
+
+Utan salt får två användare med samma lösenord samma hash. Det syns direkt i en läckt databas, och en
+angripare kan förberäkna hashar för miljontals vanliga lösenord en gång och slå upp alla konton på
+samma gång.
+
+Med salt blir varje hash unik även för identiska lösenord. Förberäkningen måste göras om per konto,
+och det är precis det som gör den olönsam.
+
+Saltet är inte hemligt. Det ska vara **unikt per lösenord**, inget mer.
+
+## Så läser du `$5$salt$hash`
+
+Ett lagrat lösenord är oftast en enda sträng med allt i, avdelat med dollartecken.
+
+```
+$5$kV8mQ2xR$Iwm2b1g/xUAHZB26/ayX/lVOdYi3IKWt3tR4scmuiI.
+```
+
+Tre delar. `5` är algoritmen. `kV8mQ2xR` är saltet. Resten är hashen.
+
+Formatet är självbeskrivande med flit: när någon ska verifiera ett lösenord om fem år står det i
+strängen vilken algoritm och vilket salt som användes. Du kan därför byta algoritm för nya lösenord
+utan att röra de gamla.
+
+En riktig `argon2id`-sträng ser likadan ut i formen, men har fler fält — minnesåtgång, antal varv
+och parallellitet — eftersom de behövs för att räkna om samma värde.
+
+## Varför en snabb hash är fel verktyg
+
+`SHA-256` är en bra hashfunktion. Den är också fel verktyg för lösenord, och skälet är att den är
+snabb.
+
+En vanlig laptop räknar ungefär **2,9 miljoner** SHA-256-hashar per sekund. En angripare med en läckt
+databas kan alltså pröva hela listan över vanliga lösenord på sekunder.
+
+Snabbhet är en dygd när du ska kontrollera att en fil är oförändrad. Den är en brist när någon
+gissar.
+
+<Callout type="varfor" title="Vad som ska vara långsamt, och för vem">
+Din server hashar **ett** lösenord per inloggning. Tar det 30 millisekunder märker ingen det.
+
+Angriparen hashar **miljarder**. Samma 30 millisekunder gör en lista som tog en timme till en lista
+som tar hundra år.
+
+Kostnaden är alltså försumbar för dig och avgörande för den som gissar. Det är hela idén.
+</Callout>
+
+## Vad argon2id, bcrypt och scrypt gör
+
+De tre är **lösenordshash-funktioner**: byggda för att vara långsamma på ett justerbart sätt.
+
+De tar en kostnadsparameter. Höjer du den blir varje beräkning dyrare, och du kan höja den igen om
+fem år när hårdvaran hunnit ikapp — utan att byta algoritm.
+
+`scrypt` och `argon2id` kräver dessutom **minne**, inte bara tid. Det är riktat mot grafikkort, som
+kan köra tusentals beräkningar parallellt men inte om var och en behöver ett par hundra megabyte.
+
+Samma laptop som klarade 2,9 miljoner SHA-256 per sekund klarar **32** scrypt-beräkningar per
+sekund. Det är en faktor 90 000, och den faktorn är hela skyddet.
+
+Välj `argon2id` om biblioteket finns. Annars `scrypt` eller `bcrypt`. Skriv aldrig din egen.
+
+<Del titel="Sessionen" />
+
+## Varför HTTP glömmer mellan anropen
+
+Nätverksdelen slog fast att HTTP är **stateless**: varje anrop står för sig, och servern minns inget
+från det förra.
+
+Det gäller även efter en lyckad inloggning. Nästa anrop är för servern en främling igen, om inte
+klienten skickar med något som knyter ihop dem.
+
+Det där "något" är antingen en session eller ett token. De löser samma problem på två motsatta sätt.
+
+## Vad en session är
+
+En **session** är ett tillstånd på servern, med ett id som klienten bär.
+
+Servern skapar en post — *id `f3a9…` hör till användare 412, skapad kl. 09:14* — och skickar id:t
+till klienten, oftast i en cookie. Vid varje anrop slår servern upp id:t och vet vem det är.
+
+Id:t i sig betyder ingenting. Det är en biljettnummer, och all information ligger i listan hos
+servern.
+
+## Vad ett token är
+
+Ett **token** är ett bevis som bär sin egen information, signerat av servern.
+
+Ett **JWT** är det vanligaste formatet: tre base64-kodade delar åtskilda av punkter, där mittendelen
+innehåller uppgifterna — vem, vilka roller, när det går ut. Signaturen gör att servern kan lita på
+innehållet utan att slå upp något.
+
+Här är den viktigaste avgränsningen i avsnittet: **ett JWT är signerat, inte krypterat.** Innehållet
+är läsbart för vem som helst som får tag i det. Signaturen bevisar att ingen *ändrat* det, inte att
+ingen *läst* det.
+
+Lägg därför aldrig något känsligt i ett JWT.
+
+## Session vs token
+
+Två sätt att minnas en inloggning, med rakt motsatta avvägningar.
+
+**Sessionen** har sanningen på servern. Uppslagningen kostar ett anrop mot en databas eller cache
+varje gång, och det är priset.
+
+**Tokenet** har sanningen i klienten. Ingen uppslagning behövs, vilket skalar bra över många servrar,
+och det är vinsten.
+
+Konsekvensen märks när något ska tas tillbaka. Sessionen kan raderas ur listan och slutar gälla på
+en gång. Tokenet är redan utfärdat och fortsätter gälla tills det går ut.
+
+<Doodle
+  name="biljetten-och-listan"
+  caption="Vakten kan stryka en rad ur listan. Biljetten i handen går inte att stryka."
+/>
+
+## Cookie vs localStorage
+
+Var tokenet bor avgör vad förra delens sårbarhet kan göra med det.
+
+**`localStorage`** är läsbart för all JavaScript på sidan. Lyckas någon med en XSS kan skriptet läsa
+tokenet och skicka det vidare, och då är inloggningen stulen.
+
+**En cookie med `HttpOnly`** är osynlig för JavaScript. Webbläsaren skickar den med anropen, men inget
+skript kan läsa den — inte ens ett som lyckats köra på sidan.
+
+Cookien har i gengäld en egen svaghet: webbläsaren skickar den automatiskt, även när anropet kommer
+från en annan sajt. Det är vad `SameSite` finns för, och den ska sättas.
+
+Regeln: **`HttpOnly` + `Secure` + `SameSite`.** En XSS är illa nog utan att också ge bort
+inloggningen.
+
+## Vad som händer vid utloggning
+
+Det beror helt på vilken av de två du valde, och det är därför frågan är värd en egen sektion.
+
+Med **session**: servern raderar posten. Nästa anrop hittar inget id och användaren är utloggad. Det
+gäller alla enheter samtidigt om du raderar alla poster för användaren.
+
+Med **token**: servern kan slänga bort sin kopia, men tokenet i klientens hand fungerar fortfarande.
+Det finns ingen post att radera — hela poängen var ju att servern inte behövde en.
+
+Vanlig utloggning med token är därför att klienten glömmer tokenet. Det räcker mot en användare som
+loggar ut, och inte alls mot någon som redan kopierat det.
+
+## Fallgropen: ett JWT går inte att ta tillbaka
+
+<Callout type="fallgrop">
+Ett utfärdat JWT gäller tills det går ut. Du kan inte återkalla det, och en "logga ut alla enheter"
+som bara raderar tokenet i webbläsaren är en knapp som inte gör vad den lovar.
+
+Tre vägar finns, och alla kostar något:
+
+**Kort livslängd** — ett access-token som lever i minuter, plus ett refresh-token som byts in mot
+nya. Fönstret blir litet i stället för noll.
+
+**En spärrlista** — servern håller en lista över återkallade token och kontrollerar den vid varje
+anrop. Det fungerar, men då har du återinfört uppslagningen du valde token för att slippa.
+
+**En version i tokenet** — ett räknarvärde per användare som höjs vid utloggning. Kräver också en
+uppslagning, men en billig.
+
+Behöver du kunna kasta ut någon **omedelbart** är en session ofta det enklare svaret.
+</Callout>
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer sällan att skriva hashningen själv — ramverket gör det, och det gör det rätt om du låter
+det. Det du gör är att välja mellan session och token i början av ett projekt, och det valet är svårt
+att ändra sedan.
+
+Det som är värt din tid nu är frågan *"hur kastar jag ut någon?"*. Ställ den innan du väljer, inte
+efter incidenten. Svaret avgör vilken av de två som passar.
+
+Nyckelrotation, OAuth-flöden, tvåfaktor och lösenordsfri inloggning med passkeys kan vänta. De blir
+dina när tjänsten har riktiga användare — och de bygger alla på skillnaden mellan att lagra ett bevis
+och att bära det.
+
+## Vanliga nybörjarförväxlingar
+
+Hashning är inte kryptering. Kryptering går att vända med en nyckel; hashning går inte att vända
+alls.
+
+Base64 är inte hashning och inte kryptering. Det är en representation, och vem som helst kan vända
+den.
+
+Saltet är inte hemligt. Det ska vara unikt per lösenord och lagras öppet bredvid hashen.
+
+SHA-256 är inte fel funktion, men fel verktyg för lösenord. Den är för snabb — 2,9 miljoner per
+sekund på en laptop.
+
+Ett JWT är inte krypterat. Det är signerat, och innehållet går att läsa av vem som helst.
+
+Att radera tokenet i webbläsaren är inte utloggning på serversidan. Tokenet fungerar tills det går
+ut.
+
+En session är inte samma sak som en cookie. Cookien bär id:t; sessionen är posten på servern.
+
+## Prova själv
+
+Övningarna kräver bara `openssl` och `python3`, som finns förinstallerade på macOS och de flesta
+Linux-system.
+
+Hasha ett lösenord två gånger och jämför:
+
+```bash
+openssl passwd -5 "sommar2026"
+openssl passwd -5 "sommar2026"
+```
+
+Två helt olika strängar, trots samma lösenord. **Det är saltet** — `openssl` slumpar ett nytt varje
+gång. Sätt det själv och kör om:
+
+```bash
+openssl passwd -5 -salt "kV8mQ2xR" "sommar2026"
+openssl passwd -5 -salt "kV8mQ2xR" "sommar2026"
+```
+
+```
+$5$kV8mQ2xR$Iwm2b1g/xUAHZB26/ayX/lVOdYi3IKWt3tR4scmuiI.
+```
+
+Nu är de identiska, och du får exakt samma sträng som står ovan. Saltet var alltså den enda
+skillnaden. Ändra en enda siffra i lösenordet:
+
+```bash
+openssl passwd -5 -salt "kV8mQ2xR" "sommar2027"
+```
+
+```
+$5$kV8mQ2xR$JiC12.9eVYW1j47U.R/kZNgcJkcGPG69YB5su69vkQ1
+```
+
+Samma salt, ett tecken annorlunda, och hashen har ingenting gemensamt med den förra. Det är den
+andra egenskapen från definitionen.
+
+Mät nu skillnaden i hastighet:
+
+```python
+import hashlib, time, os
+pw, salt = b"sommar2026", os.urandom(16)
+
+t = time.perf_counter()
+for _ in range(100_000):
+    hashlib.sha256(pw).hexdigest()
+d1 = time.perf_counter() - t
+
+t = time.perf_counter()
+hashlib.scrypt(pw, salt=salt, n=2**14, r=8,
+               p=1, dklen=32)
+d2 = time.perf_counter() - t
+
+print(f"sha256: {100_000/d1:,.0f} per sekund")
+print(f"scrypt: {1/d2:,.0f} per sekund")
+```
+
+```
+sha256: 2,908,957 per sekund
+scrypt: 32 per sekund
+```
+
+**Faktor 90 000.** Det talet är hela argumentet för en långsam funktion, och du behöver inte lita på
+det — du har just mätt det.
+
+Tre saker som kan förvirra. `openssl passwd -5` är SHA-256-crypt och används här för att **visa
+formatet**, inte som rekommendation — i en applikation väljer du `argon2id` via ditt ramverk. Utan
+`-salt` blir strängen längre, eftersom `openssl` då slumpar ett 16 tecken långt salt i stället för
+det åttatecknade ovan. Och dina hastighetstal blir andra än mina; det är förhållandet mellan dem som
+är poängen, inte siffrorna.
+
+<Callout type="kom-ihag">
+- Ett lösenord ska **hashas**, aldrig krypteras och aldrig lagras som det skrevs.
+- Hashning går åt ett håll. Kryptering går åt två. Kodning är ingetdera.
+- **Saltet är inte hemligt** — det ska vara unikt per lösenord och lagras bredvid hashen.
+- SHA-256 är för snabb för lösenord. Använd `argon2id`, `scrypt` eller `bcrypt`.
+- Ett **JWT är signerat, inte krypterat**. Innehållet är läsbart för alla.
+- Sessionen har sanningen på servern och går att radera. Tokenet gäller tills det går ut.
+- Token i cookie med `HttpOnly`, `Secure` och `SameSite` — aldrig i `localStorage`.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Varför ska ett lösenord hashas i stället för att krypteras?",
+      a: "Kryptering går att vända med en nyckel, och den nyckeln finns någonstans. Den som kommer åt både databasen och nyckeln får alla lösenord i klartext. Hashning går inte att vända alls, inte ens för den som byggde systemet.",
+    },
+    {
+      q: "Saltet lagras i klartext bredvid hashen. Förstör inte det poängen?",
+      a: "Nej. Saltet ska inte vara hemligt, bara unikt per lösenord. Dess uppgift är att göra förberäknade tabeller värdelösa: en angripare måste räkna om hela listan för varje konto i stället för en gång för alla.",
+    },
+    {
+      q: "SHA-256 anses vara en säker hashfunktion. Varför är den ändå fel för lösenord?",
+      a: "För att den är snabb — ungefär 2,9 miljoner hashar per sekund på en laptop. Snabbhet hjälper den som gissar. `argon2id` och `scrypt` är byggda för att vara långsamma och minneskrävande, vilket sänker samma laptop till ett trettiotal per sekund.",
+    },
+    {
+      q: "Vad är den viktigaste skillnaden mellan en session och ett token?",
+      a: "Var sanningen ligger. Sessionen är en post på servern som kan raderas, vilket kostar en uppslagning per anrop. Tokenet bär sin information själv, vilket slipper uppslagningen men gör att det gäller tills det går ut.",
+    },
+    {
+      q: "Din app sparar ett JWT i `localStorage`. Vad är risken?",
+      a: "All JavaScript på sidan kan läsa `localStorage`. Lyckas någon med en XSS — förra delens sårbarhet — kan skriptet läsa tokenet och skicka det vidare, och inloggningen är stulen. En cookie med `HttpOnly` är osynlig för skript.",
+    },
+    {
+      q: "Användaren klickar \"logga ut alla enheter\" i en app som använder JWT. Vad händer egentligen?",
+      a: "Utan extra mekanik: ingenting på de andra enheterna. Tokenet är redan utfärdat och gäller tills det går ut. Ska det fungera krävs korta livslängder med refresh, en spärrlista eller ett versionsvärde per användare — och de två sista återinför uppslagningen som token skulle slippa.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- Ett lösenord i klartext är läckt så fort databasen är det, och läckan drabbar andra tjänster.
+- En hashfunktion ger fast längd, samma svar varje gång, och går inte att vända.
+- Hashning går åt ett håll, kryptering åt två. Ett lösenord ska hashas.
+- Base64 är kodning — en representation, inte ett skydd. Samma avgränsning som en Secret i Kubernetes.
+- Saltet är ett unikt slumpvärde per lösenord, lagrat öppet bredvid hashen.
+- Utan salt ger samma lösenord samma hash, och förberäknade tabeller knäcker alla konton på en gång.
+- `$5$salt$hash` bär algoritm, salt och hash i en självbeskrivande sträng.
+- SHA-256 klarar 2,9 miljoner per sekund. Det är en dygd för filkontroll och en brist för lösenord.
+- `argon2id`, `scrypt` och `bcrypt` är justerbart långsamma. Samma laptop klarar 32 per sekund.
+- HTTP är stateless, så varje anrop måste bära något som knyter det till inloggningen.
+- En session är en post på servern; klienten bär bara id:t.
+- Ett token bär sin information själv och är signerat — läsbart, men inte ändringsbart.
+- Sessionen kan raderas och slutar gälla direkt. Tokenet gäller tills det går ut.
+- Token hör hemma i en cookie med `HttpOnly`, `Secure` och `SameSite`, inte i `localStorage`.
+- Behöver du kunna kasta ut någon omedelbart är en session ofta det enklare svaret.
+
+## Nästa del
+
+Därmed står Cyber-grunderna: ramen att tänka i, sårbarhetsklassen du möter oftast, och nu
+identiteterna.
+
+En mening har återkommit i tre olika serier nu, och det är värt att stanna vid den. En Secret i
+Kubernetes är kodad, inte krypterad. Ett `sensitive` i Terraform döljer utskriften, inte lagringen.
+Ett JWT är signerat, inte krypterat.
+
+Alla tre är samma misstag: att förväxla **att något ser oläsbart ut** med **att något är skyddat**.
+Skyddet ligger aldrig i formatet. Det ligger i vem som kommer åt lagringen — och det bästa svaret är
+att hemligheten aldrig skapas alls.
+
+Den tanken är utskriven i tre delar redan: CI/CD-delen om OIDC, Azure-delen om managed identity, och
+AWS-delen om roller i stället för nycklar. Läs dem i följd, så är det samma artikel tre gånger.
