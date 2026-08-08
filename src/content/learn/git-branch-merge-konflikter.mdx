@@ -154,7 +154,7 @@ Grafen visar att arbetet skedde parallellt.
 Historiken blir en rak linje, men commitarna får nya hashar — det är alltså inte samma commits längre.
 
 Rebase har en egen uppsättning regler och fallgropar, framför allt att aldrig göra det på commits
-någon annan redan hämtat. Vi tar det i en egen del. Kan du merge klarar du dig långt.
+någon annan redan hämtat. Vi tar det i del 1.3. Kan du merge klarar du dig långt.
 
 <Doodle name="merge-vs-rebase" caption="Två linjer som möts, mot en rak linje. Primtecknen betyder nya commits." />
 
@@ -270,8 +270,8 @@ Konflikter kommer du att lösa några gånger i månaden, oftast i en fil två p
 vecka. Att veta att markörerna bara är text i filen — inte ett trasigt tillstånd i Git — är
 skillnaden mellan fem minuter och en förlorad förmiddag.
 
-Rebase, cherry-pick och `reflog` kan du skjuta upp. De blir intressanta först när du behöver städa
-historik eller rädda något, och då är det inte längre nybörjarläge.
+Rebase, cherry-pick och `reflog` kommer i del 1.3. De blir intressanta först när du behöver städa
+historik eller rädda något.
 
 ## Vanliga nybörjarförväxlingar
 
@@ -366,7 +366,7 @@ Använd `git rev-parse` i stället. Och `git log` öppnas i en bläddrare som av
 - Att radera en gren tar bort pekaren, inte commitarna.
 - En merge körs på grenen som ska ta emot och pekar ut den som ska in.
 - Fast-forward flyttar bara pekaren. En vanlig merge-commit har två föräldrar.
-- Rebase skriver om historien till en rak linje och ger commitarna nya hashar. Det tas i egen del.
+- Rebase skriver om historien till en rak linje och ger commitarna nya hashar. Det tas i del 1.3.
 - En konflikt uppstår när Git inte kan kombinera ändringar automatiskt, ofta i en merge.
 - Konfliktmarkörerna är vanlig text i filen. De ska redigeras bort innan du `git add`.
 - Korta grenar ger få konflikter. Långlivade grenar ger många på en gång.

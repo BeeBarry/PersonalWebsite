@@ -1,0 +1,441 @@
+---
+title: 'Rebase och att städa historik'
+description: 'Att skriva om commits utan att förlora dem — och regeln som avgör när du får'
+category: 'git'
+part: 1
+order: 4
+date: '2026-08-08'
+tags: ['Beginner', 'Rebase', 'Reflog']
+---
+
+## Var vi är
+
+Del 1.1 ställde merge mot rebase och stannade vid definitionen: merge behåller historien, rebase
+skriver om den till en rak linje. Sedan sköt den upp resten. Del 1.2 varnade för `--force` på en
+gren någon annan hämtat.
+
+Nu tar vi rebase på riktigt: vad kommandot gör steg för steg, vad som händer när det tar stopp
+halvvägs, och hur du får tillbaka det du trodde var borta.
+
+Zoomen ligger på din egen gren innan den granskas. Att skriva om `main` ligger utanför — och efter
+den här delen vet du varför.
+
+<Del titel="Vad rebase gör" />
+
+## Vad rebase faktiskt gör
+
+`git rebase main` **tar bort dina commits och gör om dem** ovanpå `main`.
+
+Det är inte en bild. Git plockar ut varje commit på din gren som en ändringsmängd, går till
+`main`:s senaste commit, och applicerar dem en i taget som **nya** commits.
+
+Tre steg, i den ordningen: hitta commitarna som är unika för din gren, ställ dig på den nya basen,
+och spela upp dem igen. Ordet *base* i rebase är just det — du byter grund under ditt arbete.
+
+## Varför hasharna byts
+
+En commits hash beräknas ur allt den innehåller: filträdet, meddelandet, författaren, tidpunkten —
+och **föräldern**.
+
+Del 1.0 slog fast att en commit pekar bakåt. Byter du förälder byter du alltså indata till
+hashfunktionen, och då blir hashen en annan. Samma ändring, ny identitet.
+
+Konsekvensen är den som förvånar: rebasar du den *understa* commiten på grenen får **alla** ovanför
+nya hashar också, eftersom var och en har en ny förälder. En rebase av tio commits skapar tio nya,
+även om nio av dem inte fick en enda konflikt.
+
+## Vad som händer med de gamla commitarna
+
+De gamla commitarna raderas inte. De ligger kvar i repot utan att någon gren pekar på dem.
+
+En commit som ingen referens når kallas **föräldralös**. Den är fortfarande hämtbar via sin hash,
+och Gits städning tar den först efter ett par veckor.
+
+Det är därför en rebase känns läskigare än den är. Så länge du kan hitta den gamla hashen kan du gå
+tillbaka — och nästa avsnitt handlar om var Git skrev ner den åt dig.
+
+<Del titel="När det tar stopp" />
+
+## När en konflikt uppstår i en rebase
+
+En rebase stannar vid den **första** commit som inte går att applicera rent.
+
+```
+CONFLICT (content): Merge conflict in p.py
+error: could not apply b880eac... Rabatt
+```
+
+Notera hashen i felmeddelandet: `b880eac` är den **gamla** commiten, den Git försökte spela upp.
+Konfliktmarkörerna i filen ser likadana ut som i del 1.1, och löses på samma sätt.
+
+Skillnaden är att du inte är klar när du löst den. Rebasen har fler commits kvar i kön.
+
+## Vad `git status` säger mitt i
+
+Mitt i en rebase är `git status` det mest användbara kommandot i Git, och det är värt att läsa noga.
+
+```
+interactive rebase in progress; onto 96e754a
+Last command done (1 command done):
+   pick b880eac # Rabatt
+Next command to do (1 remaining command):
+   pick 93d776e # Rapport
+```
+
+Där står exakt var du är: vilken commit som just applicerades, hur många som återstår, och vilken
+som kommer härnäst. Under det listas de filer som är i konflikt.
+
+**Att det står `interactive rebase` förvirrar.** Kommandot som kördes var `git rebase main`, utan
+`-i`. Modern Git använder samma maskineri för alla rebaser, och statusraden avslöjar det. Du är inte
+i ett interaktivt läge du råkat hamna i.
+
+## `--continue`, `--skip` och `--abort`
+
+Tre vägar ut, och statusmeddelandet räknar upp alla tre.
+
+**`git rebase --continue`** — du har löst konflikten och lagt filerna i staging. Git gör commiten och
+går vidare till nästa i kön.
+
+**`git rebase --skip`** — hoppa över den här commiten helt. Dess ändring försvinner ur resultatet.
+Använd bara när du är säker på att ändringen redan finns i basen.
+
+**`git rebase --abort`** — ångra allt. Grenen återgår till exakt som den var innan du började.
+
+`--abort` är det viktigaste av de tre. Det gör en påbörjad rebase till ett riskfritt experiment: går
+det snett är du en kommandorad från utgångsläget.
+
+## Konflikt i merge vs konflikt i rebase
+
+Samma konfliktmarkörer, två helt olika situationer att befinna sig i.
+
+**I en merge** löser du konflikten **en gång**. Resultatet blir en merge-commit, och sedan är du klar.
+
+**I en rebase** kan du få lösa konflikter **flera gånger** — en gång per commit som krockar, eftersom
+varje commit spelas upp för sig.
+
+Det leder till en obehaglig upplevelse: samma rad, samma konflikt, tre gånger i rad. Orsaken är att
+commit två ändrar samma rad som commit ett, och båda spelas upp mot en ny bas.
+
+Praktisk följd: har din gren många commits och basen har rört sig mycket är en merge ofta mindre
+arbete. Rebase lönar sig på korta grenar.
+
+## Vad reflog är
+
+**Reflog** är Gits egen logg över var `HEAD` och grenarna har pekat, lokalt på din maskin.
+
+Den innehåller det som `git log` inte visar: commits du lämnat, grenar du bytt från, och varje steg i
+en rebase.
+
+```
+93d776e HEAD@{4}: rebase (abort): returning to…
+96e754a HEAD@{5}: rebase (start): checkout main
+93d776e HEAD@{6}: checkout: moving from main
+```
+
+Raderna är bredare i terminalen än här — de är klippta till höger. `HEAD@{4}` betyder "där HEAD stod
+fyra steg tillbaka", och hashen framför är det du kan gå tillbaka till.
+
+Reflogen är **lokal och personlig**. Den följer inte med vid en klon, och den finns inte hos någon
+annan. Det är din historik över din historik.
+
+## Så ångrar du en rebase
+
+Har rebasen redan avslutats hjälper inte `--abort`. Då är reflogen svaret.
+
+```bash
+git reflog
+git reset --hard 93d776e
+```
+
+Leta upp raden precis före `rebase (start)` — hashen där är din grens spets som den såg ut innan.
+`reset --hard` flyttar grenen dit, och de omskrivna commitarna blir i sin tur föräldralösa.
+
+Det är hela ångermekanismen, och den fungerar för nästan allt du kan råka göra lokalt. **Så länge
+något var committat är det hämtbart.** Det som aldrig committades finns däremot inte i reflogen.
+
+<Doodle
+  name="reflogen-minns-vagen"
+  caption="Grenen pekar framåt. Reflogen minns var den stod."
+/>
+
+<Del titel="Att städa historik" />
+
+## Vad interaktiv rebase är
+
+`git rebase -i` öppnar en **todo-lista** i din editor innan något körs, med en rad per commit.
+
+```
+pick b880eac Rabatt
+pick 93d776e Rapport
+```
+
+Listan går uppifrån och ner i **kronologisk** ordning — alltså tvärtemot `git log`, där det senaste
+står överst. Det är den vanligaste orsaken till att man squashar fel commit första gången.
+
+Byter du ut ordet först på en rad ändrar du vad som händer med den commiten. Sparar och stänger du
+utan ändring körs rebasen precis som en vanlig.
+
+## Kommandona i todo-listan
+
+Fem räcker för nästan allt.
+
+**`pick`** behåller commiten som den är. **`reword`** behåller ändringen men låter dig skriva om
+meddelandet. **`edit`** stannar vid commiten så du kan ändra innehållet. **`squash`** slår ihop
+commiten med den ovanför och låter dig skriva ett nytt gemensamt meddelande. **`drop`** kastar
+commiten helt.
+
+`squash` och `drop` är de två som ändrar vad historiken innehåller. De andra tre ändrar bara hur den
+ser ut.
+
+## squash vs fixup
+
+Två sätt att slå ihop, med en enda skillnad — meddelandet.
+
+**`squash`** slår ihop commiten med den ovanför och öppnar en editor där båda meddelandena står. Du
+skriver ett nytt som täcker helheten.
+
+**`fixup`** gör exakt samma sammanslagning men **kastar** den nedre commitens meddelande utan att
+fråga.
+
+Använd `fixup` för commits som heter *"fix typo"* eller *"glömde en fil"* — deras meddelande tillför
+ingenting. Använd `squash` när båda meddelandena innehåller något värt att behålla.
+
+## Vad cherry-pick är
+
+`git cherry-pick <hash>` tar **en** commit från var som helst och applicerar den på din nuvarande
+gren.
+
+Det används när en rättning behövs på två ställen: en bugg fixad på `main` som också måste in i en
+release-gren, eller tvärtom.
+
+Resultatet är en ny commit med samma ändring. Originalet står kvar där det var.
+
+## cherry-pick vs rebase
+
+Båda flyttar arbete, men de svarar på olika frågor.
+
+**Cherry-pick** plockar **utvalda** commits och lämnar resten. Källgrenen ändras inte alls.
+
+**Rebase** flyttar **hela** din gren till en ny bas och skriver om den i processen.
+
+Kontrollfrågan: *ska den gamla platsen finnas kvar?* Ja → cherry-pick. Nej, arbetet ska bara byta
+grund → rebase.
+
+Fallgropen med cherry-pick är dubbletter. Plockar du en commit till en gren som senare slås ihop med
+källan finns ändringen på två ställen, och Git ser dem som olika commits eftersom hasharna skiljer.
+
+## Gyllene regeln
+
+**Rebasa aldrig commits som någon annan kan ha hämtat.**
+
+Skälet följer direkt av att hasharna byts. Din kollega har `b880eac` i sitt repo. Du rebasar, och nu
+heter samma ändring `619e911`. När kollegan hämtar får hen båda — sitt gamla och ditt nya — och
+grenarna har divergerat på ett sätt som är plågsamt att reda ut.
+
+Den praktiska regeln: rebase på din egen gren innan den granskas är oproblematiskt. Rebase på `main`,
+eller på en gren där någon annan arbetar, gör du inte.
+
+Del 1.2:s `--force-with-lease` finns för det här. Har du rebasat din egen gren efter en push måste
+den skrivas över — och `--force-with-lease` vägrar om någon hunnit lägga till något du inte sett.
+
+## `git pull` vs `git pull --rebase`
+
+Den vardagligaste tillämpningen av allt ovan, och den du kommer att ställa in en gång och sedan
+glömma.
+
+**`git pull`** hämtar och **mergar**. Har du lokala commits och fjärren har rört sig får du en
+merge-commit som säger *"slog ihop origin/main med main"* — en rad brus i historiken.
+
+**`git pull --rebase`** hämtar och **rebasar** dina lokala commits ovanpå det hämtade. Ingen
+merge-commit, rak linje.
+
+Här är rebasen ofarlig, eftersom det handlar om commits du ännu inte delat. Många team sätter därför
+`git config pull.rebase true` en gång och slutar tänka på det.
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att köra `git pull --rebase` dagligen utan att tänka på det, och `git rebase -i` några
+gånger i månaden för att städa en gren innan granskning. Det du gör oftast är att **läsa
+`git status` mitt i en rebase** och avgöra om du ska fortsätta eller avbryta.
+
+Det som är värt din tid nu är reflogen. Den förvandlar rebase från något skrämmande till något du
+kan prova, och den är svaret på nästan varje *"jag tror jag förstörde något"*.
+
+`--onto`, `--autosquash`, `rerere` och att städa en hel serie släpp kan vänta. De blir aktuella när
+du underhåller ett projekt — och de bygger alla på samma uppspelning av en commit i taget.
+
+## Vanliga nybörjarförväxlingar
+
+Rebase flyttar inte commits. Den skapar nya med samma innehåll och lämnar originalen föräldralösa.
+
+Hashen ändras även för commits som inte hade någon konflikt. Föräldern är en del av hashen.
+
+`git status` säger `interactive rebase` även vid en vanlig rebase. Det är samma maskineri under.
+
+`--abort` fungerar bara under en pågående rebase. Är den avslutad använder du reflogen i stället.
+
+Reflogen finns inte hos någon annan. Den är lokal, personlig och följer inte med vid en klon.
+
+Todo-listan i `rebase -i` går i motsatt ordning mot `git log`. Äldst överst.
+
+`fixup` är inte `squash` med kortare namn. Den kastar meddelandet utan att fråga.
+
+## Prova själv
+
+Övningen skapar ett litet repo i en tillfällig mapp och rör ingenting du har. Kör raderna en i taget
+och läs utskrifterna.
+
+```bash
+cd "$(mktemp -d)" && git init -q -b main
+printf 'pris = 100\n' > p.py
+git add . && git commit -qm Grundpris
+git switch -qc rabatt
+printf 'pris = 100\nrabatt = 0.10\n' > p.py
+git commit -qam Rabatt
+git switch -q main
+printf 'pris = 100\nmoms = 0.25\n' > p.py
+git commit -qam Moms
+```
+
+Grenen och `main` har nu ändrat samma rad. Skriv upp grenens hash innan du rör den:
+
+```bash
+git log rabatt --format='%h %s' -1
+```
+
+Försök rebasa, och läs felet:
+
+```bash
+git switch -q rabatt && git rebase main
+```
+
+```
+CONFLICT (content): Merge conflict in p.py
+error: could not apply b880eac... Rabatt
+```
+
+Fråga nu Git var du befinner dig:
+
+```bash
+git status | head -6
+```
+
+```
+interactive rebase in progress; onto 96e754a
+Last command done (1 command done):
+   pick b880eac # Rabatt
+```
+
+**Det står `interactive` trots att du inte skrev `-i`.** Det är samma maskineri, och det är inte ett
+tecken på att du hamnat fel.
+
+Backa ut och kontrollera att ingenting hände:
+
+```bash
+git rebase --abort
+git log rabatt --format='%h %s' -1
+```
+
+Samma hash som innan. Kör nu om, lös konflikten och slutför:
+
+```bash
+git rebase main
+printf 'pris = 100\nmoms = 0.25\n' > p.py
+printf 'rabatt = 0.10\n' >> p.py
+git add p.py && git rebase --continue
+git log --format='%h %s' -3
+```
+
+Commiten heter fortfarande `Rabatt`, men hashen är en annan. **Det är hela poängen med avsnittet, i
+en rad utskrift.**
+
+Titta slutligen på var Git skrev ner vägen dit:
+
+```bash
+git reflog | head -8
+```
+
+Där står raden `rebase (start): checkout main`. Hashen på raden **under** den är din gren som den såg
+ut innan — och `git reset --hard <den hashen>` tar dig tillbaka.
+
+Tre saker som kan förvirra. Hasharna i utskrifterna ovan blir andra hos dig, eftersom de beräknas
+bland annat ur tidpunkten. Under en rebase står du i **detached HEAD**, vilket `git rebase
+--continue` skriver ut som `[detached HEAD 619e911]` — det är normalt och löser sig när rebasen
+avslutas. Och kopierar du in flera rader på en gång körs de utan att du hinner läsa felet; kör raden
+med `git rebase main` för sig.
+
+Städa efter dig genom att radera den tillfälliga mappen — `mktemp -d` la den under `/tmp`, och
+`pwd` visar vilken.
+
+<Callout type="kom-ihag">
+- Rebase **spelar upp** dina commits på en ny bas. Den flyttar dem inte.
+- Hashen ändras för **alla** commits ovanför den nya basen, även de utan konflikt.
+- De gamla commitarna finns kvar som föräldralösa i ett par veckor.
+- `git status` mitt i en rebase säger exakt var du är. Läs den.
+- `--abort` gör en påbörjad rebase riskfri. Är den avslutad använder du **reflogen**.
+- `squash` behåller båda meddelandena. `fixup` kastar det nedre.
+- **Rebasa aldrig commits någon annan kan ha hämtat.**
+- `git pull --rebase` är ofarligt, eftersom commitarna ännu inte är delade.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Du rebasar en gren med tio commits och bara den första hade en konflikt. Hur många får nya hashar?",
+      a: "Alla tio. En commits hash beräknas bland annat ur dess förälder, så när den första får en ny bas får den en ny hash — och därmed får nästa en ny förälder, och så vidare uppåt. Konflikten avgör bara hur mycket arbete du får, inte hur många hashar som ändras.",
+    },
+    {
+      q: "`git status` säger `interactive rebase in progress` men du skrev aldrig `-i`. Har du hamnat fel?",
+      a: "Nej. Modern Git använder samma maskineri för alla rebaser, och statusraden avslöjar det. Du kan fortsätta med `--continue` precis som vanligt.",
+    },
+    {
+      q: "Rebasen är avslutad och resultatet blev fel. `--abort` säger att ingen rebase pågår. Vad gör du?",
+      a: "Använder reflogen. `git reflog` visar var HEAD stod före rebasen — leta upp raden precis före `rebase (start)`. Sedan `git reset --hard <den hashen>`, så pekar grenen på sin gamla spets igen.",
+    },
+    {
+      q: "Vad är skillnaden mellan `squash` och `fixup` i en interaktiv rebase?",
+      a: "Sammanslagningen är identisk. `squash` öppnar en editor med båda meddelandena så du kan skriva ett nytt; `fixup` kastar den nedre commitens meddelande utan att fråga. `fixup` passar commits som heter \"fix typo\".",
+    },
+    {
+      q: "Varför får du inte rebasa en gren någon annan hämtat?",
+      a: "För att hasharna byts. Kollegan har de gamla commitarna i sitt repo, du har nya med samma innehåll, och vid nästa hämtning finns båda. Grenarna har divergerat trots att ingen ändrat något — och det är besvärligt att reda ut.",
+    },
+    {
+      q: "Varför är `git pull --rebase` ofarligt trots gyllene regeln?",
+      a: "Det rebasar bara dina egna lokala commits, som ingen annan hämtat. Det som kommer från fjärren rörs inte. Vinsten är att du slipper en merge-commit varje gång du hämtar medan du har lokalt arbete.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- Rebase tar dina commits, ställer sig på en ny bas och spelar upp dem som nya commits.
+- Hashen räknas bland annat ur föräldern, så en ny bas ger nya hashar hela vägen upp.
+- De gamla commitarna raderas inte. De blir föräldralösa och städas först efter ett par veckor.
+- En rebase stannar vid första commit som krockar, och felet nämner den **gamla** hashen.
+- `git status` mitt i visar vilken commit som just kördes och hur många som återstår.
+- Det står `interactive rebase` även utan `-i`. Samma maskineri används för alla rebaser.
+- `--continue` går vidare, `--skip` hoppar över commiten, `--abort` återställer allt.
+- En merge löser konflikten en gång. En rebase kan kräva en lösning per commit.
+- Reflogen är din lokala logg över var HEAD stått. Den följer inte med vid en klon.
+- Är rebasen avslutad ångrar du med `git reset --hard` till hashen ur reflogen.
+- `rebase -i` visar en todo-lista i kronologisk ordning — äldst överst, tvärtemot `git log`.
+- `pick`, `reword`, `edit`, `squash` och `drop` räcker för nästan allt.
+- `squash` behåller båda meddelandena. `fixup` kastar det nedre.
+- Cherry-pick plockar en enskild commit och lämnar källan orörd.
+- Rebasa aldrig delade commits. På din egen gren före granskning är det oproblematiskt.
+- `git pull --rebase` rebasar bara dina egna lokala commits och ger en rak historik.
+
+## Nästa del
+
+Därmed står Git-serien: vad som sparas, hur grenar och konflikter fungerar, vägen till en delad
+historik, och nu verktygen för att skriva om den innan någon annan ser den.
+
+Något har blivit tydligare på vägen. Nästan varje riskabelt Git-kommando är riskabelt av samma skäl —
+det ändrar något andra redan hämtat. `--force`, rebase på `main`, en omskriven tagg. Regeln bakom
+dem alla är densamma, och du kan den nu.
+
+Nästa serie tar sig an det som ligger mellan gränssnittet och databasen: API:et, och kontraktet två
+system kommer överens om.
