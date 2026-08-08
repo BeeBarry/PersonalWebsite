@@ -1,0 +1,457 @@
+---
+title: 'TLS, certifikat och förtroende'
+description: 'Vad som händer i steg 3 — och varför webbläsaren litar på just den här servern'
+category: 'natverk'
+part: 1
+order: 3
+date: '2026-08-08'
+tags: ['Beginner', 'TLS', 'Certifikat']
+---
+
+## Var vi är
+
+Del 1.0 delade upp resan i fyra steg och gick igenom tre av dem: namnet slås upp, anslutningen
+öppnas, frågan ställs. Del 1.1 tog det sista steget — vad som faktiskt står i anropet.
+
+Ett steg lämnades med fyra rader. **Steg 3: Samtalet säkras.** Där stod att servern visar upp ett
+certifikat och att klienten kontrollerar det, och sedan gick vi vidare.
+
+Den här delen öppnar den dörren. Zoomen ligger på förtroendet: vad ett certifikat är, vem som går i
+god för det, och varför du får fyra olika felmeddelanden när det inte stämmer. Krypteringsmatematiken
+ligger utanför.
+
+<Del titel="Förtroendet" />
+
+## Vad TLS är
+
+**TLS**, Transport Layer Security, är protokollet som krypterar en anslutning och bevisar vem
+servern är.
+
+Det ligger mellan TCP och HTTP. TCP öppnar kanalen, TLS säkrar den, HTTP talar genom den. Det är
+därför `https` är samma HTTP som `http` — bara ett lager inlagt under.
+
+TLS löser två problem samtidigt, och det andra är det man glömmer. **Sekretess:** ingen på vägen kan
+läsa innehållet. **Identitet:** du talar med den server namnet pekar ut, inte med någon som ställt
+sig emellan.
+
+Utan det andra vore det första meningslöst. En krypterad kanal till fel motpart är en väl skyddad
+konversation med en angripare.
+
+## TLS vs SSL
+
+Två namn på samma sak i vardagligt tal, med en skillnad som spelar roll i ett felmeddelande.
+
+**SSL** är föregångaren. Alla dess versioner är utdaterade och avstängda sedan länge.
+
+**TLS** är efterföljaren, och det du faktiskt använder. Aktuella versioner är TLS 1.2 och TLS 1.3.
+
+Namnet SSL lever kvar överallt: i `openssl`, i `s_client`, i biblioteksnamn och i felmeddelanden som
+`SSL certificate problem`. Läs det som "TLS" — men om något faktiskt vill förhandla SSLv3 är det ett
+fel, inte en variant.
+
+## Vad handskakningen gör
+
+**Handskakningen** är utbytet som sker innan ett enda byte HTTP skickas.
+
+Tre saker avgörs där. Klient och server kommer överens om vilken TLS-version och vilket chiffer som
+ska användas. Servern skickar sitt certifikat. Och de två räknar fram nycklar som bara gäller den
+här anslutningen.
+
+```
+New, TLSv1.2, Cipher is ECDHE-RSA-AES128-GCM-SHA256
+```
+
+Raden ovan är vad `openssl` skriver ut efter en lyckad handskakning. Du behöver inte kunna tyda
+chiffersviten — poängen är att den **förhandlades**, och att den skiljer sig mellan anslutningar.
+
+## Vad ett certifikat är
+
+Ett **certifikat** är en fil som binder ihop ett namn med en publik nyckel, och som är signerad av
+någon annan.
+
+Tre delar bär hela idén. **Namnet** — vilka värdnamn certifikatet gäller för. **Den publika
+nyckeln** — den servern bevisar att den äger motsvarigheten till. **Signaturen** — någon annans
+intyg på att de två hör ihop.
+
+Certifikatet är alltså inte en hemlighet. Det skickas till varje besökare, och det är meningen.
+
+## Certifikat vs nyckel
+
+Den förväxling som orsakar flest riktiga incidenter, och den är lätt att undvika när man sett den
+en gång.
+
+**Certifikatet** är publikt. Filen heter ofta `.crt` eller `.pem`, servern skickar den till alla, och
+den går att titta på i webbläsaren.
+
+**Den privata nyckeln** är hemlig. Filen heter ofta `.key`, den lämnar aldrig servern, och den som
+har den kan utge sig för att vara ditt namn.
+
+Får du frågan *"kan du skicka certifikatet?"* är svaret ja utan vidare. Ligger `.key`-filen i samma
+mapp du zippar är svaret något helt annat, och certifikatet måste bytas ut.
+
+Det är samma uppdelning som i Cyber-delens resonemang om vad som skyddar: skyddet ligger i vem som
+kommer åt nyckeln, aldrig i filformatet.
+
+## Vad en CA är
+
+En **CA**, certificate authority, är en organisation vars signatur webbläsare och operativsystem
+redan bestämt sig för att lita på.
+
+CA:n kontrollerar att den som ber om ett certifikat verkligen kontrollerar namnet. Det sker oftast
+genom att du måste lägga en viss fil på webbservern eller en viss post i DNS. Går det igenom
+signerar CA:n ditt certifikat.
+
+Hela systemet vilar alltså på en delegering: du litar inte på servern, du litar på att CA:n
+kontrollerade servern.
+
+## Kedjan upp till roten
+
+Ett certifikat signeras sällan direkt av en rot. Däremellan ligger ett eller flera **mellanliggande**
+certifikat.
+
+```
+ 0 s:CN=*.badssl.com
+   i:C=US, O=Let's Encrypt, CN=YR2
+ 1 s:C=US, O=Let's Encrypt, CN=YR2
+   i:C=US, O=ISRG, CN=Root YR
+```
+
+`s:` är subjektet — vem certifikatet gäller. `i:` är utfärdaren — vem som signerat det. Läs det
+nerifrån och upp: varje certifikats **utfärdare** är nästa certifikats **subjekt**. Det är kedjan.
+
+Mellanledet finns av en anledning. Skulle en mellanliggande nyckel läcka spärras den utan att roten
+behöver röras — och en rot går inte att byta ut utan att uppdatera varje enhet i världen.
+
+Servern kan skicka fler certifikat än de två ovan, ibland även en korssignerad rot. Det spelar ingen
+roll hur många den skickar: valideringen är klar först när kedjan når något som redan finns hos
+**dig**.
+
+<Doodle
+  name="kedjan-till-roten"
+  caption="Servern skickar de två nedersta. Den översta ligger redan på din maskin."
+/>
+
+## Vad rotlagret på din maskin är
+
+**Rotlagret** är samlingen av CA-certifikat som ditt operativsystem eller din webbläsare levereras
+med.
+
+Det är där förtroendet tar slut och blir ett antagande. Kedjan valideras uppåt tills den når något
+som finns i lagret — och det som avgör är alltid din kopia, aldrig den servern råkar skicka med. En
+angripare kan skicka en hel kedja; den slutar bara inte i något du redan litar på.
+
+Det förklarar två saker som annars är gåtfulla. Att ett internt företagscertifikat fungerar på
+jobbdatorn men inte på din egen: företagets rot är installerad på den ena. Och att en container ofta
+inte kan nå någonting med HTTPS förrän `ca-certificates` installerats — en avskalad basimage har
+tomt rotlager.
+
+## Självsignerat vs CA-signerat
+
+Två certifikat som är tekniskt likvärdiga och socialt helt olika.
+
+**Ett självsignerat certifikat** är sin egen utfärdare. Kedjan är ett enda steg och slutar i sig
+själv, så ingen utomstående har kontrollerat något.
+
+**Ett CA-signerat certifikat** är signerat av någon vars rot redan finns i mottagarens lager.
+
+Krypteringen är exakt densamma i båda fallen. Skillnaden är identiteten: det självsignerade bevisar
+att någon äger en nyckel, inte att den någon är rätt någon.
+
+Det är därför de fungerar utmärkt i en testmiljö där du själv lagt in dem, och aldrig mot en publik
+besökare.
+
+<Del titel="Namnet" />
+
+## Vad SNI är
+
+**SNI**, Server Name Indication, är värdnamnet klienten skickar **i klartext** i början av
+handskakningen, så att servern vet vilket certifikat den ska svara med.
+
+Utan SNI hade en IP-adress bara kunnat bära ett certifikat. Servern måste välja certifikat innan den
+vet vilken `Host:`-header som kommer — den ligger ju inuti det krypterade HTTP-anropet, som inte
+finns än.
+
+Det gör SNI till det enda i handskakningen som är läsbart för den som avlyssnar. Del 1.0 sa att
+HTTPS inte döljer *att* du anslöt till en viss server. Det här är mekanismen.
+
+<Doodle
+  name="sni-valjer-certet"
+  caption="En adress, tre certifikat. Namnet i klartext avgör vilket som skickas."
+/>
+
+## Vad ett wildcard-certifikat är
+
+Ett **wildcard-certifikat** gäller för alla direkta underdomäner till ett namn, skrivet med en
+asterisk: `*.badssl.com`.
+
+Det täcker `www.badssl.com` och `api.badssl.com`. Det täcker **inte** `badssl.com` självt — det
+måste stå med separat — och inte heller `a.b.badssl.com`, eftersom asterisken bara sträcker sig över
+en nivå.
+
+Priset är att en läckt nyckel gäller för hela domänen på en gång.
+
+## Utgånget vs fel namn
+
+Två fel som ger samma symptom i webbläsaren och kräver helt olika åtgärder.
+
+**Utgånget** betyder att certifikatet var rätt men att dess giltighetstid passerat. Åtgärden är att
+förnya, och felet drabbar alla besökare samtidigt vid en exakt tidpunkt.
+
+**Fel namn** betyder att certifikatet är giltigt men utfärdat för ett annat värdnamn. Åtgärden är
+att skaffa rätt certifikat, och felet drabbar bara den som besöker just det namnet.
+
+Det andra är lurigare, eftersom sajten kan ha fungerat i åratal på `www` och gå sönder första gången
+någon skriver adressen utan.
+
+## De fyra sätten att misslyckas
+
+Alla fyra ger `curl` avslutskod **60**, och alla fyra börjar med `curl: (60)`. Det som skiljer står
+efter kolonet:
+
+```
+certificate has expired
+no alternative certificate subject name
+self signed certificate
+self signed certificate in certificate chain
+```
+
+Första raden är utgånget. Andra är fel namn. Tredje är ett certifikat utan kedja alls. **Fjärde är
+den som förvirrar mest** — kedjan finns, men den slutar i en rot som inte ligger i ditt lager. Det
+är typiskt ett internt företags-CA på en maskin som saknar det.
+
+Läs alltid hela raden. Avslutskoden säger bara *förtroendet brast*, inte varför.
+
+<Del titel="I drift" />
+
+## Vad Let's Encrypt och ACME är
+
+**Let's Encrypt** är en CA som utfärdar certifikat gratis och automatiskt. **ACME** är protokollet
+den använder: din server ber om ett certifikat, får en utmaning att bevisa att den kontrollerar
+namnet, och får certifikatet utan att någon människa är inblandad.
+
+Certifikaten är avsiktligt kortlivade — omkring 90 dagar. Det låter opraktiskt och är precis
+tvärtom: en livslängd som kräver automatik gör att förnyelsen *är* automatiserad, i stället för en
+kalenderpåminnelse någon missar vart tredje år.
+
+Det är också begränsningen av skadan. Ett läckt certifikat som ingen upptäcker är värdelöst efter
+tre månader.
+
+## Vad TLS-terminering är
+
+**TLS-terminering** är punkten där den krypterade anslutningen öppnas och blir vanlig HTTP.
+
+I nästan alla riktiga system sker det inte i din applikation. Det sker i en lastbalanserare, en
+reverse proxy eller — som i Kubernetes-delen — i en Ingress-controller. Din applikation tar emot
+klartext på en intern port och behöver aldrig se en nyckel.
+
+Det förklarar varför certifikat i Kubernetes-serien var något som konfigurerades bredvid
+applikationen, aldrig i den.
+
+## Fallgropen: `curl -k` som vana
+
+<Callout type="fallgrop">
+`curl -k` — eller `--insecure` — hoppar över hela certifikatkontrollen. Anslutningen krypteras
+fortfarande, men ingen kontrollerar längre **vem** du talar med.
+
+Kommandot är rätt verktyg i exakt ett fall: när du felsöker och vill veta om problemet ligger i
+förtroendet eller någon annanstans. Svarar servern med `-k` men inte utan, är felet certifikatet.
+
+Problemet är att det fungerar. Flaggan löser stunden, hamnar i ett skript, och sedan i ett bygge.
+Då har ni ett system som accepterar vilket certifikat som helst utan att någon vet om det.
+
+Ett verifierat exempel: `curl https://expired.badssl.com` avbryter med kod 60. Samma anrop med `-k`
+ger `HTTP 200`. Ingenting blev bättre; kontrollen togs bara bort.
+</Callout>
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer sällan att skaffa ett certifikat för hand — ACME eller molnleverantören gör det. Det du
+gör flera gånger om året är att **läsa ett TLS-fel** och avgöra om det är utgånget, fel namn, eller
+en rot som saknas i just den miljön.
+
+Det som är värt din tid nu är kedjan. Nästan varje förvirrande certifikatfel är egentligen frågan
+*"vilken rot litar den här maskinen på?"* — och den frågan går inte att ställa förrän man vet att ett
+rotlager finns.
+
+Mutual TLS, certifikatspärrning, OCSP och egen PKI kan vänta. De blir dina den dag tjänster ska
+bevisa sin identitet för varandra — och de bygger alla på samma kedja.
+
+## Vanliga nybörjarförväxlingar
+
+TLS är inte SSL. Namnet SSL lever kvar i verktyg och felmeddelanden, men protokollet är utdaterat.
+
+Certifikatet är inte hemligt. Det skickas till varje besökare. Det är nyckeln som är hemlig.
+
+Ett självsignerat certifikat krypterar lika bra. Det som saknas är någon som går i god för namnet.
+
+HTTPS döljer inte vilken sajt du besöker. Värdnamnet går i klartext i SNI, innan krypteringen börjar.
+
+Ett wildcard täcker inte domänen självt. `*.example.se` gäller inte för `example.se`.
+
+Roten skickas inte av servern. Den ligger redan i ditt operativsystems rotlager — och saknas den
+spelar det ingen roll hur korrekt kedjan är.
+
+`curl -k` gör inte anslutningen okrypterad. Den gör den oidentifierad, vilket ofta är värre.
+
+## Prova själv
+
+Alla adresser nedan är publika testservrar från `badssl.com`, byggda just för det här. Inget konto
+och ingen inloggning behövs.
+
+Titta först på en kedja som fungerar:
+
+```bash
+echo | openssl s_client -connect badssl.com:443 \
+  -servername badssl.com 2>/dev/null \
+  | grep -E "^ [0-9] s:|^   i:" | head -4
+```
+
+```
+ 0 s:CN=*.badssl.com
+   i:C=US, O=Let's Encrypt, CN=YR2
+ 1 s:C=US, O=Let's Encrypt, CN=YR2
+   i:C=US, O=ISRG, CN=Root YR
+```
+
+Läs raderna parvis: utfärdaren på rad två är subjektet på rad tre. **Det är kedjan, utskriven.**
+
+`head -4` klipper medvetet. Tar du bort den ser du att servern skickar ett tredje certifikat också —
+en korssignerad rot — vilket är vanligt och inte ändrar något: valideringen slutar ändå i ditt eget
+rotlager.
+
+Prova nu de fyra felen:
+
+```bash
+D=badssl.com
+for h in expired wrong.host self-signed; do
+  curl -sS --max-time 8 "https://$h.$D" 2>&1 \
+    >/dev/null | head -1
+done
+curl -sS --max-time 8 "https://untrusted-root.$D" \
+  2>&1 >/dev/null | head -1
+```
+
+Fyra rader, alla med `curl: (60)`, alla med olika förklaring efter kolonet. Kör sedan den utgångna
+med kontrollen avstängd:
+
+```bash
+curl -sk -o /dev/null -w "%{http_code}\n" \
+  https://expired.badssl.com
+```
+
+`200`. Servern svarade hela tiden — det var din klient som vägrade, och `-k` fick den att sluta
+vägra.
+
+Ta slutligen SNI på orden. De här två namnen pekar på **samma IP-adress**:
+
+```bash
+dig +short badssl.com expired.badssl.com
+```
+
+Anslut till adressen direkt och byt bara servernamnet:
+
+```bash
+for n in expired.badssl.com badssl.com; do
+  echo | openssl s_client -connect 104.154.89.105:443 \
+    -servername "$n" 2>/dev/null \
+    | openssl x509 -noout -enddate
+done
+```
+
+```
+notAfter=Apr 12 23:59:59 2015 GMT
+notAfter=Oct 26 20:03:01 2026 GMT
+```
+
+Samma IP, samma port, två certifikat — och det första gick ut för elva år sedan. **Namnet, inte
+adressen, valde certifikatet.**
+
+Utelämna `-servername` helt, så svarar servern med ett certifikat vars namn säger allt:
+
+```bash
+echo | openssl s_client -connect 104.154.89.105:443 \
+  2>/dev/null | openssl x509 -noout -subject \
+  | grep -oE "CN=.*"
+```
+
+```
+CN=badssl-fallback-unknown-subdomain-or-no-sni
+```
+
+Tre saker som kan förvirra. `echo |` behövs för att stänga `s_client`:s inmatning — utan det blir
+sessionen hängande och du får avbryta med Ctrl-C. IP-adressen ovan kan ha ändrats sedan artikeln
+skrevs; kör `dig` först och använd den du får. Och `openssl` skriver mängder till standard error, så
+`2>/dev/null` är det som gör utskriften läsbar — inte ett sätt att dölja fel.
+
+<Callout type="kom-ihag">
+- **TLS** löser två saker: sekretess och identitet. Den andra är den man glömmer.
+- Ett **certifikat** binder ett namn till en publik nyckel, signerat av någon annan. Det är publikt.
+- **Nyckeln** är hemlig. Läcker den måste certifikatet bytas.
+- Kedjan går uppåt: varje certifikats utfärdare är nästa certifikats subjekt.
+- **Roten skickas inte** — den ligger i din maskins rotlager, och där tar förtroendet slut.
+- **SNI går i klartext.** Därför kan en IP bära många certifikat, och därför syns värdnamnet.
+- Fyra fel, en avslutskod: utgånget, fel namn, självsignerat, okänd rot. Läs hela raden.
+- `curl -k` tar bort identitetskontrollen, inte krypteringen.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "TLS löser två problem. Vilket är det som glöms bort?",
+      a: "Identiteten. Sekretessen — att ingen kan läsa med — är den uppenbara. Men en krypterad kanal till fel motpart är en väl skyddad konversation med en angripare, så beviset på vem servern är gör krypteringen meningsfull.",
+    },
+    {
+      q: "Någon ber dig skicka certifikatet. Är det känsligt?",
+      a: "Nej. Certifikatet är publikt och skickas till varje besökare som ansluter. Det som är känsligt är den privata nyckeln, ofta en `.key`-fil bredvid — den som har den kan utge sig för att vara ditt namn, och då måste certifikatet bytas.",
+    },
+    {
+      q: "Vad är skillnaden mellan ett självsignerat och ett CA-signerat certifikat?",
+      a: "Krypteringen är identisk. Skillnaden är vem som går i god för namnet: det självsignerade är sin egen utfärdare, så ingen utomstående har kontrollerat något. Det CA-signerade är signerat av någon vars rot redan finns i mottagarens rotlager.",
+    },
+    {
+      q: "Varför kan en enda IP-adress svara med olika certifikat?",
+      a: "Tack vare SNI. Klienten skickar värdnamnet i klartext i början av handskakningen, innan krypteringen börjar, och servern väljer certifikat utifrån det. Utan SNI hade servern behövt välja innan den visste vilken sajt som efterfrågades.",
+    },
+    {
+      q: "Du får `self signed certificate in certificate chain`. Vad betyder det, till skillnad från `self signed certificate`?",
+      a: "Att kedjan finns, men slutar i en rot som inte ligger i din maskins rotlager — typiskt ett internt företags-CA. Det andra felet betyder att certifikatet inte har någon kedja alls. Det första löser du genom att installera roten, det andra genom att skaffa ett riktigt certifikat.",
+    },
+    {
+      q: "När är `curl -k` rätt verktyg?",
+      a: "När du felsöker och vill veta om felet ligger i förtroendet. Svarar servern med `-k` men inte utan, är certifikatet problemet. Flaggan är fel så fort den hamnar i ett skript eller ett bygge — då accepterar systemet vilket certifikat som helst utan att någon vet om det.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- TLS ligger mellan TCP och HTTP och ger både sekretess och bevis på identitet.
+- SSL är föregångaren och är utdaterad. Namnet lever kvar i verktyg och felmeddelanden.
+- Handskakningen förhandlar version och chiffer, skickar certifikatet och tar fram nycklar.
+- Ett certifikat binder ett namn till en publik nyckel och är signerat av någon annan.
+- Certifikatet är publikt. Den privata nyckeln är hemlig och lämnar aldrig servern.
+- En CA kontrollerar att den som ber om ett certifikat kontrollerar namnet.
+- Kedjan går uppåt: varje certifikats utfärdare är nästa certifikats subjekt.
+- Roten skickas inte över nätet. Den finns i maskinens rotlager, och saknas den brister kedjan.
+- Ett självsignerat certifikat krypterar lika bra men bevisar ingen identitet.
+- SNI skickar värdnamnet i klartext, så en IP kan bära många certifikat — och namnet syns.
+- Ett wildcard gäller en nivå av underdomäner, inte domänen självt.
+- Utgånget och fel namn ger samma symptom och kräver olika åtgärder.
+- Fyra vanliga fel ger alla avslutskod 60. Förklaringen står efter kolonet.
+- Let's Encrypt utfärdar automatiskt via ACME, med omkring 90 dagars livslängd.
+- TLS termineras oftast i en proxy eller Ingress, inte i applikationen.
+- `curl -k` stänger av identitetskontrollen. Rätt vid felsökning, fel i ett skript.
+
+## Nästa del
+
+Med det här står nätverksgrunderna hela: resan från adressfältet, anropets innehåll, och nu lagret
+som gör att du vågar skicka ett lösenord över den.
+
+Flera artiklar i hubben läser annorlunda nu. Kubernetes-delen om trafik in i klustret termineras
+TLS i en Ingress. Azure- och AWS-delarna nämner certifikat som något en tjänst hanterar åt dig. Och
+Cyber-serien handlar om vad som händer när ett förtroende visar sig vara felplacerat.
+
+Nästa steg är just det perspektivet: att sluta fråga hur något fungerar och börja fråga hur det går
+att missbruka.
