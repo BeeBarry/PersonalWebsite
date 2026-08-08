@@ -1337,4 +1337,143 @@ export const DOODLES: Record<string, string> = {
     <text x="640" y="292">→ lager → db</text>
   </g>
 </svg>`,
+
+  /* ---- Nätverk 1.2 · Kedjan slutar i ditt eget rotlager ---- */
+  "kedjan-till-roten": `
+<svg viewBox="0 0 880 400" role="img" aria-label="Två kort ovanpå varandra till vänster med en pil uppåt mellan dem, och en streckad pil vidare till ett tredje kort som ligger på en laptop till höger.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M602 200 Q700 198 798 200 Q800 250 798 288 Q700 290 604 288 Q598 244 602 200 Z"/><path d="M582 302 Q700 299 818 302 Q818 310 810 312 Q700 315 590 312 Q582 310 582 302 Z"/><path d="M189 109 Q280 108 369 111 Q371 155 371 200 Q280 202 189 200 Q189 155 189 109 Z"/><path d="M202 126 Q280 124 358 126" stroke-width="1.1" opacity="0.5"/><path d="M202 139 Q280 137 358 139" stroke-width="1.1" opacity="0.5"/><path d="M189 249 Q280 248 370 251 Q372 295 371 340 Q280 341 189 339 Q190 295 189 249 Z"/><path d="M202 266 Q280 264 358 266" stroke-width="1.1" opacity="0.5"/><path d="M202 279 Q280 277 358 279" stroke-width="1.1" opacity="0.5"/><path d="M280 244 Q282 226 280 210"/><path d="M274 217 L280 204 L286 217"/><path d="M376 154 Q470 152 566 154" stroke-dasharray="7 8"/><path d="M559 148 L572 154 L559 160"/><path d="M629 219 Q700 216 772 219 Q772 246 771 273 Q700 274 628 274 Q628 246 629 219 Z"/><path d="M640 234 Q700 232 760 234" stroke-width="1.1" opacity="0.5"/><path d="M640 247 Q700 245 760 247" stroke-width="1.1" opacity="0.5"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="end" opacity="0.62">
+    <text x="176" y="160">mellanled</text>
+    <text x="176" y="300">servercert</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.45">
+    <text x="471" y="138">måste sluta här</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="700" y="364">ditt rotlager</text>
+  </g>
+</svg>`,
+
+  /* ---- Nätverk 1.2 · SNI väljer certifikat på en delad IP ---- */
+  "sni-valjer-certet": `
+<svg viewBox="0 0 880 372" role="img" aria-label="En klient till vänster med en pil in i en serverlåda som innehåller tre certifikat, varav ett är heldraget och två streckade. Under pilen ligger en lapp med värdnamnet.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M521 97 Q670 94 821 96 Q820 200 821 304 Q670 304 521 305 Q519 200 521 97 Z"/><path d="M548 119 Q600 118 653 121 Q653 148 652 175 Q600 177 549 176 Q548 148 548 119 Z" stroke-dasharray="7 8" opacity="0.4"/><path d="M548 182 Q600 180 651 181 Q652 210 653 238 Q600 239 547 238 Q547 210 548 182 Z"/><path d="M548 244 Q600 243 652 243 Q654 272 653 299 Q600 300 548 300 Q547 272 548 244 Z" stroke-dasharray="7 8" opacity="0.4"/><path d="M60 168 Q135 166 209 169 Q211 196 210 223 Q135 226 59 225 Q60 196 60 168 Z"/><path d="M216 196 Q330 194 442 196"/><path d="M435 190 L448 196 L435 202"/><path d="M300 237 Q360 234 419 235 Q422 258 421 281 Q360 280 299 279 Q299 258 300 237 Z" stroke-width="1.3" opacity="0.65"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="middle" opacity="0.75">
+    <text x="135" y="202">klienten</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="360" y="264">namnet i klartext</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="670" y="86">en IP-adress</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.6">
+    <text x="600" y="220">valt</text>
+  </g>
+</svg>`,
+
+  /* ---- API 1.2 · Token bucket — jämn påfyllning, skurvis uttag ---- */
+  "hinken-fylls-pa": `
+<svg viewBox="0 0 880 400" role="img" aria-label="En hink med mynt i, en jämn streckad droppe uppifrån, och en skopa till höger som tar flera mynt på en gång.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M400 62 Q402 100 400 138" stroke-dasharray="5 12"/><path d="M394 131 L400 144 L406 131"/><path d="M330 168 Q400 166 470 168 Q462 264 452 320 Q400 326 348 320 Q338 264 330 168 Z"/><path d="M322 168 Q400 164 478 168" stroke-width="2.2"/><path d="M373 255 Q385 255 386 267 Q385 281 371 280 Q359 281 360 267 Q359 255 373 255 Z"/><path d="M405 270 Q417 269 416 283 Q417 295 403 295 Q391 295 390 283 Q391 269 405 270 Z"/><path d="M437 254 Q449 253 448 267 Q449 279 436 280 Q423 279 423 266 Q423 253 437 254 Z"/><path d="M390 220 Q403 219 402 231 Q403 245 390 244 Q377 245 377 231 Q377 219 390 220 Z"/><path d="M425 214 Q437 215 438 229 Q437 241 424 240 Q411 241 411 227 Q411 215 425 214 Z"/><path d="M560 214 Q622 212 684 214 Q676 262 668 288 Q622 294 578 288 Q568 258 560 214 Z"/><path d="M488 236 Q524 234 556 236"/><path d="M503 230 L490 236 L503 242"/><path d="M600 239 Q612 240 613 252 Q612 264 600 263 Q588 264 589 253 Q588 240 600 239 Z"/><path d="M637 237 Q648 238 648 250 Q648 262 637 261 Q624 262 624 251 Q624 238 637 237 Z"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.6">
+    <text x="400" y="44">påfyllning, jämn takt</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="400" y="368">hinken</text>
+    <text x="622" y="368">ett anrop</text>
+  </g>
+</svg>`,
+
+  /* ---- API 1.2 · CORS upprätthålls av webbläsaren, inte servern ---- */
+  "grinden-star-hos-klienten": `
+<svg viewBox="0 0 880 372" role="img" aria-label="En serverlåda till höger skickar samma svar till två klienter till vänster. Framför den övre klienten står ett galler, framför den undre ingenting.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M641 119 Q735 119 829 119 Q831 185 830 250 Q735 251 640 250 Q640 185 641 119 Z"/><path d="M71 129 Q145 127 221 129 Q222 160 221 191 Q145 192 70 193 Q70 160 71 129 Z"/><path d="M70 258 Q145 258 219 258 Q221 290 220 322 Q145 324 69 322 Q70 290 70 258 Z"/><path d="M630 156 Q470 154 340 158"/><path d="M347 152 L334 158 L347 164"/><path d="M630 208 Q440 240 226 286"/><path d="M233 282 L220 288 L233 294"/><path d="M296 108 Q298 160 296 212"/><path d="M262 132 Q296 130 330 132" stroke-width="1.3" opacity="0.7"/><path d="M262 160 Q296 158 330 160" stroke-width="1.3" opacity="0.7"/><path d="M262 188 Q296 186 330 188" stroke-width="1.3" opacity="0.7"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="middle" opacity="0.78">
+    <text x="145" y="166">webbläsare</text>
+    <text x="145" y="296">curl</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="296" y="244">CORS</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.5">
+    <text x="735" y="282">samma svar, båda gångerna</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="735" y="110">API:et</text>
+  </g>
+</svg>`,
+
+  /* ---- Git 1.3 · Reflogen minns var grenen stod ---- */
+  "reflogen-minns-vagen": `
+<svg viewBox="0 0 880 400" role="img" aria-label="En heldragen rad commits åt höger och en streckad rad nedanför som ingen pekar på. En streckad pil från den heldragna raden ner till den streckade är märkt reflog.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M99 136 Q114 136 114 150 Q114 164 101 165 Q86 164 85 149 Q86 136 99 136 Z"/><path d="M199 136 Q214 136 213 149 Q214 164 201 164 Q186 164 186 150 Q186 136 199 136 Z"/><path d="M114 150 Q150 148 186 150"/><path d="M214 164 Q252 220 286 272" stroke-dasharray="6 7" opacity="0.45"/><path d="M301 137 Q314 136 315 149 Q314 164 299 164 Q286 164 285 149 Q286 136 301 137 Z"/><path d="M401 137 Q414 136 414 151 Q414 164 401 165 Q386 164 387 150 Q386 136 401 137 Z"/><path d="M499 137 Q514 136 514 150 Q514 164 500 164 Q486 164 487 149 Q486 136 499 137 Z"/><path d="M214 150 Q250 148 286 150"/><path d="M314 150 Q350 148 386 150"/><path d="M414 150 Q450 148 486 150"/><path d="M300 266 Q314 266 314 281 Q314 294 300 295 Q286 294 286 281 Q286 266 300 266 Z" stroke-dasharray="6 7" opacity="0.45"/><path d="M399 265 Q414 266 413 281 Q414 294 399 293 Q386 294 387 281 Q386 266 399 265 Z" stroke-dasharray="6 7" opacity="0.45"/><path d="M214 280 Q250 278 286 280" stroke-dasharray="6 7" opacity="0.45"/><path d="M314 280 Q350 278 386 280" stroke-dasharray="6 7" opacity="0.45"/><path d="M520 196 Q470 250 428 288" stroke-dasharray="7 8"/><path d="M409 286 L422 292 L409 298"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="start" opacity="0.8">
+    <text x="556" y="148">rabatt</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="start" opacity="0.5">
+    <text x="556" y="286">föräldralösa</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="end" opacity="0.62">
+    <text x="474" y="262">reflog</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.45">
+    <text x="400" y="368">samma ändring, andra hashar</text>
+  </g>
+</svg>`,
+
+  /* ---- SQL 1.2 · Läs-ändra-skriv förlorar den första skrivningen ---- */
+  "lost-update-tva-spar": `
+<svg viewBox="0 0 880 400" role="img" aria-label="Två vågräta spår med tre hållpunkter var, förskjutna i tid. Båda läser 100, båda skriver 70.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M90 126 Q380 124 670 126"/><path d="M130 111 Q145 111 145 125 Q145 141 129 140 Q115 141 115 125 Q115 111 130 111 Z"/><path d="M329 111 Q345 111 346 126 Q345 141 329 142 Q315 141 314 125 Q315 111 329 111 Z"/><path d="M560 111 Q575 111 575 126 Q575 141 561 140 Q545 141 546 126 Q545 111 560 111 Z"/><path d="M150 246 Q440 244 730 246"/><path d="M191 230 Q205 231 206 245 Q205 261 191 262 Q175 261 175 245 Q175 231 191 230 Z"/><path d="M389 230 Q405 231 406 245 Q405 261 390 261 Q375 261 375 245 Q375 231 389 230 Z"/><path d="M619 230 Q635 231 636 246 Q635 261 620 261 Q605 261 604 245 Q605 231 619 230 Z"/><path d="M70 348 Q400 346 800 348" stroke-width="1.3" opacity="0.4"/><path d="M793 342 L806 348 L793 354"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="130" y="80">läser 100</text>
+    <text x="330" y="80">räknar 70</text>
+    <text x="560" y="80">skriver 70</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="190" y="306">läser 100</text>
+    <text x="390" y="306">räknar 70</text>
+    <text x="620" y="306">skriver 70</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="17" fill="currentColor" text-anchor="end" opacity="0.8">
+    <text x="60" y="132">A</text>
+    <text x="60" y="252">B</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.5">
+    <text x="400" y="382">två uttag à 30, saldot blev 70</text>
+  </g>
+</svg>`,
+
+  /* ---- SQL 1.2 · Databasen minns vilken migration som körts sist ---- */
+  "migrationerna-och-market": `
+<svg viewBox="0 0 880 400" role="img" aria-label="Fyra filer i en stapel. De två nedersta är heldragna, de två översta streckade. En pil från vänster pekar på den översta heldragna.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M239 93 Q390 90 539 93 Q541 118 540 145 Q390 145 239 145 Q238 118 239 93 Z" stroke-dasharray="7 8" opacity="0.45"/><path d="M239 159 Q390 157 539 158 Q541 184 541 209 Q390 211 239 209 Q239 184 239 159 Z" stroke-dasharray="7 8" opacity="0.45"/><path d="M241 223 Q390 223 540 225 Q542 250 539 275 Q390 276 240 275 Q238 250 241 223 Z"/><path d="M240 289 Q390 290 539 290 Q541 316 539 341 Q390 342 240 342 Q238 316 240 289 Z"/><path d="M160 250 Q196 248 232 250"/><path d="M225 244 L238 250 L225 256"/><path d="M61 228 Q108 226 157 229 Q156 250 157 271 Q108 274 61 272 Q58 250 61 228 Z"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="start" opacity="0.7">
+    <text x="560" y="124">0004_…</text>
+    <text x="560" y="190">0003_…</text>
+    <text x="560" y="256">0002_…</text>
+    <text x="560" y="322">0001_…</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.7">
+    <text x="108" y="254">databasen</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.45">
+    <text x="390" y="378">kvar att köra ligger ovanför</text>
+  </g>
+</svg>`,
 };

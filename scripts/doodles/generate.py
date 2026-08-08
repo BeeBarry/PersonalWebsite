@@ -1379,6 +1379,170 @@ def alla():
       + "\n" + txt([(222,180,"frontend → api"),(640,292,"→ lager → db")],13,' opacity="0.5"')
       + "\n</svg>")
 
+    # 68 — Nätverk 1.2 · Kedjan till roten
+    # De två nedre korten står på marken (kommer över nätet). Det översta ligger
+    # PÅ laptopen — det är hela poängen, och därför måste laptopen ritas ut som
+    # föremål. Pilarna pekar UPPÅT: signaturen går nedifrån och valideras uppåt.
+    def kort(x, y, w_, h_):
+        return (f'<path d="{w(x,y,w_,h_)}"/>'
+                + "".join(f'<path d="M{x+12} {y+16+i*13} Q{x+w_/2:.0f} {y+14+i*13} '
+                          f'{x+w_-12} {y+16+i*13}" stroke-width="1.1" opacity="0.5"/>'
+                          for i in range(2)))
+    # Etiketterna låg först UNDER varje kort och hamnade då 10 px från kortkanten
+    # — under luftkravet, och de lästes som en del av ramen. De ligger nu i
+    # vänsterkant, där inget streck går vågrätt, och kan aldrig krocka.
+    laptop = ('<path d="M602 200 Q700 198 798 200 Q800 250 798 288 Q700 290 604 288 '
+              'Q598 244 602 200 Z"/>'
+              '<path d="M582 302 Q700 299 818 302 Q818 310 810 312 Q700 315 590 312 '
+              'Q582 310 582 302 Z"/>')
+    kedja = (kort(190, 110, 180, 90) + kort(190, 250, 180, 90)
+             + '<path d="M280 244 Q282 226 280 210"/>' + arrow(280,204,"up")
+             + '<path d="M376 154 Q470 152 566 154" stroke-dasharray="7 8"/>'
+             + arrow(572,154)
+             + kort(628, 218, 144, 56))
+    D['kedjan-till-roten']=(
+      '<svg viewBox="0 0 880 400" role="img" aria-label="Två kort ovanpå varandra till vänster med '
+      'en pil uppåt mellan dem, och en streckad pil vidare till ett tredje kort som ligger på en '
+      'laptop till höger.">\n'
+      + G % (laptop + kedja)
+      + "\n" + txt([(176,160,"mellanled"),(176,300,"servercert")],13,' opacity="0.62"',"end")
+      + "\n" + txt([(471,138,"måste sluta här")],13,' opacity="0.45"')
+      + "\n" + txt([(700,364,"ditt rotlager")],18.5) + "\n</svg>")
+
+    # 69 — Nätverk 1.2 · SNI väljer certet
+    # Namnet ritas som en lapp UTANFÖR kuvertet — i klartext, före krypteringen.
+    # Det är den detaljen artikeln bygger på, så den får inte hamna inuti servern.
+    def cert(x, y, vald):
+        p = f'<path d="{w(x,y,104,56)}"' + ('/>' if vald else ' stroke-dasharray="7 8" opacity="0.4"/>')
+        return p
+    server = (f'<path d="{w(520,96,300,208)}"/>'
+              + "".join(cert(548, 120+i*62, i==1) for i in range(3)))
+    lapp = (f'<path d="{w(60,168,150,56)}"/>'
+            '<path d="M216 196 Q330 194 442 196"/>' + arrow(448,196)
+            + f'<path d="{w(300,236,120,44)}" stroke-width="1.3" opacity="0.65"/>')
+    D['sni-valjer-certet']=(
+      '<svg viewBox="0 0 880 372" role="img" aria-label="En klient till vänster med en pil in i en '
+      'serverlåda som innehåller tre certifikat, varav ett är heldraget och två streckade. Under '
+      'pilen ligger en lapp med värdnamnet.">\n'
+      + G % (server + lapp)
+      + "\n" + txt([(135,202,"klienten")],14,' opacity="0.75"')
+      + "\n" + txt([(360,264,"namnet i klartext")],13,' opacity="0.62"')
+      + "\n" + txt([(670,86,"en IP-adress")],18.5)
+      + "\n" + txt([(600,220,"valt")],13,' opacity="0.6"') + "\n</svg>")
+
+    # 70 — API 1.2 · Hinken fylls på
+    # Droppen ovanifrån är JÄMN (en enda smal pil), skopan tar flera mynt på en
+    # gång. Kontrasten mellan de två takterna är hela token bucket-idén — ritar
+    # man in ett flöde ut blir det i stället en balansräkning, vilket är fel bild.
+    hink = ('<path d="M330 168 Q400 166 470 168 Q462 264 452 320 Q400 326 348 320 '
+            'Q338 264 330 168 Z"/>'
+            '<path d="M322 168 Q400 164 478 168" stroke-width="2.2"/>')
+    mynt = "".join(f'<path d="{circ(cx,cy,13)}"/>' for cx,cy in
+                   ((372,268),(404,282),(436,266),(390,232),(424,228)))
+    dropp = ('<path d="M400 62 Q402 100 400 138" stroke-dasharray="5 12"/>'
+             + arrow(400,144,"down"))
+    skopa = ('<path d="M560 214 Q622 212 684 214 Q676 262 668 288 Q622 294 578 288 '
+             'Q568 258 560 214 Z"/>'
+             '<path d="M488 236 Q524 234 556 236"/>' + arrow(490,236,"left")
+             + f'<path d="{circ(600,252,12)}"/><path d="{circ(636,250,12)}"/>')
+    D['hinken-fylls-pa']=(
+      '<svg viewBox="0 0 880 400" role="img" aria-label="En hink med mynt i, en jämn streckad '
+      'droppe uppifrån, och en skopa till höger som tar flera mynt på en gång.">\n'
+      + G % (dropp + hink + mynt + skopa)
+      + "\n" + txt([(400,44,"påfyllning, jämn takt")],13,' opacity="0.6"')
+      + "\n" + txt([(400,368,"hinken"),(622,368,"ett anrop")],18.5) + "\n</svg>")
+
+    # 71 — API 1.2 · Grinden står hos klienten
+    # Samma svarspil till BÅDA klienterna — det är det som gör poängen. Grinden
+    # är ett eget föremål framför den ena, inte en egenskap hos servern. Ritas
+    # grinden vid servern säger bilden raka motsatsen till vad artikeln lär ut.
+    grind = ('<path d="M296 108 Q298 160 296 212"/>'
+             + "".join(f'<path d="M262 {y} Q296 {y-2} 330 {y}" stroke-width="1.3" '
+                       f'opacity="0.7"/>' for y in (132, 160, 188)))
+    D['grinden-star-hos-klienten']=(
+      '<svg viewBox="0 0 880 372" role="img" aria-label="En serverlåda till höger skickar samma svar '
+      'till två klienter till vänster. Framför den övre klienten står ett galler, framför den undre '
+      'ingenting.">\n'
+      + G % (f'<path d="{w(640,120,190,130)}"/>'
+             + f'<path d="{w(70,128,150,64)}"/>' + f'<path d="{w(70,258,150,64)}"/>'
+             + '<path d="M630 156 Q470 154 340 158"/>' + arrow(334,158,"left")
+             + '<path d="M630 208 Q440 240 226 286"/>' + arrow(220,288,"left")
+             + grind)
+      + "\n" + txt([(145,166,"webbläsare"),(145,296,"curl")],14,' opacity="0.78"')
+      + "\n" + txt([(296,244,"CORS")],13,' opacity="0.62"')
+      + "\n" + txt([(735,282,"samma svar, båda gångerna")],13,' opacity="0.5"')
+      + "\n" + txt([(735,110,"API:et")],18.5) + "\n</svg>")
+
+    # 72 — Git 1.3 · Reflogen minns vägen
+    # Grenpilen är HELDRAGEN och pekar bara på den nya spetsen — det är allt
+    # `git log` visar. De föräldralösa commitarna ritas streckade: de finns, men
+    # inget pekar på dem. Reflogens pil går BAKÅT till en av dem, vilket är den
+    # enda vägen tillbaka och därför bildens hela innehåll.
+    rad = lambda y, xs, streck: "".join(
+        f'<path d="{circ(x,y,14)}"' + (' stroke-dasharray="6 7" opacity="0.45"/>' if streck else '/>')
+        for x in xs)
+    linje = lambda y, x1, x2, streck: (
+        f'<path d="M{x1} {y} Q{(x1+x2)//2} {y-2} {x2} {y}"'
+        + (' stroke-dasharray="6 7" opacity="0.45"/>' if streck else '/>'))
+    ny = rad(150, (300, 400, 500), False) + linje(150, 214, 286, False) \
+         + linje(150, 314, 386, False) + linje(150, 414, 486, False)
+    gammal = rad(280, (300, 400), True) + linje(280, 214, 286, True) + linje(280, 314, 386, True)
+    stam = rad(150, (100, 200), False) + linje(150, 114, 186, False) \
+           + f'<path d="M214 164 Q252 220 286 272" stroke-dasharray="6 7" opacity="0.45"/>'
+    reflog = ('<path d="M520 196 Q470 250 428 288" stroke-dasharray="7 8"/>'
+              + arrow(422,292))
+    D['reflogen-minns-vagen']=(
+      '<svg viewBox="0 0 880 400" role="img" aria-label="En heldragen rad commits åt höger och en '
+      'streckad rad nedanför som ingen pekar på. En streckad pil från den heldragna raden ner till '
+      'den streckade är märkt reflog.">\n'
+      + G % (stam + ny + gammal + reflog)
+      + "\n" + txt([(556,148,"rabatt")],15,' opacity="0.8"',"start")
+      + "\n" + txt([(556,286,"föräldralösa")],13,' opacity="0.5"',"start")
+      + "\n" + txt([(474,262,"reflog")],13,' opacity="0.62"',"end")
+      + "\n" + txt([(400,368,"samma ändring, andra hashar")],13,' opacity="0.45"') + "\n</svg>")
+
+    # 73 — SQL 1.2 · Lost update
+    # Två spår, samma tre hållpunkter, förskjutna i tid. Att BÅDA läser 100 måste
+    # synas samtidigt — därför står läsvärdena i egna etiketter och inte i en
+    # gemensam kolumn. Resultatet längst till höger är enda stället siffrorna
+    # skiljer sig, och det är där ögat ska landa.
+    def spar(y, dx):
+        p = f'<path d="M{90+dx} {y} Q{380+dx} {y-2} {670+dx} {y}"/>'
+        for x, r in ((130+dx, 15), (330+dx, 15), (560+dx, 15)):
+            p += f'<path d="{circ(x,y,r)}"/>'
+        return p
+    tid = '<path d="M70 348 Q400 346 800 348" stroke-width="1.3" opacity="0.4"/>' + arrow(806,348)
+    D['lost-update-tva-spar']=(
+      '<svg viewBox="0 0 880 400" role="img" aria-label="Två vågräta spår med tre hållpunkter var, '
+      'förskjutna i tid. Båda läser 100, båda skriver 70.">\n'
+      + G % (spar(126, 0) + spar(246, 60) + tid)
+      + "\n" + txt([(130,80,"läser 100"),(330,80,"räknar 70"),(560,80,"skriver 70")],13,
+                   ' opacity="0.62"')
+      + "\n" + txt([(190,306,"läser 100"),(390,306,"räknar 70"),(620,306,"skriver 70")],13,
+                   ' opacity="0.62"')
+      + "\n" + txt([(60,132,"A"),(60,252,"B")],17,' opacity="0.8"',"end")
+      + "\n" + txt([(400,382,"två uttag à 30, saldot blev 70")],13,' opacity="0.5"') + "\n</svg>")
+
+    # 74 — SQL 1.2 · Migrationerna och märket
+    # Filerna staplas NEDIFRÅN och upp i körordning, och märket sitter i kanten
+    # vid den senast körda. De ovanför är streckade — de finns i repot men inte
+    # i databasen. Utan märket vore bilden bara en filhög.
+    def fil(x, y, k, streck):
+        d = ' stroke-dasharray="7 8" opacity="0.45"' if streck else ''
+        return (f'<path d="{w(x,y,300,52)}"{d}/>')
+    stapel = ("".join(fil(240, 92 + i * 66, i, True) for i in range(2))
+              + "".join(fil(240, 224 + i * 66, i, False) for i in range(2)))
+    marke = ('<path d="M160 250 Q196 248 232 250"/>' + arrow(238,250)
+             + f'<path d="{w(60,228,96,44)}"/>')
+    D['migrationerna-och-market']=(
+      '<svg viewBox="0 0 880 400" role="img" aria-label="Fyra filer i en stapel. De två nedersta är '
+      'heldragna, de två översta streckade. En pil från vänster pekar på den översta heldragna.">\n'
+      + G % (stapel + marke)
+      + "\n" + txt([(560,124,"0004_…"),(560,190,"0003_…"),
+                    (560,256,"0002_…"),(560,322,"0001_…")],14,' opacity="0.7"',"start")
+      + "\n" + txt([(108,254,"databasen")],13,' opacity="0.7"')
+      + "\n" + txt([(390,378,"kvar att köra ligger ovanför")],13,' opacity="0.45"') + "\n</svg>")
+
     return D
 
 if __name__ == "__main__":
