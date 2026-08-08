@@ -1,0 +1,458 @@
+---
+title: 'När datorn är liten'
+description: 'Mikrokontrollern, minnet som tar slut och strömmen som styr varje beslut'
+category: 'embedded'
+part: 1
+partTitle: 'Grunderna'
+order: 1
+date: '2026-08-08'
+tags: ['Beginner', 'Overview']
+---
+
+## Var vi är
+
+Hela hubben har hittills handlat om datorer med gott om allt. En container får ett par gigabyte
+minne, en Kubernetes-nod har åtta kärnor, och när något tar slut startar du fler.
+
+Den här serien handlar om den andra änden. En mikrokontroller kan ha **256 kilobyte** flash och
+**64 kilobyte** RAM. Den kan sitta på ett batteri som ska hålla i fem år, och köra samma program i
+tio år utan att någon loggar in på den.
+
+Nästan varje vana från molnvärlden slår fel där. Den här delen går igenom varför, och vilka begrepp
+du behöver för att läsa vilken embedded-text som helst.
+
+Zoomen ligger på skillnaderna, inte på en specifik krets. Val av leverantör och kretsfamilj ligger
+utanför.
+
+<Del titel="Maskinen" />
+
+## Vad en mikrokontroller är
+
+En **mikrokontroller** är ett helt datorsystem på ett chip: processor, minne och periferienheter i
+samma kapsel.
+
+Det är den avgörande skillnaden mot en dator. Din laptop har en processor som pratar med separata
+minneskretsar, en separat lagringsenhet och separata styrkretsar. En mikrokontroller har allt inuti,
+och det är därför den kan kosta tre kronor och rymmas under en nagel.
+
+Den förkortas ofta **MCU**, microcontroller unit.
+
+## MCU vs CPU
+
+Två ord som båda betyder "processor" i vardagligt tal, med olika omfattning.
+
+**En CPU** är bara räknedelen. Den behöver minne, lagring och kringkretsar utanför sig för att göra
+något, och den kör praktiskt taget alltid ett operativsystem.
+
+**En MCU** innehåller räknedelen **plus** minnet och periferienheterna. Den kan köra utan
+operativsystem, startar på millisekunder, och gör ofta exakt en sak.
+
+Storleksordningarna är inte i närheten av varandra. En laptop-CPU kör i gigahertz med gigabyte RAM;
+en vanlig MCU kör i tiotals megahertz med kilobyte.
+
+Det gör att intuitionen från serverkod är fel på ett systematiskt sätt: det som är gratis där —
+en sträng till, en allokering, ett bibliotek — är inte gratis här.
+
+## Vad firmware är
+
+**Firmware** är programmet som ligger i mikrokontrollerns flashminne och startar när strömmen slås
+på.
+
+Ordet betyder inte något annat än "mjukvara". Det signalerar var den bor och hur den byts: den ligger
+i enhetens eget minne, inte på en disk, och den byts genom att hela minnet skrivs om.
+
+Det är därför en firmwareuppdatering är en händelse. Det finns ingen pakethanterare, ingen
+omstartbar tjänst och sällan någon väg tillbaka om den nya versionen inte startar.
+
+## Firmware vs mjukvara i molnet
+
+Samma kod, helt olika livscykel — och det förklarar varför embedded-team beter sig som de gör.
+
+**Molnmjukvara** rullas ut flera gånger om dagen. Går något fel rullar du tillbaka på en minut, och
+du kan läsa loggarna medan det händer.
+
+**Firmware** rullas ut sällan, ibland aldrig. Enheten kan sitta i en källare, på ett tak eller i en
+container på ett fartyg, och en misslyckad uppdatering kan göra den obrukbar.
+
+Konsekvensen är kulturell. Den defensiva kodstilen, de långa testcyklerna och motviljan mot
+beroenden är inte konservatism — det är att felkostnaden är en helt annan.
+
+<Del titel="Minnet" />
+
+## Flash vs RAM
+
+Två sorters minne, och att blanda ihop dem är det vanligaste nybörjarfelet i embedded.
+
+**Flash** är beständigt och håller programmet. Det finns kvar när strömmen försvinner, det är
+relativt stort, och det är långsamt att skriva till.
+
+**RAM** är flyktigt och håller variabler under körning. Det försvinner vid strömavbrott, och det är
+den resurs som tar slut först.
+
+Talen skiljer sig med en faktor fyra eller mer. En typisk MCU kan ha 256 kB flash och 64 kB RAM, och
+det är RAM-siffran som avgör vad du kan bygga.
+
+## Varför `const` är en RAM-optimering
+
+Här blir skillnaden praktisk på ett sätt som går att mäta.
+
+En variabel som kan ändras måste ligga i RAM. En som är `const` kan ligga kvar i flash och läsas
+direkt därifrån, eftersom ingen ändå skriver till den.
+
+En 64 kilobyte stor tabell kostar alltså antingen 64 kB av ditt RAM eller ingenting alls, beroende på
+ett enda nyckelord:
+
+```
+__TEXT   __DATA
+81920    0        med const
+16384    65536    utan const
+```
+
+Uppmätt på en vanlig dator, men uppdelningen är densamma: det som är skrivbart hamnar i RAM.
+
+<Doodle
+  name="flash-och-ram"
+  caption="Programmet och det konstanta ligger till vänster. Bara det skrivbara kostar plats till höger."
+/>
+
+Uppslagstabeller, texter, konfigurationsdefault och kalibreringsdata är nästan alltid `const` — och
+i praktiken är det ofta första åtgärden när RAM tar slut.
+
+## Vad stacken är, och varför den tar slut
+
+**Stacken** är det RAM som används för funktionsanrop: lokala variabler, argument och returadresser.
+
+På en server växer den efter behov. På en MCU har den en fast, ofta liten storlek — några kilobyte —
+och det finns ingen som säger till när den är full.
+
+Går den över kanten skriver den in i det som ligger bredvid. Programmet kraschar inte snyggt; det
+börjar bete sig obegripligt, ofta långt från den funktion som orsakade felet.
+
+Därför undviker embedded-kod stora lokala arrayer, djup rekursion och `printf` med många argument —
+allt tre är sätt att äta stack utan att det syns i koden.
+
+## Vad struct-padding kostar
+
+Kompilatorn lägger in **utfyllnad** mellan fälten i en struct, så att varje fält hamnar på en adress
+processorn kan läsa effektivt.
+
+Det betyder att fältens **ordning** påverkar hur mycket RAM strukturen tar:
+
+```c
+struct slarvig { uint8_t a; uint32_t b; uint8_t c; };
+struct packad  { uint32_t b; uint8_t a; uint8_t c; };
+```
+
+Den första blir **12 byte**, den andra **8**. Samma tre fält, en tredjedel mindre — bara för att de
+stora står först.
+
+På en server är det ointressant. Har du tusen sådana i ett 64 kB RAM är det fyra kilobyte, och det
+kan vara skillnaden mellan att programmet får plats och inte.
+
+## Varför heltalstyperna är explicita
+
+I embedded-kod ser du `uint8_t`, `int16_t` och `uint32_t` i stället för `int`.
+
+Skälet är att `int` inte har en bestämd storlek — den beror på plattformen. När samma kod ska köra på
+en 8-bitars och en 32-bitars krets är "ungefär ett heltal" inte gott nog.
+
+Den explicita typen gör också gränsen synlig, och den gränsen är närmare än man tror:
+
+```
+250 + 10 i uint8_t = 4
+```
+
+Ingen varning, inget fel. Räknaren slog runt vid 255 och började om. En sensor som räknar
+uppvaknanden i en `uint8_t` nollställer sig var 256:e gång, och buggen syns först efter några dygn.
+
+<Del titel="Strömmen och tiden" />
+
+## Varför ström är designparametern
+
+På en server är strömförbrukning en kostnad. På en batteridriven enhet är den den begränsning allt
+annat anpassas efter.
+
+Räkneexemplet är enkelt. Ett litet litiumbatteri rymmer i storleksordningen 200 milliamperetimmar.
+Drar enheten 20 milliampere konstant räcker det tio timmar. Ska det räcka fem år måste
+snittförbrukningen ner i mikroampere.
+
+Vägen dit är inte effektivare kod. Den är att enheten **sover nästan hela tiden**.
+
+**Deep sleep** är läget där processorn stannar och nästan all periferi stängs av, medan en liten del
+håller igång tillräckligt för att kunna väcka den. Skillnaden mot aktivt läge är tre till fyra
+tiopotenser.
+
+En sensor som mäter var femtonde minut är vaken någon sekund och sover 899. Allt som förlänger den
+sekunden — en TCP-handskakning, en DNS-uppslagning, en väntan på svar — kostar direkt i batteritid.
+
+<Doodle
+  name="vaken-en-sekund"
+  caption="Nästan hela linjen ligger nere. Kostnaden är bredden på den enda toppen."
+/>
+
+Det är hela förklaringen till nästa del: varför uppkopplade enheter sällan pratar HTTP.
+
+## Vad en watchdog är
+
+En **watchdog** är en timer i hårdvaran som startar om enheten om programmet inte regelbundet
+återställer den.
+
+Idén är att fånga det som inte går att förutse: en oändlig loop, en väntan som aldrig tar slut, ett
+minne som skrivits sönder. Koden måste "sparka" watchdogen med jämna mellanrum. Slutar den göra det
+antar hårdvaran att programmet hängt sig.
+
+Det är samma tanke som en liveness-probe i Kubernetes-delen, med en avgörande skillnad: det finns
+ingen control plane som startar om podden. Enheten måste kunna rädda sig själv, för ingen kommer
+och gör det.
+
+## Avbrott vs pollning
+
+Två sätt att märka att något hänt, och valet påverkar både lyhördhet och batteritid.
+
+**Pollning** betyder att koden frågar om och om igen: *har knappen tryckts ner? har knappen tryckts
+ner?* Enkelt att skriva, och processorn är vaken hela tiden.
+
+**Ett avbrott** betyder att hårdvaran säger till. Processorn kan sova, och väcks först när något
+faktiskt händer.
+
+För en batteridriven enhet är det ingen smakfråga. Pollning håller processorn vaken och tömmer
+batteriet; avbrott är det som gör de 899 sovande sekunderna möjliga.
+
+Priset är att avbrottskod är svår. Den kan avbryta din vanliga kod mitt i en beräkning, så en variabel
+som delas mellan de två måste hanteras med omsorg — annars uppstår buggar som bara syns ibland.
+
+## Superloop vs RTOS
+
+Två sätt att strukturera ett embedded-program, och de flesta projekt börjar i det första.
+
+**En superloop** är en oändlig `while (1)` som gör allt i tur och ordning. Ingen schemaläggare, inget
+operativsystem. Den är förutsägbar och lätt att felsöka, och den blir ohanterlig när uppgifterna
+börjar behöva olika takt.
+
+**Ett RTOS** — real-time operating system, som Zephyr eller FreeRTOS — ger dig **tasks** med
+prioriteter och en schemaläggare som växlar mellan dem. Varje uppgift skrivs som om den vore ensam.
+
+Priset är RAM: varje task har en egen stack, och de summeras. Ett RTOS kostar också en del flash och
+ett lager komplexitet.
+
+Tumregeln är densamma som för Kubernetes i den serien: börja utan, gå över när du märker att du håller
+på att bygga en sämre schemaläggare själv.
+
+<Del titel="Vägen in och ut" />
+
+## Vad GPIO, ADC och PWM är
+
+Tre sätt att röra den fysiska världen, och de tre du möter först.
+
+**GPIO**, general-purpose input/output, är en pinne som är antingen hög eller låg. En lysdiod, en
+knapp, en relästyrning.
+
+**ADC**, analog-to-digital converter, läser en **spänning** och ger dig ett tal. Det är så en
+temperatursensor, en ljussensor eller ett potentiometervred kommer in i koden.
+
+**PWM**, pulsbreddsmodulation, växlar en pinne mellan hög och låg så snabbt att resultatet blir en
+effektnivå. Det är så du dimmar en lysdiod eller styr hastigheten på en motor.
+
+GPIO är digitalt, ADC läser analogt, PWM härmar analogt med digitala medel.
+
+## Vad I²C, SPI och UART är
+
+Tre bussar för att prata med andra chip, och du väljer sällan själv — sensorn har redan bestämt.
+
+**UART** är den enklaste: två trådar, ingen klocka, båda sidorna måste vara överens om hastigheten i
+förväg. Det är den du ser som seriellportens felsökningsutskrifter.
+
+**I²C** använder två trådar för många enheter, där varje enhet har en adress. Långsam, men snål med
+pinnar — vanlig för sensorer.
+
+**SPI** använder fyra trådar och är snabb, men kräver en extra pinne per ansluten enhet. Vanlig för
+displayer och flashminnen.
+
+Avvägningen är alltid densamma: antal trådar mot hastighet.
+
+## Vad en bootloader är
+
+En **bootloader** är ett litet program som körs före din firmware och avgör vad som ska startas.
+
+Den gör två saker. Den kan ta emot ny firmware — över USB, radio eller seriellport — och skriva den
+till flash. Och den kan välja mellan två versioner, så att en misslyckad uppdatering kan falla
+tillbaka på den föregående.
+
+Det är den mekanismen som gör en uppdatering över radio möjlig utan att någon åker ut till enheten.
+Utan bootloader kräver ny firmware en fysisk programmerare, kopplad till kretsen.
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Kommer du från webben är det största skiftet att **resurserna inte är elastiska**. Du kan inte skala
+upp, du kan inte starta en till, och du kan inte lägga till ett bibliotek utan att fråga vad det
+kostar i flash och RAM.
+
+Det som är värt din tid nu är minnesuppdelningen. Frågan *"ligger det här i flash eller i RAM?"*
+avgör fler designbeslut än något annat i den här delen, och den ställs sällan i molnkod.
+
+Realtidskrav, DMA, avbrottsprioriteter, strömmätning med riktig utrustning och certifiering kan
+vänta. De blir dina när enheten ska tillverkas i tusentals exemplar.
+
+## Vanliga nybörjarförväxlingar
+
+En mikrokontroller är inte en liten dator. Den saknar oftast operativsystem, disk och användare.
+
+Firmware är inte en annan sorts kod. Det är vanlig kod som bor i enhetens flash och byts som en
+helhet.
+
+Flash och RAM är inte utbytbara. Programmet ligger i flash; variablerna i RAM, och RAM tar slut först.
+
+`const` är inte bara en läsbarhetsmarkering. Det avgör om värdet kostar RAM eller inte.
+
+Stacken växer inte efter behov. Den har en fast storlek, och när den svämmar över blir felet
+obegripligt i stället för tydligt.
+
+`int` har ingen bestämd storlek. Därför skrivs embedded-kod med `uint8_t` och `uint32_t`.
+
+Ett RTOS är inte gratis. Varje task har en egen stack, och de summeras i ett minne som redan är litet.
+
+## Prova själv
+
+Övningarna körs på din vanliga dator med `clang`, som finns på macOS och de flesta Linux-system.
+Uppdelningen de visar är densamma som på en mikrokontroller — bara talen är större.
+
+Börja med `const`. Skapa två filer med en 64 kilobyte stor tabell:
+
+```bash
+cat > konst.c <<'EOF'
+#include <stdint.h>
+const uint8_t tabell[65536] = {1};
+int main(void){ return tabell[0]; }
+EOF
+
+sed 's/^const //' konst.c > icke.c
+clang -o k konst.c && clang -o i icke.c
+size k i | awk '{printf "%-8s %s\n", $1, $2}'
+```
+
+```
+__TEXT   __DATA
+81920    0
+16384    65536
+```
+
+Första raden efter rubriken är `const`-varianten, andra är utan.
+
+**Ett nyckelord flyttade 64 kilobyte.** Med `const` ligger tabellen i det skrivskyddade segmentet —
+motsvarigheten till flash. Utan `const` ligger den i det skrivbara, alltså i RAM.
+
+Mät nu vad fältordningen kostar:
+
+```bash
+cat > pad.c <<'EOF'
+#include <stdint.h>
+#include <stdio.h>
+struct slarvig { uint8_t a; uint32_t b; uint8_t c; };
+struct packad  { uint32_t b; uint8_t a; uint8_t c; };
+int main(void){
+  printf("slarvig: %zu\n", sizeof(struct slarvig));
+  printf("packad : %zu\n", sizeof(struct packad));
+  uint8_t r = 250;
+  for (int n = 0; n < 10; n++) r++;
+  printf("250 + 10 = %u\n", r);
+  return 0;
+}
+EOF
+clang -o pad pad.c && ./pad
+```
+
+```
+slarvig: 12
+packad : 8
+250 + 10 = 4
+```
+
+Två resultat på en gång. **Samma tre fält tar 12 eller 8 byte** beroende på ordningen — kompilatorn
+fyller ut så att `uint32_t` hamnar på en jämn adress.
+
+Och **250 plus 10 blev 4**. Ingen varning, ingen krasch. Det är vad som händer när en räknare i en
+`uint8_t` passerar 255, och det är den sortens bugg som syns först efter några dygn i fält.
+
+Städa:
+
+```bash
+rm -f k i konst.c icke.c pad pad.c
+```
+
+Tre saker som kan förvirra. Talen från `size` är sidjusterade till 16384 på macOS, så små skillnader
+syns inte — därför är tabellen i exemplet så stor. På Linux heter segmenten `text`, `data` och `bss`
+i stället för `__TEXT` och `__DATA`, men uppdelningen är densamma. Och `sizeof` ger olika svar på
+olika arkitekturer; poängen är skillnaden mellan de två strukturerna, inte de exakta talen.
+
+<Callout type="kom-ihag">
+- En **MCU** har processor, minne och periferi på ett chip. Den kör ofta utan operativsystem.
+- **Firmware** bor i flash och byts som en helhet. En misslyckad uppdatering kan vara slutgiltig.
+- **Flash** håller programmet och överlever strömavbrott. **RAM** håller variablerna och tar slut först.
+- `const` flyttar data från RAM till flash. Det är ofta första åtgärden när minnet tar slut.
+- Stacken har **fast storlek** och varnar inte. Den skriver över det som ligger bredvid.
+- Fältordningen i en struct avgör hur mycket RAM den tar — 12 byte mot 8 i exemplet.
+- **Ström är designparametern.** Enheten sover nästan hela tiden, och vakenperioden är kostnaden.
+- **Avbrott** låter processorn sova. **Pollning** håller den vaken och tömmer batteriet.
+- Börja med en **superloop**. Gå till RTOS när du märker att du bygger en schemaläggare själv.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Vad skiljer en MCU från en CPU?",
+      a: "En CPU är bara räknedelen och behöver minne och kringkretsar utanför sig. En MCU har processor, minne och periferienheter på samma chip, kör ofta utan operativsystem och startar på millisekunder. Storleksordningarna skiljer sig med tusenfalt i både klockfrekvens och minne.",
+    },
+    {
+      q: "Ditt program får slut på RAM. Varför är `const` det första du tittar på?",
+      a: "För att en `const`-deklarerad tabell kan ligga kvar i flash och läsas därifrån, medan en skrivbar måste kopieras till RAM. En stor uppslagstabell eller textsamling kan frigöra kilobyte med ett enda nyckelord — mätt i exemplet flyttade det 64 kB.",
+    },
+    {
+      q: "Varför är en stack-överskrivning svårare att felsöka än en vanlig krasch?",
+      a: "Stacken har fast storlek och ingen kontrollerar gränsen. När den svämmar över skrivs det som ligger bredvid i minnet över, så symptomet dyker upp någon helt annanstans i programmet — ofta långt från funktionen som orsakade felet.",
+    },
+    {
+      q: "En sensor ska hålla fem år på ett litet batteri. Vad är den avgörande designfrågan?",
+      a: "Hur kort vakenperioden kan göras. Skillnaden mellan aktivt läge och deep sleep är tre till fyra tiopotenser, så snittförbrukningen bestäms av hur stor andel av tiden enheten är vaken — inte av hur effektiv koden är medan den kör.",
+    },
+    {
+      q: "Varför är avbrott bättre än pollning på en batteridriven enhet?",
+      a: "Pollning kräver att processorn är vaken för att kunna fråga. Med avbrott säger hårdvaran till, så processorn kan sova tills något faktiskt händer. Priset är att avbrottskod kan avbryta vanlig kod mitt i en beräkning, vilket kräver omsorg om delade variabler.",
+    },
+    {
+      q: "När är en superloop inte längre rätt struktur?",
+      a: "När uppgifterna behöver olika takt och prioritet, och du börjar bygga egna tidsräknare och tillståndsmaskiner för att hålla isär dem. Då gör ett RTOS jobbet bättre — mot kostnaden att varje task har en egen stack i ett RAM som redan är litet.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- En mikrokontroller har processor, minne och periferi på ett chip och kör ofta utan operativsystem.
+- En MCU räknar i megahertz och kilobyte där en CPU räknar i gigahertz och gigabyte.
+- Firmware är programmet i flash. Det byts som en helhet, sällan, och ofta utan väg tillbaka.
+- Flash är beständigt och rymmer programmet. RAM är flyktigt och tar slut först.
+- `const` låter data ligga kvar i flash i stället för att kosta RAM.
+- Stacken har fast storlek. Svämmar den över skrivs grannen över och felet blir obegripligt.
+- Struct-padding gör att fältordningen påverkar storleken — 12 byte mot 8 för samma tre fält.
+- Heltalstyperna skrivs explicit, eftersom `int` inte har en bestämd storlek.
+- En `uint8_t` slår runt vid 255 utan varning. 250 plus 10 blir 4.
+- Ström är designparametern. Snittförbrukningen avgörs av hur länge enheten är vaken.
+- Deep sleep skiljer sig från aktivt läge med tre till fyra tiopotenser.
+- En watchdog startar om enheten om koden slutar sparka den. Ingen annan kommer och gör det.
+- Avbrott låter processorn sova. Pollning håller den vaken.
+- En superloop är en `while (1)`. Ett RTOS ger tasks och prioriteter, mot RAM och komplexitet.
+- GPIO är på eller av, ADC läser en spänning, PWM härmar en nivå med snabba pulser.
+- UART, I²C och SPI är tre bussar. Avvägningen är antal trådar mot hastighet.
+- En bootloader tar emot ny firmware och kan falla tillbaka på den föregående versionen.
+
+## Nästa del
+
+Nu vet du varför enheten sover, och att varje vaken sekund kostar batteritid.
+
+Det leder rakt in i nästa fråga. Enheten ska ju säga något — ett mätvärde var femtonde minut, eller
+ett larm när något händer. Och den ska kunna ta emot ett kommando, trots att den sitter bakom en
+router någon annan äger.
+
+Nästa del handlar om varför HTTP är fel verktyg för det, och vad MQTT och CoAP gör i stället.
