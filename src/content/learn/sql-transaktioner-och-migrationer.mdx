@@ -1,0 +1,484 @@
+---
+title: 'Transaktioner och migrationer'
+description: 'Skrivningar som måste hålla ihop — och hur ett schema ändras utan att någon gissar'
+category: 'sql'
+part: 1
+order: 3
+date: '2026-08-08'
+tags: ['Beginner', 'Transaktioner', 'Migrationer']
+---
+
+## Var vi är
+
+De två första delarna handlade om att **läsa**: hur tabeller hänger ihop, hur en JOIN sätter ihop
+dem, och varför en fråga blir långsam.
+
+Del 1.1 skrev två gånger *"kör den i en transaktion du rullar tillbaka om du är osäker"* utan att
+förklara vad det betyder. Det är den ena halvan av den här delen.
+
+Den andra är skrivningar som måste hålla ihop. En överföring drar från ett konto och lägger till på
+ett annat — och det finns inget läge där bara den ena har hänt.
+
+Zoomen ligger på en databas med flera samtidiga användare. Replikering och distribuerade
+transaktioner ligger utanför.
+
+<Del titel="Transaktionen" />
+
+## Vad en transaktion är
+
+En **transaktion** är en grupp SQL-satser som databasen behandlar som en enda odelbar operation.
+
+Antingen sker allt i gruppen, eller ingenting. Det finns inget mellanläge som blir synligt för någon
+annan, och det finns inget sätt att hamna halvvägs efter en krasch.
+
+Klassikern är överföringen: `UPDATE` som drar 300 kronor från konto 1, `UPDATE` som lägger till 300
+på konto 2. Kraschar servern mellan dem utan transaktion har pengarna upphört att existera.
+
+## `BEGIN`, `COMMIT` och `ROLLBACK`
+
+Tre kommandon ramar in en transaktion.
+
+```sql
+BEGIN;
+UPDATE konto SET saldo = saldo - 300 WHERE id = 1;
+UPDATE konto SET saldo = saldo + 300 WHERE id = 2;
+COMMIT;
+```
+
+`BEGIN` öppnar. `COMMIT` gör allt permanent och synligt för andra. `ROLLBACK` kastar allt som hänt
+sedan `BEGIN` och lämnar databasen som den var.
+
+Inuti transaktionen ser **du** dina ändringar. Ingen annan gör det förrän du committat.
+
+Det gör `ROLLBACK` till ett verktyg och inte bara en nödutgång. Ska du köra ett `DELETE` du är osäker
+på: `BEGIN`, kör, titta på resultatet, och `ROLLBACK` om det inte blev som du trodde.
+
+## Vad autocommit är
+
+**Autocommit** betyder att varje sats som körs utan ett öppet `BEGIN` blir sin egen transaktion, och
+committas direkt.
+
+Det är standardläget i praktiskt taget varje databas och varje klient. Skriver du ett `UPDATE` i en
+terminal är det klart och permanent i samma ögonblick som du tryckt enter.
+
+Därför får du ett fel om du försöker ångra efteråt:
+
+```
+cannot rollback - no transaction is active
+```
+
+Meddelandet inleds med ett radnummer som beror på ditt skript. Resten säger precis vad som hänt: det
+fanns ingen transaktion att rulla tillbaka, eftersom din sats redan var en avslutad sådan.
+
+## Autocommit vs explicit transaktion
+
+Skillnaden är var gränsen går, och den bestämmer du bara i det ena fallet.
+
+**Autocommit** sätter en gräns runt **varje sats**. Två `UPDATE` blir två transaktioner, och det
+finns ett ögonblick mellan dem där bara den första har hänt.
+
+**En explicit transaktion** sätter gränsen där **du** skriver `BEGIN` och `COMMIT`. De två
+uppdateringarna blir en enhet.
+
+Regeln som följer: **så fort en operation består av mer än en sats behöver den ett `BEGIN`.** Är det
+en enda sats gör autocommit redan rätt.
+
+## Vad atomicitet betyder
+
+**Atomicitet** är egenskapen att en transaktion är odelbar — allt eller inget.
+
+Det är det första av fyra löften som brukar förkortas **ACID**. De andra tre är konsistens, isolering
+och varaktighet. Du behöver inte kunna dem utantill nu; atomiciteten är den som avgör hur du skriver
+kod.
+
+Atomiciteten gäller mot **krascher och mot andra användare**. Ingen annan session ser halva
+transaktionen, och en strömavbrott mitt i lämnar inget halvfärdigt kvar.
+
+## Ett fel avbryter inte transaktionen
+
+Här är den missuppfattning som orsakar verklig dataskada, och den är lätt att bära med sig länge.
+
+Att en sats **misslyckas** inuti en transaktion betyder inte att transaktionen rullas tillbaka. Den
+felande satsen avvisas. Allt före den står kvar, och transaktionen är fortfarande öppen.
+
+```sql
+BEGIN;
+UPDATE k SET saldo = saldo - 30 WHERE id = 1;
+INSERT INTO k VALUES (1, 999);   -- misslyckas
+COMMIT;
+```
+
+```
+Runtime error near line 5:
+UNIQUE constraint failed: k.id (19)
+```
+
+Efter det felet är saldot **70**, inte 100. Och `COMMIT` på nästa rad sparar just det — halva
+arbetet, permanent.
+
+<Callout type="fallgrop">
+Atomicitet är ett löfte om att `COMMIT` och `ROLLBACK` är allt-eller-inget. Det är **inte** ett löfte
+om att databasen städar åt dig när något går fel.
+
+Din kod måste själv anropa `ROLLBACK` när ett fel uppstår. De flesta ORM:er och drivrutiner gör det i
+sin `try`/`except`-hantering, och det är därför problemet sällan syns — tills någon skriver rå SQL i
+ett skript.
+
+Kontrollfrågan för varje skript du skriver: *om rad tre kastar ett fel, vad har hänt med rad två?*
+</Callout>
+
+<Del titel="När flera skriver samtidigt" />
+
+## Vad ett lås är
+
+Ett **lås** är en markering databasen sätter på det den håller på att arbeta med, så att ingen annan
+ändrar det samtidigt.
+
+Du skapar dem sällan själv. Databasen tar dem automatiskt när du läser och skriver, och släpper dem
+vid `COMMIT` eller `ROLLBACK`.
+
+Det förklarar en sak som annars är gåtfull: **en transaktion som står öppen håller sina lås.** Glömmer
+någon ett `COMMIT` i en terminal blockeras andra tills sessionen stängs.
+
+## Delat lås vs exklusivt lås
+
+Två sorters lås, och skillnaden är hur många som får hålla dem samtidigt.
+
+**Ett delat lås** tas vid läsning. Många kan hålla det på samma rad samtidigt — läsare stör inte
+varandra.
+
+**Ett exklusivt lås** tas vid skrivning. Bara en kan hålla det, och medan det hålls får ingen annan
+skriva samma rad.
+
+Därför skalar läsning nästan hur långt som helst medan skrivning mot samma rad står i kö. Det är
+också därför en rapportfråga som läser en miljon rader sällan är problemet — men en skrivning som
+glömts i en öppen transaktion nästan alltid är det.
+
+## Vad som händer när låset är taget
+
+Beteendet skiljer sig mellan databaser, och det är värt att veta vilket ditt system gör.
+
+Vissa **väntar** en stund och kör vidare när låset släpps. Andra ger upp direkt med ett fel:
+
+```
+Error: stepping, database is locked (5)
+```
+
+Väntar den finns en tidsgräns, och överskrids den blir det ett fel ändå. Din applikation kommer
+alltså att möta det här förr eller senare, och den behöver hantera det som ett tillfälligt fel värt
+ett omförsök — inte som ett programmeringsfel.
+
+## Vad en deadlock är
+
+En **deadlock** uppstår när två transaktioner väntar på varandras lås, och ingen kan komma vidare.
+
+Session A låser rad 1 och vill ha rad 2. Session B låser rad 2 och vill ha rad 1. Ingen släpper
+något, eftersom båda väntar.
+
+Databasen upptäcker det och **dödar den ena** transaktionen med ett fel. Den andra får fortsätta.
+Det är avsiktligt: en avbruten transaktion är bättre än två som står för evigt.
+
+Motmedlet är enklare än det låter: **rör alltid rader i samma ordning.** Uppdaterar all kod konton i
+stigande id-ordning kan mönstret ovan inte uppstå.
+
+## Lås vs deadlock
+
+Två ord som används om vartannat när något hänger, men bara det ena är ett fel.
+
+**Att vänta på ett lås** är normalt. Någon annan håller raden, du står i kö, och du kommer vidare när
+de committar.
+
+**En deadlock** är ett dödläge som aldrig löser sig av sig självt. Databasen bryter det genom att
+offra en av transaktionerna.
+
+Felmeddelandena skiljer dem åt: ett lås ger *timeout* eller *locked*, en deadlock säger uttryckligen
+*deadlock detected*. Åtgärden skiljer sig också — vid lås korta ner transaktionerna, vid deadlock
+ändra ordningen du rör raderna i.
+
+## Läs-ändra-skriv-problemet
+
+Det vanligaste sättet att förlora data utan att något felmeddelande dyker upp.
+
+Mönstret ser oskyldigt ut. Läs saldot, räkna ut det nya i applikationen, skriv tillbaka:
+
+```sql
+SELECT saldo FROM konto WHERE id = 1;   -- 100
+-- applikationen räknar 100 - 30 = 70
+UPDATE konto SET saldo = 70 WHERE id = 1;
+```
+
+Kör två sessioner det samtidigt läser båda 100. Båda räknar 70. Båda skriver 70. Två uttag på 30
+kronor har gjorts, och saldot är 70 i stället för 40.
+
+Ingen fick ett fel. Ingen rad blev korrupt. Pengarna försvann bara.
+
+<Doodle
+  name="lost-update-tva-spar"
+  caption="Båda läste 100. Den andra skrivningen skriver över den första."
+/>
+
+Lösningen är att låta **databasen** räkna, så att läsning och skrivning blir en enda sats:
+
+```sql
+UPDATE konto SET saldo = saldo - 30 WHERE id = 1;
+```
+
+Nu är operationen atomär av sig själv, och den andra sessionen läser ett värde som redan är
+uppdaterat. Behöver applikationen ändå räkna finns `SELECT ... FOR UPDATE`, som tar ett exklusivt lås
+redan vid läsningen.
+
+<Del titel="Att ändra schemat" />
+
+## Vad en migration är
+
+En **migration** är en versionshanterad fil som beskriver en ändring av databasens schema.
+
+Filen innehåller SQL — `ALTER TABLE`, `CREATE INDEX`, en `UPDATE` som fyller en ny kolumn — och den
+har ett löpnummer eller en tidsstämpel i namnet:
+
+```
+0001_skapa_konto.sql
+0002_lagg_till_epost.sql
+0003_index_pa_kundnummer.sql
+```
+
+Databasen håller själv reda på vilka som körts, i en egen tabell som ofta heter något i stil med
+`schema_migrations`. Verktyget jämför den listan med filerna och kör bara det som saknas.
+
+Det gör schemat till en del av koden. Samma fil som granskas i en pull request är den som ändrar
+produktionsdatabasen.
+
+## Migration vs handpåläggning
+
+Två sätt att ändra ett schema, och det andra går inte att göra om.
+
+**En migration** ligger i repot, granskas, och körs likadant i test, stage och produktion. Den lämnar
+ett spår av vad som ändrades och när.
+
+**Handpåläggning** är någon som kör `ALTER TABLE` i en terminal mot produktion. Det fungerar, det tar
+tio sekunder, och det finns ingenstans dokumenterat.
+
+Följden av det andra är att miljöerna glider isär. Det är samma drift som Terraform-serien beskrev
+när någon klickar i portalen efter att infrastrukturen blivit kod — och botemedlet är detsamma:
+ändringen ska bo i en fil.
+
+## Varför migrationer bara går framåt
+
+De flesta migrationsverktyg stöder en `down`-riktning som ångrar ändringen. I praktiken används den
+nästan aldrig i produktion.
+
+Skälet är att data inte går baklänges. Tar en migration bort en kolumn är innehållet borta, och
+`down`-skriptet kan återskapa kolumnen men inte det som stod i den.
+
+Därför är det praktiska mönstret att **rulla framåt**: blev migration 12 fel skriver du migration 13
+som rättar den. Historiken blir längre, men varje steg är ett steg som faktiskt gick att köra.
+
+## Fallgropen: `UPDATE` utan `WHERE`
+
+<Callout type="fallgrop">
+`UPDATE konto SET saldo = 0;` uppdaterar **varje rad i tabellen**. Det är inte ett fel, det är
+giltig SQL, och databasen frågar inte.
+
+Med autocommit på är det klart innan du hunnit ångra dig. Det finns inget `ROLLBACK` att köra.
+
+Tre vanor som gör att det inte händer dig:
+
+**Skriv `WHERE` först.** Börja med `WHERE id = 1` och lägg till `UPDATE ... SET` framför.
+
+**Kör som `SELECT` innan.** Byt ut `UPDATE ... SET` mot `SELECT *` och se hur många rader du får.
+
+**Öppna en transaktion.** `BEGIN` före, kontrollera antalet ändrade rader, `COMMIT` bara om det
+stämmer.
+
+Antalet rader är signalen. Förväntar du dig en och får `changes: 3` har du hittat felet innan
+`COMMIT`.
+</Callout>
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att skriva migrationer i varje projekt som har en databas, och du kommer att lita på att
+ramverket sätter transaktionsgränserna åt dig. Det du gör medvetet är att avgöra **var gränsen ska
+gå** när en operation består av flera steg.
+
+Det som är värt din tid nu är läs-ändra-skriv. Det är det enda felet i avsnittet som inte ger något
+felmeddelande alls, och därför det enda du måste känna igen på formen i stället för på symptomet.
+
+Isolationsnivåer, optimistisk låsning, migrationer utan driftstopp på stora tabeller och
+replikeringsfördröjning kan vänta. De blir dina när tabellerna är stora nog att en `ALTER TABLE`
+tar minuter.
+
+## Vanliga nybörjarförväxlingar
+
+Autocommit är inte "ingen transaktion". Varje sats är en egen transaktion, redan avslutad.
+
+Ett fel inuti en transaktion rullar inte tillbaka den. Den felande satsen avvisas; resten står kvar
+och `COMMIT` sparar den.
+
+Atomicitet betyder inte att databasen städar vid fel. Den betyder att `COMMIT` och `ROLLBACK` är
+allt-eller-inget.
+
+Att vänta på ett lås är inte en deadlock. Väntan löser sig när den andra committar; en deadlock gör
+det aldrig.
+
+En lång transaktion är inte gratis. Den håller sina lås tills den avslutas, även om den mest sitter
+och väntar på din applikation.
+
+En migration är inte en säkerhetskopia. Den beskriver ändringen, inte datan som fanns innan.
+
+`UPDATE` utan `WHERE` är inte ett syntaxfel. Det är en giltig sats som träffar varje rad.
+
+## Prova själv
+
+Övningarna använder `sqlite3`, som finns förinstallerat på macOS och de flesta Linux-system.
+`:memory:` skapar en databas som försvinner när kommandot är klart, så ingenting kan gå sönder.
+
+Börja med `ROLLBACK`:
+
+```bash
+sqlite3 :memory: <<'SQL'
+CREATE TABLE k (id INT, saldo INT);
+INSERT INTO k VALUES (1, 100);
+BEGIN;
+UPDATE k SET saldo = 0;
+SELECT 'i transaktionen:', saldo FROM k;
+ROLLBACK;
+SELECT 'efter rollback:', saldo FROM k;
+SQL
+```
+
+```
+i transaktionen:|0
+efter rollback:|100
+```
+
+Inuti transaktionen är saldot 0. Efter `ROLLBACK` är det 100 igen. **Din egen session såg ändringen
+som ingen annan hade sett.**
+
+Ta nu bort `BEGIN`-raden och kör om. Nu får du:
+
+```
+Runtime error near line 5: cannot rollback -
+no transaction is active
+```
+
+Raden är obruten i terminalen. Saldot är nu `0`. Det är autocommit: `UPDATE` var redan en avslutad transaktion, och det fanns
+inget att ångra.
+
+Pröva sedan det viktigaste i hela avsnittet — vad ett fel gör mitt i:
+
+```bash
+sqlite3 :memory: <<'SQL'
+CREATE TABLE k (id INTEGER PRIMARY KEY, saldo INT);
+INSERT INTO k VALUES (1,100),(2,50);
+BEGIN;
+UPDATE k SET saldo = saldo - 30 WHERE id = 1;
+INSERT INTO k VALUES (1, 999);
+COMMIT;
+SELECT 'efter commit:', saldo FROM k WHERE id=1;
+SQL
+```
+
+`INSERT`-raden misslyckas med `UNIQUE constraint failed`. Men titta på sista raden:
+
+```
+efter commit:|70
+```
+
+**Transaktionen rullades inte tillbaka.** Uppdateringen gick igenom, felet avvisades bara, och
+`COMMIT` sparade halva arbetet. Det är därför din kod måste anropa `ROLLBACK` själv.
+
+Räkna slutligen rader, så att `WHERE`-vanan sitter:
+
+```bash
+sqlite3 :memory: <<'SQL'
+.changes on
+CREATE TABLE k (id INTEGER PRIMARY KEY, saldo INT);
+INSERT INTO k VALUES (1,100),(2,50),(3,75);
+UPDATE k SET saldo = 0 WHERE id = 1;
+UPDATE k SET saldo = 0;
+SQL
+```
+
+Sista två raderna säger `changes: 1` och `changes: 3`. Skillnaden mellan dem är hela fallgropen.
+
+Tre saker som kan förvirra. `.changes on` skriver ut ett värde efter **varje** sats, även `CREATE
+TABLE` — det är de två sista du ska titta på. `sqlite3` skriver kolumner åtskilda med `|` som
+standard, vilket ser ut som ett trasigt svar men är dess normalläge. Och `:memory:` gör att inget
+sparas: kör du flera kommandon efter varandra börjar varje från tomt.
+
+<Callout type="kom-ihag">
+- En **transaktion** är allt eller inget. `BEGIN` öppnar, `COMMIT` sparar, `ROLLBACK` kastar.
+- **Autocommit** gör varje ensam sats till en avslutad transaktion. Det finns inget att ångra efteråt.
+- Består operationen av mer än en sats behöver den ett `BEGIN`.
+- **Ett fel rullar inte tillbaka transaktionen.** Din kod måste anropa `ROLLBACK`.
+- Läslås delas av många. **Skrivlås hålls av en**, tills transaktionen avslutas.
+- Att vänta på ett lås är normalt. En **deadlock** är ett dödläge databasen bryter genom att offra en.
+- **Läs-ändra-skriv förlorar data utan felmeddelande.** Låt databasen räkna: `saldo = saldo - 30`.
+- En **migration** är schemaändringen som fil, granskad och körd likadant i alla miljöer.
+- `UPDATE` utan `WHERE` träffar varje rad. Räkna raderna innan du committar.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Du kör ett `UPDATE` i en terminal och ångrar dig direkt. Hjälper `ROLLBACK`?",
+      a: "Nej. Utan ett öppet `BEGIN` gäller autocommit, så satsen var sin egen transaktion och committades i samma ögonblick. Du får felet `cannot rollback - no transaction is active`, och ändringen står kvar.",
+    },
+    {
+      q: "En `INSERT` mitt i en transaktion misslyckas mot en unik-begränsning. Vad händer med de satser som kördes före?",
+      a: "De står kvar, och transaktionen är fortfarande öppen. Bara den felande satsen avvisades. Committar du nu sparas halva arbetet permanent — atomiciteten gäller `COMMIT` och `ROLLBACK`, inte fel inuti. Din kod måste rulla tillbaka själv.",
+    },
+    {
+      q: "Varför blockerar en öppen transaktion andra användare även när den inte gör något?",
+      a: "Den håller sina lås tills den avslutas med `COMMIT` eller `ROLLBACK`. En session som tagit ett exklusivt lås på en rad och sedan väntar på applikationen håller raden ockuperad hela tiden. Det är därför transaktioner ska vara korta.",
+    },
+    {
+      q: "Vad är skillnaden mellan att vänta på ett lås och en deadlock?",
+      a: "Väntan löser sig av sig själv när den andra transaktionen committar — den är normal. En deadlock är två transaktioner som väntar på varandras lås och aldrig kommer vidare. Databasen upptäcker det och dödar den ena, eftersom en avbruten transaktion är bättre än två som står för evigt.",
+    },
+    {
+      q: "Två sessioner tar ut 30 kronor samtidigt från ett saldo på 100. Slutsaldot blir 70. Varför?",
+      a: "Båda läste 100, båda räknade 70 i applikationen, och båda skrev 70. Den andra skrivningen skrev över den första. Ingen fick ett felmeddelande. Lösningen är att låta databasen räkna: `SET saldo = saldo - 30` är en enda atomär sats.",
+    },
+    {
+      q: "Migration 12 visade sig vara fel. Varför skriver du migration 13 i stället för att köra `down`?",
+      a: "För att data inte går baklänges. Tog migration 12 bort en kolumn kan `down` återskapa kolumnen men inte innehållet. Att rulla framåt ger en längre historik där varje steg faktiskt gick att köra, i alla miljöer.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- En transaktion är en grupp satser som är odelbar: allt sker, eller ingenting.
+- `BEGIN` öppnar, `COMMIT` gör permanent och synligt, `ROLLBACK` kastar allt sedan `BEGIN`.
+- Inuti transaktionen ser bara du dina ändringar.
+- Autocommit gör varje ensam sats till en egen, redan avslutad transaktion.
+- Består operationen av flera satser behöver den en explicit transaktion.
+- Atomicitet är det första löftet i ACID och det som avgör hur du skriver kod.
+- Ett fel inuti en transaktion avbryter den inte. `COMMIT` efteråt sparar halva arbetet.
+- Ett lås markerar det databasen arbetar med. Det släpps vid `COMMIT` eller `ROLLBACK`.
+- Delade lås tas vid läsning och kan hållas av många. Exklusiva tas vid skrivning och hålls av en.
+- En öppen transaktion håller sina lås, även när den inte gör något.
+- En deadlock är ömsesidig väntan. Databasen bryter den genom att döda en transaktion.
+- Rör rader i samma ordning överallt, så kan deadlocken inte uppstå.
+- Läs-ändra-skriv förlorar data tyst. Låt databasen räkna i en enda sats.
+- En migration är en versionshanterad fil som beskriver en schemaändring.
+- Databasen håller reda på vilka migrationer som körts, så bara det som saknas körs.
+- Handpåläggning i produktion gör att miljöerna glider isär — samma drift som i Terraform-serien.
+- Rulla framåt när något blev fel. Data går inte baklänges.
+- `UPDATE` utan `WHERE` träffar varje rad, och autocommit gör det permanent direkt.
+
+## Nästa del
+
+Därmed står SQL-serien: hur data struktureras, hur den hämtas snabbt, och nu hur den ändras utan att
+gå sönder.
+
+Med den står också fundamenten: maskinen, nätet, versionshanteringen, gränssnittet mellan system och
+lagringen bakom. Det är underlaget som Docker-, Kubernetes- och Terraform-serierna vilar på — och nu
+går de att läsa utan att något steg är magi.
+
+En sak från den här delen dyker upp igen längre upp i stacken. Att en migration är schemaändringen
+*som fil* är samma idé som att infrastrukturen är en fil, och att ett Kubernetes-manifest är önskat
+läge som text. Tre serier, samma svar på frågan om var sanningen bor.
