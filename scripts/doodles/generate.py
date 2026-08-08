@@ -1567,6 +1567,33 @@ def alla():
       + "\n" + txt([(173,184,"sh"),(386,184,"app"),(698,184,"app")],14)
       + "\n" + txt([(230,268,"shell-form · 10 s"),(698,268,"exec-form · 0 s")],17) + "\n</svg>")
 
+    # 76 — Linux 1.2 · TOFU och rotlagret
+    # Vänsterpanelen har INGEN tredje part — bara du och servern, plus en bok du
+    # själv skriver i. Högerpanelen har en tredje låda ovanför som redan skrivit
+    # under. Frånvaron respektive närvaron av den lådan ÄR bilden; allt annat
+    # måste vara identiskt för att kontrasten ska läsas.
+    def dator(x, y): return f'<path d="{w(x,y,110,58)}"/>'
+    vanster = (dator(60, 150) + dator(300, 150)
+               + '<path d="M176 172 Q238 170 294 172"/>' + arrow(300,172)
+               + '<path d="M294 196 Q238 198 176 196" stroke-dasharray="6 7"/>'
+               + arrow(170,196,"left")
+               + f'<path d="{w(90,252,110,50)}"/>'
+               + '<path d="M116 268 Q145 266 174 268" stroke-width="1.1" opacity="0.55"/>'
+               + '<path d="M116 284 Q145 282 174 284" stroke-width="1.1" opacity="0.55"/>')
+    hoger = (dator(500, 150) + dator(740, 150)
+             + '<path d="M616 172 Q678 170 734 172"/>' + arrow(740,172)
+             + f'<path d="{w(600,44,150,56)}"/>'
+             + '<path d="M676 106 Q678 128 676 144" stroke-dasharray="6 7" opacity="0.6"/>'
+             + arrow(676,150,"down"))
+    D['tofu-och-rotlagret']=(
+      '<svg viewBox="0 0 880 340" role="img" aria-label="Till vänster två datorer och en anteckningsbok '
+      'under den ena. Till höger två datorer och en tredje låda ovanför som pekar ner mot servern.">\n'
+      + G % (vanster + hoger)
+      + "\n" + txt([(115,184,"du"),(355,184,"servern"),
+                    (555,184,"du"),(795,184,"servern")],13,' opacity="0.7"')
+      + "\n" + txt([(145,318,"known_hosts"),(675,80,"rotlagret")],13,' opacity="0.62"')
+      + "\n" + txt([(220,120,"TOFU"),(660,318,"CA")],17) + "\n</svg>")
+
     return D
 
 if __name__ == "__main__":

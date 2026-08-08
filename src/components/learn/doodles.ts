@@ -1497,4 +1497,26 @@ export const DOODLES: Record<string, string> = {
     <text x="698" y="268">exec-form · 0 s</text>
   </g>
 </svg>`,
+
+  /* ---- Linux 1.2 · TOFU litar en gang, en CA i forvag ---- */
+  "tofu-och-rotlagret": `
+<svg viewBox="0 0 880 340" role="img" aria-label="Till vänster två datorer och en anteckningsbok under den ena. Till höger två datorer och en tredje låda ovanför som pekar ner mot servern.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M61 149 Q115 149 169 149 Q172 179 170 207 Q115 209 59 209 Q59 179 61 149 Z"/><path d="M299 151 Q355 149 409 150 Q410 179 410 209 Q355 210 300 209 Q298 179 299 151 Z"/><path d="M176 172 Q238 170 294 172"/><path d="M287 166 L300 172 L287 178"/><path d="M294 196 Q238 198 176 196" stroke-dasharray="6 7"/><path d="M183 190 L170 196 L183 202"/><path d="M91 252 Q145 250 199 253 Q201 277 200 302 Q145 302 90 302 Q90 277 91 252 Z"/><path d="M116 268 Q145 266 174 268" stroke-width="1.1" opacity="0.55"/><path d="M116 284 Q145 282 174 284" stroke-width="1.1" opacity="0.55"/><path d="M499 150 Q555 148 609 150 Q612 179 610 209 Q555 208 499 207 Q498 179 499 150 Z"/><path d="M740 150 Q795 149 851 149 Q852 179 849 207 Q795 209 740 208 Q740 179 740 150 Z"/><path d="M616 172 Q678 170 734 172"/><path d="M727 166 L740 172 L727 178"/><path d="M601 43 Q675 42 751 44 Q750 72 749 101 Q675 102 599 99 Q600 72 601 43 Z"/><path d="M676 106 Q678 128 676 144" stroke-dasharray="6 7" opacity="0.6"/><path d="M670 137 L676 150 L682 137"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.7">
+    <text x="115" y="184">du</text>
+    <text x="355" y="184">servern</text>
+    <text x="555" y="184">du</text>
+    <text x="795" y="184">servern</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="145" y="318">known_hosts</text>
+    <text x="675" y="80">rotlagret</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="17" fill="currentColor" text-anchor="middle">
+    <text x="220" y="120">TOFU</text>
+    <text x="660" y="318">CA</text>
+  </g>
+</svg>`,
 };
