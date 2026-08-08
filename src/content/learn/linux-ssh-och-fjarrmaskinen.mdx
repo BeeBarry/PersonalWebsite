@@ -1,0 +1,461 @@
+---
+title: 'SSH och maskinen som inte står på ditt skrivbord'
+description: 'Nyckelpar, known_hosts och förtroende utan certifikatutfärdare'
+category: 'linux'
+part: 1
+order: 3
+date: '2026-08-08'
+tags: ['Beginner', 'SSH', 'Nycklar']
+---
+
+## Var vi är
+
+De två första delarna handlade om **din** maskin: filsystemet, rättigheterna, processerna och rören.
+
+Resten av hubben förutsätter något annat. Kubernetes-noder, Azure-maskiner, EC2-instanser och
+byggservrar står inte på ditt skrivbord — och ingen artikel har visat vägen dit.
+
+Den här delen tar den. Zoomen ligger på att komma in på en maskin över nätet och flytta filer dit.
+Att drifta en SSH-server ligger utanför.
+
+Nätverksdelen listade port 22 i sin porttabell och gick vidare. Här öppnar vi den.
+
+<Del titel="Nycklarna" />
+
+## Vad SSH är
+
+**SSH**, Secure Shell, är protokollet som ger dig ett skal på en annan maskin över en krypterad
+anslutning.
+
+Del 1.0 beskrev skalet som programmet du skriver kommandon i. SSH flyttar bara det: du skriver
+lokalt, kommandona körs på den andra maskinen, och utskriften kommer tillbaka.
+
+Allt från de två första delarna gäller därifrån och framåt. `pwd`, `ls -la`, rättigheter, rör — samma
+kommandon, en annan maskin.
+
+SSH bär också mer än ett skal. Filöverföring och portforward går genom samma anslutning, och det är
+därför protokollet är limmet i nästan all serverdrift.
+
+## Vad ett nyckelpar är
+
+Ett **nyckelpar** är två matematiskt sammanhörande filer: en privat nyckel och en publik.
+
+```bash
+ssh-keygen -t ed25519 -C "lisa@laptop"
+```
+
+Kommandot skapar två filer. `id_ed25519` är den privata — den lämnar aldrig din maskin.
+`id_ed25519.pub` är den publika, som du får sprida hur som helst.
+
+Den publika nyckeln är en enda rad:
+
+```
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPKE0TJK/vaspcPk
+```
+
+Tre delar: algoritmen, själva nyckeln, och en kommentar på slutet som brukar vara din e-post eller
+maskinnamn. Kommentaren betyder ingenting tekniskt — den finns för att du ska kunna se vems nyckel
+det är i en lista.
+
+Nätverksdelen gick igenom samma uppdelning för TLS: certifikatet är publikt, nyckeln är hemlig. Här
+är det samma matematik utan certifikat.
+
+## Lösenord vs nyckel
+
+Två sätt att bevisa vem du är, och skillnaden är vad som faktiskt skickas.
+
+**Ett lösenord** skickas till servern vid varje inloggning. Det går att gissa, det går att
+återanvända, och det kan skrivas ner.
+
+**En nyckel** skickas aldrig. Servern skickar en utmaning, din klient signerar den med den privata
+nyckeln, och servern kontrollerar signaturen mot den publika. Hemligheten lämnar aldrig din maskin.
+
+Det gör nyckeln bättre på tre sätt samtidigt: den går inte att gissa, den kan inte fångas upp av
+servern, och den kan återkallas för en maskin i taget.
+
+Därför stänger de flesta servrar av lösenordsinloggning helt. En publik SSH-server med lösenord får
+tusentals gissningsförsök per dygn.
+
+## Vad `authorized_keys` är
+
+`~/.ssh/authorized_keys` är en fil **på servern** som listar de publika nycklar som får logga in som
+den användaren.
+
+En rad per nyckel. Att ge någon åtkomst är att lägga till en rad; att ta bort åtkomsten är att
+radera den.
+
+Det är hela behörighetsmodellen, och den är förvånansvärt enkel. Det finns ingen central katalog och
+ingen utfärdare — bara en textfil per användare på varje maskin.
+
+Den enkelheten är också begränsningen. Tio servrar och femton medarbetare betyder femton nycklar på
+tio ställen, och det är därför större organisationer lägger något ovanpå.
+
+## Vad `known_hosts` är
+
+`~/.ssh/known_hosts` är en fil **på din maskin** som listar de servrar du har anslutit till förut,
+med deras publika värdnycklar.
+
+Servern har nämligen också ett nyckelpar. Det används inte för att identifiera dig, utan för att
+identifiera **servern** — så att du märker om något annat svarar på dess adress.
+
+Vid varje anslutning jämför din klient serverns nyckel mot raden i filen. Stämmer den fortsätter
+anslutningen utan ett ord.
+
+## `authorized_keys` vs `known_hosts`
+
+Två filer i samma katalog med spegelvända roller, och de blandas ihop hela tiden.
+
+**`authorized_keys`** ligger **på servern** och innehåller **dina** publika nycklar. Den svarar på
+frågan *vem får logga in här?*
+
+**`known_hosts`** ligger **hos dig** och innehåller **servrarnas** publika nycklar. Den svarar på
+frågan *har jag pratat med den här maskinen förut?*
+
+Minnesregeln: `authorized_keys` handlar om **dig**, `known_hosts` handlar om **dem**. Får du
+*Permission denied* är det den första. Får du en varning om ändrad värdnyckel är det den andra.
+
+## Fallgropen: rättigheterna på nyckeln
+
+<Callout type="fallgrop">
+Del 1.1 gick igenom `chmod` och rättighetstecknen. Här är konsekvensen den delen inte hade.
+
+Din privata nyckel ska vara läsbar **bara för dig** — `600`, alltså `-rw-------`. Vem som helst som
+kan läsa filen kan logga in som du, överallt där nyckeln finns i en `authorized_keys`.
+
+`ssh-keygen` sätter rätt rättigheter själv. Problemet uppstår när nyckeln kopieras: via en
+zip-fil, en delad mapp, ett Docker-bygge eller en `COPY` i en Dockerfile.
+
+**Lita inte på att verktyget stoppar dig.** Klassiskt vägrar `ssh` att använda en för öppen nyckel
+med `UNPROTECTED PRIVATE KEY FILE`, men det är inte garanterat. Uppmätt på OpenSSH 10.2 erbjöd
+klienten en nyckel med `chmod 666` utan att säga ett ord.
+
+Kontrollera själv med `ls -l`, och sätt `chmod 600` när du flyttat en nyckel.
+</Callout>
+
+<Del titel="Förtroendet" />
+
+## Vad fingeravtrycket är
+
+Ett **fingeravtryck** är en hash av en publik nyckel, kort nog att jämföra med ögat.
+
+```
+SHA256:+DiY3wvvV6TuJJhbpZisF/zLDA0zPMSvHdkr4UvCOqU
+```
+
+Nyckeln själv är för lång för att läsa. Fingeravtrycket är samma information komprimerad till något
+en människa kan stämma av mot en annan källa.
+
+Cyber-delen förklarade varför en hash duger till det: samma indata ger alltid samma utdata, och en
+enda ändrad byte ger ett helt annat resultat.
+
+## Vad TOFU betyder
+
+**TOFU**, trust on first use, är SSH:s förtroendemodell: klienten litar på serverns nyckel **första
+gången** och kommer ihåg den för alltid.
+
+Första anslutningen visar fingeravtrycket och frågar om du vill fortsätta. Svarar du ja skrivs
+nyckeln till `known_hosts`, och frågan kommer aldrig igen.
+
+Det betyder att första anslutningen är den enda som är oskyddad. Är någon i vägen just då litar du
+på fel maskin resten av tiden.
+
+Så gör man rätt: hämta fingeravtrycket från leverantören i förväg och jämför. GitHub, GitLab och
+molnleverantörerna publicerar sina.
+
+## TOFU vs CA
+
+Två sätt att lösa samma problem, och nätverksdelen tog det andra.
+
+**TOFU** kräver ingen tredje part. Du bestämmer själv, en gång per server, och kommer ihåg beslutet.
+Priset är att första gången är oskyddad och att varje maskin måste läras in separat.
+
+**En CA** låter någon annan gå i god i förväg. Din webbläsare har aldrig sett `github.com` och litar
+ändå på certifikatet, eftersom rotlagret redan innehåller den som signerade det.
+
+Det är därför du får en fråga första gången du SSH:ar till en server men aldrig när du besöker en ny
+webbsida. Samma problem, motsatt lösning.
+
+SSH kan också använda en CA, men det är ovanligt utanför stora organisationer. Standardmodellen är
+TOFU.
+
+## När värdnyckeln ändras
+
+Ändras en servers nyckel efter att du sparat den vägrar klienten ansluta, med en stor varning om att
+någon kan avlyssna anslutningen.
+
+Nästan alltid är förklaringen odramatisk: servern byggdes om och fick ett nytt nyckelpar. Det händer
+varje gång en molnmaskin skapas om, och IP-adressen råkar återanvändas.
+
+Frestelsen är att radera raden ur `known_hosts` och köra vidare. Gör det **först när du vet varför**
+nyckeln ändrades. Är svaret *"jag byggde om maskinen i morse"* är det ofarligt. Är svaret *"jag vet
+inte"* har du precis fått den varning modellen finns till för.
+
+<Doodle
+  name="tofu-och-rotlagret"
+  caption="Till vänster litar du en gång, själv. Till höger har någon redan gjort det åt dig."
+/>
+
+<Del titel="I vardagen" />
+
+## Vad `ssh-agent` gör
+
+**`ssh-agent`** är en process som håller din upplåsta privata nyckel i minnet, så att du slipper
+skriva lösenfrasen vid varje anslutning.
+
+En privat nyckel bör ha en **lösenfras** — en extra hemlighet som krypterar själva nyckelfilen. Utan
+den är en stulen fil direkt användbar; med den behöver tjuven också lösenfrasen.
+
+Agenten löser besväret. Du låser upp nyckeln en gång per session, och agenten signerar utmaningarna
+åt dig därefter.
+
+```bash
+ssh-add ~/.ssh/id_ed25519
+ssh-add -l
+```
+
+Nyckeln lämnar aldrig agenten. Den signerar bara — precis samma modell som en managed identity i
+Azure-delen, fast lokalt.
+
+## Vad `~/.ssh/config` är
+
+`~/.ssh/config` är en fil där du namnger anslutningar i stället för att upprepa flaggor.
+
+```
+Host bygg
+  HostName 10.0.4.12
+  User deploy
+  IdentityFile ~/.ssh/id_bygg
+```
+
+Nu räcker `ssh bygg`. Det som annars hade varit `ssh -i ~/.ssh/id_bygg deploy@10.0.4.12` blir ett
+ord, och samma namn fungerar i `scp` och i Git.
+
+Filen är det första du ska skapa när du har mer än en server. Den tar bort hela klassen av fel som
+handlar om att ha skrivit fel användarnamn eller pekat på fel nyckel.
+
+## Vad `scp` gör
+
+`scp` kopierar filer över samma SSH-anslutning, med en syntax som liknar `cp`.
+
+```bash
+scp rapport.txt bygg:/tmp/
+scp bygg:/var/log/app.log .
+```
+
+Kolonet är det som avgör riktningen. Det som står **före** kolonet är maskinen; det efter är sökvägen
+på den.
+
+För större eller upprepade överföringar finns `rsync`, som bara skickar det som skiljer sig. Den
+använder också SSH och samma värdnamn ur din config.
+
+## Vad portforward är
+
+**Portforward** låter en port på en maskin nås via SSH-anslutningen, som om den vore lokal.
+
+```bash
+ssh -L 5432:localhost:5432 bygg
+```
+
+Nu når du serverns databas på `localhost:5432` i din egen terminal. Databasen har aldrig exponerats
+mot internet — trafiken går genom den krypterade SSH-anslutningen.
+
+Det är det vanligaste sättet att felsöka en intern tjänst du inte får nå direkt, och det gör
+Docker-delens portmappning begriplig från ett annat håll: samma idé, en nivå upp.
+
+## Lokal vs fjärr portforward
+
+Två riktningar, och `-L` mot `-R` är lätt att blanda ihop.
+
+**`-L` — lokal.** En port hos **dig** pekar på något som servern når. Du hämtar in något du inte
+kommer åt.
+
+**`-R` — fjärr.** En port på **servern** pekar på något du når. Du exponerar något av ditt.
+
+Minnesregeln: `-L` drar hem, `-R` skickar ut. Nästan allt du kommer att göra är `-L`.
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att skapa ett nyckelpar en gång per maskin du arbetar på, lägga den publika nyckeln hos
+GitHub och hos ett par servrar, och sedan glömma bort saken. Det du gör ofta är att `ssh` in
+någonstans för att titta på en logg.
+
+Det som är värt din tid nu är `~/.ssh/config`. Fem rader per server tar bort de flesta fel du annars
+kommer att göra, och samma namn fungerar i `ssh`, `scp` och `rsync`.
+
+Certifikatbaserad SSH, bastionvärdar, `ProxyJump` och nyckelrotation i skala kan vänta. De blir dina
+den dag antalet servrar gör textfilen ohållbar — och de bygger alla på samma nyckelpar.
+
+## Vanliga nybörjarförväxlingar
+
+Den privata nyckeln skickas aldrig. Servern får en signatur, inte hemligheten.
+
+`authorized_keys` och `known_hosts` är inte samma sorts fil. Den ena ligger på servern och listar
+dig; den andra ligger hos dig och listar servrarna.
+
+En ändrad värdnyckel betyder inte automatiskt ett angrepp. Det betyder oftast att maskinen byggts om
+— men du ska veta vilket innan du raderar raden.
+
+`ssh-agent` lagrar inte lösenfrasen. Den håller den upplåsta nyckeln i minnet och signerar med den.
+
+Kommentaren i den publika nyckeln har ingen teknisk betydelse. Den finns för att du ska känna igen
+nyckeln i en lista.
+
+`ssh` vägrar inte alltid använda en för öppen nyckel. Uppmätt på OpenSSH 10.2 erbjöds en nyckel med
+`chmod 666` utan varning.
+
+`-L` och `-R` är inte utbytbara. `-L` hämtar in till dig, `-R` exponerar ut från dig.
+
+## Prova själv
+
+Övningarna skapar ett engångsnyckelpar i en tom mapp och rör varken dina riktiga nycklar eller din
+`~/.ssh/config`. Ingen server av ditt behövs.
+
+```bash
+mkdir ~/ssh-ovning && cd ~/ssh-ovning
+ssh-keygen -t ed25519 -f ./demo -N '' -C "lisa@laptop"
+ls -l demo demo.pub
+```
+
+```
+-rw-------  demo
+-rw-r--r--  demo.pub
+```
+
+**`ssh-keygen` sätter rättigheterna själv** — `600` på den privata, `644` på den publika. Titta på
+vad de innehåller:
+
+```bash
+head -1 demo
+cat demo.pub
+```
+
+Den privata börjar med `-----BEGIN OPENSSH PRIVATE KEY-----`. Den publika är **en enda rad** på
+knappt hundra tecken, som slutar med kommentaren du angav.
+
+Ta fingeravtrycket:
+
+```bash
+ssh-keygen -lf demo.pub
+```
+
+Hämta nu en riktig servers **värdnyckel**, utan att logga in någonstans:
+
+```bash
+ssh-keyscan -t ed25519 github.com > gh.pub
+ssh-keygen -lf gh.pub
+```
+
+```
+SHA256:+DiY3wvvV6TuJJhbpZisF/zLDA0zPMSvHdkr4UvCOqU
+```
+
+**Sök upp GitHubs publicerade SSH-fingeravtryck och jämför.** Stämmer de har du just gjort det TOFU
+egentligen begär av dig, men som nästan ingen gör: verifierat nyckeln mot en andra källa innan du
+litade på den.
+
+Anslut slutligen med engångsnyckeln, isolerat från din vanliga uppsättning:
+
+```bash
+ssh -F /dev/null -i demo \
+  -o IdentitiesOnly=yes \
+  -o UserKnownHostsFile=./kh \
+  -o StrictHostKeyChecking=accept-new \
+  git@github.com
+```
+
+```
+Warning: Permanently added 'github.com'
+(ED25519) to the list of known hosts.
+git@github.com: Permission denied (publickey).
+```
+
+Första raden är bruten här; den kommer på en rad i terminalen. Två rader, två olika saker. Den första är `known_hosts` — servern accepterades och skrevs till
+filen `./kh`. Den andra är `authorized_keys` — din nyckel finns inte hos GitHub, så du släpps inte
+in. **Där är skillnaden mellan de två filerna, i en enda utskrift.**
+
+Titta på vad som hamnade i `./kh`, och städa sedan:
+
+```bash
+cat kh
+cd ~ && rm -rf ~/ssh-ovning
+```
+
+Tre saker som kan förvirra. `-F /dev/null` gör att din vanliga `~/.ssh/config` ignoreras helt, och
+`IdentitiesOnly=yes` att bara nyckeln du pekat ut erbjuds. Utan dem hade din riktiga GitHub-nyckel
+använts och du hade blivit inloggad i stället. `Permission denied (publickey)` är alltså **förväntat** här och
+inte ett fel. Och `ssh-keyscan` hämtar nyckeln utan att fråga dig om något, vilket är precis varför
+den inte ersätter en verifiering mot leverantörens egen sida.
+
+<Callout type="kom-ihag">
+- SSH ger dig ett skal på en annan maskin. Allt från del 1.0 och 1.1 gäller därifrån.
+- **Den privata nyckeln skickas aldrig.** Klienten signerar en utmaning; servern kontrollerar den.
+- `authorized_keys` ligger **på servern** och listar dig. `known_hosts` ligger **hos dig** och listar dem.
+- Privat nyckel ska vara `600`. Kontrollera själv — klienten stoppar dig inte alltid.
+- **TOFU**: du litar på servern första gången och minns den. Bara första gången är oskyddad.
+- En CA gör tvärtom: någon annan går i god i förväg. Därför frågar webbläsaren aldrig.
+- En ändrad värdnyckel är oftast en ombyggd maskin — men ta reda på det innan du raderar raden.
+- `~/.ssh/config` är fem rader som tar bort de flesta anslutningsfel.
+- `-L` drar hem en port till dig. `-R` exponerar en av dina utåt.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Varför är en nyckel säkrare än ett lösenord?",
+      a: "Lösenordet skickas till servern vid varje inloggning och går att gissa. Den privata nyckeln skickas aldrig — servern skickar en utmaning som klienten signerar, och servern kontrollerar signaturen mot den publika nyckeln. Hemligheten lämnar aldrig din maskin.",
+    },
+    {
+      q: "Du får `Permission denied (publickey)`. Vilken av de två filerna ska du titta på?",
+      a: "`authorized_keys` på servern. Felet betyder att din publika nyckel inte finns bland de tillåtna för den användaren. `known_hosts` handlar om motsatt riktning — om du känner igen servern — och ger en varning om ändrad värdnyckel i stället.",
+    },
+    {
+      q: "Vad är TOFU, och när är du oskyddad?",
+      a: "Trust on first use: klienten litar på serverns nyckel första gången och sparar den i `known_hosts`. Bara den första anslutningen är oskyddad — sitter någon i vägen just då litar du på fel maskin resten av tiden. Motmedlet är att jämföra fingeravtrycket mot leverantörens publicerade innan du svarar ja.",
+    },
+    {
+      q: "Varför frågar SSH om du litar på en ny server, medan webbläsaren aldrig frågar om en ny sajt?",
+      a: "SSH använder TOFU och har ingen tredje part — du fattar beslutet själv, en gång per server. TLS använder en CA, och din maskins rotlager innehåller redan den som signerat sajtens certifikat. Samma problem, motsatt lösning.",
+    },
+    {
+      q: "Din privata nyckel har rättigheterna 644 efter att du packat upp den ur en zip. Fungerar den?",
+      a: "Möjligen — och det är problemet. Klassiskt vägrar `ssh` med `UNPROTECTED PRIVATE KEY FILE`, men det är inte garanterat: uppmätt på OpenSSH 10.2 erbjöds en nyckel med `chmod 666` utan varning. Alla som kan läsa filen kan logga in som du, så kontrollera med `ls -l` och sätt `chmod 600`.",
+    },
+    {
+      q: "Du vill nå en databas som bara lyssnar internt på en server. Vilken flagga?",
+      a: "`ssh -L 5432:localhost:5432 servern`. Lokal portforward gör serverns port nåbar som `localhost:5432` hos dig, genom den krypterade anslutningen. Databasen exponeras aldrig mot internet. `-R` gör tvärtom och exponerar något av ditt på servern.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- SSH ger ett skal på en annan maskin över en krypterad anslutning, på port 22.
+- Ett nyckelpar är två filer: den privata stannar hos dig, den publika får spridas fritt.
+- Den publika nyckeln är en rad: algoritm, nyckel och en kommentar utan teknisk betydelse.
+- Nyckeln skickas aldrig. Klienten signerar en utmaning, servern kontrollerar signaturen.
+- Därför stängs lösenordsinloggning ofta av helt på publika servrar.
+- `authorized_keys` ligger på servern och listar vilka nycklar som får logga in som den användaren.
+- `known_hosts` ligger hos dig och listar värdnycklarna för servrar du anslutit till.
+- Privat nyckel ska vara `600`. Klienten varnar inte alltid — kontrollera med `ls -l`.
+- Ett fingeravtryck är en hash av en publik nyckel, kort nog att jämföra med ögat.
+- TOFU: klienten litar på servern första gången och minns den. Bara då är du oskyddad.
+- En CA går i god i förväg. Det är därför webbläsaren aldrig frågar om en ny sajt.
+- En ändrad värdnyckel betyder oftast en ombyggd maskin. Ta reda på vilket innan du raderar raden.
+- `ssh-agent` håller den upplåsta nyckeln i minnet och signerar åt dig.
+- `~/.ssh/config` namnger anslutningar, och namnet fungerar i `ssh`, `scp` och `rsync`.
+- `scp` kopierar över samma anslutning. Kolonet avgör riktningen.
+- `-L` drar hem en port till dig, `-R` exponerar en av dina utåt.
+
+## Nästa del
+
+Med det står Linux-grunderna: du hittar i filsystemet, du förstår varför något nekas, du kan koppla
+ihop kommandon — och nu når du maskiner som inte står framför dig.
+
+En sak från den här delen dyker upp igen i nästan varje senare serie. Frågan *"vem går i god för
+den här nyckeln?"* har två svar: du själv, en gång, eller någon annan i förväg. SSH valde det
+första, TLS det andra, och molnens managed identity ett tredje där plattformen äger nyckeln åt dig.
+
+Nästa serie tar vid där maskinen slutar: vad som faktiskt händer när två datorer ska prata med
+varandra.
