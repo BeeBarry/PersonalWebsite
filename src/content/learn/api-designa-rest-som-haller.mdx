@@ -444,5 +444,8 @@ svarar sedan `403` med ett meddelande om rate limit. Och ett `304`-svar har tom 
 
 ## Nästa del
 
-Nu har vi följt kedjan från webbläsaren till API:et. Sista steget är det som ligger bakom det — hur
-data faktiskt lagras, och varför en fråga som var snabb i test kan ta nio sekunder i produktion.
+Kontraktet är nu läsbart och förutsägbart. Men det står fortfarande öppet för vem som helst, hur
+ofta som helst.
+
+I nästa del sätter vi tre grindar framför det: vem som frågar, hur mycket de får fråga, och varför
+webbläsaren ibland vägrar visa ett svar som faktiskt kom fram.

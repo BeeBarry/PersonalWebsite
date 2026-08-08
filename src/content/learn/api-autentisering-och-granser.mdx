@@ -1,0 +1,468 @@
+---
+title: 'Vem du är och hur mycket du får fråga'
+description: 'API-nycklar, tokens, rate limiting och CORS — de tre grindarna framför en endpoint'
+category: 'api'
+part: 1
+order: 3
+date: '2026-08-08'
+tags: ['Beginner', 'Autentisering', 'CORS']
+---
+
+## Var vi är
+
+De två första delarna byggde ett API som går att förstå: resurser i sökvägen, verb i metoden,
+statuskoder som betyder något. Kontraktet är på plats.
+
+Det saknar tre saker som varje riktigt API har. Ingen kontroll av **vem** som frågar. Ingen gräns
+för **hur mycket** någon får fråga. Och ingen regel för **varifrån** en webbläsare får anropa det.
+
+Den här delen tar de tre. Zoomen ligger på vad API:et gör med ett inkommande anrop — inte på hur
+inloggningen gick till från början.
+
+Cyber-delen äger begreppen bakom beviset: sessioner, tokens, och att ett JWT är signerat men inte
+krypterat. Här handlar det om hur beviset **skickas** och vad API:et **gör** med det.
+
+<Del titel="Vem som frågar" />
+
+## Vad en API-nyckel är
+
+En **API-nyckel** är en lång slumpsträng som identifierar den som anropar.
+
+Nyckeln har ingen inbyggd information. Den är ett uppslagsvärde: API:et slår upp strängen i sin
+databas och ser vilken kund, app eller integration den hör till.
+
+Den går inte ut av sig själv, och den bär ingen uppgift om vad innehavaren får göra. Allt sådant
+ligger i API:ets egen tabell, vilket är både dess enkelhet och dess begränsning.
+
+API-nycklar passar för **system som anropar system** — en integration, ett skript, en tjänst du
+själv driftar. De passar inte för att identifiera en enskild användare i en app.
+
+## Vad `Authorization`-headern är
+
+`Authorization` är den header beviset skickas i. Nätverksdelen listade den; här är formen.
+
+```
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+```
+
+Ordet före värdet är **schemat** — det säger vilken sorts bevis som följer. `Bearer` är det vanliga
+i moderna API:er och betyder ordagrant *innehavare*: den som visar upp strängen behandlas som
+behörig, utan ytterligare frågor.
+
+Det är hela säkerhetsmodellen, och den är värd att stanna vid. Ett Bearer-token är som en
+tågbiljett, inte som ett pass. Ingen kontrollerar att du är du — bara att du har biljetten.
+
+Därför är det enda som skyddar den att den skickas över TLS och aldrig hamnar någonstans den kan
+läsas.
+
+## Vad ett åtkomsttoken är
+
+Ett **åtkomsttoken** är ett tidsbegränsat bevis som API:et utfärdat efter en inloggning.
+
+Skillnaden mot nyckeln är att tokenet är **utfärdat för ett tillfälle**. Det har en giltighetstid, det
+kan innehålla vem användaren är och vad anropet får göra, och det slutar gälla av sig självt.
+
+Cyber-delen gick igenom vad som står inuti ett JWT och varför innehållet är läsbart. Här räcker det
+att veta att API:et kan kontrollera signaturen utan att slå upp något — och att kortlivade tokens
+är svaret på att de inte går att återkalla.
+
+## API-nyckel vs token
+
+Två strängar i samma header, med olika livslängd och olika ägare.
+
+**API-nyckeln** hör till ett *system* och gäller tills någon återkallar den. Den läggs i en
+konfiguration en gång och byts sällan.
+
+**Åtkomsttokenet** hör till ett *tillfälle* och går ut, ofta inom en timme. Det hämtas om automatiskt
+och lagras aldrig i en konfigurationsfil.
+
+Kontrollfrågan: *finns det en människa bakom anropet?* Ja → token. Nej, det är ett system som
+anropar ett annat → API-nyckel kan räcka.
+
+Och kör systemet i ett moln finns ofta ett tredje svar, som varken är nyckel eller lösenord — det är
+det Azure- och AWS-delarna kallar managed identity respektive roll.
+
+## Vad ett scope är
+
+Ett **scope** är en namngiven begränsning av vad ett token får göra.
+
+```
+scope: repo:read issues:write
+```
+
+Tokenet bär alltså inte bara *vem*, utan *hur mycket*. Samma användare kan ha ett token med fullt
+tillträde i sin egen terminal och ett med `repo:read` i ett bygge. Byggets token kan då inte
+förstöra något även om det läcker.
+
+Det är minsta privilegium, tillämpat på ett anrop i stället för på en person. Samma princip som
+Azure-delens roller, ett lager närmare koden.
+
+## Vad API:et faktiskt kontrollerar
+
+Vid varje anrop gör API:et tre kontroller, i ordning, och de kan misslyckas var för sig.
+
+<Flow
+  caption="Tre grindar, tre olika fel. Det är därför statuskoden säger vilket steg som brast."
+  steps={[
+    {
+      label: "Finns ett bevis, och är det äkta?",
+      note: "Saknas eller är ogiltigt → **401**. Signaturen eller uppslagningen brast.",
+    },
+    {
+      label: "Får det här beviset göra just det här?",
+      via: "scope och roll",
+      note: "Äkta men otillräckligt → **403**. Att logga in igen hjälper inte.",
+      accent: true,
+    },
+    {
+      label: "Har du frågat för mycket den senaste tiden?",
+      via: "räknaren",
+      note: "Över gränsen → **429**. Beviset är fine; takten är det inte.",
+    },
+  ]}
+/>
+
+Ordningen förklarar varför felsökning börjar med statuskoden. Nätverksdelen slog fast att `401`
+betyder *jag vet inte vem du är* och `403` *jag vet vem du är men du får inte*. Här kommer det
+tredje fallet till.
+
+<Del titel="Hur mycket du får fråga" />
+
+## Vad rate limiting är
+
+**Rate limiting** är en gräns för hur många anrop en klient får göra under en tidsperiod.
+
+Gränsen finns av tre skäl, och bara ett av dem handlar om illvilja. Den skyddar mot överbelastning,
+den hindrar en trasig klient i en oändlig loop från att dra ner tjänsten för alla andra, och den gör
+kostnaden förutsägbar.
+
+Räkningen sker nästan alltid per **identitet** — per API-nyckel, per token, eller per IP-adress när
+anropet är oautentiserat. Det är därför samma API kan ge dig sextio anrop i timmen utan inloggning
+och tusentals med.
+
+## Fast fönster vs token bucket
+
+Två sätt att räkna, med olika beteende vid gränsen.
+
+**Fast fönster** räknar anrop per klockperiod: sextio per timme, nollställt varje hel timme. Enkelt
+att förstå och enkelt att missbruka — sextio anrop 10:59 och sextio till 11:00 ger hundratjugo på två
+minuter.
+
+**Token bucket** fyller på en hink med jämn takt och tar ett mynt per anrop. Är hinken tom får du
+vänta. Modellen tillåter en **skur** upp till hinkens storlek, men håller snittet över tid.
+
+Token bucket är vanligare i moderna API:er, och skälet är det verkliga beteendet: en app som startar
+gör gärna tio anrop på en gång. Modellen släpper igenom skuren utan att tillåta ett konstant
+överskridande.
+
+<Doodle
+  name="hinken-fylls-pa"
+  caption="Droppen är jämn. Skopan tar flera på en gång, tills hinken är tom."
+/>
+
+## Vad `429` betyder
+
+`429 Too Many Requests` är statuskoden för att du överskridit gränsen.
+
+Den säger inget om att något är fel med ditt anrop. Beviset dög, sökvägen fanns, kroppen var giltig —
+du frågade bara för ofta.
+
+Alla API:er använder inte `429`. GitHub svarar exempelvis `403` med ett meddelande om rate limit,
+vilket är den förvirring del 1.0 mötte i sitt *Prova själv*. Läs alltid kroppen och räknarna innan
+du drar slutsatsen att det är ett behörighetsfel.
+
+## 401 vs 429
+
+Två sätt att bli avvisad, och att blanda ihop dem kostar timmar.
+
+**`401`** betyder att beviset saknas eller är ogiltigt. Åtgärden är att skaffa ett nytt bevis.
+
+**`429`** betyder att beviset är fullgott men att du frågat för mycket. Åtgärden är att **vänta**.
+
+Felet som följer av förväxlingen är särskilt otrevligt: en klient som tolkar `429` som ett
+inloggningsfel hämtar ett nytt token, försöker igen, blir strypt igen, och hämtar ännu ett token.
+Den har byggt en loop som gör problemet värre för varje varv.
+
+## Räknarna i svaret
+
+Ett väluppfostrat API berättar hur det ligger till **innan** du slår i taket.
+
+```
+x-ratelimit-limit: 60
+x-ratelimit-remaining: 57
+x-ratelimit-reset: 1786180257
+```
+
+`limit` är taket för perioden, `remaining` är vad som är kvar, och `reset` är när räknaren nollställs
+— som en Unix-tidsstämpel, alltså sekunder sedan 1970.
+
+Vid ett faktiskt `429` skickas ofta även `Retry-After`, med antalet sekunder att vänta. Finns den
+ska din klient läsa den i stället för att gissa.
+
+## Vad du gör när du blir strypt
+
+Rätt beteende är **exponentiell backoff**: vänta, försök igen, och fördubbla väntetiden varje gång
+det misslyckas — en sekund, två, fyra, åtta.
+
+Lägg till lite slump ovanpå, så kallad jitter. Utan den återkommer alla strypta klienter samtidigt
+efter exakt en sekund, och skapar precis den topp gränsen fanns för att förhindra.
+
+Och läs `Retry-After` när den finns. En känd väntetid slår varje gissning.
+
+<Callout type="varfor" title="Varför en enkel omförsöksloop är farlig">
+`while (fel) { försök igen }` utan väntan gör en klient till en angripare. Den fyller din egen kvot,
+belastar tjänsten och kan få din IP-adress spärrad.
+
+Skillnaden mellan en robust integration och ett incidentmöte är oftast fyra rader backoff.
+</Callout>
+
+<Del titel="Vem som får anropa från en webbläsare" />
+
+## Vad CORS är
+
+**CORS**, Cross-Origin Resource Sharing, är en regel som avgör om **JavaScript i en webbläsare** får
+läsa svaret från ett API på ett annat ursprung.
+
+Ett *ursprung* är kombinationen protokoll, värdnamn och port. `https://shop.se` och
+`https://api.shop.se` är olika ursprung, och det räcker för att regeln ska gälla.
+
+Servern svarar med en header som säger vilka ursprung som är tillåtna:
+
+```
+access-control-allow-origin: *
+```
+
+Här är det som förvirrar mest, och det är värt att läsa två gånger: **anropet gick fram.** Servern
+tog emot det och svarade. Det webbläsaren gör är att vägra lämna ut svaret till skriptet.
+
+## Vad en preflight är
+
+En **preflight** är ett extra `OPTIONS`-anrop webbläsaren skickar *innan* det riktiga, när anropet
+inte är av den enklaste sorten.
+
+Den skickas när metoden är något annat än `GET`, `HEAD` eller `POST`, eller när anropet bär egna
+headers — till exempel `Authorization`. Alltså i stort sett varje autentiserat API-anrop.
+
+Servern svarar med vad den tillåter:
+
+```
+access-control-allow-methods:
+  GET, POST, PATCH, PUT, DELETE
+access-control-max-age: 86400
+```
+
+`max-age` säger hur länge webbläsaren får minnas svaret. Utan den skulle varje anrop bli två.
+
+Det förklarar också en vanlig felsökningsupplevelse: felet syns på ett `OPTIONS`-anrop du aldrig
+skrivit, och pekar ut en metod du inte försökte använda.
+
+## CORS vs autentisering
+
+Den här förväxlingen leder till riktiga säkerhetshål, och den är utbredd.
+
+**Autentisering** avgör om anropet får utföras. Den kontrolleras av **servern**, gäller alla klienter,
+och går inte att kringgå.
+
+**CORS** avgör om ett skript i en webbläsare får läsa svaret. Den upprätthålls av **webbläsaren**, och
+gäller därför bara webbläsare.
+
+`curl` bryr sig inte om CORS. Det gör inte heller ett Python-skript, en mobilapp eller någon med
+utvecklarverktygen öppna.
+
+**CORS skyddar alltså inte ditt API.** Den skyddar användarens webbläsare från att en främmande sajt
+läser data i användarens namn. Ett API som förlitar sig på CORS för åtkomstkontroll är öppet för
+alla utom webbläsare.
+
+<Doodle
+  name="grinden-star-hos-klienten"
+  caption="Samma anrop, samma svar. Grinden står bara framför den ena."
+/>
+
+## Fallgropen: token i URL:en
+
+<Callout type="fallgrop">
+`GET /api/ordrar?token=eyJhbGciOi...` fungerar, och det är hela problemet.
+
+En URL är inte en hemlig plats. Den hamnar i webbserverns access-logg, i proxyloggar, i
+webbläsarhistoriken, i `Referer`-headern när användaren klickar vidare till en annan sajt — och i
+felrapporter som skickas till en tredje part.
+
+Beviset hör hemma i `Authorization`-headern. Headers loggas normalt inte, och de följer inte med
+till nästa sajt.
+
+Samma sak gäller ett API som tar nyckeln som frågeparameter *för att det är bekvämt att testa i
+webbläsaren*. Bekvämligheten är att den syns överallt.
+</Callout>
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att **konsumera** API:er med nycklar och tokens långt innan du bygger ett som utfärdar
+dem. Det du gör ofta är att läsa en `401`, en `403` eller en `429` och veta vilken av de tre det är.
+
+Det som är värt din tid nu är CORS-distinktionen. Du kommer att möta felet i konsolen inom en månad,
+och det första du behöver veta är att servern faktiskt svarade — annars felsöker du på fel sida.
+
+OAuth-flöden, API-gateways, mutual TLS och kvotdesign per kundnivå kan vänta. De blir dina när
+API:et har betalande användare — och de bygger alla på samma tre grindar.
+
+## Vanliga nybörjarförväxlingar
+
+En API-nyckel är inte ett lösenord. Den identifierar ett system, inte en människa, och den går inte
+att byta genom att någon loggar in.
+
+`Bearer` betyder innehavare. Den som har strängen är behörig — det finns ingen ytterligare kontroll.
+
+`429` är inte ett behörighetsfel. Beviset dög. Åtgärden är att vänta, inte att hämta ett nytt token.
+
+Alla API:er svarar inte `429`. GitHub använder `403` med ett meddelande om rate limit.
+
+Ett CORS-fel betyder inte att anropet blockerades. Det gick fram och besvarades — webbläsaren vägrade
+lämna ut svaret till skriptet.
+
+CORS är inte åtkomstkontroll. `curl` ignorerar den fullständigt, och det gör alla andra klienter
+utanför en webbläsare också.
+
+Preflight-anropet är inte något du skrivit. Webbläsaren skickar det själv så fort anropet bär en
+`Authorization`-header.
+
+## Prova själv
+
+GitHubs API svarar utan inloggning och visar sina räknare öppet. Inget konto behövs.
+
+Titta först på gränsen:
+
+```bash
+curl -sI https://api.github.com/users/BeeBarry \
+  | grep -i "^x-ratelimit"
+```
+
+```
+x-ratelimit-limit: 60
+x-ratelimit-remaining: 59
+x-ratelimit-used: 1
+x-ratelimit-resource: core
+x-ratelimit-reset: 1786180471
+```
+
+Sextio anrop i timmen utan inloggning. GitHub skickar två räknare till: `used` är spegelbilden av
+`remaining`, och `resource` säger vilken kvot som gäller — olika delar av API:et har egna.
+
+Kör kommandot igen två gånger och titta bara på `remaining`. Den räknar ner ett steg per anrop.
+**Räknaren är alltså inte en uppskattning; den är exakt.**
+
+Gör tidsstämpeln läsbar:
+
+```bash
+date -r 1786180257
+```
+
+Det är klockslaget då kvoten nollställs. På Linux heter samma sak `date -d @1786180257`.
+
+Titta nu på CORS. Fråga som om du vore ett skript på en annan sajt:
+
+```bash
+curl -sI -H "Origin: https://example.com" \
+  https://api.github.com/users/BeeBarry \
+  | grep -i "^access-control-allow-origin"
+```
+
+```
+access-control-allow-origin: *
+```
+
+Asterisken betyder att vilket ursprung som helst får läsa svaret. **Notera att du fick svaret ändå** —
+`curl` hade fått det även om headern saknats, eftersom `curl` inte bryr sig om CORS.
+
+Framkalla slutligen en preflight för hand:
+
+```bash
+curl -sI -X OPTIONS \
+  -H "Origin: https://example.com" \
+  -H "Access-Control-Request-Method: POST" \
+  https://api.github.com/users/BeeBarry \
+  | grep -i "^access-control-allow-methods"
+```
+
+```
+access-control-allow-methods:
+  GET, POST, PATCH, PUT, DELETE
+```
+
+Raden kommer på **en** rad i terminalen; den är bruten här för att få plats. Svaret är `204 No Content` med enbart headers. Det är exakt vad webbläsaren gör åt dig innan varje
+autentiserat anrop, och det är därför du ser `OPTIONS`-rader i loggen som ingen skrivit.
+
+Tre saker som kan förvirra. `-I` gör ett `HEAD`-anrop, och det räknas mot kvoten precis som ett
+`GET`. Vill du inte förbruka kvoten mer än nödvändigt: sextio i timmen räcker gott för övningarna
+ovan, men undvik att loopa. `date -r` är BSD-syntax och fungerar på macOS; GNU-versionen på de
+flesta Linux-system vill ha `-d @`. Och tidsstämpeln i utskriften ovan är från när artikeln skrevs —
+din blir en annan.
+
+<Callout type="kom-ihag">
+- En **API-nyckel** hör till ett system och gäller tills den återkallas. Ett **token** går ut.
+- `Authorization: Bearer <sträng>` — **innehavaren** är behörig. Inget mer kontrolleras.
+- Ett **scope** begränsar vad just det tokenet får göra. Minsta privilegium per anrop.
+- Tre grindar, tre koder: **401** okänd · **403** otillräcklig · **429** för ofta.
+- `429` löses genom att **vänta**, aldrig genom att hämta ett nytt token.
+- Läs `Retry-After` och räknarna. Backoff ska vara exponentiell och ha jitter.
+- **CORS upprätthålls av webbläsaren.** Anropet gick fram; svaret hölls tillbaka.
+- CORS skyddar inte ditt API. `curl` ignorerar den helt.
+- Beviset hör hemma i en header, aldrig i URL:en.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Vad betyder `Bearer` i `Authorization`-headern?",
+      a: "Innehavare. Den som visar upp strängen behandlas som behörig, utan någon ytterligare kontroll av vem hen är. Tokenet är en biljett, inte ett pass — och därför är det enda skyddet att det skickas över TLS och inte hamnar någonstans det kan läsas.",
+    },
+    {
+      q: "När passar en API-nyckel bättre än ett åtkomsttoken?",
+      a: "När det är ett system som anropar ett annat — en integration eller ett skript utan människa bakom. Nyckeln läggs i en konfiguration och gäller tills den återkallas. Finns en användare bakom anropet ska det vara ett token, som går ut av sig självt.",
+    },
+    {
+      q: "Din klient får `429` och hämtar därför ett nytt token. Varför blir det värre?",
+      a: "`429` betyder att beviset var fullgott men att takten var för hög. Ett nytt token ändrar ingenting, och hämtningen är dessutom ett extra anrop. Klienten bygger en loop som ökar belastningen för varje varv. Rätt åtgärd är att vänta, helst enligt `Retry-After`.",
+    },
+    {
+      q: "Vad är skillnaden mellan fast fönster och token bucket?",
+      a: "Fast fönster räknar anrop per klockperiod och nollställs på en gång, vilket gör att dubbla kvoten kan användas kring gränsen. Token bucket fylls på med jämn takt och tillåter en skur upp till hinkens storlek, men håller snittet över tid.",
+    },
+    {
+      q: "Du får ett CORS-fel i konsolen. Nådde anropet servern?",
+      a: "Ja. Servern tog emot anropet och svarade — det är webbläsaren som vägrar lämna ut svaret till skriptet, eftersom `access-control-allow-origin` saknades eller inte matchade. Felsök därför på serverns headers, inte på om anropet gick fram.",
+    },
+    {
+      q: "Kan du skydda ett API genom att sätta strikta CORS-regler?",
+      a: "Nej. CORS upprätthålls av webbläsaren, så `curl`, ett Python-skript eller en mobilapp ignorerar den fullständigt. CORS skyddar användarens webbläsare från att en främmande sajt läser data i användarens namn. Åtkomstkontrollen måste ligga i servern.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- En API-nyckel är ett uppslagsvärde utan inbyggd information, för system som anropar system.
+- `Authorization: Bearer <sträng>` är formen. Innehavaren är behörig, utan ytterligare kontroll.
+- Ett åtkomsttoken är utfärdat för ett tillfälle och går ut av sig självt.
+- Ett scope begränsar vad ett enskilt token får göra — minsta privilegium per anrop.
+- API:et kontrollerar tre saker i ordning: äkta bevis, tillräcklig behörighet, rimlig takt.
+- `401` är okänd, `403` är otillräcklig, `429` är för ofta. Tre koder, tre åtgärder.
+- Rate limiting räknar per identitet: nyckel, token eller IP-adress.
+- Fast fönster nollställs på klockslag. Token bucket fylls på jämnt och tillåter skurar.
+- Alla API:er svarar inte `429`. GitHub använder `403` med ett meddelande.
+- `x-ratelimit-remaining` och `reset` säger hur det ligger till innan du slår i taket.
+- Vid strypning: exponentiell backoff med jitter, och läs `Retry-After` när den finns.
+- CORS avgör om ett skript i en webbläsare får **läsa** svaret. Anropet gick fram ändå.
+- En preflight är ett `OPTIONS`-anrop webbläsaren skickar själv, bland annat vid `Authorization`.
+- CORS är ingen åtkomstkontroll. Allt utanför en webbläsare ignorerar den.
+- Ett token i URL:en hamnar i loggar, historik och `Referer`. Det hör hemma i en header.
+
+## Nästa del
+
+Därmed står API-serien: vad ett API är, hur det designas, och nu vem som får anropa det och hur
+mycket.
+
+Nu har vi följt kedjan hela vägen från webbläsaren till API:et. Sista steget är det som ligger bakom
+— hur data faktiskt lagras, och varför en fråga som var snabb i test kan ta nio sekunder i
+produktion.
