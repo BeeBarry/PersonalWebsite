@@ -2305,4 +2305,41 @@ export const DOODLES: Record<string, string> = {
     <text x="715" y="266">kopia av 2</text>
   </g>
 </svg>`,
+  /* ---- PostgreSQL 1.0 · Klustret, databasen och schemat ---- */
+  "klustret-databasen-schemat": `
+<svg viewBox="0 0 880 400" role="img" aria-label="Tre ramar innanför varandra märkta kluster, databas och schema. Innerst två lådor märkta kund och order.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M49 50 Q440 50 831 51 Q832 200 831 349 Q440 351 49 349 Q50 200 49 50 Z"/><path d="M110 110 Q440 109 771 110 Q770 220 770 330 Q440 331 110 331 Q109 220 110 110 Z"/><path d="M170 170 Q440 168 710 170 Q712 240 710 310 Q440 311 171 309 Q169 240 170 170 Z"/><path d="M210 225 Q320 224 429 224 Q430 258 431 291 Q320 292 209 290 Q210 258 210 225 Z"/><path d="M449 224 Q560 225 670 226 Q672 258 670 290 Q560 290 449 291 Q449 258 449 224 Z"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="start" opacity="0.62">
+    <text x="78" y="88">kluster</text>
+    <text x="138" y="148">databas</text>
+    <text x="198" y="206">schema</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="16" fill="currentColor" text-anchor="middle">
+    <text x="320" y="265">kund</text>
+    <text x="560" y="265">order</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="440" y="382">en anslutning väljer en databas</text>
+  </g>
+</svg>`,
+  /* ---- PostgreSQL 1.0 · En process per anslutning ---- */
+  "en-process-per-anslutning": `
+<svg viewBox="0 0 880 400" role="img" aria-label="Tre klientlådor till vänster med var sin pil till tre processer inuti en större ram som föreställer servern.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M51 46 Q140 44 230 44 Q231 78 229 111 Q140 112 49 111 Q50 78 51 46 Z"/><path d="M50 144 Q140 143 230 145 Q231 178 229 211 Q140 211 51 209 Q49 178 50 144 Z"/><path d="M50 246 Q140 244 229 246 Q230 278 230 311 Q140 311 51 310 Q49 278 50 246 Z"/><path d="M390 29 Q610 28 829 31 Q830 180 830 330 Q610 331 390 330 Q389 180 390 29 Z"/><path d="M430 60 Q610 60 789 59 Q791 88 790 114 Q610 115 430 115 Q429 88 430 60 Z"/><path d="M429 156 Q610 153 789 154 Q790 182 790 211 Q610 211 429 209 Q429 182 429 156 Z"/><path d="M431 250 Q610 248 790 250 Q792 278 791 306 Q610 306 430 306 Q429 278 431 250 Z"/><path d="M236 78 Q330 83 420 88"/><path d="M413 82 L426 88 L413 94"/><path d="M236 178 Q330 180 420 183"/><path d="M413 177 L426 183 L413 189"/><path d="M236 278 Q330 278 420 278"/><path d="M413 272 L426 278 L413 284"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="16" fill="currentColor" text-anchor="middle">
+    <text x="610" y="95">pid 142</text>
+    <text x="610" y="190">pid 143</text>
+    <text x="610" y="285">pid 144</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="140" y="352">klienter</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="610" y="368">servern</text>
+  </g>
+</svg>`,
 };

@@ -86,6 +86,7 @@ const learn = defineCollection({
       "git",
       "api",
       "sql",
+      "postgresql",
       "embedded",
     ]),
     image: z.object({ url: z.string(), alt: z.string() }).optional(),

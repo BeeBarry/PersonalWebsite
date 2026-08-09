@@ -1,0 +1,473 @@
+---
+title: 'Hierarkin, rollerna och typerna'
+description: 'Det Postgres gör som SQL-standarden inte säger — kluster, schema, roll och jsonb'
+category: 'postgresql'
+part: 1
+partTitle: 'Grunderna'
+order: 1
+date: '2026-08-09'
+tags: ['Beginner', 'PostgreSQL', 'Databaser']
+---
+
+## Var vi är
+
+SQL-serien byggde det som gäller överallt: tabeller, nycklar, relationer, JOIN, index och
+transaktioner. Ingenting där var bundet till en viss databas.
+
+Den här delen tar en. PostgreSQL har egna ord för sådant standarden beskriver annorlunda, och egna
+begrepp som standarden inte har alls — och de dyker upp i första felmeddelandet du möter.
+
+Zoomen ligger på det som skiljer: hierarkin, rollerna, typerna och verktyget. MVCC, VACUUM och
+frågeplaner tar nästa del.
+
+<Del titel="Hierarkin" />
+
+## Vad PostgreSQL är
+
+**PostgreSQL** är en relationsdatabas med öppen källkod, känd för att följa SQL-standarden nära och
+för att gå att bygga ut.
+
+SQL-delen definierade relationsdatabasen. Postgres är en implementation av den, och den som oftast
+väljs när något ska vara både relationellt och flexibelt.
+
+Namnet skrivs ut som PostgreSQL och uttalas *post-gres-Q-L*. Kortformen `postgres` är samma sak, och
+det är också namnet på standardanvändaren och standarddatabasen.
+
+## Vad ett kluster är
+
+Ett **kluster** i Postgres är en serverinstans med de databaser den håller — inte flera maskiner.
+
+Ordet är olyckligt valt och orsakar mer förvirring än något annat begrepp här. Kubernetes-seriens
+kluster är många maskiner; Postgres kluster är en installation på en maskin.
+
+Klustret har ett dataområde på disk, en portnummer och en uppsättning processer. Det du startar när
+du kör en Postgres-container är ett kluster.
+
+Vill någon tala om flera Postgres-servrar som samarbetar heter det replikering eller
+hög tillgänglighet — aldrig bara "kluster" utan att det framgår av sammanhanget.
+
+## Vad en databas är
+
+En **databas** är en isolerad samling scheman inuti klustret.
+
+En anslutning väljer **en** databas och stannar där. Du kan inte fråga över databasgränsen i samma
+fråga, vilket är den viktigaste praktiska följden.
+
+Ett nytt kluster har tre databaser: `postgres`, som är en arbetsdatabas, och `template0` och
+`template1`, som är mallar nya databaser kopieras från.
+
+Isoleringen är stark. Två applikationer i olika databaser i samma kluster delar processer och minne
+men ser inte varandras tabeller.
+
+## Vad ett schema är
+
+Ett **schema** är en namnrymd inuti en databas.
+
+Tabeller, vyer och funktioner ligger i ett schema. Två tabeller kan heta `kund` i samma databas så
+länge de ligger i olika scheman — `forsaljning.kund` och `support.kund`.
+
+Varje ny databas har ett schema som heter `public`. Skriver du `CREATE TABLE kund` utan att ange
+något hamnar tabellen där.
+
+Till skillnad från databaser går scheman att fråga över. En `JOIN` mellan `forsaljning.kund` och
+`support.arende` fungerar utan vidare.
+
+## Databas vs schema
+
+De blandas ihop ständigt, särskilt av den som kommer från MySQL — där betyder orden samma sak.
+
+**En databas** är en isolerad enhet. En anslutning når en i taget, och en fråga kan inte korsa
+gränsen.
+
+**Ett schema** är en mapp inuti databasen. Frågor korsar schemagränser fritt, och behörigheter sätts
+per schema.
+
+<Doodle name="klustret-databasen-schemat" caption="Allt ligger i det yttersta. En anslutning väljer en databas och stannar där." />
+
+Konsekvensen är hur du delar upp ett system. Ska två delar kunna fråga varandras data — använd
+scheman. Ska de vara helt åtskilda — använd databaser, och acceptera att de inte kan JOIN:a.
+
+Tumregeln för en applikation: en databas, och scheman inuti den om det behövs.
+
+## Vad `search_path` gör
+
+**`search_path`** är listan över scheman Postgres söker i när du skriver ett tabellnamn utan
+schemaprefix.
+
+```sql
+SHOW search_path;
+```
+
+```
+"$user", public
+```
+
+Standardvärdet betyder: leta först i ett schema som heter samma sak som den inloggade rollen, sedan i
+`public`. Finns inget sådant användarschema är `public` det som gäller.
+
+Det förklarar två vanliga överraskningar. En tabell du "inte hittar" ligger i ett schema som inte
+står i sökvägen — och två personer kan köra samma `SELECT` och få olika tabeller, om de loggat in som
+olika roller.
+
+<Del titel="Rollerna" />
+
+## Vad en roll är
+
+En **roll** är Postgres enda begrepp för den som gör något — en person, en applikation eller en
+grupp.
+
+En roll kan ha attribut: `LOGIN` gör att den kan ansluta, `SUPERUSER` att den får allt, `CREATEDB`
+att den får skapa databaser.
+
+En roll kan också vara medlem i en annan roll. Den mekanismen är vad andra system kallar grupper, och
+den är hur behörigheter delas ut till många på en gång.
+
+Johan i driftteamet skapar därför inte "en användare och en grupp" — han skapar två roller och gör
+den ena till medlem i den andra.
+
+## Roll vs användare
+
+Skillnaden finns i dokumentationen men inte i databasen, vilket gör den värd en egen sektion.
+
+**`CREATE USER`** finns och fungerar. Det är ett alias för `CREATE ROLE ... LOGIN` och skapar samma
+sorts objekt.
+
+**`CREATE ROLE`** utan `LOGIN` skapar något som inte kan ansluta men som kan äga objekt och ha
+behörigheter — alltså det man i vardagligt tal kallar en grupp.
+
+Konsekvensen är att `\du` listar allt i en tabell, och att skillnaden mellan användare och grupp bara
+är om `LOGIN` är satt. Postgres har ett begrepp där de flesta andra har två.
+
+## Vad ägarskap betyder
+
+Den roll som skapar ett objekt blir dess **ägare**, och ägaren får göra allt med det — inklusive att
+ta bort det.
+
+Ägarskapet följer inte med automatiskt. Skapar en migrationsroll tabellerna är det den rollen som
+äger dem, och applikationsrollen behöver egna rättigheter via `GRANT`.
+
+Det är den vanligaste orsaken till `permission denied for table` i en ny miljö: allt fungerar för den
+som byggde, och inte för den som kör.
+
+`ALTER TABLE … OWNER TO` flyttar ägarskapet. `GRANT` delar ut rättigheter utan att flytta det, vilket
+oftast är det du vill.
+
+<Del titel="Typerna" />
+
+## `text` vs `varchar(n)`
+
+Den första frågan de flesta har om Postgres är vilken textkolumn man ska välja. Svaret överraskar.
+
+**`varchar(n)`** är en textkolumn med en längdgräns. Gränsen kontrolleras vid skrivning, och ett för
+långt värde avvisas.
+
+**`text`** är en textkolumn utan gräns. Den lagras på exakt samma sätt och är exakt lika snabb.
+
+Konsekvensen är att `varchar(255)` inte ger något du inte får gratis. Talet 255 är dessutom ett arv
+från andra databaser och betyder ingenting särskilt här.
+
+Välj `text` som förval, och `varchar(n)` bara när gränsen är en verklig regel du vill att databasen
+ska upprätthålla. Övningen längst ner mäter lagringsstorleken för båda.
+
+## Vad jsonb är
+
+**`jsonb`** är en kolumntyp som lagrar JSON i ett binärt, normaliserat format.
+
+Det gör Postgres till både en relationsdatabas och ett dokumentlager. Ett fält som varierar mellan
+rader — inställningar, metadata, ett svar från ett API — kan ligga som `jsonb` utan att schemat
+ändras.
+
+Värden nås med egna operatorer: `data->>'namn'` hämtar ett fält som text, och `data @> '{"aktiv":
+true}'` frågar om objektet innehåller något.
+
+Kolumnen går också att indexera med ett GIN-index, vilket gör frågor mot innehållet snabba. Index i
+allmänhet tog SQL-delen; det som tillkommer här är att det fungerar även på ostrukturerad data.
+
+## `json` vs `jsonb`
+
+Postgres har två JSON-typer, och skillnaden syns direkt i vad de returnerar.
+
+**`json`** sparar texten ordagrant. Blankstegen, nyckelordningen och eventuella dubbletter finns
+kvar precis som de skrevs.
+
+**`jsonb`** tolkar och normaliserar. Nycklarna sorteras, blanksteg försvinner, och en upprepad nyckel
+behåller bara sitt sista värde.
+
+Konsekvensen är att `jsonb` är rätt val i nästan alla fall: den går att indexera, den är snabbare att
+läsa fält ur, och den upptäcker trasig JSON vid skrivning. Priset är att den ordagranna texten inte
+finns kvar — vilket bara spelar roll om du måste kunna återge indatan exakt.
+
+## Vad identity gör
+
+**`GENERATED ALWAYS AS IDENTITY`** gör en kolumn till en automatiskt räknande nyckel.
+
+```sql
+CREATE TABLE kund (
+  id int GENERATED ALWAYS AS IDENTITY,
+  namn text
+);
+```
+
+SQL-delen kallade det en syntetisk nyckel. Det här är Postgres — och SQL-standardens — sätt att
+skapa en.
+
+Bakom kulisserna finns en **sequence**, ett räknarobjekt som delar ut nästa tal. Den skapas
+automatiskt och heter något i stil med `kund_id_seq`.
+
+Den äldre formen `serial` gör i praktiken samma sak men är Postgres egen, och den lämnar sekvensen
+löst kopplad på ett sätt som ställer till det vid export. Nya tabeller bör använda `identity`.
+
+<Del titel="Verktyget" />
+
+## Vad `psql` är
+
+**`psql`** är Postgres terminalklient, och den har egna kommandon som inte är SQL.
+
+Alla börjar med bakstreck. `\l` listar databaser, `\dn` scheman, `\dt` tabeller, `\du` roller och
+`\d tabellnamn` beskriver en tabell.
+
+```bash
+psql -U postgres -c "SELECT 1;"
+```
+
+`-c` kör en fråga och avslutar. Utan flaggan hamnar du i en interaktiv session, som du lämnar med
+`\q`.
+
+Meta-kommandona är genvägar till frågor mot systemkatalogen. `\dt` kör en `SELECT` mot `pg_class` —
+och `\set ECHO_HIDDEN on` visar dig exakt vilken.
+
+## Vad en extension är
+
+En **extension** är ett paket som lägger till funktioner, datatyper eller operatorer i en databas.
+
+```sql
+CREATE EXTENSION pg_stat_statements;
+```
+
+Den installeras per databas, inte per kluster. Samma extension kan finnas i en databas och saknas i
+en annan i samma installation.
+
+Fyra dyker upp ofta. `pg_stat_statements` samlar statistik per fråga och är utgångspunkten för
+prestandaarbete. `pgcrypto` ger hashning och kryptering. `uuid-ossp` genererar UUID:er. `PostGIS`
+gör Postgres till en geodatabas.
+
+Det är utbyggbarheten som förklarar varför Postgres dyker upp i så olika sammanhang. Kärnan är en
+relationsdatabas; resten är påbyggnad.
+
+## Varför varje anslutning är en process
+
+Postgres startar **en egen operativsystemprocess** för varje anslutning.
+
+Linux-delen beskrev processen som ett program som körs, med ett PID. Här får varje ansluten klient en
+sådan, och den syns i `pg_stat_activity` med sitt nummer.
+
+Modellen är robust: kraschar en anslutning tar den inte med sig de andra. Priset är att en anslutning
+kostar minne och tid att starta — betydligt mer än en tråd hade gjort.
+
+<Callout type="fallgrop">
+En applikation som öppnar en ny anslutning per anrop möter taket långt före databasen är belastad.
+Standardgränsen ligger runt hundra samtidiga anslutningar, och varje ny kostar minne oavsett om den
+gör något.
+
+Symtomet är `FATAL: sorry, too many clients already` medan processorn står nästan stilla — alltså ett
+fel som ser ut som överbelastning men är en resursgräns.
+
+Svaret är en **connection pool**: ett lager som håller ett fåtal anslutningar öppna och delar dem
+mellan anropen. De flesta ramverk har en inbyggd, och PgBouncer gör det utanför applikationen.
+
+Höj inte `max_connections` som första åtgärd. Det flyttar taket och ökar minnesåtgången, utan att
+göra något åt att anslutningarna skapas i onödan.
+</Callout>
+
+<Doodle name="en-process-per-anslutning" caption="Tre klienter, tre processer. Var och en med eget PID och eget minne." />
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att möta `permission denied for table` i en ny miljö, och svaret är nästan alltid
+ägarskap: migrationsrollen skapade tabellen, applikationsrollen fick aldrig `GRANT`.
+
+Du kommer också att välja kolumntyper. `text` är förvalet, `jsonb` för det som varierar mellan rader,
+och `identity` för nycklar.
+
+Att sätta upp klustret, dimensionera minnet och välja replikeringsuppsättning är driftens arbete. Att
+veta att varje anslutning är en process är däremot ditt, eftersom det är din applikation som öppnar
+dem.
+
+Frågeplaner, VACUUM och MVCC tar nästa del. Det som inte kan vänta är hierarkin — utan den betyder
+varken felmeddelanden eller behörigheter någonting.
+
+## Vanliga nybörjarförväxlingar
+
+Ett Postgres-kluster är inte flera maskiner. Det är en serverinstans med sina databaser.
+
+En databas är inte ett schema. En anslutning når en databas i taget, medan scheman går att fråga
+över.
+
+`search_path` är inte en inställning man kan ignorera. Den avgör vilken tabell ett obekvalificerat
+namn syftar på.
+
+En användare är inte något annat än en roll. `CREATE USER` är ett alias för `CREATE ROLE ... LOGIN`.
+
+`varchar(255)` är inte snabbare än `text`. Lagringen är identisk, och 255 är ett arv från andra
+databaser.
+
+`json` och `jsonb` är inte samma typ. Den första sparar texten ordagrant, den andra normaliserar
+den.
+
+En anslutning är inte gratis. Varje anslutning är en egen process med eget minne.
+
+## Prova själv
+
+Övningen kör Postgres i en container och publicerar ingen port, så den kan inte krocka med något du
+redan har igång.
+
+```bash
+docker run -d --name pg-ovning \
+  -e POSTGRES_PASSWORD=hemligt postgres:17
+```
+
+Vänta ungefär femton sekunder. Kör sedan frågorna inuti containern:
+
+```bash
+docker exec -it pg-ovning psql -U postgres
+```
+
+Titta först på hierarkin — vilka databaser klustret har, och vilka scheman den du står i har:
+
+```sql
+SELECT datname FROM pg_database ORDER BY 1;
+\dn
+SHOW search_path;
+```
+
+```
+ postgres
+ template0
+ template1
+```
+
+Tre databaser i ett nyskapat kluster, ett schema (`public`), och sökvägen `"$user", public`. Jämför
+nu de två textkolumnerna:
+
+```sql
+SELECT pg_column_size('abc'::text) AS text,
+       pg_column_size('abc'::varchar(255)) AS varchar;
+```
+
+```
+ text | varchar
+------+---------
+    7 |       7
+```
+
+**Samma sju byte.** Längdgränsen kostar ingenting och ger ingenting i lagringen. Gör sedan det som
+visar skillnaden mellan JSON-typerna:
+
+```sql
+SELECT '{"b":1, "a":2, "b":3}'::json  AS json,
+       '{"b":1, "a":2, "b":3}'::jsonb AS jsonb;
+```
+
+```
+         json          |      jsonb
+-----------------------+------------------
+ {"b":1, "a":2, "b":3} | {"a": 2, "b": 3}
+```
+
+**Tre skillnader i en rad.** `jsonb` sorterade nycklarna, tog bort blankstegen, och behöll bara det
+sista värdet för den upprepade nyckeln `b`. `json` lämnade texten precis som den skrevs.
+
+Titta slutligen på anslutningarna:
+
+```sql
+SELECT pid, backend_type FROM pg_stat_activity
+WHERE backend_type = 'client backend';
+```
+
+```
+ pid | backend_type
+-----+----------------
+ 142 | client backend
+```
+
+**Din egen session, som en process med ett PID.** Öppnar du en andra terminal mot samma container får
+du en rad till. Avsluta med `\q` och städa:
+
+```bash
+docker rm -f pg-ovning
+```
+
+Tre saker kan förvirra. **`pg_column_size` ger 7 för tre tecken** — fyra byte är ett längdhuvud som
+Postgres lägger till, inte tecknen. **`\dn` visar bara `public`** i en ny databas, och ägaren står
+som `pg_database_owner` snarare än `postgres`. Och **`SELECT datname FROM pg_database` visar
+`template0` och `template1`**, som är mallar och inte databaser du ska arbeta i.
+
+<Callout type="kom-ihag">
+- Ett **kluster** i Postgres är en serverinstans med sina databaser — inte flera maskiner.
+- En **databas** är isolerad; en anslutning når en i taget. Ett **schema** är en namnrymd inuti den.
+- **`search_path`** avgör vilket schema ett namn utan prefix syftar på. Standard är `"$user", public`.
+- Postgres har bara **roller**. `CREATE USER` är ett alias för `CREATE ROLE ... LOGIN`.
+- **Ägaren** får allt med sitt objekt. `permission denied` i ny miljö är nästan alltid ägarskap.
+- **`text` och `varchar(n)` lagras likadant.** Gränsen är en regel, inte en optimering.
+- **`json`** sparar ordagrant, **`jsonb`** normaliserar och går att indexera. Välj `jsonb`.
+- **`identity`** är standardens sätt att skapa en räknande nyckel, med en sequence bakom.
+- **Varje anslutning är en process.** Därför behövs en connection pool, inte högre `max_connections`.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "En kollega säger att Postgres-klustret ligger på tre maskiner. Vad frågar du?",
+      a: "Vad hen menar med kluster. I Postgres är ett kluster en serverinstans med de databaser den håller — på en maskin. Flera Postgres-servrar som samarbetar heter replikering eller hög tillgänglighet, och ordet kluster används där bara med förtydligande.",
+    },
+    {
+      q: "När använder du scheman i stället för flera databaser?",
+      a: "När delarna ska kunna fråga varandras data. Frågor korsar schemagränser fritt men aldrig databasgränser — en anslutning når en databas i taget. Tumregeln för en applikation är en databas, med scheman inuti om uppdelning behövs.",
+    },
+    {
+      q: "Två personer kör exakt samma `SELECT * FROM kund` och får olika rader. Hur?",
+      a: "`search_path` är olika för dem. Standardvärdet `\"$user\", public` letar först i ett schema som heter samma som den inloggade rollen. Har den ena rollen ett eget schema med en `kund`-tabell träffar frågan den, medan den andra hamnar i `public`.",
+    },
+    {
+      q: "Vad är skillnaden mellan `CREATE USER` och `CREATE ROLE` i Postgres?",
+      a: "Bara attributet `LOGIN`. `CREATE USER` är ett alias för `CREATE ROLE ... LOGIN` och skapar samma sorts objekt. En roll utan `LOGIN` kan inte ansluta men kan äga objekt och ha behörigheter — det är vad andra system kallar en grupp.",
+    },
+    {
+      q: "Du sparar ett API-svar i en kolumn och vill kunna söka i innehållet. `json` eller `jsonb`?",
+      a: "`jsonb`. Den normaliserar värdet, går att indexera med GIN och är snabbare att läsa fält ur. `json` sparar texten ordagrant och passar bara när du måste kunna återge indatan exakt — men då förlorar du både index och sökbarhet.",
+    },
+    {
+      q: "Applikationen svarar `too many clients already` medan processorn är nästan overksam. Vad gör du?",
+      a: "Sätter in en connection pool. Varje anslutning i Postgres är en egen process med eget minne, så taket nås långt innan databasen är belastad. Att höja `max_connections` flyttar bara gränsen och ökar minnesåtgången, utan att åtgärda att anslutningarna skapas i onödan.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- Ett kluster i Postgres är en serverinstans med sina databaser, inte flera maskiner.
+- En databas är isolerad; en anslutning väljer en och kan inte fråga över gränsen.
+- Ett nytt kluster har `postgres`, `template0` och `template1`.
+- Ett schema är en namnrymd inuti databasen, och frågor korsar schemagränser fritt.
+- Varje databas har schemat `public`, dit tabeller utan prefix hamnar.
+- `search_path` avgör vilket schema ett obekvalificerat namn syftar på.
+- Postgres har bara roller. `CREATE USER` är `CREATE ROLE ... LOGIN`.
+- En roll utan `LOGIN` fungerar som en grupp, genom medlemskap.
+- Den som skapar ett objekt äger det, och ägaren får allt med det.
+- `text` och `varchar(n)` lagras identiskt; gränsen är en regel, inte en optimering.
+- `jsonb` lagrar JSON binärt och normaliserat, och går att indexera med GIN.
+- `json` sparar texten ordagrant, med blanksteg, nyckelordning och dubbletter kvar.
+- `GENERATED ALWAYS AS IDENTITY` skapar en räknande nyckel med en sequence bakom.
+- `psql` har meta-kommandon med bakstreck: `\l`, `\dn`, `\dt`, `\du`, `\d`.
+- En extension installeras per databas och lägger till typer, funktioner eller operatorer.
+- Varje anslutning är en egen process med eget PID och eget minne.
+- Därför är svaret på för många anslutningar en pool, inte ett högre tak.
+
+## Nästa del
+
+Nu vet du var saker ligger, vem som äger dem och vilka typer som är Postgres egna.
+
+Nästa del tar det som händer när databasen används. Varför växer en tabell medan raderna blir färre,
+vad gör `VACUUM` egentligen, och varför blev frågan långsam trots att indexet finns kvar?

@@ -351,4 +351,17 @@ export const categories: Category[] = [
         domain: "web",
         isVisible: true,
     },
+    // Samma uppdelning som observability-gruppen: den agnostiska kategorin
+    // ("Databaser & SQL") äger tabeller, nycklar, JOIN, index och
+    // transaktioner. Den här ägnar sig åt det Postgres gör som standarden
+    // inte säger — och ankrar bakåt i stället för att definiera om.
+    {
+        title: "PostgreSQL",
+        description: "Hierarkin, rollerna och typerna som SQL-standarden inte beskriver.",
+        icon: "skill-icons:postgresql-light",
+        slug: "postgresql",
+        group: "data",
+        domain: "web",
+        isVisible: true,
+    },
 ];

@@ -2427,6 +2427,38 @@ def alla():
       + "\n" + txt([(145,196,"1"),(335,196,"2"),(525,196,"3"),(715,196,"4")],21)
       + "\n" + txt([(715,266,"kopia av 2")],13,' opacity="0.62"') + "\n</svg>")
 
+    # 121 — PostgreSQL 1.0 · Klustret, databasen och schemat
+    # Nästlade ramar, inte en stapel. En Stack säger "vilar på"; här är
+    # relationen INNESLUTNING, och det är skillnaden mellan att förstå
+    # hierarkin och att tro att schemat ligger bredvid databasen.
+    D['klustret-databasen-schemat']=(
+      '<svg viewBox="0 0 880 400" role="img" aria-label="Tre ramar innanför varandra märkta '
+      'kluster, databas och schema. Innerst två lådor märkta kund och order.">\n'
+      + G % (f'<path d="{w(50,50,780,300)}"/><path d="{w(110,110,660,220)}"/>'
+             f'<path d="{w(170,170,540,140)}"/>'
+             f'<path d="{w(210,225,220,65)}"/><path d="{w(450,225,220,65)}"/>')
+      + "\n" + txt([(78,88,"kluster"),(138,148,"databas"),(198,206,"schema")],14,
+                   ' opacity="0.62"', "start")
+      + "\n" + txt([(320,265,"kund"),(560,265,"order")],16)
+      + "\n" + txt([(440,382,"en anslutning väljer en databas")],15,
+                   ' opacity="0.62"') + "\n</svg>")
+
+    # 122 — PostgreSQL 1.0 · En process per anslutning
+    # Processerna ritas INUTI serverramen och klienterna utanför. Ritas de som
+    # en rad bredvid varandra försvinner poängen: att processen tillhör
+    # servern, inte klienten, och kostar serverns minne.
+    klienter = "".join(f'<path d="{w(50,y,180,65)}"/>' for y in (45,145,245))
+    processer = "".join(f'<path d="{w(430,y,360,55)}"/>' for y in (60,155,250))
+    trad = "".join(f'<path d="M236 {a} Q330 {(a+b)//2} 420 {b}"/>' + arrow(426, b)
+                   for a, b in ((78,88),(178,183),(278,278)))
+    D['en-process-per-anslutning']=(
+      '<svg viewBox="0 0 880 400" role="img" aria-label="Tre klientlådor till vänster med var sin '
+      'pil till tre processer inuti en större ram som föreställer servern.">\n'
+      + G % (klienter + f'<path d="{w(390,30,440,300)}"/>' + processer + trad)
+      + "\n" + txt([(610,95,"pid 142"),(610,190,"pid 143"),(610,285,"pid 144")],16)
+      + "\n" + txt([(140,352,"klienter")],18.5)
+      + "\n" + txt([(610,368,"servern")],15,' opacity="0.62"') + "\n</svg>")
+
     return D
 
 if __name__ == "__main__":
