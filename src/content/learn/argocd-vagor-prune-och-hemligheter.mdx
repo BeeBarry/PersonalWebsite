@@ -1,0 +1,515 @@
+---
+title: 'Vågor, prune och hemligheter'
+description: 'Ordningen mellan resurser, städningen som inte sker — och GitOps svåraste fråga'
+category: 'argocd'
+part: 1
+order: 2
+date: '2026-08-09'
+tags: ['Beginner', 'ArgoCD', 'GitOps']
+---
+
+## Var vi är
+
+Förra delen gav Application-objektet och de två statusarna. Du kan läsa av om en avvikelse betyder
+att din commit inte slagit igenom eller att den gjorde det och resultatet är trasigt.
+
+Den delen behandlade dock alla resurser som en klump som appliceras samtidigt, och en enda
+applikation i ett repo utan hemligheter. Verkligheten är sällan så.
+
+Den här delen tar tre saker som dyker upp direkt: ordningen mellan resurser, vad som händer med det
+som utgått ur repot, och vad man gör med lösenord i ett repo alla kan läsa. Zoomen ligger fortfarande
+på ett kluster. Övningarna körs i samma slängbara kluster som förra delen.
+
+<Del titel="Ordningen" />
+
+## Vad en sync-operation gör
+
+En **sync** är operationen där ArgoCD applicerar manifesten mot klustret, och den är ett eget objekt
+med egen livscykel.
+
+Den har en fas — `Running`, `Succeeded`, `Failed` — och den lämnar ett spår i
+`status.operationState` som överlever operationen.
+
+Det är värt att veta att sync är något som *körs*, inte ett tillstånd. Två syncar av samma revision
+är två operationer, och ArgoCD håller reda på om den senaste lyckades.
+
+## Sync vs refresh
+
+Två ord som används om vartannat i gränssnittet och betyder helt olika saker.
+
+**Refresh** läser om repot och jämför på nytt. Ingenting ändras i klustret — bara ArgoCD:s bild av
+hur läget ser ut.
+
+**Sync** applicerar manifesten. Det är refresh plus den faktiska ändringen.
+
+Skillnaden märks när något ser fel ut i gränssnittet. En refresh svarar på frågan *"är bilden
+aktuell?"*, en sync på frågan *"rätta till det"*. Refresh är alltid ofarlig; sync är det inte.
+
+## Vad en sync wave är
+
+En **sync wave** är ett heltal som bestämmer i vilken ordning resurser appliceras.
+
+```yaml
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+```
+
+Resurser utan annotering ligger i våg **0**. ArgoCD applicerar en våg i taget, i stigande ordning,
+och väntar tills allt i vågen är friskt innan nästa börjar.
+
+Negativa tal fungerar också, vilket är det vanliga sättet att få något att köra *före* allt annat —
+en CRD eller ett namnrum som resten är beroende av.
+
+## Vad en hook är
+
+En **hook** är en resurs som körs vid en bestämd punkt i syncen i stället för att vara en del av det
+som ska finnas kvar.
+
+```yaml
+annotations:
+  argocd.argoproj.io/hook: PreSync
+  argocd.argoproj.io/hook-delete-policy: HookSucceeded
+```
+
+Faserna är `PreSync`, `Sync`, `PostSync` och `SyncFail`. Ett typiskt `PreSync` är en migrering av
+databasschemat — SQL-delens migrationer, körda innan den nya koden rullar ut.
+
+`hook-delete-policy` styr när hook-resursen städas bort. `HookSucceeded` tar bort den när den
+lyckats; `BeforeHookCreation` låter den ligga kvar tills nästa körning ersätter den, så du hinner
+läsa loggen.
+
+## Sync wave vs hook
+
+Två sätt att styra ordning, och de kombineras oftare än de ersätter varandra.
+
+**Vågen** ordnar resurser som ska **finnas kvar**. Backend före frontend, namnrum före allt.
+
+**Hooken** är ett **jobb som körs och är klart**. Den hör inte till det önskade läget; den är ett
+steg i vägen dit.
+
+En hook kan dessutom ha en egen våg. I det officiella exemplet har en `Sync`-hook `sync-wave: "1"`,
+alltså mitt emellan backend i våg 0 och frontend i våg 2 — ett underhållsmeddelande som visas medan
+frontend byts ut.
+
+<Flow
+  caption="Fem steg på tjugonio sekunder. Tidsstämplarna i klustret bekräftar ordningen exakt."
+  steps={[
+    {
+      label: "PreSync-hook",
+      via: "07:27:45",
+      note: "`upgrade-sql-schema` — migreringen, före allt annat.",
+      accent: true,
+    },
+    {
+      label: "Våg 0",
+      via: "07:27:57",
+      note: "`backend` — resurser utan annotering.",
+    },
+    {
+      label: "Våg 1",
+      via: "07:28:04",
+      note: "`maint-page-up` — en Sync-hook mitt i sekvensen.",
+    },
+    {
+      label: "Våg 2",
+      via: "07:28:12",
+      note: "`frontend` — först nu, när backend är friskt.",
+    },
+    {
+      label: "Våg 3",
+      via: "07:28:14",
+      note: "`maint-page-down` — underhållsmeddelandet tas ner.",
+    },
+  ]}
+/>
+
+Lägg märke till en sak i statusen medan det pågår: applikationen står som `OutOfSync` hela vägen
+genom sekvensen och blir `Synced` först när sista vågen är klar. En sync med vågor är alltså inte
+atomär — den är en följd av steg, och du kan se den halvvägs.
+
+<Del titel="Städningen" />
+
+## Vad prune gör
+
+**Prune** tar bort resurser som finns i klustret men inte längre i repot.
+
+Utan den ligger allt kvar som någon gång skapats. Raderar du en fil ur repot försvinner den ur
+beskrivningen — men Deploymenten den skapade fortsätter köra, för alltid, utan att någon vet varför.
+
+Det är därför prune är avstängt som standard: det är det enda ArgoCD gör som **raderar** något du
+inte uttryckligen bett om.
+
+## `requiresPruning` i statusen
+
+ArgoCD markerar varje resurs som borde tas bort, oavsett om den kommer att göra det.
+
+```bash
+Q='{range .status.resources[?(@.requiresPruning)]}'
+Q=$Q'{.kind} {.name}{"\n"}{end}'
+k -n argocd get app vagor -o jsonpath="$Q"
+```
+
+```
+Job maint-page-down
+Job maint-page-up
+```
+
+Fältet heter `requiresPruning` och ligger per resurs i `status.resources`. Det är den lista du ska
+titta på innan du slår på prune — den säger exakt vad som kommer att försvinna.
+
+## Fallgropen: prune i efterhand
+
+<Callout type="fallgrop">
+**Att slå på `prune` i efterhand städar inte upp det som redan ligger kvar.**
+
+Jag bytte `path` i en Application så att fyra resurser blev överflödiga. Applikationen blev
+`OutOfSync`, och alla fyra fick `requiresPruning: true`. Sedan satte jag `prune: true` under
+`automated` — och väntade.
+
+Ingenting hände. Inte efter trettio sekunder, inte efter en hård refresh. Resurserna låg kvar med
+`requiresPruning: true` medan `status.operationState` sa *Succeeded — successfully synced*.
+
+Orsaken är att automatisk sync är **revisionsbaserad**. ArgoCD hade redan synkat den revisionen med
+lyckat resultat och kör inte om den. Först en uttrycklig sync med `prune` städade, och då tog det
+sex sekunder.
+
+Slutsatsen: `prune: true` gäller framåt, från nästa revision. Ska något som redan finns bort måste
+du be om syncen.
+</Callout>
+
+## Vad en finalizer gör
+
+En **finalizer** är en markering på ett objekt som säger att något måste hända innan Kubernetes får
+radera det.
+
+```yaml
+metadata:
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+```
+
+Med den kvar tar en radering av Application-objektet med sig applikationens resurser. Utan den
+raderas bara beskrivningen, och det som körde lämnas kvar i klustret.
+
+<Doodle
+  name="finalizern-haller-kvar"
+  caption="Lådan lyfts, men haken sitter i. Ingenting går bort förrän ArgoCD städat klart."
+/>
+
+Det är också varför en radering ibland verkar hänga. Kubernetes väntar på att ArgoCD ska bekräfta
+att den städat, och gör ArgoCD inte det — för att den är nere — blir objektet stående i `Terminating`
+tills finalizern tas bort för hand.
+
+## Vad `syncOptions` är
+
+`syncOptions` är en lista med flaggor som ändrar hur syncen beter sig.
+
+```yaml
+spec:
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+```
+
+`CreateNamespace=true` är den du behöver först: utan den misslyckas syncen om målnamnrummet inte
+finns, eftersom ArgoCD inte skapar det åt dig som standard.
+
+Andra som dyker upp är `ServerSideApply=true`, som löser samma storleksgräns du stötte på vid
+installationen i förra delen, och `Validate=false` för manifest med fält Kubernetes inte känner igen.
+
+<Del titel="Skalan" />
+
+## Problemet med tjugo Applications
+
+Ett Application-objekt per applikation fungerar tills antalet växer.
+
+Tjugo applikationer i tre miljöer är sextio objekt. Någon ska skapa dem, hålla dem lika, och komma
+ihåg att lägga till det sextioförsta när en ny tjänst tillkommer.
+
+Och de objekten är i sig ett önskat läge som borde bo i Git — annars har du flyttat problemet i
+stället för att lösa det.
+
+## Vad app-of-apps är
+
+**App-of-apps** är mönstret där ett Application-objekt pekar på en katalog som innehåller andra
+Application-objekt.
+
+Rotapplikationen synkas en gång. Den skapar barnen, barnen synkar sina egna källor, och hela
+plattformen kommer upp ur en enda `kubectl apply`.
+
+Konsekvensen är att en ny tjänst blir en fil i rotkatalogen — en pull request, granskad som all annan
+kod. Ingen rör klustret.
+
+## App-of-apps vs ApplicationSet
+
+Två sätt att slippa skriva sextio objekt för hand, och de löser olika sorters upprepning.
+
+**App-of-apps** är en katalog med färdigskrivna Application-filer. Varje barn står utskrivet, och de
+kan skilja sig hur mycket som helst.
+
+**ApplicationSet** är en generator. Du skriver en mall och en lista — kluster, kataloger i ett repo,
+eller ett Git-uttryck — och controllern skapar objekten.
+
+Tumregeln följer av hur lika de är. Tjugo olika applikationer i en plattform → app-of-apps. Samma
+applikation i tjugo kluster → ApplicationSet.
+
+<Del titel="Hemligheterna" />
+
+## Varför hemligheter är svårt här
+
+GitOps kräver att allt önskat läge ligger i Git. Ett lösenord är en del av det önskade läget. Och
+Git-repot är läsbart för alla som får läsa koden.
+
+Kubernetes-delen slog fast att en Secret bara är base64-kodad, inte krypterad. Ett manifest med en
+Secret i ett repo är alltså ett lösenord i klartext, med ett extra steg.
+
+Det finns inget sätt runt konflikten. De två lösningarna nedan går åt var sitt håll: antingen läggs
+något i repot som bara klustret kan låsa upp, eller så läggs ingenting alls i repot.
+
+## Krypterat i repot vs hämtat vid körning
+
+**Krypterat i repot** — mönstret Sealed Secrets använder. Du krypterar värdet med en publik nyckel,
+och den krypterade filen checkas in. Bara controllern i klustret har den privata nyckeln och kan
+skapa den riktiga Secreten.
+
+**Hämtat vid körning** — mönstret External Secrets använder. Repot innehåller bara en *referens*:
+"hämta `db-password` från valvet". Det verkliga värdet ligger i Azure Key Vault, AWS Secrets Manager
+eller HashiCorp Vault, och klustret hämtar det när det behövs.
+
+<Doodle
+  name="nyckeln-stannar-i-klustret"
+  caption="Kuvertet reser. Nyckeln gör det aldrig — och därför är repot ofarligt att läsa."
+/>
+
+Avvägningen: det krypterade repot är självförsörjande men bundet till klustrets nyckel — tappar du
+den kan ingenting låsas upp. Valvet kräver en extra tjänst men ger rotation, revisionslogg och
+möjligheten att dra tillbaka en hemlighet utan att röra repot.
+
+Azure-delens managed identity är för övrigt precis det som gör den andra vägen möjlig utan en
+hemlighet till: klustret bevisar vem det är, och valvet svarar.
+
+## Fallgropen: base64 igen
+
+<Callout type="fallgrop">
+**En `Secret` i ett GitOps-repo är inte skyddad av att den är base64-kodad.**
+
+Det är tredje gången samma missförstånd dyker upp i hubben. Kubernetes-delen: en Secret är kodad,
+inte krypterad. Terraform-delen: `sensitive` döljer utskriften, inte lagringen. Cyber-delen: ett JWT
+är signerat, inte krypterat.
+
+Här är konsekvensen värre än i de andra fallen, eftersom Git aldrig glömmer. Git-delen slog fast att
+en committad hemlighet finns kvar i historiken även efter att den tagits bort — den ska betraktas
+som läckt och roteras.
+
+Kontrollfrågan innan du checkar in något: *skulle det här vara ett problem om repot blev publikt?*
+Är svaret ja hör värdet inte hemma där, oavsett hur oläsbart det ser ut.
+</Callout>
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att lägga till en sync wave när något startade i fel ordning, och du kommer att titta på
+`requiresPruning` innan du slår på prune i en miljö som redan kör.
+
+Det som är värt din tid nu är att prune och selfHeal gäller **framåt**. De rättar nästa avvikelse,
+inte den som redan finns — och den skillnaden förklarar de flesta *"varför gjorde ArgoCD ingenting?"*.
+
+ApplicationSet-generatorer, RBAC per projekt, multi-cluster och att drifta ArgoCD i drift kan vänta.
+De blir dina när fler team delar instansen — och de bygger alla på Application-objektet från förra
+delen.
+
+## Vanliga nybörjarförväxlingar
+
+Refresh är inte sync. Det ena läser om repot, det andra ändrar i klustret.
+
+Resurser utan `sync-wave` hamnar inte sist. De hamnar i våg 0.
+
+En hook är inte en resurs som ska finnas kvar. Den körs och städas bort enligt sin delete policy.
+
+En sync med vågor är inte atomär. Applikationen står `OutOfSync` medan sekvensen pågår.
+
+`prune: true` städar inte det som redan ligger kvar. Det gäller från nästa sync.
+
+En finalizer gör inte raderingen långsam. Den gör att raderingen väntar på att ArgoCD städat klart.
+
+En base64-kodad Secret i repot är inte skyddad. Den är ett lösenord med ett extra steg.
+
+## Prova själv
+
+Vi fortsätter i klustret från förra delen, med samma funktion:
+
+```bash
+k() { kubectl --context docker-desktop "$@"; }
+```
+
+Rulla ut det officiella våg-exemplet i ett eget namnrum:
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: vagor
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: >-
+      https://github.com/argoproj/argocd-example-apps
+    targetRevision: HEAD
+    path: sync-waves
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: vagor
+  syncPolicy:
+    automated: {}
+    syncOptions:
+      - CreateNamespace=true
+```
+
+```bash
+k apply -f vagor.yaml
+```
+
+Vänta en minut och läs sedan av **när** varje resurs skapades:
+
+```bash
+C=N:.metadata.name,SKAPAD:.metadata.creationTimestamp
+k -n vagor get all --no-headers -o custom-columns=$C \
+  | sort -k2
+```
+
+```
+upgrade-sql-schema…-presync   07:27:45
+backend                       07:27:57
+maint-page-up                 07:28:04
+frontend                      07:28:12
+maint-page-down               07:28:14
+```
+
+**Tidsstämplarna är beviset.** PreSync-hooken först, sedan våg 0, 1, 2 och 3 — tjugonio sekunder
+från början till slut, i exakt den ordning annoteringarna anger. Byt nu källa så att de flesta
+resurserna blir överflödiga:
+
+```bash
+k -n argocd patch app vagor --type merge \
+  -p '{"spec":{"source":{"path":"guestbook"}}}'
+```
+
+Applikationen blir `OutOfSync`, och de gamla resurserna ligger kvar. Fråga vad ArgoCD tycker borde
+bort:
+
+```bash
+Q='{range .status.resources[?(@.requiresPruning)]}'
+Q=$Q'{.kind} {.name}{"\n"}{end}'
+k -n argocd get app vagor -o jsonpath="$Q"
+```
+
+Slå nu på prune och vänta:
+
+```bash
+P='{"spec":{"syncPolicy":{"automated":'
+P=$P'{"prune":true}}}}'
+k -n argocd patch app vagor --type merge -p "$P"
+```
+
+**Ingenting händer.** Resurserna ligger kvar med `requiresPruning: true` medan
+`status.operationState` säger *Succeeded*. Automatisk sync är revisionsbaserad och kör inte om en
+revision den redan lyckats med. Be uttryckligen om syncen i stället:
+
+```bash
+P='{"operation":{"sync":'
+P=$P'{"revision":"HEAD","prune":true}}}'
+k -n argocd patch app vagor --type merge -p "$P"
+```
+
+Inom sex sekunder står applikationen som `Synced` och de gamla resurserna är borta. Städa sedan upp,
+och **i den här ordningen**:
+
+```bash
+k -n argocd delete app vagor guestbook
+k delete namespace vagor argocd
+```
+
+Tre saker som kan förvirra. **Raderar du namnrummet före applikationerna hänger det i `Terminating`**,
+eftersom Application-objektens finalizer väntar på en ArgoCD som du just tagit bort. Det officiella
+app-of-apps-exemplet i samma repo är dessutom en Helm-chart som inte längre renderar i ArgoCD 3.5 —
+den ger `failed to execute helm template command`, vilket är exemplets ålder och inte ditt fel. Och
+`maint-page-up` blir kvar i namnrummet efter syncen, eftersom just den hooken har
+`hook-delete-policy: BeforeHookCreation` och alltså ligger kvar tills nästa körning ersätter den.
+
+<Callout type="kom-ihag">
+- **Refresh** läser om repot. **Sync** ändrar i klustret. Bara den ena är ofarlig.
+- En **sync wave** är ett heltal. Resurser utan annotering ligger i våg **0**, och negativa tal går.
+- ArgoCD väntar tills en våg är frisk innan nästa börjar. Sekvensen är alltså inte atomär.
+- En **hook** körs och städas bort. `PreSync`, `Sync`, `PostSync`, `SyncFail`.
+- `hook-delete-policy: BeforeHookCreation` låter hooken ligga kvar så du hinner läsa loggen.
+- **`prune` gäller framåt.** Det som redan ligger kvar kräver en uttrycklig sync.
+- `requiresPruning` per resurs är listan över vad som kommer att försvinna.
+- **Finalizern** gör att en radering tar med sig resurserna — och hänger om ArgoCD är nere.
+- `CreateNamespace=true` behövs, annars misslyckas syncen mot ett namnrum som inte finns.
+- En Secret i repot är **kodad, inte krypterad**. Antingen kryptera den, eller lägg den i ett valv.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Vad är skillnaden mellan refresh och sync?",
+      a: "Refresh läser om repot och uppdaterar ArgoCD:s bild av läget — ingenting ändras i klustret. Sync applicerar manifesten och ändrar faktiskt. Refresh är alltid ofarlig att klicka på; sync är det inte.",
+    },
+    {
+      q: "Din CRD måste finnas innan resurserna som använder den. Hur löser du det?",
+      a: "Med en negativ sync wave på CRD:n, till exempel `argocd.argoproj.io/sync-wave: \"-1\"`. Resurser utan annotering ligger i våg 0, så allt med ett lägre tal appliceras före dem. ArgoCD väntar dessutom tills vågen är frisk innan nästa börjar.",
+    },
+    {
+      q: "Vad skiljer en hook från en resurs i en sync wave?",
+      a: "Vad som händer efteråt. Vågen ordnar resurser som ska finnas kvar i klustret. En hook är ett jobb som körs som ett steg i syncen och sedan städas bort enligt sin `hook-delete-policy` — den hör inte till det önskade läget.",
+    },
+    {
+      q: "Du slår på `prune: true` och inget städas bort, trots att `requiresPruning` är satt. Varför?",
+      a: "För att automatisk sync är revisionsbaserad. ArgoCD har redan synkat den revisionen med lyckat resultat och kör inte om den, så inställningen gäller från nästa revision. En uttrycklig sync med `prune` städar direkt.",
+    },
+    {
+      q: "Du raderar namnrummet där ArgoCD kör innan du raderat applikationerna. Vad händer?",
+      a: "Namnrummet fastnar i `Terminating`. Application-objekten har en finalizer som väntar på att ArgoCD ska städa sina resurser, och den ArgoCD har du just tagit bort. Radera alltid applikationerna först — eller ta bort finalizern för hand.",
+    },
+    {
+      q: "Ni vill lägga ett databaslösenord i GitOps-repot. Vilka två vägar finns?",
+      a: "Antingen krypterar du värdet så att bara klustret kan låsa upp det — mönstret Sealed Secrets använder, där den privata nyckeln aldrig lämnar klustret. Eller så lägger du bara en referens i repot och låter klustret hämta värdet ur ett valv vid körning, som External Secrets gör. Att checka in en vanlig Secret är inget alternativ: base64 är kodning, inte kryptering.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- En sync är en operation med en fas, och spåret ligger kvar i `status.operationState`.
+- Refresh läser om repot; sync applicerar. Bara refresh är ofarlig.
+- En sync wave är ett heltal i en annotering. Utan annotering hamnar resursen i våg 0.
+- Negativa vågor kör före allt annat — rätt plats för CRD:er och namnrum.
+- ArgoCD väntar tills en våg är frisk innan nästa börjar, så sekvensen syns halvvägs.
+- Applikationen står `OutOfSync` medan vågorna körs och blir `Synced` först efteråt.
+- En hook körs vid `PreSync`, `Sync`, `PostSync` eller `SyncFail` och städas bort efteråt.
+- `hook-delete-policy` avgör om hooken finns kvar att läsa loggen ur.
+- Prune tar bort det som utgått ur repot, och är avstängt för att det är det enda som raderar.
+- `requiresPruning` per resurs visar exakt vad som skulle försvinna.
+- `prune` gäller framåt. Det som redan ligger kvar kräver en uttrycklig sync.
+- Finalizern gör att raderingen av ett Application tar med sig dess resurser.
+- Utan ArgoCD igång hänger en radering med finalizer i `Terminating`.
+- `CreateNamespace=true` behövs för namnrum ArgoCD annars inte skapar.
+- App-of-apps är en katalog med färdiga Application-filer; ApplicationSet är en generator.
+- Olika applikationer i en plattform → app-of-apps. Samma applikation i många kluster → ApplicationSet.
+- En Secret i repot är kodad, inte krypterad. Kryptera den, eller lägg bara en referens.
+
+## Nästa del
+
+Därmed står ArgoCD-grunderna: Application-objektet och de två statusarna i förra delen, och nu
+ordningen, städningen och hemligheterna.
+
+Något har blivit tydligt på vägen genom hela hubben. Terraform pressar mot önskat läge när du kör
+`apply`. Ansible när du kör kommandot. Kubernetes oavbrutet av sig självt. ArgoCD oavbrutet, mot ett
+repo.
+
+**Det är samma slinga fyra gånger** — beskriv, jämför, rätta — med skillnaden var beskrivningen bor
+och vem som håller i klockan. Känner du igen den slingan känner du igen nästa verktyg du möter, oavsett
+vad det heter.

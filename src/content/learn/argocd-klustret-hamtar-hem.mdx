@@ -1,0 +1,456 @@
+---
+title: 'Klustret hämtar hem sitt önskade läge'
+description: 'GitOps i praktiken — och de två statusarna som betyder helt olika saker'
+category: 'argocd'
+part: 1
+partTitle: 'Grunderna'
+order: 1
+date: '2026-08-09'
+tags: ['Beginner', 'ArgoCD', 'GitOps']
+---
+
+## Var vi är
+
+CI/CD-delen slutade med en pipeline som bygger, testar och rullar ut — och som loggar in i molnet
+utan att bära på en nyckel. Utrullningen sker där: pipelinen har åtkomst till klustret och kör
+`kubectl apply`.
+
+Ansible-delen avslutades med en observation som pekar hit. Ansible pressar en maskin mot ett önskat
+läge när du kör kommandot, Terraform när du kör `apply`, och Kubernetes oavbrutet av sig självt.
+Skillnaden mellan dem är **vem som håller i klockan**.
+
+Den här delen tar den frågan till sin ytterlighet: ingen kör kommandot alls. Zoomen ligger på en
+applikation i ett kluster. Flera kluster, ApplicationSets och hemligheter i ett GitOps-repo tar vi i
+nästa del. Övningarna körs i ett slängbart kluster på din egen maskin.
+
+<Del titel="Riktningen" />
+
+## Vad GitOps är
+
+**GitOps** är att låta ett Git-repo vara den enda beskrivningen av vad som ska köras, och låta ett
+program i klustret se till att verkligheten stämmer med den.
+
+Tre saker följer av det. Ändringar görs genom commits, inte genom kommandon. Vad som *ska* köras går
+alltid att läsa i repot. Och en ändring som någon gjort direkt i klustret är per definition ett fel
+som ska rättas.
+
+Det sista är det som skiljer GitOps från "vi har våra manifest i Git". Att lagra dem där är
+versionshantering; GitOps är att repot också är det som gäller.
+
+## Vad ArgoCD är
+
+**ArgoCD** är ett program som körs *i* klustret, läser manifest från ett Git-repo, och håller
+klustret i det läge repot beskriver.
+
+Den installeras som vilken applikation som helst i ett eget namnrum, och den lägger till en ny
+resurstyp i Kubernetes API:t — `Application`.
+
+ArgoCD bygger inga images och kör inga tester. Den gör en enda sak: jämför repot med klustret och
+rättar skillnaden. Bygget hör fortfarande till pipelinen i CI/CD-delen.
+
+## Push vs pull i utrullning
+
+Den avgörande skillnaden mot allt tidigare i hubben, och den syns tydligast i vem som initierar.
+
+**Push** betyder att något utanför klustret skickar in ändringen. Pipelinen har rättigheter mot
+klustret, kör `kubectl apply`, och är klar. Det är så CI/CD-delen gjorde.
+
+**Pull** betyder att något inne i klustret hämtar hem beskrivningen själv. Ingen utanför behöver
+rättigheter mot klustret alls.
+
+<Doodle
+  name="pilen-pekar-inat"
+  caption="Pilen går inifrån och ut. Pipelinen behöver inte längre nå in genom väggen."
+/>
+
+Följden är en säkerhetsvinst som är lätt att missa. I push-modellen måste pipelinen ha en
+kube-konfiguration med skrivrättigheter, och den hemligheten finns någonstans. I pull-modellen
+behöver pipelinen bara kunna pusha till Git.
+
+## Vad ett Application-objekt är
+
+Ett **Application** är ett Kubernetes-objekt som säger vilka manifest som ska hämtas varifrån, och
+var de ska hamna.
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: guestbook
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: >-
+      https://github.com/argoproj/argocd-example-apps
+    targetRevision: HEAD
+    path: guestbook
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+```
+
+Objektet bor i ArgoCD:s eget namnrum, inte där applikationen ska köra. Det är en beskrivning *om*
+en applikation, inte applikationen själv.
+
+## `source` och `destination`
+
+De två blocken svarar på var manifesten kommer ifrån och var de ska hamna.
+
+**`source`** har tre fält som spelar roll: `repoURL` är repot, `path` är katalogen i det, och
+`targetRevision` är vilken version — en gren, en tagg eller `HEAD`.
+
+**`destination`** har två: `server` är klustret, och `namespace` är namnrummet. `https://kubernetes.default.svc`
+betyder klustret ArgoCD själv kör i.
+
+Att `targetRevision` kan vara en tagg är värt att fästa. Docker-delen slog fast att en tagg kan pekas
+om och en digest inte; samma avvägning gäller här mellan `HEAD` och en fast Git-sha.
+
+<Del titel="De två statusarna" />
+
+## Vad avstämningsslingan gör
+
+ArgoCD jämför repot med klustret med jämna mellanrum, och standardintervallet är **tre minuter**.
+
+Det är samma sorts slinga som Kubernetes egna controllers kör, en nivå upp: Kubernetes håller
+klustret i det läge API:t beskriver, och ArgoCD håller API:t i det läge repot beskriver.
+
+Slingan går också att trigga direkt. En webhook från Git gör att en push slår igenom på sekunder i
+stället för att vänta ut intervallet.
+
+## Vad sync status är
+
+**Sync status** svarar på en enda fråga: *stämmer klustret med repot?*
+
+Den har två värden. **`Synced`** betyder att det som finns i klustret motsvarar manifesten i repot.
+**`OutOfSync`** betyder att något skiljer sig — en resurs saknas, är ändrad, eller finns utan att stå
+i repot.
+
+Statusen säger ingenting om huruvida applikationen fungerar. Den jämför två beskrivningar, inget
+annat.
+
+## Vad health status är
+
+**Health status** svarar på den andra frågan: *mår det som körs bra?*
+
+Sex värden finns: `Healthy`, `Progressing`, `Degraded`, `Missing`, `Suspended` och `Unknown`. ArgoCD
+tolkar varje resurstyp åt dig — en Deployment är `Healthy` när dess poddar är redo, `Progressing`
+medan de startar.
+
+Applikationens hälsa räknas fram som **den sämsta bland dess resurser**, i ordningen `Healthy`,
+`Suspended`, `Progressing`, `Missing`, `Degraded`, `Unknown`. En enda trasig resurs drar alltså ner
+hela applikationen.
+
+## Sync status vs health status
+
+Den enskilt viktigaste distinktionen i ArgoCD, och den som gör att gränssnittet visar två kolumner
+i stället för en.
+
+**Sync status** jämför klustret mot repot. **Health status** tittar på om det som körs fungerar.
+
+De är oberoende, och alla kombinationer förekommer:
+
+<Doodle
+  name="de-tva-axlarna"
+  caption="Två frågor, fyra svar. Den övre högra rutan är den som förvånar mest."
+/>
+
+`Synced` + `Degraded` betyder att Git fick sin vilja igenom och resultatet ändå är trasigt — då är
+felet i manifesten. `OutOfSync` + `Healthy` betyder att någon ändrat i klustret och att det fungerar
+alldeles utmärkt, vilket inte gör det mindre fel.
+
+## Vad revisionen pekar på
+
+Applikationens status bär den **Git-sha** som senast synkades.
+
+```
+sync.revision   8088f4c0d970
+```
+
+Det är kopplingen tillbaka till Git-delens historik: du kan gå från en podd som beter sig konstigt
+till exakt den commit som beskrev den.
+
+I `status.history` ligger dessutom de föregående. En utrullning som gick fel går därmed att spåra
+till en commit utan att någon behöver komma ihåg vad som hände.
+
+<Del titel="Vad som rättas" />
+
+## Vad en manuell sync är
+
+En **sync** är operationen där ArgoCD faktiskt applicerar manifesten mot klustret.
+
+Utan sync händer ingenting. Ett nyskapat Application läser repot, konstaterar att inget finns i
+klustret, och stannar i `OutOfSync` + `Missing` tills någon säger till.
+
+Att den inte kör automatiskt från början är avsiktligt: du ska kunna peka ut ett repo och se vad som
+*skulle* hända innan det händer.
+
+## Vad drift är här
+
+Terraform-delen införde **drift** som att verkligheten glidit ifrån beskrivningen. ArgoCD upptäcker
+samma sak, men oavbrutet i stället för vid nästa `plan`.
+
+Skalar någon en Deployment för hand blir applikationen `OutOfSync` inom sekunder. Ändringen finns
+kvar — ArgoCD har bara noterat att den inte står i repot.
+
+Det är skillnaden mot Terraform i praktiken: `terraform plan` visar drift när du frågar, ArgoCD
+visar den hela tiden. Ingen behöver komma ihåg att titta.
+
+## Vad `syncPolicy.automated` är
+
+`syncPolicy.automated` gör att ArgoCD synkar själv när repot och klustret skiljer sig.
+
+```yaml
+spec:
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+```
+
+Utan blocket är ArgoCD en detektor: den ser skillnaden och rapporterar den. Med blocket blir den en
+regulator som också rättar den.
+
+## `prune` vs `selfHeal`
+
+Två inställningar som båda låter som "rätta till", och som täcker helt olika fall.
+
+**`prune`** tar bort resurser som finns i klustret men **inte längre i repot**. Utan den lämnas en
+Deployment kvar för alltid när någon raderar dess fil.
+
+**`selfHeal`** återställer resurser som **ändrats i klustret** till det repot säger. Utan den syns
+driften men rättas aldrig.
+
+Kontrollfrågan: försvann något ur repot → `prune`. Ändrades något i klustret → `selfHeal`. De
+används nästan alltid tillsammans, och de är två separata beslut just för att `prune` raderar.
+
+## Fallgropen: standardvärdena
+
+<Callout type="fallgrop">
+**`prune` och `selfHeal` är `false` som standard — även när `automated` är påslaget.**
+
+Det står i ArgoCD:s egen typdefinition, och det överraskar nästan alla. En Application med bara
+`automated: {}` synkar när repot ändras, men rättar varken bort borttagna resurser eller manuella
+ändringar i klustret.
+
+Jag mätte det: efter en manuell skalning till tre repliker stod applikationen kvar som `OutOfSync`
+i minuter utan att något hände. Först när `selfHeal: true` sattes gick den tillbaka till en replik —
+inom fem sekunder.
+
+Slutsatsen är inte att alltid sätta båda. Den är att veta vilket beteende du faktiskt konfigurerat,
+eftersom "automatisk" i ArgoCD betyder betydligt mindre än det låter.
+</Callout>
+
+## ArgoCD vs en pipeline som rullar ut
+
+Två sätt att få kod till ett kluster, och valet handlar om var rättigheterna bor.
+
+**Pipelinen** har en kube-konfiguration och kör `kubectl apply`. Den vet när den kört, men inte vad
+som hänt sedan. Går någon in och ändrar upptäcks det aldrig.
+
+**ArgoCD** hämtar hem själv. Pipelinen behöver inga rättigheter mot klustret, och avvikelser
+upptäcks löpande i stället för vid nästa utrullning.
+
+Priset är en komponent till att drifta, och att felsökningen får ett extra lager — är problemet i
+repot, i ArgoCD, eller i klustret? Vinsten är att frågan *"vad kör vi egentligen?"* alltid har ett
+svar, och att svaret är en commit.
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att titta på ArgoCD:s vy när något inte gick ut som väntat, och den första frågan är
+alltid vilken av de två statusarna som avviker. `OutOfSync` betyder att din commit inte slagit
+igenom; `Degraded` betyder att den gjorde det och att resultatet är trasigt.
+
+Det som är värt din tid nu är just den uppdelningen. Den avgör om du ska läsa Git-historiken eller
+podd-loggarna, och den frågan ställer du varje gång.
+
+ApplicationSets, sync waves, Helm- och Kustomize-källor, RBAC och att drifta ArgoCD kan vänta. De
+blir dina när fler team delar instansen — och de bygger alla på Application-objektet.
+
+## Vanliga nybörjarförväxlingar
+
+ArgoCD bygger ingenting. Den hämtar färdiga manifest och applicerar dem.
+
+Ett Application-objekt är inte applikationen. Det är en beskrivning om den, och den bor i ArgoCD:s
+namnrum.
+
+`Synced` betyder inte att allt fungerar. Det betyder att klustret stämmer med repot.
+
+`OutOfSync` betyder inte att något är trasigt. Applikationen kan vara fullt frisk och ändå avvika.
+
+`automated` innebär inte att ändringar i klustret rättas. Det kräver `selfHeal`.
+
+`prune` och `selfHeal` är inte samma sak. Den ena raderar det som utgått ur repot, den andra
+återställer det som ändrats i klustret.
+
+En manuell ändring i klustret försvinner inte av sig själv. Utan `selfHeal` ligger den kvar.
+
+## Prova själv
+
+Du behöver ett slängbart kluster. Slå på Kubernetes i Docker Desktop under Settings → Kubernetes,
+som i Kubernetes-delen. Kontrollera först vilka kluster din kubectl känner till:
+
+```bash
+kubectl config get-contexts -o name
+```
+
+Peka sedan ut det uttryckligen i alla kommandon, så att inget kan hamna fel:
+
+```bash
+k() { kubectl --context docker-desktop "$@"; }
+k get nodes
+```
+
+Installera ArgoCD i ett eget namnrum:
+
+```bash
+U=https://raw.githubusercontent.com/argoproj
+U=$U/argo-cd/stable/manifests/install.yaml
+k create namespace argocd
+k apply -n argocd --server-side -f $U
+```
+
+`--server-side` är inte valfritt. Utan det faller en av CRD:erna med *Too long: may not be more than
+262144 bytes* — manifestet är större än vad annoteringen `kubectl apply` sparar får vara. Vänta tills
+allt är uppe:
+
+```bash
+k -n argocd wait --for=condition=available \
+  deploy --all --timeout=300s
+```
+
+Spara nu Application-objektet från artikeln som `app.yaml` och lägg in det:
+
+```bash
+k apply -f app.yaml
+J='{.status.sync.status}/{.status.health.status}'
+k -n argocd get app guestbook -o jsonpath="$J"
+```
+
+```
+OutOfSync/Missing
+```
+
+**Inget har hänt än.** ArgoCD har läst repot, sett att ingenting finns i klustret, och stannat.
+Trigga en sync:
+
+```bash
+k -n argocd patch app guestbook --type merge \
+  -p '{"operation":{"sync":{"revision":"HEAD"}}}'
+```
+
+Kör statusfrågan några gånger med några sekunders mellanrum:
+
+```
+Synced/Progressing
+Synced/Healthy
+```
+
+Där är de två axlarna i rörelse vid olika tidpunkter. Sync blev klar direkt — manifesten var
+applicerade. Hälsan tog ett tag till, eftersom podden skulle starta. Skapa nu drift för hand:
+
+```bash
+k -n default scale deploy guestbook-ui --replicas=3
+```
+
+```
+OutOfSync/Healthy
+```
+
+**Det är hela artikeln i en rad.** Applikationen avviker från repot och mår alldeles utmärkt.
+Ingenting rättas, eftersom `selfHeal` inte är satt. Sätt den:
+
+```bash
+k -n argocd patch app guestbook --type merge \
+  -p '{"spec":{"syncPolicy":{"automated":
+      {"selfHeal":true,"prune":true}}}}'
+```
+
+Inom fem sekunder står det `Synced/Healthy` igen, och `k -n default get deploy guestbook-ui` visar
+en replik. Städa efter dig:
+
+```bash
+k delete -n argocd app guestbook
+k delete namespace argocd
+```
+
+Tre saker som kan förvirra. **Raderar du namnrummet innan applikationen kan det hänga**, eftersom
+Application-objektet har en finalizer som väntar på att ArgoCD ska städa sina resurser — ta bort
+appen först. Avstämningen sker dessutom var tredje minut som standard, så en ändring i repot slår
+inte igenom omedelbart utan en webhook. Och `k -n argocd get app` fungerar bara för att CRD:n
+installerades; `kubectl get application` utan namnrum letar i fel namnrum och svarar att inget finns.
+
+<Callout type="kom-ihag">
+- **GitOps**: repot är beskrivningen, och ett program i klustret håller verkligheten lika med den.
+- ArgoCD **hämtar hem**. Pipelinen behöver inga rättigheter mot klustret alls.
+- Ett **Application** bor i ArgoCD:s namnrum och pekar ut `source` och `destination`.
+- **Sync status** jämför kluster mot repo. **Health status** tittar på om det körande fungerar.
+- De är oberoende. `Synced` + `Degraded` och `OutOfSync` + `Healthy` förekommer båda.
+- Hälsan är den **sämsta** bland resurserna, i ordningen Healthy → … → Degraded → Unknown.
+- Avstämningen sker var tredje minut som standard. En webhook gör den omedelbar.
+- **`prune` och `selfHeal` är `false` som standard**, även med `automated` påslaget.
+- `prune` raderar det som utgått ur repot. `selfHeal` återställer det som ändrats i klustret.
+- `status.revision` är Git-shan — vägen tillbaka från en podd till en commit.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Vad är den praktiska säkerhetsvinsten med pull framför push?",
+      a: "Att ingen utanför klustret behöver rättigheter mot det. I push-modellen har pipelinen en kube-konfiguration med skrivrättigheter, och den hemligheten finns någonstans. Med ArgoCD behöver pipelinen bara kunna pusha till Git — klustret hämtar hem själv.",
+    },
+    {
+      q: "En applikation visar `Synced` men `Degraded`. Var letar du?",
+      a: "I manifesten och i podd-loggarna, inte i Git-historiken. `Synced` betyder att klustret fick precis det repot beskrev, så commiten gick igenom. `Degraded` betyder att resultatet inte fungerar — felet ligger i vad manifesten säger eller i imagen de pekar på.",
+    },
+    {
+      q: "Någon skalar en Deployment för hand. Vad händer, och vad krävs för att det ska rättas?",
+      a: "Applikationen blir `OutOfSync` inom sekunder, men ändringen ligger kvar — ArgoCD har bara noterat avvikelsen. För att den ska återställas krävs `syncPolicy.automated.selfHeal: true`, som inte är påslaget bara för att `automated` är det.",
+    },
+    {
+      q: "Vad är skillnaden mellan `prune` och `selfHeal`?",
+      a: "`prune` tar bort resurser som finns i klustret men inte längre i repot — typiskt när någon raderat en fil. `selfHeal` återställer resurser som ändrats i klustret till det repot säger. Kontrollfrågan: försvann något ur repot → prune. Ändrades något i klustret → selfHeal.",
+    },
+    {
+      q: "Varför är ett nyskapat Application `OutOfSync` och `Missing` innan du gjort något?",
+      a: "För att ArgoCD läst repot och konstaterat att ingenting av det finns i klustret. `OutOfSync` säger att klustret inte stämmer med repot, `Missing` att resurserna inte finns alls. Den synkar inte automatiskt från början — du ska kunna se vad som skulle hända först.",
+    },
+    {
+      q: "Hur skiljer sig ArgoCD:s driftupptäckt från Terraforms?",
+      a: "I när den sker. `terraform plan` visar drift när någon kör kommandot och frågar. ArgoCD stämmer av var tredje minut och rapporterar avvikelsen löpande, utan att någon behöver komma ihåg att titta. Begreppet drift är detsamma; det är kadensen som skiljer.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- GitOps betyder att repot är beskrivningen och att något i klustret håller verkligheten lika med den.
+- ArgoCD körs i klustret, läser manifest från Git och rättar skillnaden. Den bygger ingenting.
+- Push betyder att pipelinen skickar in ändringen. Pull betyder att klustret hämtar hem den.
+- Med pull behöver ingen utanför klustret rättigheter mot det.
+- Ett `Application` är ett Kubernetes-objekt i ArgoCD:s namnrum, inte applikationen självt.
+- `source` är repoURL, path och targetRevision. `destination` är server och namespace.
+- Avstämningsslingan går var tredje minut som standard; en webhook gör den omedelbar.
+- Sync status jämför kluster mot repo och har värdena `Synced` och `OutOfSync`.
+- Health status har sex värden och tittar på om det som körs fungerar.
+- Statusarna är oberoende — alla fyra kombinationer förekommer.
+- Applikationens hälsa är den sämsta bland dess resurser.
+- Ett nyskapat Application står `OutOfSync` + `Missing` tills någon synkar.
+- Drift upptäcks löpande, till skillnad från Terraform som visar den när du frågar.
+- `syncPolicy.automated` gör ArgoCD till en regulator i stället för en detektor.
+- `prune` och `selfHeal` är `false` som standard, även med `automated` påslaget.
+- `prune` raderar det som utgått ur repot; `selfHeal` återställer det som ändrats i klustret.
+- `status.revision` är Git-shan som senast synkades, och `status.history` bär de föregående.
+
+## Nästa del
+
+Nu kan du läsa en Application och avgöra vilken av de två statusarna som avviker.
+
+En applikation är dock sällan ensam. Ett riktigt kluster har tjugo, ofta i flera miljöer, och någon
+ska skapa och underhålla varenda ett av de objekten.
+
+Nästa del handlar om hur det skalar: mönstret där en Application skapar alla de andra, hur ordningen
+mellan resurser styrs när något måste vara på plats först, och den fråga som är svårast i hela
+GitOps — vad man gör med hemligheter i ett repo alla kan läsa.
