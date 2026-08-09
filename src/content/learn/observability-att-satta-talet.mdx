@@ -3,7 +3,7 @@ title: 'Att sätta talet'
 description: 'Hur du väljer en SLI, avgör hur många nior som räcker, och vad du gör när budgeten är slut'
 category: 'observability'
 part: 1
-order: 4
+order: 2
 date: '2026-08-09'
 tags: ['Beginner', 'SLO', 'SRE']
 ---
@@ -13,8 +13,8 @@ tags: ['Beginner', 'SLO', 'SRE']
 Del 1.0 definierade SLI, SLO och felbudget: måttet användaren märker, målet du satt för det, och
 det som blir över när målet dras från hundra procent.
 
-Del 1.1 och 1.2 gav verktygen — Prometheus för mätvärdena, OpenTelemetry för spåren. Du kan alltså
-mäta.
+Verktygen finns i sina egna serier: Prometheus för mätvärdena, Loki för loggarna, OpenTelemetry för
+spåren. Du kan alltså mäta.
 
 Kvar står det svåraste och det enda som inte är en teknisk fråga: **vilket tal ska stå där?** Den
 här delen handlar om att välja SLI, sätta siffran, och veta vad budgeten är till för. Zoomen ligger
@@ -321,7 +321,7 @@ En SLO utan konsekvens är ingen SLO. Den är en siffra på en instrumentbräda.
 
 ## Prova själv
 
-Vi räknar ut en riktig SLI ur en riktig tjänst. PromLabs demo är samma som i del 1.1 och kräver
+Vi räknar ut en riktig SLI ur en riktig tjänst. PromLabs demo är samma som i Prometheus-delen och kräver
 ingen inloggning.
 
 ```bash
@@ -450,7 +450,8 @@ tjänstens. Och `[30m]` är ett mycket kortare fönster än en riktig SLO använ
 
 Nu kan du sätta ett tal som betyder något, och räkna ut hur snabbt det förbrukas.
 
-Larmet har dock bara nämnts i förbifarten. Del 1.1 visade hur en larmregel skrivs, och den här hur
+Larmet har dock bara nämnts i förbifarten. Prometheus-delen visade hur en larmregel skrivs, och
+den här hur
 en gräns motiveras — men ingen av dem svarar på den fråga som avgör om övervakningen är värd något:
 **vilka larm ska överhuvudtaget finnas?**
 
