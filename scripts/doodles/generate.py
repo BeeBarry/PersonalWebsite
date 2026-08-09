@@ -1685,6 +1685,319 @@ def alla():
       + "\n" + txt([(237,346,"servern ringer upp"),(665,346,"enheten ringer upp")],17)
       + "\n</svg>")
 
+    # 81 — Grafana 1.0 · Tre källor, en frame
+    # Kärlen MÅSTE ha olika form. Tre likadana lådor med olika etiketter säger
+    # "tre av samma sak", vilket är raka motsatsen till poängen — att svaren
+    # kommer i olika format. Brickan är därför den enda regelbundna formen i
+    # bilden, och det är den regelbundenheten som är budskapet.
+    cylinder = ('<path d="M66 64 Q118 50 170 64 Q170 100 170 122 '
+                'Q118 138 66 122 Q66 100 66 64 Z"/>'
+                '<path d="M66 64 Q118 80 170 64"/>')
+    skal = '<path d="M60 288 Q118 296 176 288 Q172 344 118 348 Q64 344 60 288 Z"/>'
+    konvergens = ('<path d="M180 96 Q320 104 448 178"/>' + arrow(456,182)
+                  + '<path d="M190 206 Q320 208 448 212"/>' + arrow(456,214)
+                  + '<path d="M180 312 Q320 302 448 246"/>' + arrow(456,242))
+    D['tre-kallor-en-frame']=(
+      '<svg viewBox="0 0 880 400" role="img" aria-label="Tre olika formade kärl märkta Prometheus, '
+      'Loki och InfluxDB. Från vart och ett går en heldragen pil till samma rutnät, märkt data '
+      'frame, med kolumnerna Time, Value och labels.">\n'
+      + G % (cylinder + f'<path d="{w(58,176,124,58)}"/>' + skal
+             + rader(470,150,352,140,4,delare=(587,704)) + konvergens)
+      + "\n" + txt([(118,168,"Prometheus"),(118,262,"Loki"),(118,378,"InfluxDB")],15)
+      + "\n" + txt([(528,174,"Time"),(645,174,"Value"),(763,174,"labels")],13,' opacity="0.66"')
+      + "\n" + txt([(646,326,"data frame")],18.5) + "\n</svg>")
+
+    # 82 — Grafana 1.0 · Instant mot range
+    # Filmremsan bär BÅDE "flera i följd" och "samma sak upprepad" i en enda
+    # fysisk form. Två grafer bredvid varandra hade blivit lärkitets formspråk
+    # i stället för doodlens — och Split gör redan det jobbet när det behövs.
+    foto = f'<path d="{w(112,96,180,158)}"/><path d="{w(132,116,140,118)}"/>'
+    remsa = [f'<path d="{w(408,96,430,158)}"/>']
+    for px in range(424, 812, 48):
+        remsa.append(f'<path d="{w(px,104,26,16)}"/>')
+        remsa.append(f'<path d="{w(px,230,26,16)}"/>')
+    prickar = "".join(f'<path d="{circ(px,py,9)}"/>' for px,py in
+                      ((452,192),(516,170),(580,180),(644,152),(708,162),(772,140)))
+    D['instant-vs-range']=(
+      '<svg viewBox="0 0 880 348" role="img" aria-label="Till vänster en fotoram med en enda prick. '
+      'Till höger en filmremsa med perforering och sex prickar på olika höjd.">\n'
+      + G % (foto + f'<path d="{circ(202,175,9)}"/>' + "".join(remsa) + prickar)
+      + "\n" + txt([(202,296,"instant"),(623,296,"range")],18.5)
+      + "\n" + txt([(202,322,"ett värde per serie"),(623,322,"en punkt per steg")],13,
+                   ' opacity="0.62"') + "\n</svg>")
+
+    # 83 — Grafana 1.1 · Vad en larminstans är
+    # Papperet är ETT och korten är TRE — det är hela bilden. Frestelsen är att
+    # rita tre papper också, men då försvinner poängen: regeln skrevs en gång.
+    # Etiketterna ligger inuti korten, som i compose-en-fil, eftersom tre
+    # etiketter under tre staplade kort hade lagt text tätt intill nästa låda.
+    ark = ('<path d="M70 120 Q160 118 220 119 L250 152 Q253 220 250 290 '
+           'Q160 293 72 291 Q68 205 70 120 Z"/>'
+           '<path d="M220 119 Q219 140 222 152 Q236 154 250 152"/>'
+           '<path d="M96 176 Q160 174 224 176" stroke-width="1.2" opacity="0.55"/>'
+           '<path d="M96 206 Q160 204 224 206" stroke-width="1.2" opacity="0.55"/>')
+    grenar = ('<path d="M256 175 Q400 168 528 124"/>' + arrow(534,122)
+              + '<path d="M256 205 Q400 206 528 205"/>' + arrow(534,205)
+              + '<path d="M256 235 Q400 244 528 286"/>' + arrow(534,288))
+    D['en-regel-tre-instanser']=(
+      '<svg viewBox="0 0 880 390" role="img" aria-label="Ett papper märkt en regel med tre '
+      'heldragna pilar ut till tre kort, ett per etikettuppsättning.">\n'
+      + G % (ark + "".join(f'<path d="{w(540,y,250,62)}"/>' for y in (92,174,256)) + grenar)
+      + "\n" + txt([(665,130,"service=chat"),(665,212,"service=cart"),
+                    (665,294,"service=api")],14)
+      + "\n" + txt([(160,330,"en regel")],18.5)
+      + "\n" + txt([(665,356,"tre instanser")],15,' opacity="0.62"') + "\n</svg>")
+
+    # 84 — Grafana 1.1 · Vad en notifieringspolicy är
+    # Facken staplas, inte radas — ett träd matchas uppifrån och ner, och den
+    # lodräta ordningen bär det. Bara EN pil ritas: en streckad pil till de
+    # andra facken hade betytt "uteblivet flöde", inte "ej vald gren".
+    kuvert = (f'<path d="{w(60,168,148,84)}"/>'
+              '<path d="M64 172 L134 216 L204 172"/>')
+    facken = rader(430, 92, 400, 240, 3)
+    vagen = '<path d="M214 202 Q320 200 414 150"/>' + arrow(420,146)
+    D['sorteringsfacken']=(
+      '<svg viewBox="0 0 880 396" role="img" aria-label="Ett kuvert märkt team lika med platform '
+      'med en heldragen pil in i det översta av tre fack i en hylla märkt notifieringspolicyn.">\n'
+      + G % (kuvert + facken + vagen)
+      # Etiketten låg först på y=210 och skar rakt genom vikningens V. Under
+      # vecket (som bottnar på 216) finns 36 px ledig kuvertyta — där ligger den.
+      + "\n" + txt([(134,242,"team=platform")],13,' opacity="0.72"')
+      + "\n" + txt([(630,150,"team=platform"),(630,230,"team=data"),
+                    (630,310,"default")],14)
+      + "\n" + txt([(134,290,"larmet")],18.5)
+      + "\n" + txt([(630,368,"notifieringspolicyn")],15,' opacity="0.62"') + "\n</svg>")
+
+    # 85 — Loki 1.0 · Vad en chunk är
+    # Storleksskillnaden ÄR budskapet. Kortet får därför inte ritas lika högt
+    # som högen "för symmetrins skull" — då blir bilden en tvådelad låda och
+    # säger ingenting om varför det uteblivna indexet är billigt.
+    kort = (f'<path d="{w(90,150,150,92)}"/>'
+            '<path d="M110 180 Q165 178 220 180" stroke-width="1.2" opacity="0.55"/>'
+            '<path d="M110 206 Q165 204 220 206" stroke-width="1.2" opacity="0.55"/>')
+    hog = rader(500,90,300,220,8) + markerad(504,204,292,102,30)
+    D['indexet-och-hogen']=(
+      '<svg viewBox="0 0 880 380" role="img" aria-label="Ett litet kort märkt indexet med en '
+      'heldragen pil till en betydligt större skrafferad hög märkt chunkarna.">\n'
+      + G % (kort + hog + '<path d="M248 196 Q370 194 484 196"/>' + arrow(492,196))
+      + "\n" + txt([(165,286,"indexet"),(650,348,"chunkarna")],18.5)
+      + "\n" + txt([(368,176,"pekar på")],13,' opacity="0.62"') + "\n</svg>")
+
+    # 86 — Loki 1.0 · Kardinalitetsfällan
+    # SJU fack, inte nittiofem. Fler än så renderar som en streckad linje vid
+    # 544 px, och streckat betyder "uteblivet" i formspråket — alltså tvärtom.
+    # Talen står i brödtexten; bilden bär bara formen på skillnaden.
+    def hylla(x1,x2):
+        return (f'<path d="M{x1} 252 Q{(x1+x2)//2} 250 {x2} 252"/>'
+                f'<path d="M{x1+2} 264 Q{(x1+x2)//2} 262 {x2-2} 264"/>')
+    fa = "".join(f'<path d="{w(x,140,150,108)}"/>' for x in (80,240))
+    manga = "".join(f'<path d="{w(476+i*48,140,38,108)}"/>' for i in range(7))
+    D['tva-hyllor-en-explosion']=(
+      '<svg viewBox="0 0 880 360" role="img" aria-label="Två hyllor. Den vänstra har två breda '
+      'lådor, den högra sju smala — lika mycket innehåll, fler fack att öppna.">\n'
+      + G % (hylla(64,406) + fa + hylla(460,822) + manga)
+      + "\n" + txt([(235,306,"cluster"),(645,306,"pod_id")],18.5)
+      + "\n" + txt([(235,332,"få strömmar"),(645,332,"många strömmar")],13,
+                   ' opacity="0.62"') + "\n</svg>")
+
+    # 87 — Loki 1.1 · Vad ett derived field är
+    # Raden ritas OFÖRÄNDRAD, med en inramning runt ett ord — inte som två
+    # rader före och efter. Poängen är att derived fieldet inte rör innehållet;
+    # ritar man en "före och efter"-bild säger den tvärtom att raden skrivs om.
+    remsa = (f'<path d="{w(60,128,470,80)}"/>'
+             '<path d="M84 158 Q150 156 216 158" stroke-width="1.2" opacity="0.5"/>'
+             '<path d="M440 158 Q472 156 506 158" stroke-width="1.2" opacity="0.5"/>'
+             f'<path d="{w(240,144,176,48)}"/>')
+    spar = (f'<path d="{w(672,112,150,96)}"/>'
+            '<path d="M692 140 Q726 139 760 140" stroke-width="1.4" opacity="0.5"/>'
+            '<path d="M706 162 Q748 161 790 162" stroke-width="1.4" opacity="0.5"/>'
+            '<path d="M700 184 Q724 183 748 184" stroke-width="1.4" opacity="0.5"/>')
+    trad = '<path d="M420 162 Q524 136 650 146"/>' + arrow(658,148)
+    D['kroken-i-raden']=(
+      '<svg viewBox="0 0 880 300" role="img" aria-label="En loggrad med ett inramat ord märkt '
+      'traceID. En heldragen tråd går från ramen till ett kort med tre förskjutna staplar, '
+      'märkt spåret.">\n'
+      + G % (remsa + spar + trad)
+      + "\n" + txt([(328,174,"traceID")],13)
+      + "\n" + txt([(546,118,"derived field")],13,' opacity="0.62"')
+      + "\n" + txt([(295,250,"loggraden"),(747,250,"spåret")],18.5) + "\n</svg>")
+
+    # 88 — Ansible 1.0 · Ansible är agentlöst
+    # Ingen streckad låda inuti servern. En liten streckad form inuti en låda
+    # läses som smuts, inte som "något tillfälligt" — och poängen här är just
+    # att servern är tom efteråt. Tomheten ritas alltså som tomhet.
+    dator = ('<path d="M70 110 Q130 108 188 109 Q191 150 188 186 '
+             'Q130 188 72 186 Q68 148 70 110 Z"/>'
+             '<path d="M52 198 Q130 196 206 197 Q196 214 182 216 '
+             'Q130 218 76 216 Q62 214 52 198 Z"/>')
+    burk = (f'<path d="{w(700,96,120,150)}"/>'
+            '<path d="M712 132 Q760 131 808 132" stroke-width="1.3" opacity="0.5"/>'
+            '<path d="M712 172 Q760 171 808 172" stroke-width="1.3" opacity="0.5"/>')
+    dit = '<path d="M222 140 Q380 132 620 138"/>' + arrow(628,138)
+    hem = '<path d="M628 206 Q420 214 232 208"/>' + arrow(224,208,"left")
+    D['paketet-som-inte-blir-kvar']=(
+      '<svg viewBox="0 0 880 330" role="img" aria-label="En laptop och en server med två heldragna '
+      'pilar mellan sig: modulen kopieras dit, svaret kommer tillbaka. Servern är tom.">\n'
+      + G % (dator + burk + dit + hem)
+      + "\n" + txt([(420,118,"modulen kopieras"),(420,238,"svaret tillbaka")],13,
+                   ' opacity="0.62"')
+      + "\n" + txt([(129,288,"din maskin"),(760,288,"servern")],18.5) + "\n</svg>")
+
+    # 89 — Ansible 1.0 · Fallgropen i --check
+    # Den tredje rutan är streckad OCH tom. Streckat betyder "uteblivet" i
+    # formspråket, vilket är exakt rätt här: torrkörningen visar ingenting om
+    # det steget. Fylls rutan med text tappar bilden sin enda poäng.
+    rutor = (f'<path d="{w(240,70,400,62)}"/>'
+             f'<path d="{w(240,152,400,62)}"/>'
+             f'<path d="{w(240,234,400,62)}" stroke-dasharray="8 9" opacity="0.38"/>')
+    D['halet-i-torrkorningen']=(
+      '<svg viewBox="0 0 880 370" role="img" aria-label="Tre rutor under varandra märkta file, copy '
+      'och command. De två första är heldragna och rapporterar changed. Den tredje är streckad och '
+      'tom, och rapporterar skipping.">\n'
+      + G % rutor
+      + "\n" + txt([(440,108,"file"),(440,190,"copy")],16.5)
+      + "\n" + txt([(440,272,"command")],16.5,' opacity="0.45"')
+      + "\n" + txt([(690,108,"changed"),(690,190,"changed")],13,' opacity="0.62"',"start")
+      + "\n" + txt([(690,272,"skipping")],13,' opacity="0.45"',"start")
+      + "\n" + txt([(440,336,"--check")],18.5) + "\n</svg>")
+
+    # 90 — Ansible 1.1 · Handler vs task
+    # EN klocka, två trådar. Två klockor (en som ringer, en som tiger) hade
+    # blivit en före/efter-bild, och då handlar den om tid i stället för om
+    # villkor. Poängen är att samma handler nås av två olika utfall.
+    klocka = ('<path d="M660 202 Q662 116 730 112 Q798 117 800 202"/>'
+              '<path d="M644 202 Q730 208 816 202"/>'
+              f'<path d="{circ(730,218,9)}"/>'
+              + markerad(668,150,124,50,26))
+    trad_ja = '<path d="M286 108 Q460 112 636 152"/>' + arrow(644,154)
+    trad_nej = ('<path d="M286 220 Q460 214 636 188" stroke-dasharray="8 9" opacity="0.4"/>'
+                + f'<g opacity="0.4">{arrow(644,186)}</g>')
+    D['klockan-som-inte-ringer']=(
+      '<svg viewBox="0 0 880 340" role="img" aria-label="Två rutor märkta changed och ok. Från '
+      'changed går en heldragen tråd till en klocka, från ok en streckad som tonar bort.">\n'
+      + G % (f'<path d="{w(80,76,200,62)}"/><path d="{w(80,190,200,62)}"/>'
+             + klocka + trad_ja + trad_nej)
+      + "\n" + txt([(180,114,"changed")],16.5)
+      + "\n" + txt([(180,228,"ok")],16.5,' opacity="0.45"')
+      + "\n" + txt([(730,288,"handlern")],18.5) + "\n</svg>")
+
+    # 91 — InfluxDB 1.0 · Vad line protocol är
+    # Anatomiformen ur referensens typologi (D3), samma som `url-raden`. Här
+    # bär den en extra sak: kommatecknet mellan låda ett och två ritas ut,
+    # mellanrummen mellan de andra lämnas tomma. Det är hela syntaxregeln.
+    lprutor = "".join(f'<path d="{w(x,80,bredd,64)}"/>' for x,bredd in
+                      ((60,130),(206,200),(422,210),(648,210)))
+    ned = "".join(f'<path d="M{x} 148 Q{x+2} 164 {x} 180"/>' for x in (125,306,527,753))
+    D['line-protocol-raden']=(
+      '<svg viewBox="0 0 880 260" role="img" aria-label="En rad line protocol uppdelad i fyra rutor '
+      'med pilar ner till etiketterna mätning, taggar, fält och tid. Mellan de två första rutorna '
+      'står ett kommatecken.">\n'
+      + G % (lprutor + ned)
+      + "\n" + txt([(125,120,"temp"),(306,120,"rum=lager"),
+                    (527,120,"value=21.5"),(753,120,"1783638000")],15)
+      + "\n" + txt([(198,120,",")],17,' opacity="0.7"')
+      + "\n" + txt([(125,210,"mätning"),(306,210,"taggar"),
+                    (527,210,"fält"),(753,210,"tid")],18.5) + "\n</svg>")
+
+    # 92 — InfluxDB 1.1 · Vad retention är
+    # Ingen fallande låda och ingen rörelse. Streckat betyder "uteblivet" i
+    # formspråket, så de borttagna lådorna RITAS streckade och står kvar på
+    # sin plats — bilden blir ett tillstånd att läsa, inte ett förlopp.
+    planka = ('<path d="M110 212 Q465 209 830 212"/>'
+              '<path d="M112 224 Q465 221 828 224"/>')
+    kvar = "".join(f'<path d="{w(x,112,100,98)}"/>' for x in (360,475,590,705))
+    borta = "".join(f'<path d="{w(x,112,100,98)}" stroke-dasharray="8 9" opacity="0.35"/>'
+                    for x in (130,245))
+    grans = '<path d="M352 78 Q354 158 352 242" stroke-dasharray="6 8" opacity="0.5"/>'
+    D['hyllan-har-en-ande']=(
+      '<svg viewBox="0 0 880 300" role="img" aria-label="En hylla med sex lådor. De två till vänster '
+      'om en streckad gräns är streckade och borttagna; de fyra till höger är heldragna och kvar.">\n'
+      + G % (planka + borta + kvar + grans)
+      + "\n" + txt([(352,62,"retention")],15,' opacity="0.62"')
+      + "\n" + txt([(190,268,"borttagna")],15,' opacity="0.45"')
+      + "\n" + txt([(580,268,"kvar i bucketen")],18.5) + "\n</svg>")
+
+    # 93 — ArgoCD 1.0 · Push vs pull i utrullning
+    # Pilen från klustret är HELDRAGEN och pilen från pipelinen STRECKAD och
+    # överkryssad. Ritas båda heldragna blir bilden "två vägar in", vilket är
+    # raka motsatsen: poängen är att bara den ena riktningen finns.
+    repofil = ('<path d="M60 80 Q140 78 168 79 L200 112 Q203 166 200 220 '
+               'Q140 223 62 221 Q57 150 60 80 Z"/>'
+               '<path d="M168 79 Q167 100 170 112 Q184 114 200 112"/>'
+               '<path d="M84 140 Q130 138 176 140" stroke-width="1.2" opacity="0.5"/>'
+               '<path d="M84 168 Q130 166 176 168" stroke-width="1.2" opacity="0.5"/>')
+    klustret = (f'<path d="{w(560,60,260,200)}"/>'
+                f'<path d="{w(590,96,90,54)}"/><path d="{w(700,96,90,54)}"/>'
+                f'<path d="{w(590,176,200,54)}"/>')
+    hamtar = '<path d="M548 130 Q380 122 216 128"/>' + arrow(208,128,"left")
+    stoppad = ('<path d="M486 322 Q524 302 546 254" stroke-dasharray="7 8" opacity="0.45"/>'
+               '<g opacity="0.55"><path d="M540 232 L566 258"/>'
+               '<path d="M566 232 L540 258"/></g>')
+    D['pilen-pekar-inat']=(
+      '<svg viewBox="0 0 880 380" role="img" aria-label="En fil märkt Git-repot och en låda märkt '
+      'klustret. En heldragen pil går från klustret till filen. En streckad pil från en låda märkt '
+      'pipeline stoppas av ett kryss innan den når klustret.">\n'
+      + G % (repofil + klustret + f'<path d="{w(300,300,180,58)}"/>' + hamtar + stoppad)
+      + "\n" + txt([(382,106,"hämtar")],13,' opacity="0.62"')
+      + "\n" + txt([(390,336,"pipeline")],15)
+      + "\n" + txt([(130,258,"Git-repot"),(690,298,"klustret")],18.5) + "\n</svg>")
+
+    # 94 — ArgoCD 1.0 · Sync status vs health status
+    # Taxonomiformen (D6). Rutorna innehåller SLUTSATSEN, inte statusparet —
+    # statusparen står redan i brödtexten, och en bild som upprepar dem säger
+    # inget nytt. Det bilden tillför är att alla fyra rutorna är ifyllda.
+    rutnat = (f'<path d="{w(200,90,480,200)}"/>'
+              '<path d="M202 190 Q440 188 678 190"/>'
+              '<path d="M440 92 Q442 190 440 288"/>')
+    D['de-tva-axlarna']=(
+      '<svg viewBox="0 0 880 360" role="img" aria-label="Ett rutnät med två kolumner, Synced och '
+      'OutOfSync, och två rader, Healthy och Degraded. Alla fyra rutor är ifyllda med en slutsats.">\n'
+      + G % rutnat
+      + "\n" + txt([(320,72,"Synced"),(560,72,"OutOfSync")],15)
+      + "\n" + txt([(186,148,"Healthy"),(186,248,"Degraded")],15,'',"end")
+      # Ingen undertext här: bildtexten i MDX säger redan "två frågor, fyra
+      # svar", och samma mening två gånger under samma bild är brus.
+      + "\n" + txt([(320,148,"allt stämmer"),(560,148,"någon rörde klustret"),
+                    (320,248,"felet är i repot"),(560,248,"båda delarna")],14) + "\n</svg>")
+
+    # 95 — ArgoCD 1.1 · Vad en finalizer gör
+    # Lådan ritas LYFT men haken sitter kvar i marken. Ritas den halvvägs
+    # borta blir bilden ett förlopp; poängen är ett låst tillstånd — något
+    # som drar uppåt och något som håller emot, samtidigt.
+    mark = ('<path d="M180 300 Q440 297 700 300"/>'
+            f'<g stroke-width="1.1" opacity="0.4">{hatch(184,302,512,16,30)}</g>')
+    haken = ('<path d="M336 242 Q326 264 334 282"/>'
+             '<path d="M334 282 Q348 294 358 284"/>')
+    lyft = '<path d="M400 112 Q402 84 400 64"/>' + arrow(400,56,"up")
+    D['finalizern-haller-kvar']=(
+      '<svg viewBox="0 0 880 360" role="img" aria-label="En låda märkt Application lyfts uppåt av en '
+      'pil märkt delete, men hålls kvar av en hake ner i marken.">\n'
+      + G % (f'<path d="{w(300,130,200,110)}"/>' + mark + haken + lyft)
+      + "\n" + txt([(400,42,"delete")],13,' opacity="0.62"')
+      + "\n" + txt([(400,192,"Application")],15)
+      + "\n" + txt([(440,336,"resurserna i klustret")],15,' opacity="0.62"') + "\n</svg>")
+
+    # 96 — ArgoCD 1.1 · Krypterat i repot vs hämtat vid körning
+    # Nyckeln ritas INUTI klustret och har ingen pil alls. En streckad pil
+    # tillbaka hade betytt "uteblivet flöde" och fått läsaren att leta efter
+    # ett flöde som inte finns. Att nyckeln bara ligger där ÄR budskapet.
+    kuvert = (f'<path d="{w(100,150,140,72)}"/>'
+              '<path d="M104 154 L170 196 L236 154"/>'
+              f'<path d="{circ(170,206,11)}"/>')
+    nyckel = (f'<path d="{circ(676,158,17)}"/>'
+              '<path d="M694 158 Q730 156 764 158"/>'
+              '<path d="M744 158 Q745 170 744 176"/>'
+              '<path d="M760 158 Q761 168 760 174"/>')
+    resan = '<path d="M292 186 Q440 180 588 184"/>' + arrow(596,184)
+    D['nyckeln-stannar-i-klustret']=(
+      '<svg viewBox="0 0 880 340" role="img" aria-label="En låda märkt repot med ett förseglat '
+      'kuvert i. En heldragen pil till en låda märkt klustret, där en nyckel ligger. Nyckeln har '
+      'ingen pil.">\n'
+      + G % (f'<path d="{w(60,110,220,140)}"/>' + kuvert
+             + f'<path d="{w(600,90,240,180)}"/>' + nyckel + resan)
+      + "\n" + txt([(440,164,"kuvertet")],13,' opacity="0.62"')
+      + "\n" + txt([(170,296,"repot"),(720,306,"klustret")],18.5) + "\n</svg>")
+
     return D
 
 if __name__ == "__main__":

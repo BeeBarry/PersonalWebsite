@@ -1177,7 +1177,7 @@ export const DOODLES: Record<string, string> = {
   "gardinen-inte-kassaskapet": `
 <svg viewBox="0 0 880 400" role="img" aria-label="Till vänster en terminal med en gardin hängande framför sig. Till höger en fil med tre synliga textrader och ingenting framför.">
   <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-<path d="M81 120 Q230 118 381 120 Q382 205 381 289 Q230 290 81 291 Q78 205 81 120 Z"/><path d="M80 158 Q230 156 380 158"/><path d="M64 112 Q230 109 396 112"/><path d="M96 118 Q103 200 96 282" stroke-width="1.4" opacity="0.55"/><path d="M132 118 Q139 200 132 282" stroke-width="1.4" opacity="0.55"/><path d="M168 118 Q175 200 168 282" stroke-width="1.4" opacity="0.55"/><path d="M204 118 Q211 200 204 282" stroke-width="1.4" opacity="0.55"/><path d="M240 118 Q247 200 240 282" stroke-width="1.4" opacity="0.55"/><path d="M276 118 Q283 200 276 282" stroke-width="1.4" opacity="0.55"/><path d="M312 118 Q319 200 312 282" stroke-width="1.4" opacity="0.55"/><path d="M348 118 Q355 200 348 282" stroke-width="1.4" opacity="0.55"/><path d="M540 118 Q634 116 706 118 L748 162 Q751 226 748 290 Q634 293 542 291 Q538 204 540 118 Z"/><path d="M706 118 Q705 146 708 162 Q728 164 748 162"/><path d="M568 206 Q638 204 712 206" stroke-width="1.3" opacity="0.6"/><path d="M568 236 Q638 234 712 236" stroke-width="1.3" opacity="0.6"/><path d="M568 266 Q638 264 712 266" stroke-width="1.3" opacity="0.6"/>
+<path d="M81 121 Q230 120 381 121 Q381 205 380 290 Q230 292 81 291 Q79 205 81 121 Z"/><path d="M80 158 Q230 156 380 158"/><path d="M64 112 Q230 109 396 112"/><path d="M96 118 Q103 200 96 282" stroke-width="1.4" opacity="0.55"/><path d="M132 118 Q139 200 132 282" stroke-width="1.4" opacity="0.55"/><path d="M168 118 Q175 200 168 282" stroke-width="1.4" opacity="0.55"/><path d="M204 118 Q211 200 204 282" stroke-width="1.4" opacity="0.55"/><path d="M240 118 Q247 200 240 282" stroke-width="1.4" opacity="0.55"/><path d="M276 118 Q283 200 276 282" stroke-width="1.4" opacity="0.55"/><path d="M312 118 Q319 200 312 282" stroke-width="1.4" opacity="0.55"/><path d="M348 118 Q355 200 348 282" stroke-width="1.4" opacity="0.55"/><path d="M540 118 Q634 116 706 118 L748 162 Q751 226 748 290 Q634 293 542 291 Q538 204 540 118 Z"/><path d="M706 118 Q705 146 708 162 Q728 164 748 162"/><path d="M568 206 Q638 204 712 206" stroke-width="1.3" opacity="0.6"/><path d="M568 236 Q638 234 712 236" stroke-width="1.3" opacity="0.6"/><path d="M568 266 Q638 264 712 266" stroke-width="1.3" opacity="0.6"/>
   </g>
   <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.75">
     <text x="230" y="148">&lt;sensitive&gt;</text>
@@ -1288,7 +1288,7 @@ export const DOODLES: Record<string, string> = {
   "biljetten-och-listan": `
 <svg viewBox="0 0 880 340" role="img" aria-label="Till vänster en biljett med en pil till en lista där en rad är överstruken. Till höger en biljett med text i och ingen lista alls, med en överkryssad streckad linje tvärs över.">
   <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-<path d="M60 161 Q112 158 165 160 Q165 189 164 217 Q112 218 61 218 Q58 189 60 161 Z"/><path d="M76 178 Q112 176 148 178" stroke-width="1.2" opacity="0.55"/><path d="M170 188 Q212 186 250 188"/><path d="M243 182 L256 188 L243 194"/><path d="M257 118 Q342 116 426 118 Q426 184 425 249 Q342 250 258 251 Q256 184 257 118 Z"/><path d="M260 151 Q342 150 424 151"/><path d="M260 184 Q342 183 424 184"/><path d="M260 217 Q342 216 424 217"/><path d="M266 184 Q342 182 418 184"/><path d="M599 160 Q652 159 704 161 Q705 189 703 219 Q652 219 599 217 Q599 189 599 160 Z"/><path d="M616 178 Q652 176 688 178" stroke-width="1.2" opacity="0.55"/><path d="M616 194 Q652 192 688 194" stroke-width="1.2" opacity="0.55"/><path d="M584 188 Q656 190 720 188" stroke-dasharray="6 7" opacity="0.6"/><path d="M636 172 L668 204"/><path d="M668 172 L636 204"/>
+<path d="M59 159 Q112 159 164 161 Q166 189 163 217 Q112 220 59 217 Q59 189 59 159 Z"/><path d="M76 178 Q112 176 148 178" stroke-width="1.2" opacity="0.55"/><path d="M170 188 Q212 186 250 188"/><path d="M243 182 L256 188 L243 194"/><path d="M259 118 Q342 116 427 119 Q427 184 427 251 Q342 251 258 251 Q257 184 259 118 Z"/><path d="M260 151 Q342 150 424 151"/><path d="M260 184 Q342 183 424 184"/><path d="M260 217 Q342 216 424 217"/><path d="M266 184 Q342 182 418 184"/><path d="M600 159 Q652 158 705 160 Q705 189 703 218 Q652 219 599 217 Q600 189 600 159 Z"/><path d="M616 178 Q652 176 688 178" stroke-width="1.2" opacity="0.55"/><path d="M616 194 Q652 192 688 194" stroke-width="1.2" opacity="0.55"/><path d="M584 188 Q656 190 720 188" stroke-dasharray="6 7" opacity="0.6"/><path d="M636 172 L668 204"/><path d="M668 172 L636 204"/>
   </g>
   <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.62">
     <text x="112" y="254">id</text>
@@ -1600,6 +1600,303 @@ export const DOODLES: Record<string, string> = {
   <g font-family="var(--font-mono)" font-size="17" fill="currentColor" text-anchor="middle">
     <text x="237" y="346">servern ringer upp</text>
     <text x="665" y="346">enheten ringer upp</text>
+  </g>
+</svg>`,
+
+  /* ---- Grafana 1.0 · Vad en data frame är — STIL: HANDRITAD ---- */
+  "tre-kallor-en-frame": `
+<svg viewBox="0 0 880 400" role="img" aria-label="Tre olika formade kärl märkta Prometheus, Loki och InfluxDB. Från vart och ett går en heldragen pil till samma rutnät, märkt data frame, med kolumnerna Time, Value och labels.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M66 64 Q118 50 170 64 Q170 100 170 122 Q118 138 66 122 Q66 100 66 64 Z"/><path d="M66 64 Q118 80 170 64"/><path d="M58 176 Q120 175 182 175 Q183 205 181 233 Q120 234 57 233 Q58 205 58 176 Z"/><path d="M60 288 Q118 296 176 288 Q172 344 118 348 Q64 344 60 288 Z"/><path d="M471 150 Q646 149 822 149 Q823 220 823 290 Q646 292 469 289 Q468 220 471 150 Z"/><path d="M472 185 Q646 184 820 185"/><path d="M472 220 Q646 219 820 220"/><path d="M472 255 Q646 254 820 255"/><path d="M587 152 Q588 220 587 288"/><path d="M704 152 Q705 220 704 288"/><path d="M180 96 Q320 104 448 178"/><path d="M443 176 L456 182 L443 188"/><path d="M190 206 Q320 208 448 212"/><path d="M443 208 L456 214 L443 220"/><path d="M180 312 Q320 302 448 246"/><path d="M443 236 L456 242 L443 248"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle">
+    <text x="118" y="168">Prometheus</text>
+    <text x="118" y="262">Loki</text>
+    <text x="118" y="378">InfluxDB</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.66">
+    <text x="528" y="174">Time</text>
+    <text x="645" y="174">Value</text>
+    <text x="763" y="174">labels</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="646" y="326">data frame</text>
+  </g>
+</svg>`,
+
+  /* ---- Grafana 1.0 · Instant vs range — STIL: HANDRITAD ---- */
+  "instant-vs-range": `
+<svg viewBox="0 0 880 348" role="img" aria-label="Till vänster en fotoram med en enda prick. Till höger en filmremsa med perforering och sex prickar på olika höjd.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M113 97 Q202 94 291 96 Q292 175 291 254 Q202 255 113 255 Q111 175 113 97 Z"/><path d="M131 115 Q202 115 272 115 Q274 175 272 233 Q202 234 131 234 Q132 175 131 115 Z"/><path d="M203 167 Q211 166 210 174 Q211 184 202 183 Q193 184 193 176 Q193 166 203 167 Z"/><path d="M407 95 Q623 95 838 96 Q838 175 838 255 Q623 254 407 254 Q406 175 407 95 Z"/><path d="M425 105 Q437 102 451 105 Q451 112 451 120 Q437 120 424 121 Q422 112 425 105 Z"/><path d="M424 229 Q437 229 451 231 Q451 238 450 245 Q437 248 423 246 Q423 238 424 229 Z"/><path d="M473 103 Q485 103 497 104 Q499 112 498 119 Q485 122 472 119 Q472 112 473 103 Z"/><path d="M472 230 Q485 228 499 231 Q498 238 498 245 Q485 248 472 246 Q472 238 472 230 Z"/><path d="M519 104 Q533 102 546 104 Q547 112 545 121 Q533 120 521 120 Q520 112 519 104 Z"/><path d="M519 229 Q533 230 547 229 Q546 238 545 245 Q533 246 519 246 Q520 238 519 229 Z"/><path d="M568 104 Q581 104 593 103 Q596 112 595 119 Q581 121 567 121 Q568 112 568 104 Z"/><path d="M568 229 Q581 228 594 231 Q596 238 595 245 Q581 247 567 247 Q566 238 568 229 Z"/><path d="M615 104 Q629 103 643 103 Q642 112 643 120 Q629 121 615 121 Q616 112 615 104 Z"/><path d="M617 230 Q629 230 641 231 Q644 238 642 247 Q629 246 617 246 Q615 238 617 230 Z"/><path d="M664 104 Q677 104 690 103 Q692 112 689 121 Q677 120 664 120 Q664 112 664 104 Z"/><path d="M665 231 Q677 230 691 231 Q690 238 691 245 Q677 247 664 246 Q663 238 665 231 Z"/><path d="M713 104 Q725 103 739 105 Q739 112 739 119 Q725 120 713 121 Q712 112 713 104 Z"/><path d="M712 230 Q725 228 738 231 Q738 238 739 247 Q725 247 711 246 Q710 238 712 230 Z"/><path d="M761 103 Q773 104 785 103 Q788 112 787 119 Q773 121 760 120 Q759 112 761 103 Z"/><path d="M761 230 Q773 229 787 231 Q788 238 786 247 Q773 247 760 245 Q759 238 761 230 Z"/><path d="M808 105 Q821 102 834 103 Q836 112 834 120 Q821 120 809 120 Q807 112 808 105 Z"/><path d="M808 231 Q821 228 834 229 Q836 238 834 247 Q821 248 809 246 Q806 238 808 231 Z"/><path d="M453 184 Q461 183 461 192 Q461 201 453 202 Q443 201 442 192 Q443 183 453 184 Z"/><path d="M516 162 Q525 161 524 170 Q525 179 516 179 Q507 179 506 171 Q507 161 516 162 Z"/><path d="M581 171 Q589 171 590 179 Q589 189 581 189 Q571 189 572 181 Q571 171 581 171 Z"/><path d="M644 144 Q653 143 652 151 Q653 161 644 162 Q635 161 636 153 Q635 143 644 144 Z"/><path d="M708 154 Q717 153 717 161 Q717 171 708 172 Q699 171 699 162 Q699 153 708 154 Z"/><path d="M771 130 Q781 131 781 140 Q781 149 772 148 Q763 149 762 140 Q763 131 771 130 Z"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="202" y="296">instant</text>
+    <text x="623" y="296">range</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="202" y="322">ett värde per serie</text>
+    <text x="623" y="322">en punkt per steg</text>
+  </g>
+</svg>`,
+
+  /* ---- Grafana 1.1 · Vad en larminstans är — STIL: HANDRITAD ---- */
+  "en-regel-tre-instanser": `
+<svg viewBox="0 0 880 390" role="img" aria-label="Ett papper märkt en regel med tre heldragna pilar ut till tre kort, ett per etikettuppsättning.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M70 120 Q160 118 220 119 L250 152 Q253 220 250 290 Q160 293 72 291 Q68 205 70 120 Z"/><path d="M220 119 Q219 140 222 152 Q236 154 250 152"/><path d="M96 176 Q160 174 224 176" stroke-width="1.2" opacity="0.55"/><path d="M96 206 Q160 204 224 206" stroke-width="1.2" opacity="0.55"/><path d="M539 92 Q665 92 791 93 Q790 123 791 155 Q665 156 539 155 Q539 123 539 92 Z"/><path d="M539 173 Q665 173 791 174 Q792 205 789 236 Q665 236 540 237 Q538 205 539 173 Z"/><path d="M539 256 Q665 255 790 256 Q791 287 789 317 Q665 318 539 317 Q539 287 539 256 Z"/><path d="M256 175 Q400 168 528 124"/><path d="M521 116 L534 122 L521 128"/><path d="M256 205 Q400 206 528 205"/><path d="M521 199 L534 205 L521 211"/><path d="M256 235 Q400 244 528 286"/><path d="M521 282 L534 288 L521 294"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="middle">
+    <text x="665" y="130">service=chat</text>
+    <text x="665" y="212">service=cart</text>
+    <text x="665" y="294">service=api</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="160" y="330">en regel</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="665" y="356">tre instanser</text>
+  </g>
+</svg>`,
+
+  /* ---- Grafana 1.1 · Vad en notifieringspolicy är — STIL: HANDRITAD ---- */
+  "sorteringsfacken": `
+<svg viewBox="0 0 880 396" role="img" aria-label="Ett kuvert märkt team lika med platform med en heldragen pil in i det översta av tre fack i en hylla märkt notifieringspolicyn.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M60 169 Q134 166 208 169 Q208 210 208 251 Q134 253 60 251 Q60 210 60 169 Z"/><path d="M64 172 L134 216 L204 172"/><path d="M430 92 Q630 91 830 92 Q830 212 830 332 Q630 334 429 333 Q430 212 430 92 Z"/><path d="M432 172 Q630 171 828 172"/><path d="M432 252 Q630 251 828 252"/><path d="M214 202 Q320 200 414 150"/><path d="M407 140 L420 146 L407 152"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.72">
+    <text x="134" y="242">team=platform</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="middle">
+    <text x="630" y="150">team=platform</text>
+    <text x="630" y="230">team=data</text>
+    <text x="630" y="310">default</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="134" y="290">larmet</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="630" y="368">notifieringspolicyn</text>
+  </g>
+</svg>`,
+
+  /* ---- Loki 1.0 · Vad en chunk är — STIL: HANDRITAD ---- */
+  "indexet-och-hogen": `
+<svg viewBox="0 0 880 380" role="img" aria-label="Ett litet kort märkt indexet med en heldragen pil till en betydligt större skrafferad hög märkt chunkarna.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M90 150 Q165 150 241 150 Q242 196 240 242 Q165 242 90 242 Q89 196 90 150 Z"/><path d="M110 180 Q165 178 220 180" stroke-width="1.2" opacity="0.55"/><path d="M110 206 Q165 204 220 206" stroke-width="1.2" opacity="0.55"/><path d="M501 91 Q650 88 800 90 Q800 200 800 311 Q650 312 500 310 Q500 200 501 91 Z"/><path d="M502 118 Q650 116 798 118"/><path d="M502 145 Q650 144 798 145"/><path d="M502 172 Q650 172 798 172"/><path d="M502 200 Q650 199 798 200"/><path d="M502 228 Q650 226 798 228"/><path d="M502 255 Q650 254 798 255"/><path d="M502 282 Q650 282 798 282"/><g stroke-width="1.1" opacity="0.42"><path d="M534 306 L504 276"/><path d="M564 306 L504 246"/><path d="M594 306 L504 216"/><path d="M624 306 L522 204"/><path d="M654 306 L552 204"/><path d="M684 306 L582 204"/><path d="M714 306 L612 204"/><path d="M744 306 L642 204"/><path d="M774 306 L672 204"/><path d="M796 298 L702 204"/><path d="M796 268 L732 204"/><path d="M796 238 L762 204"/><path d="M796 208 L792 204"/></g><path d="M248 196 Q370 194 484 196"/><path d="M479 190 L492 196 L479 202"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="165" y="286">indexet</text>
+    <text x="650" y="348">chunkarna</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="368" y="176">pekar på</text>
+  </g>
+</svg>`,
+
+  /* ---- Loki 1.0 · Kardinalitetsfällan — STIL: HANDRITAD ---- */
+  "tva-hyllor-en-explosion": `
+<svg viewBox="0 0 880 360" role="img" aria-label="Två hyllor. Den vänstra har två breda lådor, den högra sju smala — lika mycket innehåll, fler fack att öppna.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M64 252 Q235 250 406 252"/><path d="M66 264 Q235 262 404 264"/><path d="M79 140 Q155 140 230 140 Q231 194 230 249 Q155 249 80 248 Q79 194 79 140 Z"/><path d="M240 140 Q315 139 391 139 Q390 194 390 248 Q315 249 240 249 Q240 194 240 140 Z"/><path d="M460 252 Q641 250 822 252"/><path d="M462 264 Q641 262 820 264"/><path d="M475 140 Q495 138 513 139 Q514 194 513 249 Q495 250 475 247 Q476 194 475 140 Z"/><path d="M525 141 Q543 140 562 141 Q564 194 561 249 Q543 249 524 247 Q522 194 525 141 Z"/><path d="M573 141 Q591 139 610 141 Q611 194 609 247 Q591 248 571 247 Q570 194 573 141 Z"/><path d="M619 140 Q639 138 658 141 Q658 194 658 249 Q639 250 620 248 Q620 194 619 140 Z"/><path d="M668 139 Q687 139 705 139 Q706 194 706 249 Q687 249 667 248 Q668 194 668 139 Z"/><path d="M716 140 Q735 140 755 140 Q755 194 754 248 Q735 248 717 249 Q714 194 716 140 Z"/><path d="M764 140 Q783 139 801 141 Q803 194 803 248 Q783 249 763 249 Q764 194 764 140 Z"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="235" y="306">cluster</text>
+    <text x="645" y="306">pod_id</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="235" y="332">få strömmar</text>
+    <text x="645" y="332">många strömmar</text>
+  </g>
+</svg>`,
+
+  /* ---- Loki 1.1 · Vad ett derived field är — STIL: HANDRITAD ---- */
+  "kroken-i-raden": `
+<svg viewBox="0 0 880 300" role="img" aria-label="En loggrad med ett inramat ord märkt traceID. En heldragen tråd går från ramen till ett kort med tre förskjutna staplar, märkt spåret.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M60 129 Q295 128 531 129 Q532 168 530 208 Q295 210 60 207 Q60 168 60 129 Z"/><path d="M84 158 Q150 156 216 158" stroke-width="1.2" opacity="0.5"/><path d="M440 158 Q472 156 506 158" stroke-width="1.2" opacity="0.5"/><path d="M241 144 Q328 143 416 145 Q416 168 415 192 Q328 194 239 193 Q238 168 241 144 Z"/><path d="M673 113 Q747 112 821 113 Q822 160 822 209 Q747 210 672 208 Q670 160 673 113 Z"/><path d="M692 140 Q726 139 760 140" stroke-width="1.4" opacity="0.5"/><path d="M706 162 Q748 161 790 162" stroke-width="1.4" opacity="0.5"/><path d="M700 184 Q724 183 748 184" stroke-width="1.4" opacity="0.5"/><path d="M420 162 Q524 136 650 146"/><path d="M645 142 L658 148 L645 154"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle">
+    <text x="328" y="174">traceID</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="546" y="118">derived field</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="295" y="250">loggraden</text>
+    <text x="747" y="250">spåret</text>
+  </g>
+</svg>`,
+
+  /* ---- Ansible 1.0 · Ansible är agentlöst — STIL: HANDRITAD ---- */
+  "paketet-som-inte-blir-kvar": `
+<svg viewBox="0 0 880 330" role="img" aria-label="En laptop och en server med två heldragna pilar mellan sig: modulen kopieras dit, svaret kommer tillbaka. Servern är tom.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M70 110 Q130 108 188 109 Q191 150 188 186 Q130 188 72 186 Q68 148 70 110 Z"/><path d="M52 198 Q130 196 206 197 Q196 214 182 216 Q130 218 76 216 Q62 214 52 198 Z"/><path d="M699 95 Q760 94 821 96 Q821 171 821 245 Q760 248 701 246 Q698 171 699 95 Z"/><path d="M712 132 Q760 131 808 132" stroke-width="1.3" opacity="0.5"/><path d="M712 172 Q760 171 808 172" stroke-width="1.3" opacity="0.5"/><path d="M222 140 Q380 132 620 138"/><path d="M615 132 L628 138 L615 144"/><path d="M628 206 Q420 214 232 208"/><path d="M237 202 L224 208 L237 214"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="420" y="118">modulen kopieras</text>
+    <text x="420" y="238">svaret tillbaka</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="129" y="288">din maskin</text>
+    <text x="760" y="288">servern</text>
+  </g>
+</svg>`,
+
+  /* ---- Ansible 1.0 · Fallgropen i --check — STIL: HANDRITAD ---- */
+  "halet-i-torrkorningen": `
+<svg viewBox="0 0 880 370" role="img" aria-label="Tre rutor under varandra märkta file, copy och command. De två första är heldragna och rapporterar changed. Den tredje är streckad och tom, och rapporterar skipping.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M240 69 Q440 70 640 71 Q642 101 641 133 Q440 133 240 132 Q240 101 240 69 Z"/><path d="M240 153 Q440 152 640 151 Q641 183 641 213 Q440 216 240 213 Q238 183 240 153 Z"/><path d="M240 234 Q440 234 639 235 Q640 265 639 296 Q440 297 239 297 Q239 265 240 234 Z" stroke-dasharray="8 9" opacity="0.38"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="16.5" fill="currentColor" text-anchor="middle">
+    <text x="440" y="108">file</text>
+    <text x="440" y="190">copy</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="16.5" fill="currentColor" text-anchor="middle" opacity="0.45">
+    <text x="440" y="272">command</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="start" opacity="0.62">
+    <text x="690" y="108">changed</text>
+    <text x="690" y="190">changed</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="start" opacity="0.45">
+    <text x="690" y="272">skipping</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="440" y="336">--check</text>
+  </g>
+</svg>`,
+
+  /* ---- Ansible 1.1 · Handler vs task — STIL: HANDRITAD ---- */
+  "klockan-som-inte-ringer": `
+<svg viewBox="0 0 880 340" role="img" aria-label="Två rutor märkta changed och ok. Från changed går en heldragen tråd till en klocka, från ok en streckad som tonar bort.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M79 76 Q180 76 280 75 Q280 107 281 138 Q180 140 81 137 Q79 107 79 76 Z"/><path d="M81 191 Q180 190 280 190 Q281 221 281 252 Q180 254 79 253 Q78 221 81 191 Z"/><path d="M660 202 Q662 116 730 112 Q798 117 800 202"/><path d="M644 202 Q730 208 816 202"/><path d="M731 210 Q739 209 739 219 Q739 227 729 226 Q721 227 722 217 Q721 209 731 210 Z"/><g stroke-width="1.1" opacity="0.42"><path d="M694 200 L668 174"/><path d="M720 200 L670 150"/><path d="M746 200 L696 150"/><path d="M772 200 L722 150"/><path d="M792 194 L748 150"/><path d="M792 168 L774 150"/></g><path d="M286 108 Q460 112 636 152"/><path d="M631 148 L644 154 L631 160"/><path d="M286 220 Q460 214 636 188" stroke-dasharray="8 9" opacity="0.4"/><g opacity="0.4"><path d="M631 180 L644 186 L631 192"/></g>
+  </g>
+  <g font-family="var(--font-mono)" font-size="16.5" fill="currentColor" text-anchor="middle">
+    <text x="180" y="114">changed</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="16.5" fill="currentColor" text-anchor="middle" opacity="0.45">
+    <text x="180" y="228">ok</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="730" y="288">handlern</text>
+  </g>
+</svg>`,
+
+  /* ---- InfluxDB 1.0 · Vad line protocol är — STIL: HANDRITAD ---- */
+  "line-protocol-raden": `
+<svg viewBox="0 0 880 260" role="img" aria-label="En rad line protocol uppdelad i fyra rutor med pilar ner till etiketterna mätning, taggar, fält och tid. Mellan de två första rutorna står ett kommatecken.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M60 81 Q125 78 191 81 Q190 112 189 144 Q125 145 60 144 Q59 112 60 81 Z"/><path d="M205 80 Q306 80 406 81 Q408 112 406 143 Q306 144 207 144 Q205 112 205 80 Z"/><path d="M423 80 Q527 79 632 80 Q633 112 631 143 Q527 146 421 143 Q421 112 423 80 Z"/><path d="M648 81 Q753 79 858 80 Q860 112 859 144 Q753 144 648 144 Q648 112 648 81 Z"/><path d="M125 148 Q127 164 125 180"/><path d="M306 148 Q308 164 306 180"/><path d="M527 148 Q529 164 527 180"/><path d="M753 148 Q755 164 753 180"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle">
+    <text x="125" y="120">temp</text>
+    <text x="306" y="120">rum=lager</text>
+    <text x="527" y="120">value=21.5</text>
+    <text x="753" y="120">1783638000</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="17" fill="currentColor" text-anchor="middle" opacity="0.7">
+    <text x="198" y="120">,</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="125" y="210">mätning</text>
+    <text x="306" y="210">taggar</text>
+    <text x="527" y="210">fält</text>
+    <text x="753" y="210">tid</text>
+  </g>
+</svg>`,
+
+  /* ---- InfluxDB 1.1 · Vad retention är — STIL: HANDRITAD ---- */
+  "hyllan-har-en-ande": `
+<svg viewBox="0 0 880 300" role="img" aria-label="En hylla med sex lådor. De två till vänster om en streckad gräns är streckade och borttagna; de fyra till höger är heldragna och kvar.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M110 212 Q465 209 830 212"/><path d="M112 224 Q465 221 828 224"/><path d="M131 112 Q180 110 230 111 Q230 161 231 210 Q180 210 130 211 Q128 161 131 112 Z" stroke-dasharray="8 9" opacity="0.35"/><path d="M245 113 Q295 110 344 112 Q345 161 345 210 Q295 211 245 210 Q243 161 245 113 Z" stroke-dasharray="8 9" opacity="0.35"/><path d="M359 111 Q410 111 460 111 Q462 161 460 209 Q410 212 361 210 Q359 161 359 111 Z"/><path d="M476 111 Q525 111 574 112 Q577 161 576 210 Q525 211 475 209 Q475 161 476 111 Z"/><path d="M589 111 Q640 111 689 113 Q691 161 689 211 Q640 212 589 211 Q589 161 589 111 Z"/><path d="M705 111 Q755 111 806 113 Q806 161 804 211 Q755 212 704 209 Q705 161 705 111 Z"/><path d="M352 78 Q354 158 352 242" stroke-dasharray="6 8" opacity="0.5"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="352" y="62">retention</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.45">
+    <text x="190" y="268">borttagna</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="580" y="268">kvar i bucketen</text>
+  </g>
+</svg>`,
+
+  /* ---- ArgoCD 1.0 · Push vs pull i utrullning — STIL: HANDRITAD ---- */
+  "pilen-pekar-inat": `
+<svg viewBox="0 0 880 380" role="img" aria-label="En fil märkt Git-repot och en låda märkt klustret. En heldragen pil går från klustret till filen. En streckad pil från en låda märkt pipeline stoppas av ett kryss innan den når klustret.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M60 80 Q140 78 168 79 L200 112 Q203 166 200 220 Q140 223 62 221 Q57 150 60 80 Z"/><path d="M168 79 Q167 100 170 112 Q184 114 200 112"/><path d="M84 140 Q130 138 176 140" stroke-width="1.2" opacity="0.5"/><path d="M84 168 Q130 166 176 168" stroke-width="1.2" opacity="0.5"/><path d="M561 59 Q690 60 821 59 Q820 160 819 260 Q690 261 560 260 Q560 160 561 59 Z"/><path d="M590 96 Q635 94 681 96 Q681 123 679 149 Q635 151 589 150 Q589 123 590 96 Z"/><path d="M700 97 Q745 95 789 95 Q790 123 790 150 Q745 150 701 150 Q698 123 700 97 Z"/><path d="M591 176 Q690 176 789 176 Q792 203 789 230 Q690 231 590 229 Q588 203 591 176 Z"/><path d="M300 300 Q390 298 480 299 Q480 329 481 357 Q390 359 299 358 Q300 329 300 300 Z"/><path d="M548 130 Q380 122 216 128"/><path d="M221 122 L208 128 L221 134"/><path d="M486 322 Q524 302 546 254" stroke-dasharray="7 8" opacity="0.45"/><g opacity="0.55"><path d="M540 232 L566 258"/><path d="M566 232 L540 258"/></g>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="382" y="106">hämtar</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle">
+    <text x="390" y="336">pipeline</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="130" y="258">Git-repot</text>
+    <text x="690" y="298">klustret</text>
+  </g>
+</svg>`,
+
+  /* ---- ArgoCD 1.0 · Sync status vs health status — STIL: HANDRITAD ---- */
+  "de-tva-axlarna": `
+<svg viewBox="0 0 880 360" role="img" aria-label="Ett rutnät med två kolumner, Synced och OutOfSync, och två rader, Healthy och Degraded. Alla fyra rutor är ifyllda med en slutsats.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M200 89 Q440 88 680 89 Q681 190 680 290 Q440 292 200 289 Q200 190 200 89 Z"/><path d="M202 190 Q440 188 678 190"/><path d="M440 92 Q442 190 440 288"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle">
+    <text x="320" y="72">Synced</text>
+    <text x="560" y="72">OutOfSync</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="end">
+    <text x="186" y="148">Healthy</text>
+    <text x="186" y="248">Degraded</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="middle">
+    <text x="320" y="148">allt stämmer</text>
+    <text x="560" y="148">någon rörde klustret</text>
+    <text x="320" y="248">felet är i repot</text>
+    <text x="560" y="248">båda delarna</text>
+  </g>
+</svg>`,
+
+  /* ---- ArgoCD 1.1 · Vad en finalizer gör — STIL: HANDRITAD ---- */
+  "finalizern-haller-kvar": `
+<svg viewBox="0 0 880 360" role="img" aria-label="En låda märkt Application lyfts uppåt av en pil märkt delete, men hålls kvar av en hake ner i marken.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M299 130 Q400 130 500 129 Q502 185 500 240 Q400 241 301 240 Q298 185 299 130 Z"/><path d="M180 300 Q440 297 700 300"/><g stroke-width="1.1" opacity="0.4"><path d="M214 318 L198 302"/><path d="M244 318 L228 302"/><path d="M274 318 L258 302"/><path d="M304 318 L288 302"/><path d="M334 318 L318 302"/><path d="M364 318 L348 302"/><path d="M394 318 L378 302"/><path d="M424 318 L408 302"/><path d="M454 318 L438 302"/><path d="M484 318 L468 302"/><path d="M514 318 L498 302"/><path d="M544 318 L528 302"/><path d="M574 318 L558 302"/><path d="M604 318 L588 302"/><path d="M634 318 L618 302"/><path d="M664 318 L648 302"/><path d="M694 318 L678 302"/></g><path d="M336 242 Q326 264 334 282"/><path d="M334 282 Q348 294 358 284"/><path d="M400 112 Q402 84 400 64"/><path d="M394 69 L400 56 L406 69"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="400" y="42">delete</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle">
+    <text x="400" y="192">Application</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="440" y="336">resurserna i klustret</text>
+  </g>
+</svg>`,
+
+  /* ---- ArgoCD 1.1 · Krypterat i repot vs hämtat vid körning — STIL: HANDRITAD ---- */
+  "nyckeln-stannar-i-klustret": `
+<svg viewBox="0 0 880 340" role="img" aria-label="En låda märkt repot med ett förseglat kuvert i. En heldragen pil till en låda märkt klustret, där en nyckel ligger. Nyckeln har ingen pil.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M61 109 Q170 110 280 110 Q281 180 279 249 Q170 252 60 251 Q60 180 61 109 Z"/><path d="M100 149 Q170 150 240 150 Q240 186 240 223 Q170 223 99 223 Q98 186 100 149 Z"/><path d="M104 154 L170 196 L236 154"/><path d="M170 196 Q181 195 181 206 Q181 217 170 218 Q159 217 158 207 Q159 195 170 196 Z"/><path d="M601 90 Q720 89 841 90 Q841 180 841 270 Q720 271 599 270 Q599 180 601 90 Z"/><path d="M676 140 Q693 141 692 159 Q693 175 677 175 Q659 175 658 159 Q659 141 676 140 Z"/><path d="M694 158 Q730 156 764 158"/><path d="M744 158 Q745 170 744 176"/><path d="M760 158 Q761 168 760 174"/><path d="M292 186 Q440 180 588 184"/><path d="M583 178 L596 184 L583 190"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="440" y="164">kuvertet</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="170" y="296">repot</text>
+    <text x="720" y="306">klustret</text>
   </g>
 </svg>`,
 };
