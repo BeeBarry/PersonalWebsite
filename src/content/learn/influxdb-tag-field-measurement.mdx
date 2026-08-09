@@ -32,7 +32,7 @@ nästan alltid läses som ett intervall.
 Antagandet färgar allt. Data skrivs i tidsordning och sällan om, den läses oftast som *"de senaste
 sex timmarna"*, och den blir mindre intressant med åldern.
 
-InfluxDB är en av dem. Prometheus från Observability-delen är en annan — den är också en
+InfluxDB är en av dem. Prometheus från sin egen serie är en annan — den är också en
 tidsseriedatabas, med ett annat sätt att få tag i datan.
 
 ## Tidsseriedatabas vs relationsdatabas
@@ -167,7 +167,7 @@ samma.
 
 Två tidsseriedatabaser som gör motsatta val på nästan varje punkt.
 
-Observability-delen införde skillnaden mellan pull och push. **Prometheus hämtar** från en lista över
+Prometheus-delen införde skillnaden mellan pull och push. **Prometheus hämtar** från en lista över
 mål den känner till. **InfluxDB tar emot** — applikationen eller en agent skickar in punkterna.
 
 Det gör dem bra på olika saker. Prometheus märker att en tjänst är borta, eftersom hämtningen

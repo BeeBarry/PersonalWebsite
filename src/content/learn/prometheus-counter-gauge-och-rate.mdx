@@ -1,23 +1,26 @@
 ---
-title: 'Mätvärden med Prometheus'
-description: 'Counter, gauge, rate och varför ett genomsnitt nästan alltid ljuger'
-category: 'observability'
+title: 'Counter, gauge och rate'
+description: 'Formatet, frågespråket — och varför ett genomsnitt nästan alltid ljuger'
+category: 'prometheus'
 part: 1
-order: 2
+partTitle: 'Grunderna'
+order: 1
 date: '2026-08-07'
 tags: ['Beginner', 'Prometheus', 'PromQL']
 ---
 
 ## Var vi är
 
-Förra delen gav de tre signalerna och regeln att larma på mätvärden och felsöka i loggar. Nu gör vi
-mätvärdet konkret.
+Observability-delen gav de tre signalerna och regeln att larma på mätvärden och felsöka i loggar.
+Den här serien gör den mellersta konkret.
 
-Vi använder Prometheus, som är den vanligaste vägen och den vars format nästan allt annat kan läsa.
-Kubernetes API-server, databaser, köer och lastbalanserare exponerar redan sina mätvärden i det.
+Prometheus är den vanligaste vägen dit, och den vars format nästan allt annat kan läsa.
+Kubernetes API-server, databaser, köer och lastbalanserare exponerar redan sina mätvärden i det —
+och Grafana, Loki och InfluxDB förhåller sig alla till det på något sätt.
 
-Den här delen går från hur en rad ser ut till ett larm som är värt att väcka någon för. Övningarna
-körs mot en publik demo och kräver ingen installation.
+Den här delen går från hur en rad ser ut till ett larm som är värt att väcka någon för. Zoomen ligger
+på att fråga en Prometheus som redan finns; att drifta den ligger utanför. Övningarna körs mot en
+publik demo och kräver ingen installation.
 
 <Del titel="Formatet" />
 
@@ -409,5 +412,10 @@ tyst förvanskas om du klistrar in frågan direkt i URL:en.
 
 Med mätvärdena på plats står grunden: du kan se att något är fel, och ungefär var.
 
-Nästa naturliga steg är spårningen på riktigt — att instrumentera en applikation med OpenTelemetry,
-och gå från ett långsamt anrop i grafen till det exakta databasanropet som orsakade det.
+Två trådar löper vidare härifrån, och de har varsin egen serie. **Grafana** tar frågan du just skrev
+och gör den till en panel någon tittar på klockan tre. **OpenTelemetry** tar det mätvärdet aldrig
+kan svara på: ett p95 på nio sekunder pekar ut ett problem och lämnar dig med hela systemet att leta
+i — spåret pekar ut raden.
+
+Och **Observability-delen** fortsätter på frågan som gäller oavsett verktyg: vilket tal är
+tillräckligt bra, och vilka larm är värda att väcka någon för?

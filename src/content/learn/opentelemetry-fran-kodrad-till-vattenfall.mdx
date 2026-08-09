@@ -1,24 +1,26 @@
 ---
-title: 'Spårning med OpenTelemetry'
-description: 'Från ett långsamt anrop i grafen till det exakta databasanropet som orsakade det'
-category: 'observability'
+title: 'Från kodrad till vattenfall'
+description: 'Instrumentering, kontextspridning och sampling — och hur ett N+1 ser ut i ett spår'
+category: 'opentelemetry'
 part: 1
-order: 3
+partTitle: 'Grunderna'
+order: 1
 date: '2026-08-08'
 tags: ['Beginner', 'OpenTelemetry', 'Tracing']
 ---
 
 ## Var vi är
 
-Förra delen gjorde mätvärdena konkreta: en counter som bara växer, ett histogram som ger dig p95, och
-ett larm som är värt att väcka någon för.
+Prometheus-delen gjorde mätvärdena konkreta: en counter som bara växer, ett histogram som ger dig
+p95, och ett larm som är värt att väcka någon för.
 
 Mätvärdet säger att *något* är långsamt. Det säger aldrig *vad*. Ett p95 på nio sekunder pekar ut ett
 problem och lämnar dig med hela systemet att leta i.
 
-Den här delen tar det sista steget: hur du får ut spår ur en applikation, hur de hålls ihop mellan
-tjänster, och hur du läser dem för att hitta raden som kostade tid. Del 1.0 definierade *trace* och
-*span* — här handlar det om att få dem att uppstå.
+Den här serien tar det sista steget: hur du får ut spår ur en applikation, hur de hålls ihop mellan
+tjänster, och hur du läser dem för att hitta raden som kostade tid. Observability-delen definierade
+*trace* och *span* — här handlar det om att få dem att uppstå. Zoomen ligger på instrumenteringen;
+att drifta en spårlagring ligger utanför.
 
 <Del titel="Att få ut data" />
 
@@ -231,7 +233,7 @@ Utan attribut kan du konstatera att någon fick ett långsamt svar. Du kan inte 
 alla kunder eller en enda, om det gällde ett visst produktfilter, eller varför just den frågan
 returnerade 40 000 rader.
 
-Lägg till en handfull attribut på de spann som betyder något. Men akta kardinaliteten — del 1.0
+Lägg till en handfull attribut på de spann som betyder något. Men akta kardinaliteten — Observability-delen
 förklarade varför ett unikt värde per anrop är förödande i ett mätvärde. I ett span är det däremot
 oftast rätt: spår lagras som enskilda poster, inte som tidsserier.
 </Callout>
@@ -400,15 +402,17 @@ anropet är klart, eftersom servrarna kör som daemon-trådar — det är avsikt
 
 ## Nästa del
 
-Därmed står de tre signalerna som verktyg: loggen, mätvärdet och nu spåret som binder ihop dem.
+Därmed står grunderna för spårning: hur data uppstår, hur den hålls ihop, och hur ett vattenfall
+läses.
 
 Något har hänt med resten av hubben på vägen hit. Två artiklar som stod för sig själva hänger nu
 ihop med den här. SQL-delens N+1 är trappan du just lärde dig känna igen. Och Kubernetes-delen om
 resurser handlar om en strypt container som inte syns i någon status — men som syns direkt som ett
 glapp i ett vattenfall.
 
-Kvar står frågan som ingen av de tre delarna svarat på. Du kan nu se allt — men *allt* är för
-mycket, och en instrumentbräda med sextio paneler säger lika lite som ingen alls.
+Trace-id:t löper dessutom vidare. **Loki-delen** använder det för att hoppa från ett långsamt anrop
+till exakt de loggrader som hörde till det, och **Grafana-delen** för att göra hoppet klickbart.
 
-Nästa del handlar om att välja: hur du sätter ett tal på vad som är tillräckligt bra, och vad du
-gör när det talet inte längre håller.
+Kvar står frågan inget av verktygen svarar på. Du kan nu se allt — men *allt* är för mycket.
+**Observability-delen** tar den: hur du sätter ett tal på vad som är tillräckligt bra, och vilka
+larm som är värda att väcka någon för.

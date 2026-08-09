@@ -158,22 +158,43 @@ export const categories: Category[] = [
         domain: "cloud",
         isVisible: true,
     },
+    // Ordningen i gruppen är inte alfabetisk utan pedagogisk: principerna
+    // först, sedan ett verktyg per signal — mätvärde, logg, spår — och sist
+    // ytan som visar alla tre.
     {
-        title: "Grafana",
-        description: "Från mätvärde till en panel någon faktiskt tittar på.",
-        icon: "skill-icons:grafana-light",
-        slug: "grafana",
+        title: "Prometheus",
+        description: "Mätvärden över tid, och ett frågespråk byggt för dem.",
+        icon: "skill-icons:prometheus",
+        slug: "prometheus",
         group: "observability",
         domain: "cloud",
         isVisible: true,
     },
-    // Loki är det enda av de nya verktygen utan varumärkeslogga i något av de
-    // fyra installerade ikonpaketen — därför neutral mdi:, som ärver accenten.
+    // Loki är det enda av verktygen utan varumärkeslogga i något av de fyra
+    // installerade ikonpaketen — därför neutral mdi:, som ärver accenten.
     {
         title: "Loki",
         description: "Loggar som går att fråga — utan att indexera varje ord.",
         icon: "mdi:text-box-search-outline",
         slug: "loki",
+        group: "observability",
+        domain: "cloud",
+        isVisible: true,
+    },
+    {
+        title: "OpenTelemetry",
+        description: "Standarden som gör ett anrop följbart över tjänstegränser.",
+        icon: "logos:opentelemetry-icon",
+        slug: "opentelemetry",
+        group: "observability",
+        domain: "cloud",
+        isVisible: true,
+    },
+    {
+        title: "Grafana",
+        description: "Från mätvärde till en panel någon faktiskt tittar på.",
+        icon: "skill-icons:grafana-light",
+        slug: "grafana",
         group: "observability",
         domain: "cloud",
         isVisible: true,
