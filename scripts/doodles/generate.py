@@ -2216,6 +2216,49 @@ def alla():
       + "\n" + txt([(625,200,"3"),(790,200,"4")],17)
       + "\n" + txt([(440,268,"numren räknas inte om")],15,' opacity="0.62"') + "\n</svg>")
 
+    # 109 — RabbitMQ 1.0 · Exchangen delar ut
+    # Exchangen ritas som EN låda utan innehåll — den lagrar inget, och en låda
+    # med kort i skulle säga motsatsen. Den tredje linjen är streckad OCH utan
+    # pilspets: den leder inte fram, den slutar.
+    linje = ('<path d="M265 214 Q430 190 588 74"/>' + arrow(594, 71)
+             + '<path d="M265 240 Q430 234 588 224"/>' + arrow(594, 226)
+             + '<path d="M265 266 Q430 300 560 358" stroke-dasharray="7 8" '
+               'opacity="0.45"/>')
+    D['exchangen-delar-ut']=(
+      '<svg viewBox="0 0 880 480" role="img" aria-label="En låda märkt exchange till vänster med '
+      'tre linjer ut till tre köer. Två linjer är heldragna med pilspets, den tredje är streckad '
+      'och slutar utan att nå fram.">\n'
+      + G % (f'<path d="{w(60,180,200,120)}"/>'
+             + "".join(f'<path d="{w(600,y,220,70)}"/>' for y in (40,190,340))
+             + linje)
+      + "\n" + txt([(160,150,"order.lagd")],14,' opacity="0.62"')
+      + "\n" + txt([(160,336,"exchange"),(710,134,"betalning"),
+                    (710,284,"analys"),(710,434,"utskick")],18.5)
+      + "\n" + txt([(710,158,"order.*"),(710,308,"#"),(710,458,"faktura.*")],13,
+                   ' opacity="0.62"') + "\n</svg>")
+
+    # 110 — RabbitMQ 1.1 · Stjärnan och brädgården
+    # Anatomiformen: dela strängen i sina ord och märk upp vad varje jokertecken
+    # täcker. En bild med köer och pilar hade blivit doodle 109 en gång till —
+    # här är poängen inte vägen, utan hur långt ett mönster sträcker sig.
+    def klammer(x1, x2, y, djup=12):
+        m = (x1 + x2) // 2
+        return (f'<path d="M{x1} {y} Q{x1} {y+djup} {x1+djup} {y+djup} '
+                f'L{m-djup} {y+djup} Q{m} {y+djup} {m} {y+djup*2} '
+                f'Q{m} {y+djup} {m+djup} {y+djup} L{x2-djup} {y+djup} '
+                f'Q{x2} {y+djup} {x2} {y}" stroke-width="1.3" opacity="0.7"/>')
+    D['stjarnan-och-bradgarden']=(
+      '<svg viewBox="0 0 880 360" role="img" aria-label="Strängen order punkt lagd punkt se, '
+      'uppdelad i tre rutor. En klammer under den mittersta rutan är märkt med en stjärna, och en '
+      'klammer under de två sista är märkt med en brädgård.">\n'
+      + G % ("".join(f'<path d="{w(x,40,190,90)}"/>' for x in (120,345,570))
+             + klammer(345,535,155) + klammer(345,760,255))
+      + "\n" + txt([(215,95,"order"),(440,95,"lagd"),(665,95,"se")],17)
+      + "\n" + txt([(327,95,"."),(552,95,".")],17,' opacity="0.55"')
+      + "\n" + txt([(440,203,"*"),(552,303,"#")],21)
+      + "\n" + txt([(440,227,"ett ord"),(552,327,"noll eller flera")],13,
+                   ' opacity="0.62"') + "\n</svg>")
+
     return D
 
 if __name__ == "__main__":

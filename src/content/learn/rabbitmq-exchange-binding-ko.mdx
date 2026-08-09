@@ -1,0 +1,443 @@
+---
+title: 'Exchange, binding och kö'
+description: 'Producenten skickar aldrig till en kö — och vad som händer med meddelandet som ingen bundit upp'
+category: 'rabbitmq'
+part: 1
+partTitle: 'Grunderna'
+order: 1
+date: '2026-08-09'
+tags: ['Beginner', 'RabbitMQ', 'AMQP']
+---
+
+## Var vi är
+
+Kafka-serien tog den ena sortens broker: en logg som ligger kvar, delad i partitioner, där
+konsumenten minns sin plats.
+
+RabbitMQ är den andra sorten. Meddelandet försvinner när det ackas, ordningen sköts av kön självt,
+och producenten skickar inte till någon kö alls.
+
+Den här delen tar modellen — exchange, binding, routing key — och vad de fyra exchange-typerna gör.
+Ack, prefetch och dead letter-mekaniken tar nästa del.
+
+<Del titel="Modellen" />
+
+## Vad RabbitMQ är
+
+**RabbitMQ** är en meddelandebroker som tar emot meddelanden, avgör vilka köer de hör hemma i, och
+levererar dem till konsumenter.
+
+Meddelandedelen definierade brokern som tjänsten som håller meddelandet tills någon hämtar det.
+RabbitMQ är den definitionen i sin mest renodlade form.
+
+Det som gör den värd en egen serie är mellansteget. Mellan producenten och kön ligger något som
+bestämmer, och det steget är hela skillnaden mot både Kafka och en enkel kö.
+
+## Vad AMQP är
+
+**AMQP 0-9-1** är protokollet RabbitMQ talar, och det är protokollet som definierar begreppen i den
+här artikeln.
+
+Exchange, binding, routing key och kö är alltså inte RabbitMQ-uppfinningar. De är delar av en
+standard, och samma ord dyker upp i andra implementationer.
+
+RabbitMQ talar också MQTT och STOMP genom insticksmoduler, och IoT-serien använde det första. AMQP
+är ändå det som modellen är byggd kring.
+
+Numret spelar roll. AMQP 1.0 är ett annat protokoll med en annan modell, trots namnet — och när
+någon säger AMQP menas nästan alltid 0-9-1.
+
+## Vad en exchange är
+
+En **exchange** är den del av brokern som tar emot publicerade meddelanden och avgör vilka köer de
+ska kopieras till.
+
+Producenten publicerar alltid till en exchange, aldrig till en kö. Exchangen lagrar ingenting själv
+— den fattar ett beslut och skickar vidare.
+
+Beslutet fattas utifrån meddelandets routing key och de bindningar som finns. Matchar ingen bindning
+kastas meddelandet, och exchangen behåller inget spår av det.
+
+<Doodle name="exchangen-delar-ut" caption="Två köer matchar och får var sitt exemplar. Den tredje linjen är streckad — dit går ingenting." />
+
+## Vad en kö är i RabbitMQ
+
+En **kö** är en namngiven, ordnad lista av meddelanden som väntar på att levereras till en konsument.
+
+Kön är det enda som lagrar. Meddelandet ligger där tills en konsument hämtar och ackar det, och
+sedan är det borta.
+
+Meddelandedelen beskrev formen. Det som tillkommer här är att kön måste **bindas** för att få något
+— en kö som ingen bundit upp är en kö som aldrig fylls, hur mycket som än publiceras.
+
+Flera konsumenter på samma kö delar på arbetet, en meddelande var, precis som modellen beskrev.
+
+## Exchange vs kö
+
+De blandas ihop varje gång någon säger "skicka till kön", och de gör helt olika saker.
+
+**Exchangen** tar emot och beslutar. Den har ingen storlek, ingen längd och inget innehåll.
+
+**Kön** lagrar och levererar. Den har en längd du kan mäta, och det är den som växer när konsumenten
+inte hinner.
+
+Konsekvensen märks i felsökningen. En kö som är tom kan bero på att konsumenten är snabb — eller på
+att bindningen saknas och att meddelandena aldrig kom in. De två ser likadana ut från kön, och olika
+ut från exchangen.
+
+## Vad en binding är
+
+En **binding** är en regel som kopplar en exchange till en kö.
+
+Regeln säger vilka meddelanden kön ska få. Utan binding finns ingen väg från exchangen till kön, och
+kön är därmed onåbar.
+
+En kö kan ha flera bindningar, från samma eller olika exchanges. En exchange kan ha bindningar till
+många köer, och ett meddelande som matchar tre av dem kopieras till alla tre.
+
+Bindningen skapas oftast av **konsumenten**, inte av producenten. Det är den som vet vad den vill ha,
+och det är därför en ny lyssnare kan tillkomma utan att avsändaren ändras.
+
+## Vad en routing key är
+
+En **routing key** är en textsträng som producenten sätter på meddelandet och som exchangen fattar
+sitt beslut utifrån.
+
+Nyckeln beskriver vad meddelandet *är*, inte vart det ska. `order.lagd` och `faktura.skapad` är
+typiska, och punkten är en konvention som topic-exchangen bygger på.
+
+Routing key är alltså inte en adress. Producenten vet inte vilka köer som finns, och nyckeln fungerar
+likadant oavsett om noll eller tio köer lyssnar.
+
+## Binding key vs routing key
+
+De två är samma sorts sträng på var sin sida av beslutet, och namnen gör dem lätta att kasta om.
+
+**Routing key** sätts på **meddelandet**, av producenten, vid publicering.
+
+**Binding key** anges i **bindningen**, av den som binder kön, och är mönstret som meddelandets
+routing key jämförs mot.
+
+Konsekvensen är att jämförelsen sker i exchangen, mellan något rörligt och något fast. Ett meddelande
+med `order.lagd` når en kö bunden med `order.*`, men inte en kö bunden med `faktura.*` — och i det
+andra fallet försvinner meddelandet tyst.
+
+<Del titel="Utdelningen" />
+
+## Vad en direct exchange gör
+
+En **direct exchange** levererar till de köer vars binding key är **exakt lika** med meddelandets
+routing key.
+
+Ingen mönstermatchning sker. `order.lagd` når en kö bunden med `order.lagd`, och ingen annan.
+
+Det är den enklaste typen och den som ligger närmast en vanlig kö. Den passar när ett meddelande ska
+till en bestämd mottagare, och när antalet nycklar är litet och känt.
+
+## Vad en fanout exchange gör
+
+En **fanout exchange** levererar till **alla** köer som är bundna till den, och bryr sig inte om
+routing key alls.
+
+Nyckeln kan sättas men ignoreras. Varje bunden kö får ett exemplar av varje meddelande.
+
+Det är meddelandedelens topic i sin renaste form: ett faktum sprids till alla som lyssnar. Ska en ny
+tjänst reagera på samma händelse binder den sin kö, och ingenting annat ändras.
+
+## Vad en topic exchange gör
+
+En **topic exchange** levererar till de köer vars binding key **matchar mönstret** i meddelandets
+routing key, med punkten som avdelare.
+
+Två jokertecken finns. `*` matchar exakt ett ord, och `#` matchar noll eller flera.
+
+En kö bunden med `order.*` får `order.lagd` men inte `order.lagd.se` — den senare har ett ord för
+mycket. En kö bunden med `order.#` får båda, och dessutom `order` helt utan punkt, eftersom noll ord
+också räknas.
+
+Det sista överraskar de flesta, och det är värt att komma ihåg när ett mönster fångar mer än väntat.
+
+<Doodle name="stjarnan-och-bradgarden" caption="Stjärnan täcker ett ord. Brädgården täcker resten — även när det inte finns någon." />
+
+## Fanout vs topic
+
+Båda sprider till flera köer, och valet mellan dem avgör vem som bestämmer.
+
+**Fanout** ger alla allt. Producenten bestämmer ingenting, och en kö som binder sig får hela
+strömmen.
+
+**Topic** låter varje kö välja. Bindningen är ett filter, och två köer på samma exchange kan få helt
+olika delmängder.
+
+Konsekvensen är att fanout är enklare och topic nästan alltid det man vill ha. En topic exchange
+bunden med `#` beter sig som en fanout, medan en fanout aldrig kan bli mer selektiv i efterhand.
+
+## Vad default-exchangen är
+
+**Default-exchangen** är en namnlös direct exchange som varje vhost har från början, och som varje kö
+automatiskt binds till med sitt eget namn som binding key.
+
+Det är den som gör att man kan publicera "direkt till en kö". Publicering till exchangen `""` med
+routing key `betalning` når kön `betalning`, utan att någon bindning skapats för hand.
+
+Bekvämligheten har ett pris. Publicerar du så har producenten fått veta ett könamn, och den lösa
+kopplingen som är hela poängen med modellen är borta.
+
+Använd den för snabba prov och för enkla arbetsköer. Bygg annars en egen exchange, även när det bara
+finns en kö bakom den.
+
+<Del titel="Driften" />
+
+## Vad en vhost är
+
+En **vhost**, virtuell värd, är ett namngivet fack i brokern med egna exchanges, köer och
+behörigheter.
+
+Namn är unika inom en vhost, inte i brokern. Två vhosts kan båda ha en kö som heter `betalning`, och
+de har ingenting med varandra att göra.
+
+Standardvhosten heter `/` och är den du hamnar i om du inte anger något. Det är därför exempel på
+nätet fungerar utan att nämna vhosts alls.
+
+I drift används de för att skilja miljöer eller team åt på samma broker. Behörigheter sätts per
+vhost, vilket gör dem till gränsen mellan vem som får se vad.
+
+## Vad durable betyder
+
+**Durable** betyder att kön eller exchangen finns kvar efter en omstart av brokern.
+
+En kö som inte är durable försvinner när noden startas om, tillsammans med allt som låg i den. Det
+är sällan vad man vill, och därför är durable standard i moderna klienter.
+
+Kön är dock bara halva saken. Meddelandet måste dessutom vara markerat som **persistent** för att
+skrivas till disk — en persistent meddelande i en icke-durable kö försvinner ändå, och tvärtom.
+
+Priset är hastighet. Att skriva till disk är långsammare än att hålla i minnet, och det är en
+avvägning per kö snarare än en inställning för hela brokern.
+
+## RabbitMQ vs Kafka
+
+Den jämförelse hela klungan leder fram till, och svaret är inte att den ena är bättre.
+
+**RabbitMQ** är en broker som delar ut arbete. Meddelandet försvinner när det ackas, routingen är
+rik och sker i brokern, och kön är gjord för att vara tom.
+
+**Kafka** är en logg som ligger kvar. Konsumenten minns sin plats, ordningen finns per partition, och
+loggen är gjord för att flera oberoende läsare ska kunna gå igenom samma data i egen takt.
+
+Konsekvensen är att frågan avgör valet. Ska något *göras* en gång, med komplex utdelning och per
+meddelande-hantering — RabbitMQ. Ska något *läsas om*, av flera, i egen takt, med historik — Kafka.
+
+Ett vanligt system har båda, och för olika flöden. Att välja verktyg efter volym är den vanligaste
+felslutsatsen: RabbitMQ hanterar stora volymer, och Kafka klarar små.
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att deklarera köer och bindningar i kod, oftast i uppstarten av din konsument. Det är
+bindningen som avgör vad din tjänst får, och den är det första du kontrollerar när något uteblir.
+
+Du kommer också att felsöka en tom kö. Frågan att ställa är om meddelandet aldrig publicerades, eller
+om det publicerades och inte routades — och det är två helt olika fel med samma symtom.
+
+Att välja exchange-typ gör du en gång per flöde. Topic är förvalet, direct när nycklarna är få och
+exakta, fanout när alla ska ha allt ändå.
+
+Kluster, spegling, quorum queues och shovel kan vänta. De blir dina med driftansvar, och de bygger
+alla på exchange, binding och kö.
+
+## Vanliga nybörjarförväxlingar
+
+Producenten publicerar inte till en kö. Den publicerar till en exchange, som beslutar.
+
+En exchange lagrar ingenting. Kön är det enda som har innehåll och längd.
+
+En kö utan bindning får aldrig något, hur mycket som än publiceras till exchangen.
+
+Routing key är inte en adress. Den beskriver vad meddelandet är, och fungerar likadant oavsett hur
+många köer som lyssnar.
+
+Binding key och routing key är inte samma sida av beslutet. Den ena sitter på bindningen, den andra
+på meddelandet.
+
+`*` och `#` är inte utbytbara. `*` är exakt ett ord, `#` är noll eller flera — och `order.#` fångar
+därför även `order`.
+
+En durable kö räddar inte meddelandena av sig själv. De måste också vara persistent.
+
+AMQP 1.0 är inte en nyare version av AMQP 0-9-1. Det är ett annat protokoll med en annan modell.
+
+## Prova själv
+
+Övningen visar det som är svårast att tro på: att ett publicerat meddelande kan försvinna utan att
+något går fel. Allt körs i en slängbar container.
+
+```bash
+docker run -d --name rabbit-ovning \
+  -p 5672:5672 -p 15672:15672 \
+  rabbitmq:4-management
+docker exec -it rabbit-ovning bash
+```
+
+Vänta tjugo sekunder efter start, så brokern hinner upp. Skapa en topic exchange och publicera till
+den — utan att någon kö finns:
+
+```bash
+rabbitmqadmin declare exchange \
+  --name ordrar --type topic
+rabbitmqadmin publish message --exchange ordrar \
+  --routing-key order.lagd --payload "order-1001"
+```
+
+```
+Message published but NOT routed
+```
+
+**Meddelandet togs emot och kastades.** Ingen kö var bunden, exchangen lagrar ingenting, och
+ingenting gick fel. Kontrollera att det inte finns någon kö alls:
+
+```bash
+rabbitmqctl -q list_queues name messages
+```
+
+Utskriften är tom. Skapa nu en kö och bind den med ett mönster:
+
+```bash
+rabbitmqadmin declare queue --name betalning
+rabbitmqadmin declare binding --source ordrar \
+  --destination-type queue --destination betalning \
+  --routing-key "order.*"
+```
+
+Publicera två meddelanden — ett som matchar mönstret och ett som inte gör det:
+
+```bash
+rabbitmqadmin publish message --exchange ordrar \
+  --routing-key order.lagd --payload "order-1002"
+rabbitmqadmin publish message --exchange ordrar \
+  --routing-key faktura.skapad --payload "faktura-9"
+```
+
+```
+Message published and routed successfully
+Message published but NOT routed
+```
+
+**Samma exchange, samma kö, olika utfall.** Skillnaden är bara routing key. Titta på kön:
+
+```bash
+rabbitmqctl -q list_queues name messages
+```
+
+```
+name	messages
+betalning	1
+```
+
+Ett meddelande, inte två. Titta sedan på bindningarna:
+
+```bash
+rabbitmqctl -q list_bindings \
+  source_name destination_name routing_key
+```
+
+```
+source_name	destination_name	routing_key
+	betalning	betalning
+ordrar	betalning	order.*
+```
+
+**Två rader, och du skapade bara den ena.** Den första har tom källa — det är default-exchangen, som
+band kön till sitt eget namn automatiskt. Hämta slutligen meddelandet:
+
+```bash
+rabbitmqadmin get messages --queue betalning
+```
+
+Utskriften är en bred tabell. De tre kolumner som betyder något säger `exchange: ordrar`,
+`routing_key: order.lagd` och `payload: order-1002` — meddelandet bär alltså med sig vilken väg det
+tog. Städa sedan:
+
+```bash
+exit
+docker rm -f rabbit-ovning
+```
+
+Tre saker kan förvirra. **`NOT routed` är inte ett fel** utan ett besked: brokern tog emot
+meddelandet och hittade ingen mottagare. Många system är tysta i det läget, och att RabbitMQ säger
+det är en fördel värd att utnyttja. **`rabbitmqctl` skriver ibland ut en rad om `Timeout: 60.0
+seconds`** innan resultatet — det är en informationsrad, inte ett problem. Och **brokern behöver
+tjugo sekunder** efter `docker run`; kommandon dessförinnan svarar att noden inte går att nå.
+
+Vill du se jokertecknen: bind en kö till med `order.#` i stället för `order.*`, publicera
+`order.lagd`, `order.lagd.se` och `order`, och jämför talen. Uppmätt blir det ett meddelande i
+`order.*`-kön och tre i `order.#`-kön.
+
+<Callout type="kom-ihag">
+- Producenten publicerar till en **exchange**, aldrig till en kö.
+- **Exchangen beslutar och lagrar ingenting.** Kön lagrar och har en längd.
+- En **binding** är regeln som kopplar exchange till kö. Utan den får kön aldrig något.
+- **Routing key** sitter på meddelandet, **binding key** på bindningen. Jämförelsen sker i exchangen.
+- **Direct** matchar exakt, **fanout** ger alla allt, **topic** matchar mönster.
+- `*` är ett ord, `#` är noll eller flera — så `order.#` fångar även `order`.
+- **Default-exchangen** binder varje kö till sitt eget namn. Bekvämt, men binder ihop producenten med könamnet.
+- **Durable** gäller kön. Meddelandet måste dessutom vara **persistent**.
+- RabbitMQ delar ut arbete som försvinner. Kafka håller en logg som ligger kvar.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Du publicerar tusen meddelanden och kön är tom. Vad kontrollerar du först?",
+      a: "Bindningen. En kö utan binding får aldrig något, hur mycket som än publiceras till exchangen — meddelandena kastas i exchangen utan att något går fel. En tom kö kan också bero på en snabb konsument, och de två ser likadana ut från kön men olika ut från exchangens perspektiv.",
+    },
+    {
+      q: "Vad är skillnaden mellan en routing key och en binding key?",
+      a: "Routing key sätts på meddelandet av producenten vid publicering. Binding key anges i bindningen av den som binder kön, och är mönstret som routing key jämförs mot. Jämförelsen sker i exchangen, mellan något rörligt och något fast.",
+    },
+    {
+      q: "En kö är bunden med `order.*`. Vilka av `order.lagd`, `order.lagd.se` och `order` når den?",
+      a: "Bara `order.lagd`. Jokertecknet `*` matchar exakt ett ord, så `order.lagd.se` har ett ord för mycket och `order` ett för lite. Hade bindningen varit `order.#` hade alla tre nått fram, eftersom `#` matchar noll eller flera ord.",
+    },
+    {
+      q: "Varför är det tveksamt att publicera till default-exchangen i produktion?",
+      a: "Därför att routing key då måste vara könamnet, vilket betyder att producenten känner till en kö. Den lösa kopplingen som är hela poängen med modellen försvinner — en ny konsument kan inte längre tillkomma genom att bara binda sin egen kö.",
+    },
+    {
+      q: "Kön är deklarerad som durable men meddelandena är borta efter en omstart. Hur?",
+      a: "Meddelandena var inte markerade som persistent. Durable gäller att kön som sådan överlever omstarten; innehållet skrivs till disk först när meddelandet självt är persistent. Båda behövs, och det ena utan det andra räcker inte.",
+    },
+    {
+      q: "När väljer du RabbitMQ framför Kafka?",
+      a: "När något ska göras en gång, med rik utdelning och hantering per meddelande — arbete som försvinner när det är utfört. Kafka passar när samma data ska läsas om, av flera oberoende konsumenter i egen takt, med historik. Volym är sällan det som avgör: RabbitMQ klarar stora volymer och Kafka klarar små.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- RabbitMQ är en broker som tar emot meddelanden, beslutar var de hör hemma och levererar dem.
+- AMQP 0-9-1 är protokollet som definierar exchange, binding, routing key och kö.
+- AMQP 1.0 är ett annat protokoll med en annan modell, trots namnet.
+- En exchange tar emot publicerade meddelanden och avgör vilka köer de kopieras till.
+- Exchangen lagrar ingenting. Matchar ingen bindning kastas meddelandet.
+- En kö är en namngiven, ordnad lista som lagrar tills en konsument ackar.
+- En binding är regeln som kopplar exchange till kö, och skapas oftast av konsumenten.
+- Routing key sätts på meddelandet och beskriver vad det är, inte vart det ska.
+- Binding key är mönstret i bindningen som routing key jämförs mot.
+- Direct matchar exakt, fanout ger alla bundna köer allt, topic matchar mönster.
+- `*` matchar ett ord, `#` matchar noll eller flera — därför fångar `order.#` även `order`.
+- Default-exchangen är namnlös och binder varje kö till sitt eget namn automatiskt.
+- En vhost är ett fack med egna exchanges, köer och behörigheter. Standard är `/`.
+- Durable gäller kön över en omstart; meddelandet måste också vara persistent.
+- RabbitMQ delar ut arbete som försvinner vid ack; Kafka håller en logg som ligger kvar.
+
+## Nästa del
+
+Modellen står: producenten publicerar till en exchange, bindningen avgör vilka köer som får
+meddelandet, och kön lagrar tills någon ackar.
+
+Kvar står ordet *ackar*. Vad händer med meddelandet mellan att konsumenten fått det och att den
+kvitterar — och varför får en konsument som hämtar tusen meddelanden i taget resten av gruppen att
+stå stilla?

@@ -2094,4 +2094,49 @@ export const DOODLES: Record<string, string> = {
     <text x="440" y="268">numren räknas inte om</text>
   </g>
 </svg>`,
+  /* ---- RabbitMQ 1.0 · Exchangen delar ut ---- */
+  "exchangen-delar-ut": `
+<svg viewBox="0 0 880 480" role="img" aria-label="En låda märkt exchange till vänster med tre linjer ut till tre köer. Två linjer är heldragna med pilspets, den tredje är streckad och slutar utan att nå fram.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M61 181 Q160 180 261 179 Q262 240 261 300 Q160 300 59 301 Q59 240 61 181 Z"/><path d="M600 40 Q710 40 821 40 Q821 75 820 110 Q710 112 601 110 Q598 75 600 40 Z"/><path d="M600 190 Q710 189 821 191 Q822 225 820 260 Q710 260 600 260 Q599 225 600 190 Z"/><path d="M601 339 Q710 338 821 339 Q821 375 820 411 Q710 411 599 410 Q599 375 601 339 Z"/><path d="M265 214 Q430 190 588 74"/><path d="M581 65 L594 71 L581 77"/><path d="M265 240 Q430 234 588 224"/><path d="M581 220 L594 226 L581 232"/><path d="M265 266 Q430 300 560 358" stroke-dasharray="7 8" opacity="0.45"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="160" y="150">order.lagd</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="160" y="336">exchange</text>
+    <text x="710" y="134">betalning</text>
+    <text x="710" y="284">analys</text>
+    <text x="710" y="434">utskick</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="710" y="158">order.*</text>
+    <text x="710" y="308">#</text>
+    <text x="710" y="458">faktura.*</text>
+  </g>
+</svg>`,
+  /* ---- RabbitMQ 1.0 · Stjärnan och brädgården ---- */
+  "stjarnan-och-bradgarden": `
+<svg viewBox="0 0 880 360" role="img" aria-label="Strängen order punkt lagd punkt se, uppdelad i tre rutor. En klammer under den mittersta rutan är märkt med en stjärna, och en klammer under de två sista är märkt med en brädgård.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M120 40 Q215 39 311 41 Q312 85 311 129 Q215 130 120 130 Q119 85 120 40 Z"/><path d="M346 41 Q440 39 534 39 Q536 85 535 131 Q440 132 344 131 Q343 85 346 41 Z"/><path d="M570 39 Q665 39 759 40 Q760 85 760 130 Q665 132 569 131 Q570 85 570 39 Z"/><path d="M345 155 Q345 167 357 167 L428 167 Q440 167 440 179 Q440 167 452 167 L523 167 Q535 167 535 155" stroke-width="1.3" opacity="0.7"/><path d="M345 255 Q345 267 357 267 L540 267 Q552 267 552 279 Q552 267 564 267 L748 267 Q760 267 760 255" stroke-width="1.3" opacity="0.7"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="17" fill="currentColor" text-anchor="middle">
+    <text x="215" y="95">order</text>
+    <text x="440" y="95">lagd</text>
+    <text x="665" y="95">se</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="17" fill="currentColor" text-anchor="middle" opacity="0.55">
+    <text x="327" y="95">.</text>
+    <text x="552" y="95">.</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="21" fill="currentColor" text-anchor="middle">
+    <text x="440" y="203">*</text>
+    <text x="552" y="303">#</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="440" y="227">ett ord</text>
+    <text x="552" y="327">noll eller flera</text>
+  </g>
+</svg>`,
 };
