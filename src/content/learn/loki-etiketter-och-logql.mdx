@@ -1,0 +1,469 @@
+---
+title: 'Loggar utan fulltextindex'
+description: 'Varför Loki indexerar etiketter i stället för ord — och vad det gör med din fråga'
+category: 'loki'
+part: 1
+partTitle: 'Grunderna'
+order: 1
+date: '2026-08-08'
+tags: ['Beginner', 'Loki', 'LogQL']
+---
+
+## Var vi är
+
+Observability-delen gav de tre signalerna och regeln att larma på mätvärden men felsöka i loggar.
+Grafana-delen byggde larmet. Kvar står det sista steget: loggen som förklarar varför larmet gick.
+
+En logg som inte går att fråga är dock lika tyst som ingen logg. Och sättet Loki gör den frågbar på
+är ovanligt — det är därför den både är billig att driva och lätt att använda fel.
+
+Den här delen handlar om den designen och vad den betyder för hur du skriver frågor. Zoomen ligger
+på att fråga en Loki som redan finns; att drifta lagringen och sätta upp insamlingen ligger utanför.
+Övningarna körs mot samma publika instans som Grafana-delarna.
+
+<Del titel="Indexet" />
+
+## Vad Loki är
+
+**Loki** är en logglagring som indexerar etiketter, inte loggarnas innehåll.
+
+Den tar emot loggrader med en uppsättning etiketter, sparar raderna komprimerade, och låter dig hämta
+tillbaka dem genom att först peka ut etiketterna och sedan söka i texten.
+
+Loki ritar inga grafer och skickar inga larm. Precis som Prometheus lagrar den och svarar; Grafana är
+gränssnittet ovanpå, och larmen bor i Grafanas larmregler.
+
+## Loki vs en fulltextsökmotor
+
+Skillnaden är hela designbeslutet, och den förklarar både priset och begränsningarna.
+
+**En fulltextsökmotor** som Elasticsearch bygger ett index över **orden** i varje rad. Du kan söka på
+vilket ord som helst i hela lagret utan att veta var det står. Indexet blir därför ofta större än
+loggarna det pekar på.
+
+**Loki** bygger index bara över **etiketterna**. Innehållet lagras komprimerat och genomsöks först
+när frågan redan begränsat vilka rader det gäller.
+
+Vinsten är att lagringen blir dramatiskt billigare, eftersom det dyra indexet aldrig byggs. Priset
+är att du inte kan söka i allt på en gång — du måste alltid veta ungefär var du letar.
+
+## Vad en ström är
+
+En **ström** är alla loggrader som delar exakt samma uppsättning etiketter.
+
+```
+cluster=play-db-cluster
+container=grafana
+namespace=usman-sandbox
+service_name=grafana
+```
+
+De fyra etiketterna ovan pekar ut en ström. Varje rad som kommer in med precis den kombinationen
+läggs sist i den, sorterad på tid.
+
+Byter en enda etikett värde är det en **annan** ström. Det är den regeln som gör kardinalitet till en
+fråga om lagring och inte bara om prydlighet.
+
+## Ström vs serie
+
+Loki lånade sin modell från Prometheus, så orden ligger nära varandra — men de innehåller olika saker.
+
+**En tidsserie** i Prometheus är en följd av **tal** över tid, ett per hämtning.
+
+**En ström** i Loki är en följd av **textrader** över tid, en per loggrad.
+
+Etikettmodellen är densamma: en unik etikettkombination ger en egen enhet i båda systemen. Det är
+därför `{service_name="grafana"}` ser ut precis som ett PromQL-urval, och det är avsiktligt.
+
+## Vad en chunk är
+
+En **chunk** är ett komprimerat block med loggrader från **en** ström under ett tidsintervall.
+
+Indexet innehåller bara etikettuppsättningen och en pekare till chunkarna. Själva texten ligger i
+chunkarna, i objektlagring — samma sorts billiga lagring som en filhink i molnet.
+
+<Doodle
+  name="indexet-och-hogen"
+  caption="Kortet är litet, högen är stor. Det är hela affären: bara kortet indexeras."
+/>
+
+När du frågar läser Loki alltså indexet för att hitta rätt chunkar, packar upp dem, och söker igenom
+raderna. Sökningen i texten är en genomsökning — den är snabb bara för att chunkarna redan är få.
+
+<Del titel="Frågan" />
+
+## Vad LogQL är
+
+**LogQL** är Lokis frågespråk. En fråga är en kedja där varje steg smalnar av eller omformar
+resultatet från det föregående.
+
+<Flow
+  caption="Fyra steg. Bara det första bestämmer vilka chunkar som ens packas upp."
+  steps={[
+    {
+      label: "Strömväljaren",
+      via: "`{service_name=\"grafana\"}`",
+      note: "Väljer strömmarna. Obligatorisk, och det enda steget som använder indexet.",
+      accent: true,
+    },
+    {
+      label: "Line-filter",
+      via: "`|= \"error\"`",
+      note: "Söker i själva textraden. Kastar rader som inte innehåller strängen.",
+    },
+    {
+      label: "Parser",
+      via: "`| logfmt`",
+      note: "Plockar isär raden till fält, så innehållet blir frågbart.",
+    },
+    {
+      label: "Label-filter",
+      via: "`| level=\"info\"`",
+      note: "Filtrerar på fälten parsern just skapade.",
+    },
+  ]}
+/>
+
+Ordningen är inte kosmetisk. Varje steg är billigare ju färre rader det får in, och det första steget
+är det enda som slipper packa upp något alls.
+
+## Strömväljaren är obligatorisk
+
+En LogQL-fråga **måste** börja med en strömväljare. Det finns inget sätt att söka i alla loggar.
+
+```
+{service_name="grafana"} |= "error"
+```
+
+Utan klamrarna först är frågan inte ofullständig — den är ogiltig, och Loki vägrar redan vid
+tolkningen.
+
+<Callout type="fallgrop">
+Kommer du från Elasticsearch eller från `grep` är det här det första som skaver. Att bara skriva
+`|= "error"` känns naturligt och ger:
+
+```
+parse error at line 0, col 1:
+syntax error: unexpected |=
+```
+
+Det är inte ett fel i din syntax i övrigt, och det går inte att kringgå med en bredare fråga.
+Begränsningen **är** designen: utan en strömväljare skulle Loki behöva packa upp varenda chunk i
+lagret för att svara.
+
+Har du ingen aning om var felet sitter, börja med en bred men giltig väljare — `{cluster="prod"}`
+— och smalna av därifrån.
+</Callout>
+
+## LogQL vs PromQL
+
+Två språk som ser nästan likadana ut i början och sedan går isär helt.
+
+**PromQL** börjar med ett mätvärdesnamn och arbetar med tal. Urvalet inom klamrar är valfritt och
+smalnar bara av.
+
+**LogQL** börjar med klamrarna, som är obligatoriska, och arbetar med textrader. Rören efteråt
+filtrerar och plockar isär text.
+
+Likheten är inte en tillfällighet, och den betalar sig: `sum by`, tidsfönster som `[5m]` och
+etikettmatchare med `=~` fungerar likadant i båda. Kan du Prometheus-delens frågor kan du hälften av
+LogQL redan.
+
+## Vad ett line-filter är
+
+Ett **line-filter** söker efter en sträng i själva loggraden, efter att strömmarna valts ut.
+
+Fyra operatorer täcker det mesta: `|=` innehåller, `!=` innehåller inte, `|~` matchar reguljärt
+uttryck, och `!~` matchar inte.
+
+Line-filter är det billigaste steget efter strömväljaren, eftersom det arbetar på rå text utan att
+tolka den. Lägg det därför **före** parsern, inte efter — samma resultat, betydligt mindre arbete.
+
+## Label-filter vs line-filter
+
+Två filter som skrivs likadant med rör och gör helt olika saker.
+
+**Line-filtret** (`|= "error"`) tittar på hela raden som text. Det bryr sig inte om struktur, och
+det matchar även om ordet står mitt i ett meddelande.
+
+**Label-filtret** (`| level="error"`) tittar på ett **fält**. Fältet måste finnas — antingen som en
+strömetikett eller som något en parser just skapat.
+
+Skillnaden märks direkt: `|= "error"` fångar en rad där ordet står i ett felmeddelande om något helt
+annat, medan `| level="error"` bara fångar rader vars nivåfält faktiskt är `error`.
+
+<Del titel="Innehållet" />
+
+## Vad en parser är
+
+En **parser** plockar isär loggraden till namngivna fält som resten av frågan kan filtrera på.
+
+```
+logger=plugins.update.checker t=2026-08-08T15:34:41.
+```
+
+Raden ovan är verklig, och den är i **logfmt** — nyckel-värde-par åtskilda med mellanslag. Skickar du
+den genom `| logfmt` blir `logger` och `t` fält du kan fråga på.
+
+De vanliga parserarna är `logfmt`, `json` och `regexp`. De två första kräver att raden faktiskt har
+det formatet; den tredje låter dig namnge grupper i ett reguljärt uttryck när den inte har det.
+
+Det är här strukturerad loggning betalar sig. Observability-delen slog fast att en strukturerad rad
+är bättre än en textrad — den här sektionen är varför.
+
+## Vad strukturerad metadata är
+
+**Strukturerad metadata** är fält som följer med raden utan att bli strömetiketter.
+
+Ett exempel ur verkliga data är `detected_level`, som Loki sätter själv när den känner igen en
+loggnivå i raden.
+
+Poängen är att du kan filtrera på dem utan parser, och utan att de skapar nya strömmar. Det är
+kompromissen mellan "etikett" och "något jag måste tolka varje gång", och den finns just för att
+lösa nästa sektions problem.
+
+## Kardinalitetsfällan
+
+Observability-delen införde kardinalitet som antalet unika etikettkombinationer. I Loki har den en
+extra konsekvens: varje kombination är en egen ström med egna chunkar.
+
+På instansen jag mätte hade etiketten `cluster` **två** värden. Etiketten `service_name` hade **95**.
+En etikett med ett id per anrop hade haft miljoner.
+
+<Doodle
+  name="tva-hyllor-en-explosion"
+  caption="Samma mängd loggrader. Den högra hyllan har bara fler fack att öppna."
+/>
+
+Följden är att varje för fin etikett gör frågorna långsammare och lagringen dyrare — små chunkar
+komprimerar sämre och fler av dem måste öppnas. Regeln är kort: **etiketter är för det du väljer
+strömmar på, aldrig för det du söker efter.** Sökningen gör line-filtret.
+
+## Vad en metrikfråga över loggar är
+
+En **metrikfråga** räknar på loggrader och ger tal tillbaka i stället för text.
+
+```
+sum(count_over_time({cluster="play-db-cluster"}[5m]))
+```
+
+`count_over_time` räknar rader per ström över fönstret, och `sum` slår ihop dem. Svaret är en
+matris — samma sorts svar som en range-fråga mot Prometheus, och det ritas i samma paneltyp.
+
+Det är så du får ett larm på loggar utan att lagra ett eget mätvärde: räkna rader som matchar, och
+sätt en tröskel med regeln från Grafana-delen.
+
+Var ändå sparsam. En metrikfråga över ett brett fönster packar upp alla chunkar den rör, och en
+counter i Prometheus är alltid billigare för något du mäter ofta.
+
+## När Loki är fel verktyg
+
+<Split
+  leftTitle="Ta Loki"
+  rightTitle="Ta något annat"
+  caption="Frågan är inte vilken som är bäst, utan om du vet var du letar när du börjar leta."
+>
+  <div slot="left">
+
+  **Du vet vilken tjänst eller vilket kluster du undersöker.** Strömväljaren blir naturlig och
+  frågan snabb.
+
+  **Loggvolymen är stor och budgeten liten.** Det uteblivna indexet är exakt det som gör Loki billig.
+
+  **Du kör redan Grafana och Prometheus.** Etiketterna och frågespråket är samma modell du kan.
+
+  </div>
+  <div slot="right">
+
+  **Du behöver söka på fritext över allt.** "Hitta det här ordervärdet någonstans i loggarna" är
+  fulltextsökmotorns fråga, inte Lokis.
+
+  **Loggarna är din primära affärsdata.** Ska du analysera dem, inte felsöka med dem, hör de hemma i
+  en databas.
+
+  **Du har inga meningsfulla etiketter.** Utan en naturlig indelning i strömmar tappar Loki sin enda
+  ingång.
+
+  </div>
+</Split>
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att skriva LogQL i ett textfält i Grafana, oftast med larmet framför dig och en tidsstämpel
+att utgå från. Nästan varje fråga du skriver kommer att vara en strömväljare plus ett line-filter.
+
+Det som är värt din tid nu är ordningen: väljare först, line-filter sedan, parser sist. Den ordningen
+är skillnaden mellan ett svar på en sekund och en fråga som får ge upp.
+
+Insamlingen med Alloy eller Promtail, retention och komprimering, samt att drifta lagringen kan
+vänta. De blir dina den dag du äger loggplattformen — och de bygger alla på strömmen och chunken.
+
+## Vanliga nybörjarförväxlingar
+
+Loki indexerar inte innehållet. Bara etiketterna hamnar i indexet.
+
+En LogQL-fråga kan inte börja med ett filter. Strömväljaren är obligatorisk, och utan den är frågan
+ogiltig.
+
+Ett line-filter är inte ett label-filter. Det ena läser hela raden som text, det andra ett namngivet
+fält.
+
+En parser skapar inga strömetiketter. Fälten den skapar lever bara i frågan.
+
+Fler etiketter gör inte Loki snabbare. Varje ny etikettkombination är en ny ström med egna chunkar.
+
+Loki är inte en sökmotor. Den hittar strömmen åt dig och genomsöker sedan texten.
+
+En metrikfråga över loggar är inte gratis. Den packar upp varje chunk den rör.
+
+## Prova själv
+
+Vi frågar Loki genom Grafanas datakälle-proxy — samma väg som i Grafana-delen, men mot en
+Loki-datakälla i stället för Prometheus.
+
+```bash
+L=https://play.grafana.org/api/datasources/proxy
+L=$L/uid/grafanacloud-logs/loki/api/v1
+```
+
+Fråga först vilka etiketter som finns:
+
+```bash
+curl -s $L/labels | jq '.data | length'
+```
+
+Jag fick `48`. Jämför nu kardinaliteten hos två av dem:
+
+```bash
+curl -s $L/label/cluster/values | jq -r '.data[]'
+```
+
+```
+appenv-grafana-play-cluster
+play-db-cluster
+```
+
+```bash
+curl -s $L/label/service_name/values \
+  | jq '.data | length'
+```
+
+Två värden mot `95`. **Det är kardinalitetsavsnittet i två kommandon** — samma loggar, men den ena
+etiketten delar upp dem i två strömmar och den andra i nittiofem.
+
+Hämta sedan en verklig rad:
+
+```bash
+curl -s -G $L/query_range \
+  --data-urlencode 'query={service_name="grafana"}' \
+  --data-urlencode 'limit=1' \
+  | jq -r '.data.result[0].values[0][1]' | cut -c1-52
+```
+
+```
+logger=plugins.update.checker t=2026-08-08T15:34:41.
+```
+
+Nyckel-värde-par åtskilda med mellanslag — det är logfmt, och det är därför `| logfmt` fungerar på
+den. Prova nu att utelämna strömväljaren:
+
+```bash
+curl -s -G $L/query_range \
+  --data-urlencode 'query=|= "error"'
+```
+
+```
+parse error at line 0, col 1:
+syntax error: unexpected |=
+```
+
+**Det där felet är hela artikelns tes.** Loki vägrar en fråga som skulle tvinga den att öppna allt.
+Räkna slutligen rader i stället för att läsa dem:
+
+```bash
+S='{cluster="play-db-cluster"}'
+curl -s -G $L/query_range --data-urlencode \
+  "query=sum(count_over_time(${S}[5m]))" \
+  | jq -r .data.resultType
+```
+
+Svaret är `matrix` — samma svarstyp som en range-fråga mot Prometheus, och det är därför en
+loggräkning kan ritas i en vanlig time series-panel.
+
+Tre saker som kan förvirra. **Skriv `${S}` med klammer, inte `$S`** — i zsh tolkas `$S[5m]` som ett
+index i variabeln och du får `bad math expression` i stället för ett svar. Instansen är dessutom
+publik och tjänsterna byts ut, så `service_name="grafana"` kan ge tomt; kör värdelistan igen och
+välj ett namn som finns. Och `limit` gäller per ström, inte totalt — en fråga som matchar tio
+strömmar med `limit=1` kan ge tio rader.
+
+<Callout type="kom-ihag">
+- Loki indexerar **etiketterna**, aldrig innehållet. Det är hela designen och hela prisskillnaden.
+- En **ström** är alla rader med exakt samma etikettuppsättning. En etikett som ändras ger en ny ström.
+- En **chunk** är komprimerade rader från en ström. Indexet pekar bara ut chunkar.
+- Strömväljaren är **obligatorisk**. Utan den är frågan ogiltig, inte bara bred.
+- Kedjan är väljare → line-filter → parser → label-filter, och ordningen avgör kostnaden.
+- `|= "error"` läser hela raden. `| level="error"` läser ett fält som måste finnas.
+- Etiketter är för att **välja strömmar**, aldrig för att söka. Sökningen gör line-filtret.
+- `count_over_time` gör loggar till tal, och svaret ritas som vilken tidsserie som helst.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Varför är Loki billigare att drifta än en fulltextsökmotor?",
+      a: "För att det dyra indexet aldrig byggs. En fulltextsökmotor indexerar orden i varje rad, och indexet blir ofta större än loggarna. Loki indexerar bara etikettuppsättningen och lagrar innehållet komprimerat i chunkar, som genomsöks först när frågan redan begränsat vilka rader det gäller.",
+    },
+    {
+      q: "Vad är en ström, och när blir det en ny?",
+      a: "En ström är alla loggrader som delar exakt samma uppsättning etiketter. Ändras en enda etikett till ett nytt värde är det en annan ström, med egna chunkar. Det är därför antalet unika värden per etikett avgör både lagringskostnad och frågehastighet.",
+    },
+    {
+      q: "Du skriver `|= \"timeout\"` utan klamrar och får ett parse error. Varför går det inte att kringgå?",
+      a: "För att strömväljaren är det enda steget som använder indexet. Utan den skulle Loki behöva packa upp varenda chunk i lagret för att svara, och den möjligheten finns inte. Lösningen är att börja med en bred men giltig väljare, till exempel `{cluster=\"prod\"}`, och smalna av därifrån.",
+    },
+    {
+      q: "Vad är skillnaden mellan `|= \"error\"` och `| level=\"error\"`?",
+      a: "Det första är ett line-filter och letar efter strängen någonstans i den råa raden — även mitt i ett meddelande om något annat. Det andra är ett label-filter och läser fältet `level`, som måste finnas antingen som strömetikett eller som något en parser skapat.",
+    },
+    {
+      q: "En kollega vill lägga till request-id som etikett för att kunna hitta enskilda anrop. Vad svarar du?",
+      a: "Att det ger en ström per anrop. Varje unik etikettkombination blir en egen ström med egna chunkar, så miljontals värden gör lagringen dyr och frågorna långsamma. Request-id hör hemma i raden och hittas med ett line-filter, eller som strukturerad metadata.",
+    },
+    {
+      q: "Varför lägger man line-filtret före parsern och inte efter?",
+      a: "För att båda ger samma resultat men olika kostnad. Line-filtret arbetar på rå text och är billigt; parsern tolkar varje rad den får in. Filtrerar du först har parsern färre rader att arbeta med, ofta storleksordningar färre.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- Loki indexerar etiketter, inte innehåll. Den lagrar och svarar; Grafana ritar och larmar.
+- En fulltextsökmotor indexerar orden och kan söka i allt. Loki kan det inte, och är därför billig.
+- En ström är alla rader med exakt samma etikettuppsättning.
+- En tidsserie i Prometheus är tal över tid; en ström i Loki är textrader över tid.
+- En chunk är komprimerade rader från en ström. Indexet innehåller bara etiketter och pekare.
+- LogQL är en kedja: strömväljare, line-filter, parser, label-filter.
+- Strömväljaren är obligatorisk. Utan den svarar Loki med ett parse error.
+- PromQL och LogQL delar etikettmatchare, tidsfönster och `sum by`.
+- `|=`, `!=`, `|~` och `!~` är line-filtren, och de arbetar på rå text.
+- Ett label-filter läser ett fält som måste finnas — som etikett eller från en parser.
+- `logfmt`, `json` och `regexp` är parserarna. Fälten de skapar lever bara i frågan.
+- Strukturerad metadata följer med raden utan att skapa nya strömmar.
+- Varje unik etikettkombination är en ström. Fler etiketter ger dyrare lagring och långsammare frågor.
+- Etiketter väljer strömmar. Line-filtret söker. Blanda inte ihop rollerna.
+- `count_over_time` gör loggar till tal, och svaret är en matris som ritas som en tidsserie.
+- Loki passar när du vet var du letar. Fritext över allt är en annan sorts verktyg.
+
+## Nästa del
+
+Nu vet du varför frågan måste börja med en strömväljare, och hur kedjan efter den fungerar.
+
+I praktiken börjar du dock sällan med en tom textruta. Du börjar med ett larm som gick, en tidpunkt,
+och en tjänst — och frågan är hur du tar dig från notifieringen i telefonen till den rad som
+förklarar den.
+
+Nästa del handlar om just den vägen: hur larmet, panelen och loggen hänger ihop i Grafana, och hur
+ett trace-id tar dig från ett långsamt anrop till exakt de rader som hörde till det.

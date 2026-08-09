@@ -1,0 +1,485 @@
+---
+title: 'Från larm till loggrad'
+description: 'Vägen från notifieringen i telefonen till raden som förklarar den — och vidare till spåret'
+category: 'loki'
+part: 1
+order: 2
+date: '2026-08-08'
+tags: ['Beginner', 'Loki', 'Explore']
+---
+
+## Var vi är
+
+Förra delen förklarade varför en LogQL-fråga måste börja med en strömväljare, och hur kedjan efter
+den fungerar.
+
+I praktiken börjar du dock aldrig med en tom textruta. Du börjar med ett larm som gick, en tidpunkt
+och en tjänst — och frågan är hur du tar dig därifrån till raden som förklarar det.
+
+Den här delen följer den vägen hela sträckan, och ett steg till: från loggraden vidare in i spåret.
+Zoomen ligger på arbetsgången i Grafana. Att drifta Loki eller ställa in insamlingen ligger utanför.
+
+<Del titel="Ingången" />
+
+## Vad larmet redan ger dig
+
+Ett larm som gått bär mer information än de flesta använder, och allt går att läsa av innan du
+skriver en enda fråga.
+
+Det bär **tidpunkten** då villkoret blev sant, **etiketterna** på den instans som larmade, och de
+annotationer regeln fick med sig. Grafana-delen gick igenom alla tre.
+
+Två av dem är särskilt värdefulla här. Instansens etiketter innehåller nästan alltid en tjänst eller
+ett kluster, och `__panelId__` pekar tillbaka på panelen du kan titta på först.
+
+<Split
+  leftTitle="Börja med felmeddelandet"
+  rightTitle="Börja med larmet"
+  leftTone="bad"
+  rightTone="good"
+  caption="Samma incident. Skillnaden är hur mycket du redan visste innan du började leta."
+>
+  <div slot="left">
+
+  Du kopierar felsträngen ur notifieringen och söker brett efter den.
+
+  Träffarna kommer från hela klustret och från hela dygnet, och de flesta hör till något annat.
+
+  Du vet fortfarande inte om raderna du hittar är före eller efter det som gick sönder.
+
+  </div>
+  <div slot="right">
+
+  Du tar etiketterna från larminstansen och gör dem till strömväljare.
+
+  Du sätter tidsfönstret runt utvärderingstiden, med några minuter före.
+
+  Först nu filtrerar du på text — i ett material som redan är rätt tjänst och rätt minuter.
+
+  </div>
+</Split>
+
+## Vad Explore är
+
+**Explore** är Grafanas arbetsyta för enstaka frågor: en datakälla, en fråga och ett resultat, utan
+att något sparas.
+
+Den finns för att felsökning och övervakning är två olika aktiviteter. Det du gör klockan tre är att
+ställa tjugo frågor i rad där nitton är fel — och ingen av dem hör hemma i en dashboard.
+
+Explore kommer också ihåg din frågehistorik, vilket är det som gör den nittonde frågan billig att
+skriva.
+
+## Explore vs dashboard
+
+Två ytor som visar samma data från samma datakällor, med rakt motsatta syften.
+
+**Dashboarden** är förberedd. Någon har bestämt frågorna i förväg, och den svarar på frågor någon
+redan visste att de skulle ställa.
+
+**Explore** är improviserad. Du skriver frågan nu, ändrar den, och kastar den.
+
+Konsekvensen är att en dashboard är bra på att visa *att* något är fel, medan Explore är bra på att
+ta reda på *varför*. Att gå från den ena till den andra är hela arbetsgången i den här artikeln.
+
+## Från larmets etiketter till en strömväljare
+
+Larminstansens etiketter är nästan direkt användbara som strömväljare, eftersom båda kommer från
+samma etikettmodell.
+
+<Flow
+  caption="Fyra steg, och de tre första skrivs utan att du läser en enda loggrad."
+  steps={[
+    {
+      label: "Larmet",
+      note: "Ger tidpunkt och etiketter — ofta `service_name` eller `cluster`.",
+    },
+    {
+      label: "Tidsfönstret",
+      via: "runt utvärderingstiden",
+      note: "Några minuter före larmet, inte bara efter. Orsaken är äldre än symptomet.",
+      accent: true,
+    },
+    {
+      label: "Strömväljaren",
+      via: "`{service_name=\"…\"}`",
+      note: "Etiketten från instansen, rakt in i klamrarna.",
+    },
+    {
+      label: "Line-filtret",
+      via: "`|= \"…\"`",
+      note: "Först nu texten. Materialet är redan rätt tjänst och rätt minuter.",
+    },
+  ]}
+/>
+
+Steget som oftast görs fel är det andra. Sätter du fönstret från larmets tidpunkt och framåt ser du
+konsekvenserna men aldrig orsaken — och orsaken ligger nästan alltid några minuter före.
+
+## Vad kontextvyn gör
+
+**Kontextvyn** visar raderna omkring en träff, i samma ström, oavsett om de matchar din fråga.
+
+Den finns för att en felrad sällan förklarar sig själv. Raden före kan vara anropet som inleddes,
+och raderna efter kan vara återförsöken.
+
+Det är också ett sätt att upptäcka att du filtrerat bort svaret. Ser du i kontexten att något
+intressant ligger precis intill träffen var ditt line-filter för smalt.
+
+<Del titel="Raden" />
+
+## Vad `line_format` gör
+
+`line_format` skriver om själva loggraden med en mall, efter att en parser plockat isär den.
+
+```
+{service_name="grafana"} | logfmt
+  | line_format "{{.level}} {{.logger}}"
+```
+
+Frågan ovan ger rader som `info infra.usagestats` i stället för hela originalraden. Fälten skrivs
+med punkt och namn inuti dubbla klammerpar.
+
+Det är rent kosmetiskt, och det är precis poängen: när du läser hundra rader i följd är det
+skillnaden mellan att kunna skumma dem och att inte kunna det.
+
+## Vad `label_format` gör
+
+`label_format` byter namn på ett fält eller skapar ett nytt av befintliga.
+
+```
+{service_name="grafana"} | logfmt
+  | label_format niva=level
+```
+
+Nu heter fältet `niva` i resultatet, och det går att filtrera på under det namnet. Originalfältet
+finns kvar.
+
+Det används mest för att jämka ihop tjänster som loggar samma sak under olika namn — en skriver
+`level`, en annan `severity`, och en dashboard behöver ett namn.
+
+## Vad live tail är
+
+**Live tail** strömmar nya loggrader till skärmen allteftersom de kommer in, i stället för att
+hämta ett avslutat tidsintervall.
+
+Det motsvarar `tail -f` från Linux-delen, fast över en strömväljare i stället för en fil — och över
+alla instanser av tjänsten samtidigt.
+
+Använd den när du själv utlöser något och vill se effekten. Den är fel verktyg för att förstå något
+som redan hänt, eftersom den bara visar framtiden.
+
+## Vad en datalänk är
+
+En **datalänk** gör ett värde i ett resultat klickbart och skickar med värdet till något annat.
+
+Länken kan gå till en URL, till en annan dashboard, eller till en annan datakälla. Värdet sätts in
+med `${__value.raw}`.
+
+Datalänkar konfigureras normalt per panel. På en Loki-datakälla finns dock en särskild variant som
+gäller alla resultat från den datakällan — och det är nästa sektion.
+
+## Vad ett derived field är
+
+Ett **derived field** är en regel på Loki-datakällan som plockar ut ett värde ur loggraden och gör
+det till en länk.
+
+Regeln har ett namn, ett sätt att hitta värdet, och ett mål. På den publika instansen ser den ut så
+här:
+
+```
+namn   traceID
+regex  [tT]race_?[iI][dD]"?[:=]"?(\w+)
+mål    grafanacloud-traces (tempo)
+url    ${__value.raw}
+```
+
+Den fångande gruppen `(\w+)` är värdet som skickas vidare. Målet är en Tempo-datakälla, alltså
+spårlagringen — och det är den kopplingen som gör hoppet i nästa avsnitt möjligt.
+
+<Doodle
+  name="kroken-i-raden"
+  caption="Raden är oförändrad. Det är kroken i ett av orden som leder vidare."
+/>
+
+<Del titel="Spåret" />
+
+## Derived field vs parser
+
+Två sätt att få ut ett värde ur en loggrad, och de arbetar på olika material.
+
+**Parsern** (`| json`, `| logfmt`) körs i Loki, som en del av frågan. Den kräver att raden har ett
+känt format, och fälten den skapar lever bara i den frågan.
+
+**Derived field** körs i Grafana, på den råa raden, efter att svaret kommit tillbaka. Den bryr sig
+inte om formatet — bara om att regexen matchar.
+
+Instansen jag mätte har faktiskt **båda**: en `regex`-variant som läser den råa texten, och en
+`label`-variant som läser ett fält en parser skapat. De finns bredvid varandra för att täcka
+loggar som ser olika ut.
+
+<Callout type="fallgrop">
+En derived field-regex måste tåla **din** loggformats skiljetecken, och det är där de flesta
+misslyckas tyst.
+
+Titta på den riktiga regexen igen: `[tT]race_?[iI][dD]"?[:=]"?(\w+)`. Den accepterar både `traceID`
+och `trace_id`, både stort och litet `i`, både `=` och `:`, och valfria citattecken runt om.
+
+Det är inte överdrift. Samma regel måste fungera på en logfmt-rad som skriver `traceID=abc` och på
+en JSON-rad som skriver `"traceID":"abc"`. Skriver du bara `traceID=(\w+)` fungerar länken i
+utvecklingsmiljön och saknas i produktion, utan felmeddelande — fältet dyker helt enkelt inte upp.
+</Callout>
+
+## Hur trace-id binder ihop logg och spår
+
+Observability-delen om OpenTelemetry införde trace-id som det som håller ihop ett anrop över flera
+tjänster. Här är den andra halvan av samma idé.
+
+Skriver applikationen ut sitt trace-id i varje loggrad blir raden sökbar från spåret, och spåret
+nåbart från raden. En verklig rad från instansen ser ut så här:
+
+```json
+{
+  "level": "INFO",
+  "traceID": "5baa3080043c0253e70cb2",
+  "httpRequest": { "url": "…" }
+}
+```
+
+Värdet är 32 hexadecimala tecken — samma format som `traceparent` bar i OpenTelemetry-delen. Det är
+inte en tillfällighet; det är samma id, skrivet på två ställen.
+
+Kravet är alltså inte på Loki utan på **applikationen**: den måste logga sitt trace-id. Gör den inte
+det finns ingen bro att bygga.
+
+## Från logg till spår vs från spår till logg
+
+Bron går åt båda hållen, och du väljer riktning utifrån vad larmet sa.
+
+**Från logg till spår** börjar med ett felmeddelande. Du har en rad som säger vad som gick fel, och
+följer trace-id:t för att se hela anropet — vilka tjänster det passerade och var tiden tog vägen.
+
+**Från spår till logg** börjar med en långsam span. Du har ett vattenfall där ett steg tar nio
+sekunder, och hämtar de loggrader som hör till just det steget.
+
+Tumregeln: **fel** leder framåt till spåret, **långsamhet** leder bakåt till loggen. Ett fel behöver
+sammanhang, en fördröjning behöver detaljer.
+
+## Vad `unwrap` gör
+
+`unwrap` tar ett numeriskt fält ur loggraden och behandlar det som ett mätvärde.
+
+```
+sum(rate({service_name="api"} | json
+  | unwrap duration_ms [5m]))
+```
+
+Utan `unwrap` kan du bara räkna rader. Med `unwrap` kan du summera, ta genomsnitt och percentiler på
+ett tal som råkade stå i texten.
+
+Det är räddningen när något inte exponeras som mätvärde men skrivs i loggen — vilket är förvånansvärt
+ofta, särskilt i äldre tjänster.
+
+## `count_over_time` vs `unwrap`
+
+Två sätt att göra tal av loggar, och de svarar på olika frågor.
+
+**`count_over_time`** räknar **rader**. Frågan den svarar på är *hur många*, och den bryr sig inte
+om vad som står i dem.
+
+**`unwrap`** läser ett **tal ur raden**. Frågan den svarar på är *hur mycket*, och den kräver att
+fältet finns och går att tolka som ett tal.
+
+Priset för `unwrap` är att varje rad måste parsas innan talet kan läsas. En rad som saknar fältet
+hoppas över tyst, vilket gör att ett stavfel i fältnamnet ger en tom graf i stället för ett fel.
+
+Och båda är dyrare än en riktig counter i Prometheus. Loggbaserade mätvärden är rätt när alternativet
+är inget mätvärde alls — inte som förstahandsval.
+
+{/* DOODLE bortvald i steg 2: en bild där ett tal lyfts ur en rad upp på en kurva
+    hade blivit två pappersremsor med markerad text i samma artikel, och den
+    andra hade dessutom behövt en graf — lärkitets formspråk, inte doodlens.
+    En bild räcker här; `kroken-i-raden` bär den enda idé som har fysisk form. */}
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att göra den här resan varje gång något går sönder, och den tar en till två minuter när du
+kan den. Larmets etiketter blir strömväljaren, tidsfönstret läggs runt utvärderingstiden, och
+line-filtret kommer sist.
+
+Det som är värt din tid nu är just den ordningen, plus vanan att titta några minuter **före** larmet.
+Det är den enskilt vanligaste anledningen till att någon läser rätt loggar och ändå missar orsaken.
+
+Egna datalänkar per panel, korrelationer mellan datakällor, sampling av loggar och att sätta upp
+insamlingen kan vänta. De blir dina den dag du äger plattformen — och de bygger alla på strömmen,
+raden och trace-id:t.
+
+## Vanliga nybörjarförväxlingar
+
+Explore är inte en dashboard utan sparknapp. Det är en yta för frågor du tänker kasta.
+
+Larmets tidpunkt är inte början på fönstret. Orsaken ligger nästan alltid några minuter före.
+
+Kontextvyn filtrerar inte. Den visar raderna omkring träffen, oavsett din fråga.
+
+`line_format` ändrar inte datan. Den ändrar bara hur raden visas.
+
+Ett derived field körs inte i Loki. Det körs i Grafana, på den råa raden, efter svaret.
+
+Ett trace-id i loggen kommer inte från Loki. Applikationen måste skriva ut det själv.
+
+`unwrap` räknar inte rader. Det läser ett tal ur dem, och hoppar tyst över rader som saknar fältet.
+
+## Prova själv
+
+Vi använder samma publika instans som förut. Först datakällans derived fields:
+
+```bash
+G=https://play.grafana.org/api
+curl -s $G/datasources | jq -r '
+  .[] | select(.uid=="grafanacloud-logs")
+  | .jsonData.derivedFields[]
+  | "\(.matcherType)  \(.name)"'
+```
+
+```
+regex  traceID
+label  traceID (field)
+```
+
+Två regler för samma sak — en som läser den råa texten och en som läser ett fält. Titta på regexen:
+
+```bash
+curl -s $G/datasources | jq -r '
+  .[] | select(.uid=="grafanacloud-logs")
+  | .jsonData.derivedFields[0].matcherRegex'
+```
+
+```
+[tT]race_?[iI][dD]"?[:=]"?(\w+)
+```
+
+**Läs den tecken för tecken.** Den tål `traceID` och `trace_id`, `=` och `:`, med eller utan
+citattecken. Kontrollera vart länken pekar:
+
+```bash
+curl -s $G/datasources | jq -r '
+  .[] | select(.uid=="grafanacloud-traces") | .type'
+```
+
+Svaret är `tempo` — spårlagringen. Hämta nu en rad som regexen faktiskt matchar:
+
+```bash
+L=$G/datasources/proxy
+L=$L/uid/grafanacloud-logs/loki/api/v1
+S='{cluster="play-db-cluster"}'
+Q="$S"' |~ "traceID"'
+curl -s -G $L/query_range \
+  --data-urlencode "query=$Q" \
+  --data-urlencode 'limit=1' \
+  | jq -r '.data.result[0].values[0][1]' \
+  | jq -r .traceID
+```
+
+Du får ett trettiotvå tecken långt hexvärde. **Det är bron:** samma id finns i Tempo, och det är
+värdet det derived fieldet skickar dit.
+
+Prova slutligen att skriva om raden:
+
+```bash
+Q='{service_name="grafana"} | logfmt'
+Q=$Q' | line_format "{{.level}} {{.logger}}"'
+curl -s -G $L/query_range \
+  --data-urlencode "query=$Q" \
+  --data-urlencode 'limit=1' \
+  | jq -r '.data.result[0].values[0][1]'
+```
+
+```
+info infra.usagestats
+```
+
+Hela originalraden är borta, och kvar står två fält. Jämför med samma fråga utan `line_format`, så
+ser du hur mycket brus mallen tog bort.
+
+Tre saker som kan förvirra. **Trace-id:t blir ett annat varje gång du kör** — instansen är levande
+och raden är inte densamma, så jämför inte mot mitt värde. Den andra `jq` i kedjan fungerar bara för
+att raden råkar vara JSON; är den logfmt får du `parse error` från `jq`, inte från Loki. Och
+`line_format` ger tomma rader om fältet inte finns — ett stavfel i `{{.logger}}` ger inget fel, bara
+en kortare rad.
+
+<Callout type="kom-ihag">
+- Larmet bär redan **tid och etiketter**. Båda går rakt in i frågan utan att du läser en rad.
+- Lägg fönstret **före** larmet också. Orsaken är äldre än symptomet.
+- **Explore** är ytan för frågor du kastar. Dashboarden är den för frågor någon förberett.
+- **Kontextvyn** visar raderna omkring träffen och avslöjar ett för smalt line-filter.
+- `line_format` skriver om raden för läsbarhet. `label_format` byter namn på ett fält.
+- Ett **derived field** körs i Grafana på den råa raden och gör ett värde till en länk.
+- Regexen måste tåla ditt loggformats skiljetecken — annars saknas länken tyst.
+- **Applikationen** måste logga sitt trace-id. Loki bygger ingen bro åt dig.
+- Fel leder framåt till spåret. Långsamhet leder bakåt till loggen.
+- `count_over_time` räknar rader. `unwrap` läser ett tal ur dem.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Du får ett larm klockan 03:14. Vilket tidsfönster sätter du i Explore?",
+      a: "Ett som börjar före 03:14 — några minuter räcker ofta. Larmets tidpunkt är när villkoret blev sant, alltså när symptomet syntes. Orsaken ligger tidigare, och ett fönster som börjar vid larmet visar bara konsekvenserna.",
+    },
+    {
+      q: "Vad är skillnaden mellan Explore och en dashboard?",
+      a: "Syftet. Dashboarden har förberedda frågor och svarar på det någon visste att de skulle fråga. Explore är för frågan du skriver nu och kastar sen. Dashboarden visar att något är fel; Explore tar reda på varför.",
+    },
+    {
+      q: "Var körs ett derived field, och vad arbetar det på?",
+      a: "I Grafana, efter att svaret kommit tillbaka från Loki, och på den råa loggraden. En parser körs däremot i Loki som en del av frågan och kräver att raden har ett känt format. Derived field bryr sig bara om att regexen matchar.",
+    },
+    {
+      q: "Er trace-länk fungerar i test men saknas i produktion, utan felmeddelande. Vad misstänker du?",
+      a: "Att regexen inte tål produktionens loggformat. Skriver test logfmt (`traceID=abc`) och produktion JSON (`\"traceID\":\"abc\"`) matchar en regex som `traceID=(\\w+)` bara det ena. Fältet dyker då inte upp alls, och det syns inte som ett fel — bara som en länk som inte finns.",
+    },
+    {
+      q: "Vad krävs för att kunna hoppa från en loggrad till spåret?",
+      a: "Att applikationen skriver ut sitt trace-id i loggraden. Loki skapar inget id själv, och Grafana kan bara länka på något som redan står i texten. Finns id:t där gör ett derived field resten: plockar ut värdet och skickar det till spårdatakällan.",
+    },
+    {
+      q: "När använder du `unwrap` i stället för `count_over_time`?",
+      a: "När frågan är *hur mycket* och inte *hur många*. `count_over_time` räknar rader; `unwrap` läser ett numeriskt fält ur dem så du kan summera eller ta percentiler. Priset är att varje rad måste parsas, och att rader som saknar fältet hoppas över tyst.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- Ett larm bär tidpunkt, etiketter och annotationer. Allt tre är användbart innan du skriver en fråga.
+- Etiketterna blir strömväljaren. Tidsfönstret läggs runt utvärderingstiden, med marginal före.
+- Explore är ytan för improviserade frågor; dashboarden för förberedda.
+- Kontextvyn visar raderna omkring en träff och avslöjar när line-filtret var för smalt.
+- `line_format` skriver om raden med en mall och gör hundra rader skummingsbara.
+- `label_format` byter namn på ett fält, oftast för att jämka ihop tjänster som loggar olika.
+- Live tail visar nya rader allteftersom. Den är fel verktyg för något som redan hänt.
+- En datalänk gör ett värde klickbart och skickar med det, med `${__value.raw}`.
+- Ett derived field är en datalänk på hela Loki-datakällan, driven av en regex på den råa raden.
+- Parsern körs i Loki och kräver ett känt format. Derived field körs i Grafana och kräver bara en träff.
+- Regexen måste tåla både `=` och `:` och valfria citattecken, annars saknas länken tyst.
+- Trace-id:t i loggraden är samma id som i spåret. Applikationen måste skriva ut det.
+- Fel leder framåt till spåret, långsamhet bakåt till loggen.
+- `unwrap` gör ett numeriskt fält i raden till ett mätvärde du kan summera och percentilera.
+- Rader som saknar fältet hoppas över tyst, så ett stavfel ger en tom graf i stället för ett fel.
+- Loggbaserade mätvärden är rätt när alternativet är inget mätvärde — inte som förstahandsval.
+
+## Nästa del
+
+Därmed står Loki-grunderna: designen som gör den billig, och vägen från larmet till raden och vidare
+in i spåret.
+
+Något har hänt med de tidigare serierna på vägen hit. Observability-delens tre signaler är inte
+längre tre separata saker — de är tre vyer med samma etiketter och samma id, och du kan gå mellan
+dem utan att tappa sammanhanget.
+
+Kvar står frågan om vad som händer när mätvärdena inte kommer från en tjänst som exponerar `/metrics`
+utan från tusentals enheter som skickar in dem. Det är en annan sorts lagring, och nästa serie
+handlar om den.
