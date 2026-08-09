@@ -2,13 +2,10 @@
 title: 'Introduktion till Docker'
 description: 'Container, image, registry och Compose — de fyra begreppen resten av serien vilar på'
 category: 'docker'
-image:
-    url: '/docker-intro.svg'
-    alt: 'Docker Introduction'
 part: 1
 partTitle: 'Grunderna'
 order: 1
-date: '2025-02-03'
+date: '2026-08-08'
 tags: ['Beginner', 'Overview']
 ---
 
@@ -55,6 +52,27 @@ Node-version, samma databas, samma inställningar.
 - Imagen gör versionsvalen synliga och möjliga att granska.
 - Projekten stör inte varandra. Två projekt kan använda olika Node-versioner på samma dator.
 </Callout>
+
+## Containerns livscykel
+
+En container är inte antingen igång eller borta. Den går genom fyra lägen, och `docker ps` visar
+bara ett av dem.
+
+**Created** — skapad men inte startad. **Running** — processen kör. **Exited** — processen är klar
+eller kraschad, men containern finns kvar med sitt filsystem och sina loggar. **Removed** — borta på
+riktigt.
+
+Det förklarar det som förvirrar mest första veckan. `docker ps` listar bara `Running`. En container
+som gjort sitt och avslutat ser ut att ha försvunnit, men ligger kvar som `Exited` tills någon tar
+bort den.
+
+```bash
+docker ps      # bara det som kör
+docker ps -a   # allt som finns
+```
+
+Det är också därför `docker run` på samma image två gånger ger **två** containrar. Kommandot skapar
+alltid en ny; det återanvänder aldrig en gammal.
 
 ## Container vs virtuell maskin
 
@@ -117,6 +135,47 @@ Lagren är skrivskyddade och återanvänds mellan images. Har du tio images som 
 
 Det är också därför en image på 900 MB inte tar 900 MB extra plats när du redan har en liknande.
 Hur lagren byggs och varför ordningen mellan dem spelar roll tar vi i nästa del.
+
+## Var images ligger på din maskin
+
+Images sparas i Dockers eget lager på disken, inte som filer du kan bläddra bland.
+
+```bash
+docker images
+docker system df
+```
+
+`docker images` listar dem med storlek. `docker system df` sammanfattar vad Docker tar upp totalt:
+images, stoppade containrar, volymer och byggcache.
+
+Talet växer fortare än man tror. Varje bygge lämnar lager, och varje `Exited` container ligger kvar
+med sitt filsystem. Det är därför en utvecklarmaskin plötsligt har tiotals gigabyte i Docker, och
+`docker system prune` är kommandot som städar.
+
+Storleken i `docker images` är dessutom **inte** additiv. Två images som delar basen räknas var för
+sig, men lagren finns bara en gång på disken.
+
+## amd64 vs arm64
+
+En image är byggd för en processorarkitektur, och det märks först när den inte är det.
+
+**`amd64`** är Intel och AMD — nästan alla servrar. **`arm64`** är Apple Silicon, Raspberry Pi och
+en växande del av molnet.
+
+Kör du på en nyare Mac är din värd `arm64`. De flesta officiella images finns för båda, och Docker
+väljer rätt automatiskt. Problemet uppstår med en image som bara finns för en av dem:
+
+```
+WARNING: The requested image's platform
+(linux/amd64) does not match the detected host
+platform (linux/arm64/v8)
+```
+
+Meddelandet är brutet här; det kommer på en rad. Containern **startar ändå** — Docker Desktop
+emulerar den andra arkitekturen, långsamt. På en Linux-server utan emulering får du i stället
+`exec format error`, vilket ser ut som en trasig fil men betyder fel arkitektur.
+
+Vill du välja medvetet finns `--platform linux/amd64` på både `pull` och `run`.
 
 <Del titel="Dela och köra flera" />
 
@@ -242,11 +301,6 @@ fil du kan versionshantera, i stället för i ett kommando någon måste komma i
 
   </div>
 </Split>
-
-<Doodle
-  name="compose-en-fil"
-  caption="En fil, tre containrar, ett kommando — och nätverket får du på köpet."
-/>
 
 <Del titel="Öva och förstå" />
 

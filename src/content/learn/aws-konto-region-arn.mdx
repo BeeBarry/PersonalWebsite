@@ -306,7 +306,7 @@ curl -sI https://s3.eu-north-1.amazonaws.com
 
 Svaret är `HTTP/1.1 405 Method Not Allowed`, med raderna `Allow: GET` och `Server: AmazonS3`. **405
 är inte ett fel hos dig.** Det betyder att du nådde fram till S3 i Stockholm och att just den metoden
-inte är tillåten mot tjänstens rot — vilket bevisar att endpointen finns.
+inte är tillåten mot tjänstens rot. Det bevisar att endpointen finns.
 
 Prova sedan en region som inte finns:
 

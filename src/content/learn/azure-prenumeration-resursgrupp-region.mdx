@@ -437,7 +437,7 @@ Kolumnen `Location` är gruppens region — alltså var metadatan ligger, inte n
 resurserna kör.
 
 Tre saker som kan förvirra. Listan från `list-locations` innehåller poster med `regionType`
-`Logical`, som `eastusstage`, och dem går det inte att lägga en resurs i — filtrera på
+`Logical`, som `eastusstage`, och dem går det inte att lägga en resurs i. Filtrera på
 `metadata.regionType=='Physical'` om du bara vill se de riktiga. Antalet regioner du ser är dessutom
 ditt eget: en prenumeration kan sakna åtkomst till regioner som en annan har. Och `az account show`
 visar den prenumeration som råkar vara vald — har du flera byter du med `az account set`.

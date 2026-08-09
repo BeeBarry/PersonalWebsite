@@ -266,7 +266,7 @@ senare, men den ändrar ett etablerat svarskontrakt.
 </Callout>
 
 Sidnummer är den enkla varianten och räcker långt. Det finns en robustare som heter cursor-baserad
-sidindelning, där klienten får en markör i stället för ett sidnummer — den blir intressant först när
+sidindelning, där klienten får en markör i stället för ett sidnummer. Den blir intressant först när
 listan ändras medan någon bläddrar i den.
 
 ## Felsvar som går att göra något åt
@@ -322,8 +322,7 @@ Det är samma princip som `plan` i Terraform: se överenskommelsen innan den bli
 ## Vad det här betyder i ditt arbete
 
 Du kommer att lägga till endpoints i ett befintligt API oftare än du designar ett nytt. Det viktigaste
-du gör då är att **följa mönstret som redan finns**, även när du hade valt annorlunda själv —
-konsekvens är värd mer än att varje enskild adress är optimal.
+du gör då är att **följa mönstret som redan finns**, även när du hade valt annorlunda själv. Konsekvens är värd mer än att varje enskild adress är optimal.
 
 Designar du från början är tre beslut värda att ta direkt: en dokumenterad versionsstrategi,
 sidindelning med rimlig standard, och ett felformat klienten kan agera på.

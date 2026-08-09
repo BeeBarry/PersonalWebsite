@@ -152,6 +152,57 @@ samma nätverk.
 
 Det är inte en glömska utan ett medvetet val, och nästa avsnitt förklarar varför.
 
+## Vad `.env` gör
+
+En fil som heter `.env` bredvid `compose.yaml` läses automatiskt, och dess värden fyller i
+`${...}` **i compose-filen**.
+
+```
+TAGG=22-alpine
+```
+
+```yaml
+services:
+  api:
+    image: node:${TAGG}
+```
+
+Kontrollera resultatet utan att starta något:
+
+```bash
+docker compose config | grep image:
+```
+
+```
+image: node:22-alpine
+```
+
+Substitutionen skedde alltså innan Compose ens började. Det är samma idé som Terraform-seriens
+variabler, ett lager längre ut.
+
+## `environment` vs `env_file`
+
+Här sitter förväxlingen, och den kostar tid varje gång.
+
+**`.env`** fyller i platshållare i compose-filen. Värdena når **inte** containern.
+
+**`env_file:`** pekar ut en fil vars rader blir miljövariabler **inuti** containern.
+
+**`environment:`** sätter enskilda variabler direkt i compose-filen, och **vinner** över `env_file`
+när samma namn finns i båda.
+
+Uppmätt med en `.env` som sätter `TAGG` och en `app.env` som sätter `HEMLIG`:
+
+```
+HEMLIG=fran-envfile EXTRA=bara-har TAGG=
+```
+
+`TAGG` är **tomt** inuti containern. Variabeln användes för att bygga compose-filen och skickades
+aldrig vidare. Lägger tjänsten dessutom till `environment: HEMLIG: fran-environment` blir svaret
+`HEMLIG=fran-environment` — den vinner.
+
+Minnesregeln: `.env` talar med **filen**, `env_file` talar med **containern**.
+
 <Del titel="Portar och ordning" />
 
 ## Vad `ports` faktiskt gör
@@ -272,6 +323,25 @@ services:
 
 `healthcheck` kör kommandot inuti databascontainern med jämna mellanrum. Så länge det misslyckas
 räknas tjänsten som ohälsosam, och `condition: service_healthy` håller kvar API:et i startgroparna.
+
+## Att läsa loggarna från flera tjänster
+
+När tre containrar startar tillsammans blandas deras utskrifter, och det är avsiktligt.
+
+```bash
+docker compose logs -f
+docker compose logs -f api
+```
+
+Utan tjänstenamn får du allt, med ett prefix per rad som säger vilken tjänst den kom från. Med
+tjänstenamn får du bara den ena.
+
+Prefixet är det som gör den blandade vyn användbar. Startordningen syns direkt, och ett fel i
+databasen som får API:et att krascha en sekund senare står som två rader efter varandra i stället
+för i två fönster.
+
+`-f` följer loggen medan den skrivs, precis som `tail -f` i Linux-delen. Utan flaggan får du det som
+finns just nu och tillbaka till prompten.
 
 <Del titel="Öva och förstå" />
 

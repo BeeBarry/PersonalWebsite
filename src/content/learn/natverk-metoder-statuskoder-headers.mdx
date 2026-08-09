@@ -227,8 +227,8 @@ Lösningen är att autentisera sig.
 **`403 Forbidden`** betyder *jag vet vem du är, och du får ändå inte.* Inloggningen är i sin
 ordning, men kontot saknar behörighet. Att logga in igen hjälper inte.
 
-Svarar ett API `401` när det borde vara `403` skickas användaren till inloggningssidan i onödan —
-och hamnar i en loop där hen loggar in om och om igen utan att komma vidare.
+Svarar ett API `401` när det borde vara `403` skickas användaren till inloggningssidan i onödan.
+Där hamnar hen i en loop och loggar in om och om igen utan att komma vidare.
 
 Namnet på `401` är för övrigt historiskt fel: den handlar om autentisering, inte om behörighet.
 

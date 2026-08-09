@@ -275,8 +275,8 @@ Hemligheter lagras i CI-verktyget och skjuts in som miljövariabler när jobbet 
 refererar till namnet, aldrig till värdet.
 
 <Callout type="fallgrop">
-**Loggen är publik oftare än du tror.** En hemlighet som skrivs ut i en logg är läckt — och det
-räcker att någon kör `echo` på fel variabel, eller att ett verktyg loggar sitt anrop med `-v`.
+**Loggen är publik oftare än du tror.** En hemlighet som skrivs ut i en logg är läckt. Det räcker
+att någon kör `echo` på fel variabel, eller att ett verktyg loggar sitt anrop med `-v`.
 
 CI-verktyg maskerar värden de känner igen, men bara exakt de strängarna. Är hemligheten base64-kodad
 eller inbakad i en URL går den rakt igenom.

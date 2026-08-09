@@ -271,6 +271,23 @@ Den som hämtar imagen kan gräva fram filen ur lagret. Lägg till `.dockerignor
 bygget, och betrakta hemligheten som läckt om imagen redan delats.
 </Callout>
 
+## `.dockerignore` vs `.gitignore`
+
+Två filer med samma syntax och nästan samma namn, som skyddar mot olika saker.
+
+**`.gitignore`** håller filer utanför **repot**. Den påverkar vad som versionshanteras och delas med
+teamet.
+
+**`.dockerignore`** håller filer utanför **byggkontexten**. Den påverkar vad `COPY` kan nå och vad
+som hamnar i imagen.
+
+De överlappar men är inte utbytbara, och skillnaden går åt båda hållen. `node_modules` hör hemma i
+båda. Men `.git`-katalogen ska med i `.dockerignore` och kan omöjligt stå i `.gitignore`. Och en `.env`
+som redan är i `.gitignore` finns ändå kvar på din disk, alltså i byggkontexten, om du inte skriver
+in den i `.dockerignore` också.
+
+Har du bara den ena är det nästan alltid `.dockerignore` som saknas.
+
 ## Bygg och kör
 
 ```bash

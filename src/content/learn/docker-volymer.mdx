@@ -92,6 +92,30 @@ Applikationen märker ingenting — den skriver till en helt vanlig sökväg.
   caption="Containern kastas. Volymen står kvar."
 />
 
+## Var volymen faktiskt ligger
+
+Docker kan tala om var en volym bor:
+
+```bash
+docker volume inspect min-vol \
+  --format '{{.Mountpoint}}'
+```
+
+```
+/var/lib/docker/volumes/min-vol/_data
+```
+
+Sökvägen ser ut som en vanlig katalog, och på en Linux-server är den det. **På macOS och Windows
+finns den inte.** Docker kör där i en liten Linux-maskin, och sökvägen gäller inuti den. Försöker du `cd` dit får
+du *No such file or directory*.
+
+Det är inte ett fel. Det är att volymen medvetet är Dockers område, inte ditt filsystem. Vill du åt
+innehållet gör du det genom en container:
+
+```bash
+docker run --rm -v min-vol:/d alpine ls -la /d
+```
+
 ## Volym vs image-lager
 
 Två sorters lagring i samma container, och de beter sig tvärtom.
@@ -171,6 +195,32 @@ bind mount. Är det ett vanligt namn är det en named volume.
 
 **Tumregeln är kort:** bind mount för kod du redigerar, named volume för data appen skapar.
 
+## Vem som äger filerna i en volym
+
+En ny named volume är tom och ägs av **root**:
+
+```bash
+docker run --rm -v min-vol:/d alpine \
+  stat -c 'uid=%u gid=%g' /d
+```
+
+```
+uid=0 gid=0
+```
+
+Så länge containern kör som root märks det inte. Kör den som en annan användare, vilket produktionsdelen rekommenderar, kan den inte skriva i
+volymen. Felet blir *Permission denied* på en katalog som ser helt tom och normal ut.
+
+Officiella databasimages löser det åt dig genom att sätta rättigheterna vid start. Din egen
+applikation gör det inte, och då är det ditt jobb.
+
+En bind mount beter sig dessutom **olika på olika värdar**. Uppmätt på Docker Desktop för Mac visas
+en fil som ägs av uid 501 som `uid=0` inuti containern, och en container som kör som `node` får
+skriva. På en Linux-server går värdens uid rakt igenom, och då uppstår rättighetsproblemet på
+riktigt.
+
+Det är den vanligaste orsaken till *"det fungerar på min dator"* i just det här sammanhanget.
+
 ## Anonyma volymer
 
 En tredje variant du inte skapar med flit men kommer att stöta på.
@@ -212,6 +262,23 @@ volumes:
   - /app/node_modules
 ```
 </Callout>
+
+## `prune` vs `down -v`
+
+Två sätt att städa, med olika räckvidd — och det ena är betydligt trubbigare.
+
+**`docker compose down -v`** tar bort volymerna som hör till **det här projektet**. Räckvidden är
+mappen du står i.
+
+**`docker volume prune`** tar bort **alla** volymer på maskinen som ingen container använder just
+nu. Räckvidden är hela din dator.
+
+Den andra är farlig av ett skäl som inte syns: en volym från ett projekt du inte rört på en månad
+räknas som oanvänd, eftersom dess containrar är borta. Testdatan du sparade i mars försvinner när du
+städar efter ett helt annat projekt.
+
+Kör `docker volume ls` först. Kommandot frågar en gång och rapporterar bara hur många byte som
+frigjordes.
 
 ## En volym är inte en säkerhetskopia
 
