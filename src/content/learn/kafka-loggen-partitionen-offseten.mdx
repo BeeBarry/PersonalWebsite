@@ -1,0 +1,477 @@
+---
+title: 'Loggen, partitionen och offseten'
+description: 'Varför Kafka delar upp en topic — och vad nyckeln har med ordningen att göra'
+category: 'kafka'
+part: 1
+partTitle: 'Grunderna'
+order: 1
+date: '2026-08-09'
+tags: ['Beginner', 'Kafka', 'Meddelanden']
+---
+
+## Var vi är
+
+Meddelandeserien byggde vokabulären: broker, kö, topic, logg, ack och de tre garantierna. Den
+lämnade två frågor obesvarade, och båda pekade hit.
+
+Hur går ordning ihop med parallella konsumenter? Och hur kan ett meddelande ligga kvar i en vecka
+medan tio konsumenter läser det i olika takt?
+
+Kafka svarar på båda med samma sak: partitionen. Den här delen tar anatomin — loggen, partitionen,
+offseten och nyckeln — och det som krävs för att läsa en beskrivning av ett Kafka-kluster. Drift,
+lag och de svåra avvägningarna tar nästa del.
+
+<Del titel="Loggen" />
+
+## Vad Kafka är
+
+**Apache Kafka** är en distribuerad logg som flera system skriver till och läser ur, oberoende av
+varandra.
+
+Meddelandedelen definierade en logg som en följd av meddelanden som ligger kvar efter att de lästs.
+Kafka är den formen, byggd för att köras på flera maskiner samtidigt.
+
+Kafka är inte en kö i traditionell mening. Ingenting försvinner när det konsumerats, och det är
+utgångspunkten för allt annat i den här delen.
+
+Ordet *distribuerad* betyder här att samma logg ligger uppdelad och kopierad över flera maskiner.
+Hur det går till tar avsnittet om klustret.
+
+## Vad en topic är i Kafka
+
+En **topic** är en namngiven logg. `ordrar`, `betalningar`, `klick` — ett namn per sorts händelse.
+
+Meddelandedelen beskrev en topic som en kanal där alla prenumeranter får varje meddelande. Kafkas
+topic gör samma sak, med en skillnad som förklarar resten av artikeln: den glömmer ingenting.
+
+En prenumerant som ansluter i dag kan läsa det som skrevs i förrgår. En ny tjänst kan börja från
+loggens början utan att någon annan påverkas.
+
+Topicen är också den enhet du skapar, namnger och sätter regler på. Den är sällan det du läser
+ifrån direkt — det är nästa begrepp.
+
+## Vad en partition är
+
+En **partition** är en av de delar en topic är uppdelad i, och den är den faktiska loggen.
+
+En topic med tre partitioner är tre separata följder av meddelanden. Varje record hamnar i exakt en
+av dem, och inom den partitionen ligger de i den ordning de skrevs.
+
+Partitionen är också enheten för parallellism. Tre partitioner betyder att tre konsumenter kan läsa
+samtidigt, var och en på sin egen del.
+
+<Callout type="varfor" title="Varför Kafka delar upp loggen">
+En enda logg kan bara skrivas till i en följd, och läsas i en följd. Den ryms dessutom på en maskin.
+
+Meddelandedelen slutade i avvägningen mellan ordning och genomströmning, och partitionen är svaret
+på den: ordningen behålls *inom* varje del, medan delarna körs parallellt.
+
+Priset är att någon global ordning över hela topicen inte finns. Det priset betalas medvetet, och
+nästa avsnitt visar var det syns.
+</Callout>
+
+## Topic vs partition
+
+De två blandas ihop varje gång någon säger "meddelandet ligger i topicen".
+
+**Topicen** är namnet och konfigurationen. Den är en logisk gruppering, och den innehåller ingenting
+själv.
+
+**Partitionen** är den fysiska loggen med records i. Den ligger på en bestämd maskin, den har en
+ordning, och det är den ett meddelande faktiskt hamnar i.
+
+Konsekvensen är att ordning alltid gäller per partition, aldrig per topic. En topic med en partition
+har global ordning — och därmed en konsument åt gången.
+
+## Vad en offset är
+
+En **offset** är ett löpnummer som identifierar ett records plats i sin partition. Den börjar på 0
+och räknas upp med ett.
+
+Offseten är unik inom partitionen, inte inom topicen. Två records i olika partitioner har båda
+offset 0, och det är helt normalt.
+
+Numret sätts av Kafka när recordet skrivs och ändras aldrig. Ett record är därmed adresserbart med
+tre tal: topic, partition, offset.
+
+Det är också offseten som gör att varje konsument kan läsa i sin egen takt. Kafka håller inte reda
+på vad som är levererat — konsumenten håller reda på var den är.
+
+## Vad retention är
+
+**Retention** är regeln för hur länge records ligger kvar i en partition innan de raderas.
+
+Standarden är sju dagar. Den kan sättas i tid eller i storlek, och den gäller oavsett om något har
+läst meddelandet eller inte.
+
+Det är den viktigaste skillnaden mot en kö. En kö töms av att någon läser; en Kafka-partition töms
+av att tiden går.
+
+Följden är att retention är ditt återställningsfönster. Upptäcker du på onsdagen att konsumenten
+räknat fel sedan måndagen kan du läsa om — förutsatt att retentionen är längre än felet är gammalt.
+
+## Vad ett record är
+
+Ett **record** är det Kafka lagrar: en nyckel, ett värde, en tidsstämpel och en uppsättning headers.
+
+Värdet är innehållet — ofta JSON, ibland ett binärt format som Avro eller Protobuf. Kafka läser
+aldrig värdet, utan behandlar det som en följd av bytes.
+
+Headers är fältet där spårningsinformation hör hemma. OpenTelemetry-delens `traceparent` läggs här,
+och det är så ett spår följer med genom Kafka i stället för att ta slut vid brokern.
+
+Nyckeln ser ut som ett fält bland andra. Den är det inte.
+
+## Vad nyckeln gör
+
+**Nyckeln** avgör vilken partition recordet hamnar i. Kafka hashar nyckeln och delar med antalet
+partitioner.
+
+Följden är enkel och är hela poängen: **samma nyckel hamnar alltid i samma partition**. Och eftersom
+ordning gäller inom en partition, får alla records med samma nyckel garanterad inbördes ordning.
+
+Väljs `kundnummer` som nyckel behandlas en kunds ordrar i rätt följd, medan olika kunder körs
+parallellt. Det är svaret meddelandedelen lovade: ordning per nyckel, inte över allt.
+
+<Doodle name="nyckeln-valjer-raden" caption="Två kort med samma nyckel hamnar i samma rad. Vilken rad avgörs av hashen, inte av dig." />
+
+Nyckeln väljs alltså efter vad som måste hålla ordningen. Det är ett av få designbeslut i Kafka som
+är svårt att ändra i efterhand.
+
+## Med nyckel vs utan nyckel
+
+Ett record får ha nyckeln `null`, och valet mellan de två är ett riktigt val.
+
+<Split
+  leftTitle="Utan nyckel"
+  rightTitle="Med nyckel"
+  leftTone="neutral"
+  rightTone="neutral"
+  caption="Jämn fördelning eller garanterad ordning. Du får ett av dem."
+>
+  <div slot="left">
+
+  Records fördelas jämnt över partitionerna.
+
+  Alla partitioner får ungefär lika mycket, och genomströmningen blir den högsta möjliga.
+
+  Ingen inbördes ordning finns mellan två records, ens från samma avsändare.
+
+  Passar mätvärden, loggrader och klick — sådant som ska räknas, inte följas.
+
+  </div>
+  <div slot="right">
+
+  Records med samma nyckel hamnar i samma partition.
+
+  Ordningen inom nyckeln är garanterad, och en konsument ser kundens händelser i rätt följd.
+
+  Fördelningen blir ojämn om någon nyckel är mycket vanligare än andra.
+
+  Passar ordrar, kontosaldon och allt där två händelser om samma sak inte får byta plats.
+
+  </div>
+</Split>
+
+<Callout type="fallgrop">
+Antalet partitioner ingår i uträkningen av vilken partition en nyckel hamnar i. **Ökar du antalet
+partitioner flyttas därför nycklar till andra partitioner.**
+
+Det som redan ligger i loggen flyttas inte. Resultatet är att `kund-7` kan ha sina gamla records i
+partition 2 och sina nya i partition 0 — och då är ordningen för den kunden bruten, permanent.
+
+Sätt hellre fler partitioner än du behöver från början. Att öka dem i efterhand går tekniskt, men
+det är inte en ofarlig operation för en topic med nycklar.
+</Callout>
+
+<Del titel="Klustret" />
+
+## Vad en broker är i Kafka
+
+En **broker** är en enskild Kafka-server. Flera brokrar bildar tillsammans ett kluster.
+
+Ordet betyder därmed något smalare här än i meddelandedelen, där brokern var hela tjänsten. I Kafka
+är brokern en maskin bland flera, och tjänsten är klustret.
+
+Varje partition ligger på en bestämd broker. En topic med tolv partitioner över tre brokrar ger fyra
+partitioner per maskin, och det är så en enda topic kan vara större än en server.
+
+Klustret behöver också något som håller reda på vem som äger vad. I moderna versioner sköts det av
+Kafka självt, i ett läge som heter KRaft — äldre installationer använder ZooKeeper, och det är
+skillnaden du märker först i en gammal guide.
+
+## Vad replikering är
+
+**Replikering** är att varje partition finns i flera kopior på olika brokrar.
+
+En av kopiorna är **leader** och tar emot all trafik. De andra är **followers** och håller sig
+ajour genom att läsa från leadern.
+
+Dör den broker som håller en leader väljs en av followers till ny leader, och skrivningarna
+fortsätter dit. Antalet kopior kallas replikationsfaktor, och tre är vanligt i drift.
+
+De kopior som hunnit ikapp kallas **in-sync replicas**, ISR. Det är ur den mängden en ny leader kan
+väljas — en kopia som ligger efter får inte ta över, eftersom den saknar records.
+
+## Vad `acks` gör
+
+**`acks`** är producentens inställning för hur många kopior som måste ha tagit emot recordet innan
+skrivningen räknas som lyckad.
+
+`acks=0` väntar inte alls. `acks=1` väntar på leadern. `acks=all` väntar på alla kopior i ISR.
+
+Skillnaden märks när en broker dör i fel ögonblick. Med `acks=1` kan ett record vara kvitterat till
+producenten men bara finnas på leadern — dör den innan någon follower hunnit hämta det, är recordet
+borta.
+
+`acks=all` är därför standardvalet för allt som betyder något. Priset är väntetid, och det är en
+avvägning du gör per flöde och inte per kluster.
+
+<Del titel="Läsningen" />
+
+## Vad en konsumentgrupp är
+
+En **konsumentgrupp** är en uppsättning konsumenter som delar på arbetet i en topic.
+
+Gruppen har ett namn, och Kafka håller reda på var gruppen står i varje partition. Konsumenterna i
+gruppen får var sin partition att läsa.
+
+Två *olika* grupper på samma topic är oberoende av varandra. Båda får varje record, och båda har
+egna positioner.
+
+Det är så Kafka gör både det en kö gör och det en topic gör — med samma data. Inom gruppen delas
+arbetet ut; mellan grupper kopieras det.
+
+## Hur partitionerna fördelas
+
+Kafka tilldelar varje partition till **exakt en** konsument i gruppen. En konsument kan däremot ha
+flera partitioner.
+
+Tre partitioner och två konsumenter ger 2 + 1. Tre partitioner och tre konsumenter ger en var.
+
+<Doodle name="gruppen-och-partitionerna" caption="Fyra konsumenter, tre partitioner. Den fjärde har inget att göra — den streckade linjen går ingenstans." />
+
+Tre partitioner och fyra konsumenter ger en konsument som står utan arbete. **Antalet partitioner är
+taket för hur mycket en grupp kan parallellisera**, och det är därför partitionsantalet är ett
+kapacitetsbeslut och inte en detalj.
+
+Fördelningen räknas om när en konsument tillkommer eller försvinner. Den omräkningen heter rebalance
+och har en egen uppsättning problem, som nästa del tar.
+
+## Vad en committad offset är
+
+En **committad offset** är den position gruppen sparat som "läst hit" för en partition.
+
+Positionen lagras i Kafka självt, i en intern topic. Startar konsumenten om fortsätter den från den
+sparade positionen i stället för från början.
+
+Att committa är alltså inte att bekräfta ett enskilt record. Det är att flytta ett bokmärke, och
+allt före bokmärket räknas som klart.
+
+Det förklarar varför en konsument som committar för tidigt tappar arbete: bokmärket står redan
+framför något som aldrig blev gjort.
+
+## Producentens acks vs konsumentens commit
+
+Båda kallas ofta bara "kvittering", och de sitter i motsatta ändar av loggen.
+
+**`acks`** är producentens fråga: *är recordet skrivet och tillräckligt kopierat?* Den handlar om
+hållbarhet, och svaret kommer från brokrarna.
+
+**Commit** är konsumentens påstående: *jag har behandlat allt fram till hit.* Den handlar om
+framdrift, och den skrivs av konsumenten själv.
+
+Konsekvensen är att de skyddar mot olika fel. `acks` skyddar mot att data försvinner när en maskin
+dör; commit avgör vad som händer när en konsument startar om. Meddelandedelens val mellan högst en
+gång och minst en gång ligger i det andra, inte i det första.
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att välja nyckel. Det är det enskilt viktigaste beslutet i den här delen, och frågan är
+alltid densamma: vilka två meddelanden får aldrig byta plats?
+
+Du kommer också att läsa en beskrivning av en topic och behöva förstå den: antal partitioner, vilken
+broker som är leader, och hur många kopior som är i synk. De tre talen räcker för att avgöra om en
+topic tål att en maskin försvinner.
+
+Att sätta upp ett kluster, dimensionera diskar och välja replikationsfaktor är oftast någon annans
+jobb. Att veta att partitionsantalet är taket för parallellism är däremot ditt, eftersom det är den
+gränsen din konsument möter först.
+
+Consumer lag, rebalance-problem, compaction och transaktioner kan vänta till nästa del. De blir
+begripliga först när loggen, partitionen och offseten sitter.
+
+## Vanliga nybörjarförväxlingar
+
+En topic är inte en logg. Topicen är namnet; partitionerna är loggarna.
+
+Ordning gäller inte per topic. Den gäller inom en partition, och det är därför nyckeln finns.
+
+En offset är inte unik i topicen. Varje partition har sin egen räkning som börjar på 0.
+
+Ett konsumerat record försvinner inte. Retention raderar på tid eller storlek, oavsett vem som läst.
+
+Fler konsumenter ger inte mer parallellism än det finns partitioner. Överskottet står stilla.
+
+`acks` är inte samma sak som commit. Det första är producentens hållbarhet, det andra konsumentens
+position.
+
+En broker är inte hela Kafka här. Den är en maskin i klustret.
+
+## Prova själv
+
+Övningen startar ett Kafka-kluster med en broker i Docker, skickar fyra records med nycklar och
+visar vilken partition de hamnade i. Allt är slängbart och tas bort på sista raden.
+
+```bash
+docker run -d --name kafka-ovning \
+  -p 9092:9092 apache/kafka:latest
+docker exec -it kafka-ovning bash
+cd /opt/kafka/bin
+```
+
+Resten körs inuti containern. Skapa en topic med tre partitioner:
+
+```bash
+./kafka-topics.sh --create --topic ordrar \
+  --partitions 3 --bootstrap-server :9092
+```
+
+```
+Created topic ordrar.
+```
+
+Titta på vad som skapades:
+
+```bash
+./kafka-topics.sh --describe --topic ordrar \
+  --bootstrap-server :9092
+```
+
+Du får en rad per partition. Varje rad säger `Leader: 1` — det finns bara en broker, så den äger
+alla tre — och `Replicas: 1` med `Isr: 1`, alltså en enda kopia som är i synk. Raderna innehåller
+också fälten `Elr` och `LastKnownElr`, som är tomma här och hör till nyare versioner.
+
+Skicka nu fyra records, där texten före kolon är nyckeln:
+
+```bash
+./kafka-console-producer.sh --topic ordrar \
+  --bootstrap-server :9092 \
+  --reader-property parse.key=true \
+  --reader-property key.separator=:
+```
+
+Klistra in raderna en i taget, och avsluta med `Ctrl+C`:
+
+```
+kund-7:order-1001
+kund-9:order-1002
+kund-7:order-1003
+kund-4:order-1004
+```
+
+Läs tillbaka dem, med partition och offset utskrivna:
+
+```bash
+./kafka-console-consumer.sh --topic ordrar \
+  --bootstrap-server :9092 --from-beginning \
+  --formatter-property print.partition=true \
+  --formatter-property print.offset=true \
+  --formatter-property print.key=true
+```
+
+```
+Partition:1 Offset:0 kund-9 order-1002
+Partition:2 Offset:0 kund-7 order-1001
+Partition:2 Offset:1 kund-7 order-1003
+Partition:2 Offset:2 kund-4 order-1004
+```
+
+**Båda `kund-7`-recorden hamnade i partition 2**, i den ordning de skickades. Det är nyckeln som
+gjorde det, och det är hela mekaniken bakom ordning per nyckel.
+
+Avsluta med `Ctrl+C`, kör samma kommando igen, och se att exakt samma fyra rader kommer tillbaka —
+loggen tömdes inte av att du läste den. Städa sedan:
+
+```bash
+exit
+docker rm -f kafka-ovning
+```
+
+Fyra saker kan förvirra, och alla fyra är korrekt beteende. **Partition 0 är tom** trots att det
+finns tre partitioner och fyra records: hashningen fördelar jämnt först över många nycklar.
+**`kund-4` hamnade i samma partition som `kund-7`** — olika nycklar kan dela partition, eftersom
+hashen delas med antalet partitioner. **Utskriftsordningen är inte den ordning du skickade i**:
+`order-1002` kommer först, eftersom konsumenten läser en partition i taget och det inte finns någon
+ordning över topicen. Och äldre guider använder `--property` i stället för `--reader-property` och
+`--formatter-property` — flaggan fungerar än, men svarar med en varning i Kafka 4.
+
+<Callout type="kom-ihag">
+- En **topic** är namnet. **Partitionen** är den faktiska loggen, och den ett record hamnar i.
+- **Ordning gäller inom en partition**, aldrig över en topic.
+- En **offset** är ett löpnummer per partition, och börjar om på 0 i varje.
+- **Nyckeln väljer partition.** Samma nyckel, samma partition, och därmed garanterad ordning.
+- Ökar du antalet partitioner **flyttas nycklar** — och ordningen för dem bryts permanent.
+- **Retention** raderar på tid eller storlek, inte på att någon läst. Standard är sju dagar.
+- Partitioner tilldelas **en konsument var** i en grupp. Fler konsumenter än partitioner står stilla.
+- **`acks`** är producentens hållbarhet. **Commit** är konsumentens position. Olika ändar, olika fel.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Varför garanterar Kafka inte ordning över en hel topic?",
+      a: "Därför att topicen är uppdelad i partitioner som skrivs och läses parallellt. Ordningen bevaras inom varje partition, men mellan två partitioner finns ingen gemensam följd. Det är avvägningen mellan ordning och genomströmning, och partitionen är stället där den görs.",
+    },
+    {
+      q: "Du sätter `kundnummer` som nyckel. Vad vinner du, och vad förlorar du?",
+      a: "Du vinner att alla records för samma kund hamnar i samma partition och därmed behandlas i rätt inbördes ordning. Du förlorar jämn fördelning: har en kund tio gånger fler ordrar än andra blir den partitionen tyngre, och den konsument som läser den ligger efter.",
+    },
+    {
+      q: "Två records har båda offset 0. Är något fel?",
+      a: "Nej. Offseten räknas per partition, inte per topic. Två records i olika partitioner har båda offset 0, och ett record identifieras därför av tre saker: topic, partition och offset.",
+    },
+    {
+      q: "Gruppen har fem konsumenter och topicen tre partitioner. Vad händer?",
+      a: "Tre konsumenter får var sin partition, och två står utan arbete. En partition tilldelas exakt en konsument i gruppen, så antalet partitioner är taket för hur mycket gruppen kan parallellisera. Fler konsumenter ger ingen ytterligare genomströmning.",
+    },
+    {
+      q: "Vad är skillnaden mellan `acks=all` och att committa en offset?",
+      a: "`acks=all` är producentens krav på att recordet finns i alla kopior som är i synk innan skrivningen räknas som lyckad — det skyddar mot att data försvinner när en maskin dör. Commit är konsumentens bokmärke över vad den behandlat, och avgör var den fortsätter efter en omstart.",
+    },
+    {
+      q: "En kollega vill öka antalet partitioner från 3 till 6 på en topic med kundnummer som nyckel. Vad invänder du?",
+      a: "Att antalet partitioner ingår i uträkningen av vilken partition en nyckel hamnar i. Efter ändringen kan `kund-7` hamna i en annan partition än tidigare, medan de gamla recorden ligger kvar där de var. Ordningen för den kunden är då bruten, och det går inte att laga i efterhand.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- Kafka är en distribuerad logg som flera system skriver till och läser ur oberoende av varandra.
+- En topic är en namngiven logg och den enhet du skapar och konfigurerar.
+- En partition är en av topicens delar, och den faktiska loggen ett record hamnar i.
+- Ordning gäller inom en partition. Över en topic finns ingen gemensam följd.
+- En offset är ett löpnummer per partition som börjar på 0 och aldrig ändras.
+- Retention raderar på tid eller storlek, oavsett om någon läst. Sju dagar är standard.
+- Ett record är nyckel, värde, tidsstämpel och headers. Spårnings-id hör hemma i headers.
+- Nyckeln hashas och väljer partition. Samma nyckel ger samma partition, och därmed ordning.
+- Utan nyckel fördelas records jämnt, men ingen inbördes ordning finns.
+- Ändrat partitionsantal flyttar nycklar och bryter ordningen för dem permanent.
+- En broker är en maskin i klustret. Partitionen ligger på en bestämd broker.
+- Replikering ger varje partition flera kopior: en leader och followers, med ISR som mängden ikappna.
+- `acks` styr hur många kopior som måste ha tagit emot recordet innan skrivningen räknas som lyckad.
+- En konsumentgrupp delar på partitionerna. Olika grupper är oberoende och får var sitt exemplar.
+- En partition går till exakt en konsument i gruppen. Överskjutande konsumenter står stilla.
+- En committad offset är gruppens bokmärke per partition, sparat i Kafka självt.
+
+## Nästa del
+
+Anatomin står: topicen är namnet, partitionen är loggen, offseten är platsen och nyckeln väljer var
+recordet hamnar.
+
+Kvar står det som gör Kafka svårt i drift. Konsumenten ligger efter — hur mycket, och sedan när? En
+konsument tillkommer och alla slutar läsa i några sekunder — varför? Och hur kan en topic behålla
+det senaste värdet per nyckel för alltid utan att växa i oändlighet?

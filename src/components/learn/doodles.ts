@@ -2019,4 +2019,45 @@ export const DOODLES: Record<string, string> = {
     <text x="440" y="330">skickat 1 2 3 4  ·  utfört 1 3 4 2</text>
   </g>
 </svg>`,
+  /* ---- Kafka 1.0 · Nyckeln väljer partitionen ---- */
+  "nyckeln-valjer-raden": `
+<svg viewBox="0 0 880 400" role="img" aria-label="Två kort märkta kund-7 till vänster. Två pilar går från dem till den nedersta av tre rader, märkt P2.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M40 81 Q115 79 189 79 Q192 120 189 160 Q115 160 41 159 Q38 120 40 81 Z"/><path d="M40 240 Q115 239 191 241 Q192 280 189 320 Q115 321 40 319 Q39 280 40 240 Z"/><path d="M430 60 Q625 59 819 60 Q820 98 820 135 Q625 137 430 134 Q429 98 430 60 Z"/><path d="M430 166 Q625 164 819 166 Q820 202 819 241 Q625 241 429 241 Q429 202 430 166 Z"/><path d="M430 269 Q625 270 820 270 Q821 308 821 345 Q625 346 430 344 Q430 308 430 269 Z"/><path d="M195 120 Q320 150 420 292"/><path d="M411 294 L424 300 L411 306"/><path d="M195 280 Q310 292 420 306"/><path d="M412 301 L425 307 L412 313"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="16" fill="currentColor" text-anchor="middle">
+    <text x="115" y="128">kund-7</text>
+    <text x="115" y="288">kund-7</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="17" fill="currentColor" text-anchor="middle">
+    <text x="465" y="105">P0</text>
+    <text x="465" y="210">P1</text>
+    <text x="465" y="315">P2</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="625" y="378">topic ordrar</text>
+  </g>
+</svg>`,
+  /* ---- Kafka 1.0 · Gruppen och partitionerna ---- */
+  "gruppen-och-partitionerna": `
+<svg viewBox="0 0 880 400" role="img" aria-label="Tre lådor märkta P0, P1 och P2 till vänster, kopplade med heldragna pilar till tre av fyra konsumenter. Den fjärde konsumentens linje är streckad och slutar i tomma intet.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M51 59 Q170 58 291 59 Q291 93 290 127 Q170 126 49 126 Q48 93 51 59 Z"/><path d="M49 145 Q170 144 289 145 Q290 179 290 211 Q170 214 51 212 Q48 179 49 145 Z"/><path d="M51 231 Q170 231 291 232 Q291 265 290 299 Q170 300 49 297 Q48 265 51 231 Z"/><path d="M600 39 Q710 38 820 39 Q822 70 820 100 Q710 101 599 100 Q598 70 600 39 Z"/><path d="M599 126 Q710 126 820 127 Q822 156 820 186 Q710 188 601 185 Q600 156 599 126 Z"/><path d="M599 213 Q710 210 820 211 Q822 242 821 272 Q710 272 601 272 Q598 242 599 213 Z"/><path d="M600 297 Q710 297 820 299 Q821 328 819 358 Q710 358 599 358 Q598 328 600 297 Z"/><path d="M295 93 Q450 81 592 70"/><path d="M584 64 L597 70 L584 76"/><path d="M295 179 Q450 167 592 156"/><path d="M584 150 L597 156 L584 162"/><path d="M295 265 Q450 253 592 242"/><path d="M584 236 L597 242 L584 248"/><path d="M592 328 Q520 322 448 316" stroke-dasharray="7 8" opacity="0.45"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="17" fill="currentColor" text-anchor="middle">
+    <text x="170" y="102">P0</text>
+    <text x="170" y="188">P1</text>
+    <text x="170" y="274">P2</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="17" fill="currentColor" text-anchor="middle">
+    <text x="710" y="78">1</text>
+    <text x="710" y="164">2</text>
+    <text x="710" y="250">3</text>
+    <text x="710" y="336">4</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="170" y="348">topic ordrar</text>
+    <text x="710" y="384">konsumentgrupp</text>
+  </g>
+</svg>`,
 };

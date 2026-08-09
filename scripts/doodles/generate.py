@@ -2148,6 +2148,43 @@ def alla():
       + "\n" + txt([(440,330,"skickat 1 2 3 4  ·  utfört 1 3 4 2")],15,' opacity="0.62"')
       + "\n</svg>")
 
+    # 105 — Kafka 1.0 · Nyckeln väljer partitionen
+    # Båda korten bär SAMMA nyckel och båda pilarna landar i samma rad. Ritas
+    # två olika nycklar blir bilden om fördelning; poängen är motsatsen — att
+    # nyckeln tar bort valet. Raderna är breda och låga för att läsa som logg,
+    # inte som lådor.
+    rader3 = "".join(f'<path d="{w(430,y,390,75)}"/>' for y in (60,165,270))
+    till_p2 = ('<path d="M195 120 Q320 150 420 292"/>' + arrow(424, 300)
+               + '<path d="M195 280 Q310 292 420 306"/>' + arrow(425, 307))
+    D['nyckeln-valjer-raden']=(
+      '<svg viewBox="0 0 880 400" role="img" aria-label="Två kort märkta kund-7 till vänster. Två '
+      'pilar går från dem till den nedersta av tre rader, märkt P2.">\n'
+      + G % (f'<path d="{w(40,80,150,80)}"/><path d="{w(40,240,150,80)}"/>'
+             + rader3 + till_p2)
+      + "\n" + txt([(115,128,"kund-7"),(115,288,"kund-7")],16)
+      + "\n" + txt([(465,105,"P0"),(465,210,"P1"),(465,315,"P2")],17)
+      + "\n" + txt([(625,378,"topic ordrar")],15,' opacity="0.62"') + "\n</svg>")
+
+    # 106 — Kafka 1.0 · Gruppen och partitionerna
+    # Den fjärde konsumentens linje är STRECKAD och slutar i tomma intet —
+    # utan pilspets, eftersom den inte når något. Ritas den med spets läser
+    # bilden som att den ändå får något, vilket är precis felet den ska visa.
+    par = "".join(f'<path d="{w(50,y,240,66)}"/>' for y in (60,146,232))
+    kons = "".join(f'<path d="{w(600,y,220,60)}"/>' for y in (40,126,212,298))
+    kopplingar = "".join(
+        f'<path d="M295 {a} Q450 {(a+b)//2} 592 {b}"/>' + arrow(597, b)
+        for a, b in ((93,70),(179,156),(265,242)))
+    tom = '<path d="M592 328 Q520 322 448 316" stroke-dasharray="7 8" opacity="0.45"/>'
+    D['gruppen-och-partitionerna']=(
+      '<svg viewBox="0 0 880 400" role="img" aria-label="Tre lådor märkta P0, P1 och P2 till '
+      'vänster, kopplade med heldragna pilar till tre av fyra konsumenter. Den fjärde konsumentens '
+      'linje är streckad och slutar i tomma intet.">\n'
+      + G % (par + kons + kopplingar + tom)
+      + "\n" + txt([(170,102,"P0"),(170,188,"P1"),(170,274,"P2")],17)
+      + "\n" + txt([(710,78,"1"),(710,164,"2"),(710,250,"3"),(710,336,"4")],17)
+      + "\n" + txt([(170,348,"topic ordrar"),(710,384,"konsumentgrupp")],15,
+                   ' opacity="0.62"') + "\n</svg>")
+
     return D
 
 if __name__ == "__main__":
