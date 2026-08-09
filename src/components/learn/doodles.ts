@@ -2139,4 +2139,42 @@ export const DOODLES: Record<string, string> = {
     <text x="552" y="327">noll eller flera</text>
   </g>
 </svg>`,
+  /* ---- RabbitMQ 1.1 · Unacked är utlånat ---- */
+  "unacked-ligger-utlanat": `
+<svg viewBox="0 0 880 340" role="img" aria-label="En kö med ett kort och en streckad tom plats. En heldragen pil går till en konsument som håller kortet, och en streckad linje går tillbaka från konsumenten till kön.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M61 90 Q210 89 361 91 Q360 170 360 250 Q210 250 60 251 Q59 170 61 90 Z"/><path d="M84 116 Q140 115 196 114 Q196 170 195 225 Q140 225 84 226 Q83 170 84 116 Z"/><path d="M214 116 Q270 115 326 114 Q327 170 324 226 Q270 226 216 224 Q215 170 214 116 Z" stroke-dasharray="7 8" opacity="0.4"/><path d="M601 90 Q710 88 821 89 Q822 170 819 250 Q710 250 601 249 Q599 170 601 90 Z"/><path d="M639 114 Q710 113 780 116 Q782 170 780 225 Q710 227 639 225 Q640 170 639 114 Z"/><path d="M366 142 Q480 138 590 142"/><path d="M583 136 L596 142 L583 148"/><path d="M594 208 Q480 214 368 208" stroke-dasharray="7 8" opacity="0.45"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="210" y="290">kö</text>
+    <text x="710" y="290">konsument</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="480" y="326">kön räknar det inte, brokern minns det</text>
+  </g>
+</svg>`,
+  /* ---- RabbitMQ 1.1 · Vägen till dead letter ---- */
+  "vagen-till-dead-letter": `
+<svg viewBox="0 0 880 340" role="img" aria-label="Tre lådor på rad: kön betalning, exchangen ordrar punkt dlx och kön avvisade. Över båda pilarna står samma routing key.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M40 90 Q140 89 239 90 Q240 145 240 199 Q140 202 41 199 Q39 145 40 90 Z"/><path d="M340 90 Q440 88 541 91 Q540 145 540 200 Q440 201 341 199 Q340 145 340 90 Z"/><path d="M639 90 Q740 88 841 90 Q841 145 840 201 Q740 202 641 200 Q640 145 639 90 Z"/><path d="M245 145 Q288 141 328 145"/><path d="M320 139 L333 145 L320 151"/><path d="M545 145 Q588 141 628 145"/><path d="M620 139 L633 145 L620 151"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="288" y="118">betalning</text>
+    <text x="588" y="118">betalning</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="17" fill="currentColor" text-anchor="middle">
+    <text x="140" y="240">betalning</text>
+    <text x="440" y="240">ordrar.dlx</text>
+    <text x="740" y="240">avvisade</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.5">
+    <text x="140" y="266">kö</text>
+    <text x="440" y="266">exchange</text>
+    <text x="740" y="266">kö</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="440" y="320">samma nyckel hela vägen</text>
+  </g>
+</svg>`,
 };

@@ -1,0 +1,479 @@
+---
+title: 'Ack, prefetch och vägen till dead letter'
+description: 'Tillståndet mellan leverans och kvittering — och varför en dead letter-uppsättning kan tappa allt tyst'
+category: 'rabbitmq'
+part: 1
+order: 2
+date: '2026-08-09'
+tags: ['Beginner', 'RabbitMQ', 'Drift']
+---
+
+## Var vi är
+
+Förra delen gav modellen: producenten publicerar till en exchange, bindningen avgör vilka köer som
+får meddelandet, och kön lagrar tills någon ackar.
+
+Kvar stod ordet *ackar*. Vad händer med meddelandet mellan att konsumenten fått det och att den
+kvitterar, och varför kan en konsument som hämtar tusen meddelanden i taget få resten att stå stilla?
+
+Den här delen svarar. Zoomen ligger på konsumentsidan och på vad som händer när något inte går
+igenom. Kluster, federation och shovel ligger utanför.
+
+<Del titel="Kvitteringen" />
+
+## Vad unacked betyder
+
+**Unacked** är tillståndet där ett meddelande är levererat till en konsument men ännu inte kvitterat.
+
+Meddelandet är då varken i kön eller borta. Det är utlånat: kön räknar det inte som väntande, men
+brokern har det kvar och vet vem som håller det.
+
+<Doodle name="unacked-ligger-utlanat" caption="Kortet ligger hos konsumenten. Den streckade linjen tillbaka är brokerns minne av vem som har det." />
+
+Dör konsumenten — processen kraschar, anslutningen bryts — läggs alla dess unacked meddelanden
+tillbaka i kön. Ingenting går förlorat, och det är hela poängen med tillståndet.
+
+Kön rapporterar de två talen var för sig, som `messages_ready` och `messages_unacknowledged`. En kö
+som ser tom ut i det första kan ha hundra utlånade i det andra.
+
+## Vad ack och nack gör
+
+**`basic.ack`** säger att meddelandet är färdigbehandlat. Brokern tar bort det, och tillståndet
+unacked upphör.
+
+**`basic.nack`** säger att det inte gick. Konsumenten anger samtidigt om meddelandet ska läggas
+tillbaka i kön eller inte, och det valet avgör vad som händer sedan.
+
+Med `requeue=true` går meddelandet tillbaka till kön och kan levereras igen — ofta till samma
+konsument, direkt. Med `requeue=false` lämnar det kön för gott, och hamnar i en dead letter-exchange
+om en sådan är satt.
+
+`basic.reject` gör samma sak som `basic.nack` men för ett meddelande i taget. Nack tillkom för att
+kunna avvisa flera på en gång.
+
+## Auto-ack vs manuell ack
+
+Valet görs när konsumenten startar, och det är samma val som meddelandedelens två garantier.
+
+**Auto-ack** kvitterar i samma stund meddelandet skickas till konsumenten. Brokern glömmer det direkt,
+och kraschar konsumenten under behandlingen är meddelandet borta.
+
+**Manuell ack** låter konsumenten kvittera när arbetet är klart. Kraschar den innan dess kommer
+meddelandet tillbaka, och kan behandlas två gånger.
+
+Konsekvensen är att auto-ack ger högst en gång och manuell ack ger minst en gång. Auto-ack är
+dessutom snabbare, eftersom brokern inte behöver hålla reda på något — och det är precis den
+bekvämligheten som gör den farlig i ett flöde som betyder något.
+
+<Callout type="fallgrop">
+Auto-ack tar bort mer än säkerhetsnätet. Den tar också bort **prefetch**, som nästa block handlar om.
+
+Utan ack finns inget att räkna, så brokern skickar allt den har så fort den kan. En konsument med
+auto-ack kan därför få hela kön skickad till sig på en gång, oavsett hur mycket minne den har.
+
+Kombinationen auto-ack och en lång kö är ett av få sätt att få en konsument att dö av att den
+lyckades ansluta.
+</Callout>
+
+## Vad redelivered-flaggan är
+
+**`redelivered`** är en flagga på meddelandet som är sann när det levererats minst en gång förut.
+
+Flaggan säger inte hur många gånger, och den säger inte varför. Den säger bara att det här inte är
+första försöket.
+
+Den är ändå användbar. En konsument som ser `redelivered=true` kan välja en försiktigare väg: logga
+mer, kontrollera om arbetet redan är gjort, eller avvisa direkt i stället för att försöka igen.
+
+Meddelandedelens dedupliceringsnyckel är det som gör den kontrollen möjlig. Flaggan säger att du
+*bör* titta efter; nyckeln är det du tittar med.
+
+<Del titel="Flödet" />
+
+## Vad en channel är
+
+En **channel** är en logisk anslutning inuti en TCP-anslutning till brokern.
+
+En applikation öppnar en connection och sedan flera channels i den. Publicering, konsumtion och
+deklarationer sker alla på en channel.
+
+Det finns eftersom TCP-anslutningar är dyra att öppna och underhålla. Tjugo trådar som var för sig
+behöver prata med brokern delar en anslutning och tar en channel var.
+
+Skälet att den dyker upp här är att nästa inställning sätts per channel, inte per kö eller per
+anslutning.
+
+## Vad prefetch är
+
+**Prefetch** är det antal obekräftade meddelanden en channel får ha samtidigt.
+
+Är prefetch satt till 10 skickar brokern som mest tio meddelanden innan den väntar på en ack. Ackas
+ett skickas nästa.
+
+Inställningen heter `basic.qos` i protokollet och `prefetch_count` i de flesta klienter. Den är
+konsumentens enda broms mot att få mer än den hinner med.
+
+Utan prefetch — värdet 0 — finns ingen gräns alls, och brokern skickar så fort den kan.
+
+## Prefetch 1 vs obegränsad
+
+De två ytterligheterna visar avvägningen tydligast.
+
+**Prefetch 1** ger konsumenten ett meddelande i taget. Arbetet fördelas jämnt mellan konsumenter,
+eftersom den som är klar får nästa — men varje leverans kostar en tur och retur till brokern.
+
+**Obegränsad prefetch** låter brokern skicka allt. Genomströmningen blir hög för en ensam konsument,
+och köns innehåll hamnar i konsumentens minne.
+
+Konsekvensen är att svaret ligger emellan och beror på hur lång behandlingen är. Tar varje meddelande
+sekunder är låg prefetch rätt; tar det millisekunder blir tur och retur-kostnaden det som dominerar.
+
+## Vad som händer utan prefetch
+
+Det här är svaret på frågan förra delen ställde.
+
+Två konsumenter ansluter till samma kö, och kön har tusen meddelanden. Utan prefetch skickar brokern
+allt till den som anslöt först — den är ju redo, och det finns ingen gräns.
+
+Den andra konsumenten står tom medan den första arbetar sig igenom tusen meddelanden. Kön ser
+bearbetad ut, arbetet är i praktiken enkeltrådigt, och att starta fler konsumenter ändrar ingenting.
+
+Symtomet är en kö som töms långsamt medan hälften av konsumenterna är sysslolösa. Ett prefetch-värde
+löser det, och det är den vanligaste inställningen som saknas i ett RabbitMQ-bygge.
+
+<Del titel="Återvändsgränden" />
+
+## Vad en dead letter exchange är
+
+En **dead letter exchange**, DLX, är den exchange dit meddelanden skickas när de lämnar en kö utan
+att ha blivit behandlade.
+
+Den sätts som ett argument på kön — `x-dead-letter-exchange` — och pekar ut ett exchange-namn. Kön
+skickar inte till en annan kö, utan publicerar om meddelandet.
+
+Meddelandedelen beskrev dead letter-kön som platsen dit det som misslyckats för många gånger flyttas.
+RabbitMQ bygger den platsen av delarna från förra delen, och det är därför den heter exchange.
+
+## Varför DLX är en exchange
+
+Det ser omständligt ut att gå via en exchange när målet är en kö. Skälet är att routingen ska gå att
+välja.
+
+<Doodle name="vagen-till-dead-letter" caption="Meddelandet publiceras om, med samma routing key. Därför måste bindningen till höger matcha den." />
+
+Meddelandet publiceras om till DLX:en **med sin ursprungliga routing key**, om inte
+`x-dead-letter-routing-key` sätts. En topic-exchange kan därmed sortera det som misslyckats på samma
+sätt som originalet sorterades.
+
+<Callout type="fallgrop">
+Att meddelandet behåller sin routing key är också den vanligaste orsaken till att en dead
+letter-uppsättning tappar allt tyst.
+
+Sätt `x-dead-letter-exchange` till en topic-exchange vars enda bindning är `avvisad.#`, och skicka
+sedan dit ett meddelande vars routing key är `betalning`. Nyckeln matchar ingen bindning, exchangen
+kastar meddelandet, och det finns ingenting kvar att felsöka.
+
+Uppmätt på RabbitMQ 4.3: huvudkön tömdes, dead letter-kön förblev tom, och ingen del av systemet
+rapporterade något.
+
+Använd en **fanout** som DLX om du inte har ett skäl till annat. Den bryr sig inte om routing key,
+och då kan uppsättningen inte gå sönder på det här sättet.
+</Callout>
+
+## Vad som utlöser dead lettering
+
+Fyra saker, och bara den första är ett aktivt beslut.
+
+**Konsumenten avvisar** med `requeue=false`. Det är det normala sättet att säga att meddelandet inte
+går att behandla.
+
+**Meddelandets TTL löper ut** medan det ligger i kön. Ingen har rört det, och tiden avgjorde.
+
+**Kön är full.** Är `x-max-length` satt trängs det äldsta meddelandet ut när ett nytt kommer in.
+
+**Antalet leveranser överskrids.** Quorum queues har `x-delivery-limit`, och när den nås flyttas
+meddelandet i stället för att levereras igen.
+
+Den fjärde är den som gör poison message-problemet lösbart utan egen kod. Utan en gräns kan ett
+meddelande som alltid misslyckas fastna i en evig runda.
+
+## DLX vs requeue-loop
+
+De två är vad som händer efter ett misslyckande, och skillnaden är om systemet kommer vidare.
+
+**En requeue-loop** uppstår när konsumenten avvisar med `requeue=true`. Meddelandet går tillbaka i
+kön, levereras igen, misslyckas igen — ofta inom millisekunder, och utan paus emellan.
+
+**Dead lettering** flyttar meddelandet ur vägen efter ett bestämt antal försök. Kön fortsätter
+behandlas, och det trasiga ligger kvar att titta på.
+
+Konsekvensen är att `requeue=true` bara hör hemma där felet är känt som tillfälligt — databasen var
+nere en sekund. För allt annat är det ett sätt att bränna processorkraft utan att komma framåt, och
+det är därför en gräns behöver finnas någonstans.
+
+## Vad TTL gör
+
+**TTL**, time to live, är hur länge ett meddelande får ligga i en kö innan det tas bort eller
+dead-letter:as.
+
+Den sätts antingen per kö med `x-message-ttl` eller per meddelande vid publicering. Sätts båda gäller
+den kortaste.
+
+Nyttan är att gammal data slutar vara värd att behandla. En positionsuppdatering från en lastbil är
+ointressant efter en timme, och en TTL gör det till en regel i stället för en bedömning i koden.
+
+Kombinationen TTL och DLX är dessutom det klassiska sättet att bygga en fördröjd retry: låt
+meddelandet ligga i en väntkö med TTL, och låt dess dead letter-exchange peka tillbaka till
+huvudkön.
+
+<Del titel="Hållbarheten" />
+
+## Vad publisher confirms är
+
+**Publisher confirms** är brokerns bekräftelse till producenten att ett meddelande tagits emot och
+tagits om hand.
+
+Utan dem är publicering en enkelriktad handling. Producenten skickar, och vet inte om brokern var
+uppe, om disken var full eller om meddelandet routades.
+
+Med confirms svarar brokern med ett `ack` per meddelande. För ett persistent meddelande i en durable
+kö kommer svaret först när det är skrivet till disk.
+
+Det är producentsidans motsvarighet till konsumentens ack, och den är avstängd som standard. En
+producent som inte slagit på confirms kan inte skilja ett levererat meddelande från ett förlorat.
+
+## Confirms vs durable
+
+De låter som samma löfte och skyddar mot olika saker.
+
+**Durable** är en egenskap hos kön: den finns kvar efter en omstart av brokern. Tillsammans med
+persistent på meddelandet betyder det att innehållet skrivs till disk.
+
+**Confirms** är ett besked till producenten om att det faktiskt skett. Utan besked vet producenten
+inte om skrivningen hann göras innan noden dog.
+
+Konsekvensen är att båda behövs för ett flöde som inte får tappa något. Durable utan confirms är ett
+löfte ingen kontrollerar, och confirms utan durable är en bekräftelse på något som försvinner vid
+nästa omstart.
+
+## Vad quorum queues är
+
+En **quorum queue** är en kötyp som replikeras över flera noder med Raft, och som är avsedd för data
+som inte får försvinna.
+
+Skrivningen räknas som klar när en majoritet av noderna har den. Dör en nod finns kön kvar på de
+andra, med sitt innehåll.
+
+Priset är hastighet och minne. En quorum queue är långsammare än en classic queue, och den är gjord
+för köer som ska vara korta snarare än för miljontals väntande meddelanden.
+
+Deklarerar du en kö utan att ange typ får du fortfarande en classic queue. Quorum är det medvetna
+valet för det som betyder något — och det är också där `x-delivery-limit` finns.
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att sätta prefetch. Det är den enskilt vanligaste inställningen som saknas, och symtomet —
+en kö som töms långsamt medan halva konsumentgruppen är sysslolös — ser ut som ett kapacitetsproblem.
+
+Du kommer också att bygga en dead letter-uppsättning, och den ska testas innan den behövs. Publicera
+ett meddelande, avvisa det, och kontrollera att det faktiskt dyker upp i den andra kön — annars vet
+du inte om routingen håller.
+
+Valet mellan manuell och auto-ack gör du en gång per konsument, och manuell är rätt för allt utom
+mätvärden du kan förlora. Publisher confirms är motsvarande val på andra sidan.
+
+Kluster, federation, shovel och prestandatrimning kan vänta. De blir dina med driftansvar, och de
+bygger alla på det här: ett utlånat meddelande, en gräns för hur många, och en väg ut för det som
+inte går.
+
+## Vanliga nybörjarförväxlingar
+
+Ett unacked meddelande är varken i kön eller borta. Det är utlånat, och kommer tillbaka om
+konsumenten dör.
+
+Auto-ack betyder inte att brokern kvitterar åt dig när du är klar. Den kvitterar när meddelandet
+skickas.
+
+Auto-ack stänger också av prefetch. Utan ack finns inget att räkna, och brokern skickar allt.
+
+`redelivered` säger inte hur många gånger meddelandet levererats. Bara att det inte är första
+gången.
+
+Prefetch sätts per channel, inte per kö och inte per anslutning.
+
+En dead letter exchange är inte en kö. Meddelandet publiceras om, och behöver en bindning för att
+landa någonstans.
+
+Ett dead-letter:at meddelande behåller sin routing key. Matchar den ingen bindning försvinner det en
+andra gång, tyst.
+
+`requeue=true` är inte en retry-strategi. Utan gräns är det en slinga utan paus.
+
+Durable är inte samma sak som confirms. Det ena är att kön överlever, det andra att producenten får
+veta.
+
+## Prova själv
+
+Övningen bygger en dead letter-uppsättning och utlöser den på två sätt: genom att avvisa ett
+meddelande, och genom att låta ett annat bli för gammalt. Allt körs i en slängbar container.
+
+```bash
+docker run -d --name rabbit-ovning \
+  -p 5672:5672 -p 15672:15672 \
+  rabbitmq:4-management
+docker exec -it rabbit-ovning bash
+```
+
+Vänta tjugo sekunder. Bygg först vägen ut — en fanout-exchange och en kö bunden till den:
+
+```bash
+rabbitmqadmin declare exchange \
+  --name ordrar.dlx --type fanout
+rabbitmqadmin declare queue --name avvisade
+rabbitmqadmin declare binding \
+  --source ordrar.dlx --destination-type queue \
+  --destination avvisade --routing-key ""
+```
+
+Skapa sedan huvudkön och peka ut exchangen som dess dead letter-väg:
+
+```bash
+rabbitmqadmin declare queue --name betalning \
+  --arguments '{"x-dead-letter-exchange":"ordrar.dlx"}'
+rabbitmqadmin publish message \
+  --routing-key betalning --payload "order-1001"
+rabbitmqctl -q list_queues name messages
+```
+
+```
+name	messages
+avvisade	0
+betalning	1
+```
+
+Avvisa nu meddelandet utan att lägga tillbaka det:
+
+```bash
+rabbitmqadmin get messages --queue betalning \
+  --ack-mode reject_requeue_false
+rabbitmqctl -q list_queues name messages
+```
+
+```
+name	messages
+avvisade	1
+betalning	0
+```
+
+**Meddelandet bytte kö.** Det lämnade `betalning`, publicerades om till `ordrar.dlx`, och landade i
+`avvisade` via bindningen. Gör nu samma sak utan att röra meddelandet alls — låt tiden göra jobbet:
+
+```bash
+rabbitmqadmin declare queue --name kortlivad \
+  --arguments '{"x-message-ttl": 3000,
+    "x-dead-letter-exchange": "ordrar.dlx"}'
+rabbitmqadmin publish message \
+  --routing-key kortlivad --payload "order-1002"
+rabbitmqctl -q list_queues name messages
+```
+
+Kön `kortlivad` har ett meddelande. Vänta fem sekunder och fråga igen:
+
+```bash
+rabbitmqctl -q list_queues name messages
+```
+
+```
+name	messages
+kortlivad	0
+avvisade	2
+```
+
+**Ingen konsument var inblandad.** TTL:n löpte ut, och kön flyttade meddelandet själv. Städa sedan:
+
+```bash
+exit
+docker rm -f rabbit-ovning
+```
+
+Tre saker kan förvirra. **Bindningen till en fanout behöver ingen routing key** — `--routing-key ""`
+räcker, eftersom en fanout inte tittar på den. **Ett dead-letter:at meddelande behåller sin
+ursprungliga routing key**, så hade `ordrar.dlx` varit en topic-exchange med bindningen `avvisad.#`
+hade `betalning` inte matchat, och meddelandet hade försvunnit i tysthet — uppmätt på RabbitMQ 4.3
+blev både huvudkön och dead letter-kön tomma. Och **brokern behöver tjugo sekunder** efter
+`docker run` innan kommandona går igenom.
+
+<Callout type="kom-ihag">
+- **Unacked** är utlånat: varken i kön eller borta. Dör konsumenten kommer meddelandet tillbaka.
+- **Auto-ack** kvitterar vid leverans och ger högst en gång. **Manuell ack** ger minst en gång.
+- Auto-ack **stänger av prefetch** — utan ack finns inget att räkna.
+- **Prefetch** är antalet obekräftade meddelanden per **channel**. Utan den kan en konsument ta allt.
+- En **dead letter exchange** är en exchange. Meddelandet publiceras om och behöver en bindning.
+- Det **behåller sin routing key** — matchar den ingen bindning försvinner det en andra gång.
+- Fyra saker utlöser dead lettering: avvisning, TTL, full kö och överskriden leveransgräns.
+- `requeue=true` utan gräns är en slinga utan paus, inte en retry-strategi.
+- **Durable** betyder att kön överlever. **Confirms** betyder att producenten får veta.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Kön visar 0 väntande meddelanden, men arbetet är inte gjort. Var är de?",
+      a: "Troligen unacked — levererade till en konsument men ännu inte kvitterade. Kön rapporterar `messages_ready` och `messages_unacknowledged` var för sig, och ett utlånat meddelande räknas inte som väntande. Dör konsumenten läggs de tillbaka automatiskt.",
+    },
+    {
+      q: "Varför är auto-ack farligare än bara \"du kan tappa ett meddelande\"?",
+      a: "Därför att den också stänger av prefetch. Utan ack finns inget för brokern att räkna, så den skickar allt den har så fort den kan. En konsument med auto-ack mot en lång kö kan få hela köns innehåll i sitt minne och dö av det.",
+    },
+    {
+      q: "Två konsumenter läser samma kö, men bara den ena arbetar. Vad saknas?",
+      a: "Ett prefetch-värde. Utan gräns skickar brokern allt till den konsument som var redo först, och den andra står tom tills den första betat av hela högen. Arbetet blir enkeltrådigt i praktiken, och fler konsumenter hjälper inte.",
+    },
+    {
+      q: "Du har satt `x-dead-letter-exchange` men den andra kön förblir tom. Vad kontrollerar du?",
+      a: "Bindningen och routing key. Meddelandet publiceras om till exchangen med sin ursprungliga routing key, så en topic-exchange vars bindning inte matchar kastar meddelandet en andra gång — tyst, utan att något rapporteras. En fanout som DLX tar bort hela den felkällan.",
+    },
+    {
+      q: "När är `requeue=true` rätt val?",
+      a: "När felet är känt som tillfälligt — databasen var nere en sekund, ett nätverksanrop hann inte fram. För allt annat blir det en slinga: meddelandet läggs tillbaka, levereras igen och misslyckas igen, ofta inom millisekunder och utan paus. Då hör det hemma i en dead letter-exchange efter ett bestämt antal försök.",
+    },
+    {
+      q: "Kön är durable och meddelandet persistent. Räcker det för att inget ska tappas?",
+      a: "Nej. Utan publisher confirms får producenten aldrig veta om brokern hann skriva meddelandet innan noden dog. Durable och persistent handlar om att data överlever; confirms om att avsändaren får besked. Ett flöde som inte får tappa något behöver båda.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- Unacked är tillståndet mellan leverans och kvittering: meddelandet är utlånat, inte borta.
+- Dör konsumenten läggs dess unacked meddelanden tillbaka i kön.
+- `basic.ack` tar bort meddelandet. `basic.nack` avvisar, med eller utan requeue.
+- Auto-ack kvitterar vid leverans och ger högst en gång; manuell ack ger minst en gång.
+- Auto-ack stänger också av prefetch, eftersom det inte finns någon ack att räkna.
+- `redelivered` säger att meddelandet levererats förut, inte hur många gånger.
+- En channel är en logisk anslutning inuti en TCP-anslutning, och prefetch sätts per channel.
+- Prefetch är antalet obekräftade meddelanden en channel får ha samtidigt.
+- Utan prefetch kan en konsument få hela kön medan de andra står sysslolösa.
+- En dead letter exchange är en exchange — meddelandet publiceras om och behöver en bindning.
+- Meddelandet behåller sin routing key, så en icke-matchande bindning kastar det en andra gång.
+- Dead lettering utlöses av avvisning utan requeue, TTL, full kö eller överskriden leveransgräns.
+- `requeue=true` utan gräns är en slinga utan paus.
+- TTL sätts per kö eller per meddelande, och den kortaste gäller.
+- TTL plus DLX är det klassiska sättet att bygga en fördröjd retry.
+- Publisher confirms är brokerns besked till producenten, och är avstängt som standard.
+- Durable gäller att kön överlever; confirms att producenten får veta att skrivningen skedde.
+- Quorum queues replikeras med Raft och har `x-delivery-limit`. Classic är fortfarande standard.
+
+## Nästa del
+
+Därmed står båda brokrarna: Kafkas logg som ligger kvar, och RabbitMQs kö som töms — med
+kvitteringen, gränsen och vägen ut.
+
+Meddelandeserien öppnade med en fråga om varför system slutar vänta på varandra. Svaret har nu tre
+lager: modellen, garantierna, och två verktyg som löser dem med rakt motsatt utgångspunkt.
+
+Vad som kommer härnäst avgör du. Klungan är komplett, och varje senare serie kan ankra hit när ett
+system ska sluta ringa och börja skicka.

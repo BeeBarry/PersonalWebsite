@@ -2259,6 +2259,40 @@ def alla():
       + "\n" + txt([(440,227,"ett ord"),(552,327,"noll eller flera")],13,
                    ' opacity="0.62"') + "\n</svg>")
 
+    # 111 — RabbitMQ 1.1 · Unacked är utlånat
+    # Kön ritas med en TOM plats där det utlånade kortet låg. Ritas platsen
+    # igenfylld ser meddelandet ut att finnas på två ställen; ritas den
+    # streckad-och-tom säger bilden att kön inte räknar det, men minns det.
+    tomplats = f'<path d="{w(215,115,110,110)}" stroke-dasharray="7 8" opacity="0.4"/>'
+    D['unacked-ligger-utlanat']=(
+      '<svg viewBox="0 0 880 340" role="img" aria-label="En kö med ett kort och en streckad tom '
+      'plats. En heldragen pil går till en konsument som håller kortet, och en streckad linje går '
+      'tillbaka från konsumenten till kön.">\n'
+      + G % (f'<path d="{w(60,90,300,160)}"/><path d="{w(85,115,110,110)}"/>' + tomplats
+             + f'<path d="{w(600,90,220,160)}"/><path d="{w(640,115,140,110)}"/>'
+             + '<path d="M366 142 Q480 138 590 142"/>' + arrow(596, 142)
+             + '<path d="M594 208 Q480 214 368 208" stroke-dasharray="7 8" opacity="0.45"/>')
+      + "\n" + txt([(210,290,"kö"),(710,290,"konsument")],18.5)
+      + "\n" + txt([(480,326,"kön räknar det inte, brokern minns det")],13,
+                   ' opacity="0.62"') + "\n</svg>")
+
+    # 112 — RabbitMQ 1.1 · Vägen till dead letter
+    # Nyckeln står ovanför BÅDA pilarna, med samma text. Det är hela poängen:
+    # meddelandet publiceras om oförändrat, och därför måste bindningen till
+    # höger matcha nyckeln som sattes till vänster.
+    D['vagen-till-dead-letter']=(
+      '<svg viewBox="0 0 880 340" role="img" aria-label="Tre lådor på rad: kön betalning, '
+      'exchangen ordrar punkt dlx och kön avvisade. Över båda pilarna står samma routing key.">\n'
+      + G % ("".join(f'<path d="{w(x,90,200,110)}"/>' for x in (40,340,640))
+             + '<path d="M245 145 Q288 141 328 145"/>' + arrow(333, 145)
+             + '<path d="M545 145 Q588 141 628 145"/>' + arrow(633, 145))
+      + "\n" + txt([(288,118,"betalning"),(588,118,"betalning")],13,' opacity="0.62"')
+      + "\n" + txt([(140,240,"betalning"),(440,240,"ordrar.dlx"),(740,240,"avvisade")],17)
+      + "\n" + txt([(140,266,"kö"),(440,266,"exchange"),(740,266,"kö")],13,
+                   ' opacity="0.5"')
+      + "\n" + txt([(440,320,"samma nyckel hela vägen")],15,' opacity="0.62"')
+      + "\n</svg>")
+
     return D
 
 if __name__ == "__main__":
