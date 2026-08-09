@@ -1987,4 +1987,36 @@ export const DOODLES: Record<string, string> = {
     <text x="670" y="346">läst ligger kvar</text>
   </g>
 </svg>`,
+  /* ---- Meddelanden 1.1 · Retry och dead letter ---- */
+  "forsoken-och-dead-letter": `
+<svg viewBox="0 0 880 460" role="img" aria-label="En låda märkt kö och en märkt konsument, med tre streckade bågar emellan. Från kön går en heldragen pil ner till en låda märkt dead letter.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M60 59 Q170 59 279 60 Q282 110 279 160 Q170 160 60 160 Q60 110 60 59 Z"/><path d="M599 59 Q710 60 821 60 Q820 110 820 159 Q710 161 601 160 Q599 110 599 59 Z"/><path d="M285 85 Q440 63 588 85" stroke-dasharray="7 8" opacity="0.5"/><g opacity="0.5"><path d="M581 79 L594 85 L581 91"/></g><path d="M285 110 Q440 88 588 110" stroke-dasharray="7 8" opacity="0.5"/><g opacity="0.5"><path d="M581 104 L594 110 L581 116"/></g><path d="M285 135 Q440 113 588 135" stroke-dasharray="7 8" opacity="0.5"/><g opacity="0.5"><path d="M581 129 L594 135 L581 141"/></g><path d="M170 215 Q173 250 170 284"/><path d="M164 277 L170 290 L176 277"/><path d="M60 300 Q170 298 279 300 Q282 345 280 389 Q170 392 60 391 Q58 345 60 300 Z"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="440" y="44">tre försök</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="170" y="190">kö</text>
+    <text x="710" y="190">konsument</text>
+    <text x="170" y="420">dead letter</text>
+  </g>
+</svg>`,
+
+  /* ---- Meddelanden 1.1 · Retryn som bryter ordningen ---- */
+  "ordningen-som-bryts": `
+<svg viewBox="0 0 880 380" role="img" aria-label="Fyra kort i rad märkta 1, 3 och 4, med en streckad tom plats där kort 2 låg. En båge går från den tomma platsen till ett kort märkt 2 längst till höger.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M89 149 Q140 149 189 149 Q192 210 190 269 Q140 272 90 270 Q88 210 89 149 Z"/><path d="M329 149 Q380 148 430 149 Q432 210 430 271 Q380 271 331 269 Q330 210 329 149 Z"/><path d="M450 150 Q500 150 549 151 Q551 210 550 270 Q500 270 450 271 Q449 210 450 150 Z"/><path d="M691 150 Q740 150 790 150 Q790 210 790 270 Q740 271 689 270 Q690 210 691 150 Z"/><path d="M211 149 Q260 150 310 150 Q312 210 311 270 Q260 270 209 270 Q209 210 211 149 Z" stroke-dasharray="7 8" opacity="0.4"/><path d="M260 142 Q500 52 736 140"/><path d="M734 133 L740 146 L746 133"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="21" fill="currentColor" text-anchor="middle">
+    <text x="140" y="222">1</text>
+    <text x="380" y="222">3</text>
+    <text x="500" y="222">4</text>
+    <text x="740" y="222">2</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="440" y="330">skickat 1 2 3 4  ·  utfört 1 3 4 2</text>
+  </g>
+</svg>`,
 };

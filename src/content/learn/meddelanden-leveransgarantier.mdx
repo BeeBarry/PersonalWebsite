@@ -1,0 +1,470 @@
+---
+title: 'Kvitteringen, dubbletten och ordningen'
+description: 'Vad som händer när konsumenten kraschar mitt i arbetet — och varför exakt en gång är svårare än det låter'
+category: 'meddelanden'
+part: 1
+order: 2
+date: '2026-08-09'
+tags: ['Beginner', 'Meddelanden', 'Idempotens']
+---
+
+## Var vi är
+
+Förra delen byggde modellen: brokern tar emot, kön delar ut, loggen ligger kvar, och eventet vänder
+beroendet. Den slutade i en fråga.
+
+Konsumenten hämtade meddelandet och kraschade mitt i arbetet. Får kunden inget kvitto, eller två?
+
+Den här delen svarar. Zoomen ligger på vad som händer runt ett enskilt meddelande: kvitteringen,
+omförsöket och ordningen. Kafka och RabbitMQ har egna ord för samma sak, och de orden tar
+respektive serie.
+
+<Del titel="Kvitteringen" />
+
+## Vad en ack är
+
+En **ack** är konsumentens besked till brokern om att meddelandet är färdigbehandlat och kan tas
+bort.
+
+Ordet är kort för *acknowledgement*. Brokern håller kvar meddelandet tills acken kommer, och lämnar
+ut det igen om den uteblir.
+
+Det är hela mekaniken bakom att ett meddelande inte tappas när en konsument kraschar. Brokern
+antar aldrig att arbetet är gjort — den väntar på beskedet.
+
+Uteblir acken kallas meddelandet **redelivered** när det kommer tillbaka. Många brokrar sätter en
+flagga på det, så konsumenten kan se att den fått meddelandet förut.
+
+## Vad som avgör garantin
+
+Konsumenten gör två saker: arbetet, och kvitteringen. **Ordningen mellan dem avgör vad som händer
+vid en krasch**, och det är det enda valet som styr garantin.
+
+<Split
+  leftTitle="Kvittera först"
+  rightTitle="Arbeta först"
+  leftTone="neutral"
+  rightTone="neutral"
+  caption="Samma två steg, omkastade. Kraschen mellan dem ger motsatta problem."
+>
+  <div slot="left">
+
+  Konsumenten ackar direkt när meddelandet hämtats, och arbetar sedan.
+
+  Kraschar den mellan stegen är meddelandet redan borta ur kön.
+
+  Arbetet blir aldrig gjort, och ingen vet om det.
+
+  </div>
+  <div slot="right">
+
+  Konsumenten arbetar först och ackar när arbetet är klart.
+
+  Kraschar den mellan stegen kommer meddelandet tillbaka.
+
+  Arbetet görs om — och det som redan hann bli gjort blir gjort två gånger.
+
+  </div>
+</Split>
+
+Det finns inget tredje läge där ingen av riskerna finns. Det är därför garantierna nedan är två, och
+inte en.
+
+## Vad högst en gång betyder
+
+**Högst en gång**, *at-most-once*, betyder att meddelandet levereras noll eller en gång. Det tappas
+hellre än dubbleras.
+
+Det är kvittera-först-varianten. Ingen omsändning sker, eftersom brokern redan glömt meddelandet.
+
+Garantin är rätt val när datan kommer igen ändå. En temperaturmätning var tionde sekund behöver
+ingen omsändning — nästa mätning är redan på väg.
+
+IoT-serien mötte den som MQTT:s QoS 0, där skälet var radiotid och batteri. Skälet i ett
+serversystem är ett annat: en dubblett kostar mer än en förlorad rad.
+
+## Vad minst en gång betyder
+
+**Minst en gång**, *at-least-once*, betyder att meddelandet levereras en eller flera gånger. Det
+dubbleras hellre än tappas.
+
+Det är arbeta-först-varianten, och det är standardläget i praktiskt taget varje broker. Uteblir
+acken skickas meddelandet om.
+
+Garantin är rätt val när arbetet betyder något: en betalning, en order, ett mejl. Att göra om är
+nästan alltid bättre än att aldrig göra.
+
+Priset är dubbletter, och det priset betalas i konsumenten. Nästa block handlar om hur.
+
+## Högst en gång vs minst en gång
+
+Valet står nästan alltid mellan de två, och frågan som avgör är vad ett fel kostar.
+
+**Högst en gång** förlorar hellre data. Väljs när nästa meddelande gör det förlorade ointressant, och
+när en dubblett skulle synas för en användare.
+
+**Minst en gång** dubblerar hellre. Väljs när arbetet inte får utebli, och den lägger därmed en
+uppgift på konsumenten: att tåla att få samma meddelande igen.
+
+Konsekvensen är att valet inte är en inställning du gör en gång för hela systemet. Det avgörs per
+flöde, av vad meddelandet betyder.
+
+## Vad exakt en gång betyder
+
+**Exakt en gång**, *exactly-once*, betyder att meddelandet levereras och behandlas precis en gång —
+varken tappat eller dubblerat.
+
+Det låter som det självklara valet, och det är därför ordet står i så många produktblad.
+
+Svårigheten är att brokern och din databas är två skilda system. SQL-delen visade att en transaktion
+är atomär — allt eller inget — men den atomiciteten gäller inuti en databas.
+
+Att skriva en rad *och* acka ett meddelande är två skrivningar i två system. Kraschen kan inträffa
+mellan dem, och ingen av dem vet om den andra.
+
+<Callout type="fallgrop">
+Läs alltid vad "exactly-once" gäller i just det verktyget. Nästan alltid gäller det brokerns egen
+sträcka: att meddelandet skrivs en gång i brokern, eller att en läsning och en skrivning *inuti
+samma broker* sker atomärt.
+
+Det som ligger utanför är din konsument. Skriver den till en databas, anropar ett betalsystem eller
+skickar ett mejl är den sträckan inte med i garantin.
+
+IoT-serien beskrev QoS 2 som exakt en gång, och det stämmer för den sträcka MQTT ansvarar för:
+mellan klient och broker. Det är samma avgränsning, och den är lätt att läsa förbi.
+</Callout>
+
+<Del titel="Dubbletten" />
+
+## Vad en idempotent konsument är
+
+En **idempotent konsument** är en konsument där det inte gör någon skillnad om samma meddelande
+behandlas en gång eller fem.
+
+Nätverksdelen definierade *idempotent* som att fler anrop ger samma slutläge som ett, och Terraform-
+och Ansible-serierna använde samma egenskap på infrastruktur. Här flyttar den till mottagarsidan av
+en kö.
+
+Poängen är att egenskapen är billigare att bygga än exakt en gång är att garantera. Du behöver inte
+förhindra dubbletten — det räcker att den andra gången inte gör något.
+
+`Sätt orderstatus till betald` är idempotent. `Öka saldot med 100` är det inte. Skillnaden ligger i
+formuleringen, inte i tekniken.
+
+## Vad en dedupliceringsnyckel är
+
+En **dedupliceringsnyckel** är ett värde som identifierar meddelandet, så att konsumenten kan känna
+igen ett den redan behandlat.
+
+Konsumenten sparar nyckeln när arbetet är klart, och kontrollerar den innan nästa arbete. Är nyckeln
+redan sparad hoppar den över och ackar direkt.
+
+Nyckeln ska sättas av **producenten**, inte av brokern. Ett order-id följer meddelandet genom
+omsändningar och genom en broker som bytts ut; ett id brokern hittar på gör inte det.
+
+<Callout type="sa-gor-du" title="Spara nyckeln i samma transaktion som arbetet">
+Kontrollen hjälper bara om nyckeln och arbetet skrivs tillsammans. Skrivs de var för sig kan
+kraschen inträffa mellan dem, och då är du tillbaka i samma problem ett steg längre in.
+
+Ligger arbetet i en databas: skriv raden och nyckeln i en och samma transaktion. Då gäller SQL-delens
+allt-eller-inget för båda, och kontrollen blir pålitlig.
+</Callout>
+
+## Exakt en gång vs idempotens
+
+De två löser samma problem från motsatt håll, och blandas ihop i nästan varje diskussion.
+
+**Exakt en gång** försöker se till att meddelandet aldrig behandlas två gånger. Det kräver att
+brokern och konsumentens lagring samordnas, och garantin gäller bara så långt den samordningen når.
+
+**Idempotens** accepterar att meddelandet kan behandlas två gånger, och ser till att det inte spelar
+någon roll. Ansvaret ligger hos konsumenten, och det slutar inte fungera för att en broker byts ut.
+
+Konsekvensen är att den praktiska lösningen är den andra. Team som bygger på minst en gång plus
+idempotenta konsumenter får något som håller — och det är därför det är standardsvaret på frågan hur
+man undviker dubbletter.
+
+<Del titel="Felet" />
+
+## Vad en retry är
+
+En **retry** är brokerns eller konsumentens nya försök att behandla ett meddelande som misslyckats.
+
+Uteblir acken lämnas meddelandet ut igen. Det är samma mekanism som ger dubbletter, sedd från andra
+hållet: den finns för att fel oftast är tillfälliga.
+
+Ett omförsök ska vänta, och vänta längre för varje gång. API-delen gick igenom exponentiell backoff
+och jitter, och samma regler gäller här — en konsument som försöker om direkt i en snäv slinga
+förvandlar ett tillfälligt fel till en överbelastning.
+
+Skillnaden mot ett HTTP-anrop är att här finns ingen som väntar på svaret. Ingenting blir långsamt
+och märks, vilket är precis varför gränsen måste sättas i förväg.
+
+## Vad ett poison message är
+
+Ett **poison message** är ett meddelande som misslyckas varje gång, oavsett hur många försök som
+görs.
+
+Orsaken är sällan tillfällig. Fältet saknas, JSON-strukturen är trasig, eller så pekar ordern på en
+produkt som inte finns.
+
+Utan en gräns fastnar systemet i en slinga: samma meddelande hämtas, misslyckas, återlämnas och
+hämtas igen. I en kö som bevarar ordning står dessutom allt bakom det still.
+
+Det är den vanligaste orsaken till att en konsument ser ut att arbeta hårt utan att något blir
+gjort.
+
+## Vad en dead letter-kö är
+
+En **dead letter-kö** är en separat kö dit meddelanden flyttas när de misslyckats ett bestämt antal
+gånger.
+
+Meddelandet lämnar därmed huvudflödet. Resten av kön kan behandlas, och det trasiga meddelandet
+finns kvar att titta på.
+
+<Doodle name="forsoken-och-dead-letter" caption="Tre streckade försök som inte tog. Den heldragna pilen ner är beslutet att sluta försöka." />
+
+Kön ska larmas på. Ett meddelande i dead letter-kön betyder att någon behöver läsa det, och
+tystnaden därifrån är det som gör att fel upptäcks veckor senare.
+
+## Retry vs dead letter
+
+De hör ihop och gör olika saker, och gränsen mellan dem är ett tal du väljer.
+
+**En retry** är antagandet att felet är tillfälligt. Databasen var nere en sekund, nätverket hackade,
+tjänsten startade om.
+
+**Dead letter** är slutsatsen att felet inte är tillfälligt. Efter ett bestämt antal försök flyttas
+meddelandet undan i stället för att fortsätta kosta.
+
+Konsekvensen är att båda behövs, och att talet däremellan är en avvägning. Tre försök är ett vanligt
+utgångsläge; noll försök gör tillfälliga fel till incidenter, och obegränsat antal gör ett trasigt
+meddelande till en oändlig slinga.
+
+<Del titel="Ordningen" />
+
+## Vad ordning betyder i en kö
+
+**Ordning** betyder att meddelanden behandlas i samma följd som de skickades.
+
+Det låter som en självklar egenskap, och det är den nästan aldrig. En kö levererar i ordning, men
+*behandlingen* sker i den takt konsumenterna hinner.
+
+Två konsumenter på samma kö hämtar var sitt meddelande samtidigt. Blir den ena klar först är arbetet
+utfört i omvänd ordning, trots att kön var perfekt sorterad.
+
+Därför är frågan aldrig om kön har ordning. Frågan är om ditt flöde tål att den bryts.
+
+## Retryn som bryter ordningen
+
+Ett omförsök flyttar meddelandet bakåt i tiden, och det är den mest förvånande av konsekvenserna i
+den här delen.
+
+Meddelande 2 misslyckas och skickas om. Under tiden hinner 3 och 4 behandlas. När 2 kommer tillbaka
+utförs det efter dem.
+
+<Doodle name="ordningen-som-bryts" caption="Kortet lyfts ut vid andra platsen och läggs tillbaka sist. Bågen är vägen det tog." />
+
+`OrderAvbruten` som behandlas före `OrderLagd` är det klassiska resultatet. Ordern skapas efter att
+avbeställningen hanterats, och blir kvar.
+
+Motmedlet är att göra konsumenten oberoende av ordningen: låt meddelandet bära ett tidsvärde eller
+ett versionsnummer, och ignorera det som är äldre än det du redan sett.
+
+## Ordning vs genomströmning
+
+De två drar åt olika håll, och du kan inte maximera båda.
+
+**Ordning** kräver att ett meddelande behandlas färdigt innan nästa börjar. En konsument, ett
+meddelande i taget.
+
+**Genomströmning** kräver att flera meddelanden behandlas samtidigt. Fler konsumenter, mer parallellt
+arbete, och därmed ingen garanterad följd.
+
+Konsekvensen är att lösningen är att dela upp. Ordning behövs sällan över *hela* flödet, utan per
+kund eller per order — och då kan meddelanden med samma nyckel gå till samma konsument medan resten
+går parallellt.
+
+Det är precis vad Kafkas partitioner gör, och därför är det den serien som tar mekaniken.
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att skriva konsumenter som får samma meddelande två gånger, och den dagen kommer utan
+förvarning. Det du gör oftast är att välja en dedupliceringsnyckel och lägga den i samma transaktion
+som arbetet.
+
+Nästan lika ofta ställer du in två tal: hur många försök som görs, och hur länge det väntas mellan
+dem. Tre försök med växande väntetid är ett rimligt utgångsläge, och det är värt att sätta medvetet
+i stället för att ärva verktygets standard.
+
+Det tredje du kommer att göra är att larma på dead letter-kön. En kö som ingen tittar i är samma sak
+som ingen felhantering alls.
+
+Transaktionell utsändning, outbox-mönstret och Kafkas transaktioner kan vänta. De löser den sista
+sträckan mellan broker och databas, och de blir begripliga först när du sett varför minst en gång
+plus idempotens räcker så långt.
+
+## Vanliga nybörjarförväxlingar
+
+En ack betyder inte att arbetet lyckades. Den betyder att konsumenten säger sig vara klar med
+meddelandet.
+
+Minst en gång är inte ett fel i brokern. Det är den garanti nästan alla brokrar ger, och dubbletten
+är priset för att inget tappas.
+
+Exakt en gång tar inte bort behovet av idempotens. Garantin gäller sträckan brokern ansvarar för,
+inte din databas eller ditt betalsystem.
+
+En idempotent konsument hindrar inte dubbletten. Den gör att den andra behandlingen inte ändrar
+något.
+
+En dedupliceringsnyckel ska inte komma från brokern. Producentens id följer med genom omsändningar
+och genom ett byte av broker.
+
+En retry-slinga utan väntan är inte robusthet. Den gör ett tillfälligt fel till en överbelastning.
+
+En kö som levererar i ordning ger inte behandling i ordning. Två konsumenter räcker för att bryta
+den.
+
+## Prova själv
+
+Övningen bygger vidare på brevlådan från förra delen, och visar båda garantierna med `cat` och `rm` i
+olika ordning. Ingen broker behövs.
+
+```bash
+mkdir -p ~/ack-ovning/brevlada && cd ~/ack-ovning
+echo order-1001 > brevlada/001.msg
+echo order-1002 > brevlada/002.msg
+echo order-1003 > brevlada/003.msg
+```
+
+Kör en konsument som **arbetar först** och kraschar innan kvitteringen. Arbetet är att skriva ordern
+till en fil:
+
+```bash
+cat brevlada/001.msg >> utfort.txt
+ls brevlada
+```
+
+Meddelandet ligger kvar, eftersom `rm` aldrig kördes. Brokern hade gjort samma sak: utan ack kommer
+meddelandet tillbaka. Så gör omförsöket, den här gången hela vägen:
+
+```bash
+f=brevlada/001.msg
+cat "$f" >> utfort.txt && rm "$f"
+cat utfort.txt
+```
+
+```
+order-1001
+order-1001
+```
+
+**Två rader.** Det är minst en gång: ingenting tappades, och ordern behandlades två gånger. Prova nu
+motsatt ordning — **kvittera först**, krascha före arbetet:
+
+```bash
+rm brevlada/002.msg
+cat utfort.txt
+```
+
+`order-1002` finns varken i kön eller i `utfort.txt`. Det är högst en gång: ingen dubblett, och
+inget spår av att arbetet skulle ha gjorts.
+
+Gör slutligen konsumenten idempotent. Nyckeln är meddelandets innehåll, och kontrollen sker före
+arbetet:
+
+```bash
+m=$(cat brevlada/003.msg)
+grep -qxF "$m" utfort.txt || echo "$m" >> utfort.txt
+grep -qxF "$m" utfort.txt || echo "$m" >> utfort.txt
+cat utfort.txt
+```
+
+```
+order-1001
+order-1001
+order-1003
+```
+
+Raden kördes **två gånger** och `order-1003` finns ändå bara en. Det är hela idempotensen: den andra
+behandlingen kontrollerade nyckeln och gjorde ingenting.
+
+```bash
+cd ~ && rm -rf ~/ack-ovning
+```
+
+Tre saker kan förvirra. `grep -qxF` matchar hela raden ordagrant — utan `-x` hade `order-100` matchat
+`order-1001` och hoppat över fel meddelande. De två `order-1001`-raderna kommer från det första
+steget och är alltså den dubblett övningen skapade, inte ett fel. Och nyckeln ligger här i samma fil
+som arbetet, vilket är ovanligt tur: i ett riktigt system måste de skrivas i samma transaktion, annars
+flyttas kraschen bara ett steg.
+
+<Callout type="kom-ihag">
+- En **ack** säger att konsumenten är klar med meddelandet, inte att arbetet lyckades.
+- **Ordningen mellan arbete och ack avgör garantin.** Det finns inget läge utan risk.
+- **Högst en gång** tappar hellre. **Minst en gång** dubblerar hellre, och är standard.
+- **Exakt en gång** gäller den sträcka brokern äger — inte din databas eller ditt betalsystem.
+- En **idempotent konsument** gör att den andra behandlingen inte ändrar något. Det är svaret.
+- **Dedupliceringsnyckeln sätts av producenten** och skrivs i samma transaktion som arbetet.
+- Efter ett bestämt antal försök hör meddelandet hemma i en **dead letter-kö** — som ska larmas på.
+- En **retry flyttar meddelandet bakåt i tiden** och bryter ordningen för det.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Konsumenten ackar direkt när den hämtat meddelandet och kraschar sedan. Vad har hänt?",
+      a: "Meddelandet är borta ur kön och arbetet blev aldrig gjort. Det är högst en gång — brokern har redan glömt meddelandet, så ingen omsändning sker. Hade konsumenten arbetat först och ackat sist hade meddelandet kommit tillbaka i stället, med en dubblett som risk.",
+    },
+    {
+      q: "Varför räcker det inte att välja en broker som lovar exakt en gång?",
+      a: "Garantin gäller nästan alltid brokerns egen sträcka — att meddelandet skrivs en gång i brokern, eller att läsning och skrivning inuti samma broker sker atomärt. Din konsument som skriver till en databas eller anropar ett betalsystem ligger utanför. Brokern och databasen är två system, och kraschen kan inträffa mellan de två skrivningarna.",
+    },
+    {
+      q: "Vilket av kommandona är idempotent: `Sätt orderstatus till betald` eller `Öka saldot med 100`?",
+      a: "Det första. Att sätta samma status två gånger ger samma slutläge som en gång. Att öka saldot två gånger ger 200 i stället för 100. Skillnaden ligger i hur arbetet är formulerat, inte i vilken teknik som används.",
+    },
+    {
+      q: "Varför ska dedupliceringsnyckeln komma från producenten och inte från brokern?",
+      a: "Producentens id — till exempel ett order-id — följer med meddelandet genom omsändningar och genom ett byte av broker. Ett id som brokern hittar på kan bli ett nytt vid omsändning, och då känner konsumenten inte igen meddelandet den redan behandlat.",
+    },
+    {
+      q: "En konsument arbetar oavbrutet men ingenting blir gjort. Vad misstänker du?",
+      a: "Ett poison message: ett meddelande som misslyckas varje gång, oavsett antal försök. Utan en gräns hämtas det, misslyckas, återlämnas och hämtas igen i en slinga — och i en kö som bevarar ordning står allt bakom det still. Motmedlet är ett tak för antalet försök och en dead letter-kö.",
+    },
+    {
+      q: "`OrderAvbruten` behandlades före `OrderLagd`, trots att de skickades i rätt ordning. Hur?",
+      a: "Två förklaringar är möjliga. Parallella konsumenter hämtar var sitt meddelande och blir klara i olika takt. En retry flyttar meddelandet bakåt i tiden, så att senare meddelanden hinner före. Motmedlet är detsamma: låt meddelandet bära ett versionsnummer eller tidsvärde, och ignorera det som är äldre än det du redan sett.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- En ack är konsumentens besked att meddelandet är färdigbehandlat och kan tas bort.
+- Uteblir acken lämnas meddelandet ut igen, ofta märkt som redelivered.
+- Ordningen mellan arbete och ack avgör garantin. Något tredje läge utan risk finns inte.
+- Högst en gång levererar noll eller en gång, och tappar hellre än dubblerar.
+- Minst en gång levererar en eller flera gånger, dubblerar hellre än tappar, och är standard.
+- Valet mellan dem görs per flöde, utifrån vad ett fel kostar.
+- Exakt en gång gäller den sträcka brokern äger — konsumentens databas ligger utanför.
+- En idempotent konsument gör att den andra behandlingen inte ändrar något.
+- En dedupliceringsnyckel sätts av producenten och skrivs i samma transaktion som arbetet.
+- En retry antar att felet är tillfälligt, och ska vänta längre för varje försök.
+- Ett poison message misslyckas varje gång och fastnar i en slinga utan ett tak för försöken.
+- En dead letter-kö tar emot det som misslyckats för många gånger, och ska larmas på.
+- En kö levererar i ordning, men två konsumenter räcker för att behandlingen ska ske i en annan.
+- En retry flyttar meddelandet bakåt i tiden och bryter ordningen för just det.
+- Ordning och genomströmning drar åt olika håll. Lösningen är ordning per nyckel, inte över allt.
+
+## Nästa del
+
+Därmed står grunderna: modellen i förra delen, och garantierna i den här. Orden räcker för att läsa
+vilken brokers dokumentation som helst.
+
+Nästa serie tar det första av verktygen. Kafka löser ordning och genomströmning på ett sätt som
+förklarar hela dess design — och svarar på hur ett meddelande kan ligga kvar i en vecka samtidigt som
+tio konsumenter läser det i olika takt.

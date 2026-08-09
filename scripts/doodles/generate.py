@@ -2114,6 +2114,40 @@ def alla():
       + "\n" + txt([(210,346,"läst är borta"),(670,346,"läst ligger kvar")],13,
                    ' opacity="0.62"') + "\n</svg>")
 
+    # 103 — Meddelanden 1.1 · Retry och dead letter
+    # De tre försöken är STRECKADE, flytten till dead letter HELDRAGEN. Ritas
+    # försöken heldragna läser bilden som att arbetet blev gjort tre gånger,
+    # vilket är motsatsen — de misslyckades allihop.
+    forsok = "".join(
+        f'<path d="M285 {y} Q440 {y-22} 588 {y}" stroke-dasharray="7 8" opacity="0.5"/>'
+        + f'<g opacity="0.5">{arrow(594, y)}</g>' for y in (85, 110, 135))
+    D['forsoken-och-dead-letter']=(
+      '<svg viewBox="0 0 880 460" role="img" aria-label="En låda märkt kö och en märkt konsument, '
+      'med tre streckade bågar emellan. Från kön går en heldragen pil ner till en låda märkt dead '
+      'letter.">\n'
+      + G % (f'<path d="{w(60,60,220,100)}"/><path d="{w(600,60,220,100)}"/>' + forsok
+             + '<path d="M170 215 Q173 250 170 284"/>' + arrow(170, 290, "down")
+             + f'<path d="{w(60,300,220,90)}"/>')
+      + "\n" + txt([(440,44,"tre försök")],14,' opacity="0.62"')
+      + "\n" + txt([(170,190,"kö"),(710,190,"konsument"),(170,420,"dead letter")],18.5)
+      + "\n</svg>")
+
+    # 104 — Meddelanden 1.1 · Retryn som bryter ordningen
+    # Den tomma platsen är streckad — streckat betyder "uteblivet", och kortet
+    # som lämnat sin plats är exakt det. Glappet före det sista kortet är med
+    # flit: det ligger inte bredvid raden, det ligger EFTER den.
+    kort = "".join(f'<path d="{w(x,150,100,120)}"/>' for x in (90,330,450,690))
+    tom = f'<path d="{w(210,150,100,120)}" stroke-dasharray="7 8" opacity="0.4"/>'
+    bage = ('<path d="M260 142 Q500 52 736 140"/>' + arrow(740, 146, "down"))
+    D['ordningen-som-bryts']=(
+      '<svg viewBox="0 0 880 380" role="img" aria-label="Fyra kort i rad märkta 1, 3 och 4, med en '
+      'streckad tom plats där kort 2 låg. En båge går från den tomma platsen till ett kort märkt 2 '
+      'längst till höger.">\n'
+      + G % (kort + tom + bage)
+      + "\n" + txt([(140,222,"1"),(380,222,"3"),(500,222,"4"),(740,222,"2")],21)
+      + "\n" + txt([(440,330,"skickat 1 2 3 4  ·  utfört 1 3 4 2")],15,' opacity="0.62"')
+      + "\n</svg>")
+
     return D
 
 if __name__ == "__main__":
