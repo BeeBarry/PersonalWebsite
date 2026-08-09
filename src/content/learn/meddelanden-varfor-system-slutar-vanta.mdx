@@ -1,0 +1,473 @@
+---
+title: 'Varför system slutar vänta på varandra'
+description: 'Broker, kö och event — och vad du ger upp när svaret inte kommer direkt'
+category: 'meddelanden'
+part: 1
+partTitle: 'Grunderna'
+order: 1
+date: '2026-08-09'
+tags: ['Beginner', 'Meddelanden', 'Arkitektur']
+---
+
+## Var vi är
+
+API-serien byggde kontraktet mellan två system: en klient frågar, en server svarar, och svaret kommer
+i samma anrop. Nätverksserien visade samma sak en nivå ner.
+
+Alla de anropen delar en egenskap. Den som frågar står kvar och väntar.
+
+Den här delen tar det som händer när väntan blir problemet. Zoomen ligger på modellen och orden —
+broker, kö, topic, logg, event. Leveransgarantierna tar nästa del, och Kafka och RabbitMQ har egna
+serier.
+
+<Del titel="Anropet" />
+
+## Vad ett synkront anrop är
+
+Ett **synkront anrop** är ett anrop där den som frågar väntar på svaret innan den gör något annat.
+
+HTTP-anropet från nätverksserien är synkront. Klienten skickar en request och håller anslutningen
+öppen tills responsen kommer tillbaka.
+
+Teamets kassa gör fyra saker när en order läggs.
+
+<Flow
+  layout="row"
+  caption="Kunden får sin bekräftelse först när alla fyra har svarat."
+  steps={[
+    { label: "Betalning", note: "Dra beloppet. Kan neka." },
+    { label: "Lager", via: "sedan", note: "Minska saldot med ett." },
+    { label: "Kvittomejl", via: "sedan", note: "Skicka mejlet till kunden." },
+    { label: "Analys", via: "sedan", note: "Skriv en rad för statistiken.", accent: true },
+  ]}
+/>
+
+Kassan väntar på var och en. Den som frågar synkront lånar ut sin väntetid till alla den frågar.
+
+## Kedjan som faller ihop
+
+Kvittomejlet skickas av en extern leverantör. Leverantören har en dålig dag och svarar på tolv
+sekunder i stället för på tvåhundra millisekunder.
+
+Nu tar varje order tolv sekunder. Kassan väntar på mejltjänsten, och kunden väntar på kassan.
+
+Ingenting i kassans egen kod är trasigt. Kassan är ändå nere, sett från kunden.
+
+Räknat blir det tydligt. Fyra tjänster som var för sig är uppe 99,9 % av tiden ger 99,6 % när alla
+fyra måste svara — eftersom sannolikheterna multipliceras.
+
+<Doodle name="kedjan-som-faller-ihop" caption="Pilarna framåt är heldragna. Pilarna tillbaka är streckade — det är svaren som uteblir." />
+
+Observability-delen om felbudget räknade på precis de niorna. Här är den vanligaste orsaken till att
+de tar slut: ett anrop som inte behövde vara synkront.
+
+## Vad ett meddelande är
+
+Ett **meddelande** är data som ett system skickar i väg utan att vänta på att arbetet blir gjort.
+
+Meddelandet lämnas till en mellanhand, som tar emot det och håller det tills en mottagare hämtar
+det. Avsändaren fortsätter direkt.
+
+Kvittot avsändaren får är att meddelandet är mottaget av mellanhanden. Det är inte ett kvitto på att
+mejlet är skickat.
+
+Den skillnaden är liten i en mening och stor i ett system. Den återkommer i varje avsnitt nedan.
+
+## Synkront anrop vs meddelande
+
+De två ser ut som varianter av samma sak. De ger dig olika saker.
+
+**Ett synkront anrop** ger dig svaret och felet direkt. Du vet om det gick bra innan du går vidare,
+och du kan tala om det för kunden i samma andetag.
+
+**Ett meddelande** ger dig ett kvitto på avlämning. Om arbetet lyckades vet du inte, och får veta
+det någon annanstans.
+
+Frågan är därför inte vilket som är bäst, utan om den som frågar behöver svaret för att kunna
+fortsätta. Kassan behöver betalningens svar. Kassan behöver inte mejlserverns.
+
+<Split
+  leftTitle="Fyra synkrona anrop"
+  rightTitle="Ett anrop, tre meddelanden"
+  leftTone="bad"
+  rightTone="good"
+  caption="Samma fyra saker blir gjorda. Skillnaden är vem som står och väntar."
+>
+  <div slot="left">
+
+  Kassan anropar betalning, lager, mejl och analys, och väntar på var och en.
+
+  Svarstiden är summan av alla fyra.
+
+  En långsam mejltjänst gör kassan långsam. En nere mejltjänst gör kassan nere.
+
+  </div>
+  <div slot="right">
+
+  Kassan anropar betalningen och väntar på den, eftersom kunden ska få veta om kortet nekades.
+
+  Lager, mejl och analys skickas som meddelanden.
+
+  En nere mejltjänst gör inget alls med kassan. Meddelandena ligger kvar tills tjänsten är uppe.
+
+  </div>
+</Split>
+
+<Del titel="Brevlådan" />
+
+## Vad en broker är
+
+En **broker** är en tjänst som tar emot meddelanden och håller dem tills en mottagare hämtar dem.
+
+IoT-serien mötte redan en broker: den som sensorerna publicerar till över MQTT. Modellen är
+densamma här, en nivå upp och utan batteribudget.
+
+RabbitMQ, Kafka, Azure Service Bus och Amazon SQS är brokrar. De skiljer sig i garantier och skala,
+inte i vad de är till för.
+
+Brokern gör en sak som är svår att bygga själv: den överlever att båda parterna startar om.
+
+<Callout type="varfor" title="Varför inte bara en tabell i databasen">
+En tabell med `status = 'väntar'` går att använda som kö, och görs ofta i små system. Det fungerar
+tills två konsumenter läser samma rad samtidigt.
+
+Då behöver du låsning, en tidsgräns för rader som fastnat, en räknare för antal försök och en
+plats för det som aldrig lyckas. Vid det laget har du byggt en broker, med de fel som följer av att
+den är hemmagjord.
+
+Databastabellen är ändå rätt val ibland — särskilt i det som kallas **outbox-mönstret**, där raden
+skrivs i samma transaktion som datan och skickas vidare av en separat process. Det djupet ligger
+utanför den här serien.
+</Callout>
+
+## Producenten och konsumenten
+
+**Producenten** är det som skickar meddelandet. **Konsumenten** är det som läser det och gör
+arbetet.
+
+Producent och konsument är roller, inte program — precis som klient och server i API-serien. Samma
+tjänst är ofta producent i ett flöde och konsument i ett annat.
+
+Kassan är producent när den skickar `OrderLagd`. Lagertjänsten är konsument av samma meddelande, och
+producent när den skickar `SaldoAndrat`.
+
+## Vad en kö är
+
+En **kö** är en lista av meddelanden där varje meddelande tas emot av *en* konsument och sedan
+försvinner.
+
+Kommer tio konsumenter till samma kö delar de på arbetet. Var och en tar sina meddelanden, och ingen
+tar samma meddelande som en annan.
+
+Det gör kön till verktyget för arbete som ska utföras en gång: dra en betalning, skicka ett mejl,
+skala om en bild.
+
+Att lägga till fler konsumenter är också hela skalningsmodellen. Växer kön startar du fler, och
+arbetet fördelas utan att någon konfiguration ändras.
+
+## Vad en topic är
+
+En **topic** är en namngiven kanal där varje meddelande går till *alla* som prenumererar på den.
+
+IoT-serien tog topics i MQTT:s form, med hierarkiska namn och filter. Idén är densamma här: den som
+skickar namnger ämnet, inte mottagaren.
+
+Kassan publicerar `OrderLagd` på en topic. Lager, analys och kvittotjänsten prenumererar, och alla
+tre får sitt eget exemplar.
+
+Läggs en fjärde prenumerant till får den kommande meddelanden. Kassan ändras inte.
+
+## Kö vs topic
+
+Den vanligaste förväxlingen i hela ämnet, och den enda som ändrar vad systemet gör.
+
+**En kö** delar ut arbete. Ett meddelande går till en konsument.
+
+**En topic** sprider ett faktum. Ett meddelande går till alla prenumeranter.
+
+Konsekvensen är att valet följer av meddelandets innebörd. Ska något göras en gång är kön rätt; ska
+flera reagera på samma händelse är det topicen.
+
+Verktygen bygger båda formerna av sina egna delar, och orden skiljer sig därför åt. RabbitMQ har
+exchange plus kö, Kafka har topic plus konsumentgrupp — och båda tar vi i egna serier.
+
+## Vad en logg är
+
+En **logg** är en följd av meddelanden som ligger kvar efter att de lästs, i den ordning de kom.
+
+Konsumenten håller själv reda på hur långt den har läst. Positionen är ett tal, och konsumenten kan
+flytta talet bakåt och läsa om det som redan är läst.
+
+Ordet gör dubbeltjänst i branschen. Loggen här är inte applikationsloggen från Loki-serien, utan en
+lagringsform för meddelanden.
+
+## Kö vs logg
+
+Två sätt att förvara meddelandet, med olika svar på frågan *vad händer efter läsningen*.
+
+**I en kö** försvinner meddelandet när det konsumerats. Kön är en arbetslista, och en tom kö betyder
+att allt arbete är gjort.
+
+**I en logg** ligger meddelandet kvar. Loggen är en historik, och en ny konsument kan börja om från
+början av den.
+
+<Doodle name="kon-och-loggen" caption="Till vänster är den tredje platsen tom. Till höger ligger allt kvar, och läsarna står på olika ställen." />
+
+Skillnaden märks den dag något ska läggas till. En ny tjänst som ska räkna om all statistik kan göra
+det ur loggen. Ur kön går det inte, eftersom kön redan är tömd.
+
+Priset är att loggen måste städas på tid eller storlek. Utan en gräns växer den för alltid.
+
+## Vad backpressure är
+
+**Backpressure** är det som uppstår när producenten skickar snabbare än konsumenten hinner arbeta.
+
+I ett synkront anrop märks det direkt. Anropen blir långsamma, och till slut svarar servern `429`
+eller `503` — samma strypning som API-delen gick igenom.
+
+Med en broker emellan märks det inte alls till en början. Kassan är lika snabb som förut, kön växer
+tyst, och kvittona kommer allt senare.
+
+Därför är kölängden och **lag** — hur långt efter konsumenten ligger — de två tal du larmar på. Det
+är den signal som ersätter svarstiden du inte längre har.
+
+<Callout type="fallgrop">
+En kö ser ut som en lagringsplats: data ligger i den och går att läsa. Den är byggd för att vara
+nästan tom.
+
+Används kön medvetet för att lagra får du problem som inte syns på en gång. Minnet tar slut, äldre
+meddelanden går inte att söka i, och en omstart av brokern blir riskabel i stället för rutin.
+
+Ska datan finnas kvar och gå att fråga på hör den hemma i en databas. Kön bär arbete som ska utföras,
+inte fakta som ska sparas.
+</Callout>
+
+<Del titel="Innehållet" />
+
+## Vad ett kommando är
+
+Ett **kommando** är ett meddelande som ber en bestämd mottagare göra något.
+
+`SkickaKvitto` och `DraBetalning` är kommandon. De är skrivna i imperativ, och avsändaren vet vem som
+ska utföra arbetet.
+
+Ett kommando kan avvisas. Mottagaren är den som avgör om det går att göra, och avsändaren har redan
+gått vidare när det avgörs.
+
+## Vad ett event är
+
+Ett **event** är ett meddelande som säger att något redan har hänt.
+
+`OrderLagd` och `BetalningGodkand` är event. De är skrivna i dåtid, och de namnger ingen mottagare
+alls.
+
+Ett event kan inte avvisas. Det som hänt har hänt, och den som läser eventet kan bara bestämma vad
+den själv gör med informationen.
+
+## Kommando vs event
+
+Grammatiken skiljer dem åt, och den skillnaden avgör åt vilket håll beroendet pekar.
+
+**Ett kommando** namnger mottagaren. Kassan skickar `SkickaKvitto` till kvittotjänsten, och kassan
+måste veta att kvittotjänsten finns.
+
+**Ett event** namnger bara vad som hänt. Kassan publicerar `OrderLagd` utan att veta vem som lyssnar.
+
+Konsekvensen syns när något nytt ska läggas till. Med kommandon ändras kassan varje gång en ny
+mottagare tillkommer. Med event ändras bara den nya mottagaren.
+
+Det är därför event är det som gör att ett system kan växa utan att kassan blir ett nav som varje
+ändring måste passera.
+
+Du behöver inte välja det ena. De flesta system har båda: kommandon där en bestämd tjänst ska göra
+ett bestämt jobb, event där ett faktum ska spridas till okända lyssnare.
+
+## Vad du inte får gratis
+
+Brokern tar bort väntan. Den tar inte bort arbetet, och tre saker blir svårare.
+
+**Svaret försvinner.** Misslyckas kvittomejlet får kassan aldrig veta det. Felet dyker upp i en
+annan tjänst, vid en annan tidpunkt, och någon måste ha bestämt var det ska synas.
+
+**Konsistensen blir fördröjd.** Lagersaldot är rätt om en stund, inte i samma sekund som ordern
+läggs. Det tillståndet heter *eventual consistency*, och det är en följd av modellen — inte en bugg
+i den.
+
+**Felsökningen blir längre.** OpenTelemetry-delen visade hur `traceparent` följer ett anrop mellan
+tjänster. Samma id måste bäras i meddelandets huvud och läsas av konsumenten, annars slutar spåret
+vid brokern.
+
+Du behöver inte kunna sagas, outbox-mönstret eller event sourcing nu. De finns för att hantera precis
+de tre priserna, och det som ska sitta i dag är att priset finns och vad det består av.
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att skriva konsumenter. Det du gör oftast är att läsa ett meddelandes innehåll, avgöra vad
+tjänsten ska göra med det, och bestämma vad som händer när det inte går.
+
+Nästan lika ofta läser du någon annans meddelandenamn i en kodgranskning. Ett namn i imperativ pekar
+ut en mottagare och binder ihop två tjänster; ett namn i dåtid gör det inte. Den skillnaden är värd
+att kommentera.
+
+Att välja broker, dimensionera partitioner och sätta upp övervakningen av kölängd är oftast någon
+annans jobb till att börja med. Det är ändå de talen som avgör om din konsument hänger med, så det
+är värt att veta var de visas.
+
+Leveransgarantier, dubbletter och dead letter kan vänta till nästa del. Modellen kan inte vänta —
+utan den blir varje verktygs egna ord obegripliga.
+
+## Vanliga nybörjarförväxlingar
+
+Asynkront betyder inte snabbare. Samma arbete blir gjort, men den som skickar slipper stå kvar under
+tiden.
+
+Ett meddelande är inte ett anrop. Kvittot säger att brokern tagit emot, inte att arbetet är utfört.
+
+En kö är inte en topic. Kön delar ut ett meddelande till en konsument, topicen ger det till alla.
+
+Loggen i den här delen är inte applikationsloggen från Loki-serien. Här betyder ordet en lagringsform
+för meddelanden.
+
+Ett event är inte ett kommando skrivet i dåtid. Kommandot namnger sin mottagare, eventet namnger
+bara det som hänt.
+
+En kö är inte en databas. Den är byggd för att vara nästan tom.
+
+Brokern gör inte systemet enklare. Den flyttar komplexiteten från väntan till uppföljning.
+
+## Prova själv
+
+Övningarna nedan bygger en kö av två inbyggda saker — en named pipe och en katalog. Ingen broker
+installeras, och allt ligger i en mapp du raderar sist.
+
+Börja med det som *inte* är en kö:
+
+```bash
+mkdir ~/ko-ovning && cd ~/ko-ovning
+mkfifo kon
+echo "order-1001" > kon &
+```
+
+En named pipe ser ut som en fil, och `echo` ovan ser ut att lyckas. Fråga skalet vad som hände:
+
+```bash
+jobs
+```
+
+```
+[1]  + running    echo "order-1001" > kon
+```
+
+**Skrivningen står och väntar.** Det finns ingen läsare, och en pipe håller inte kvar något — den
+kopplar ihop två parter som måste vara igång samtidigt. Hämta meddelandet:
+
+```bash
+cat kon
+```
+
+Nu skrivs `order-1001` ut, och `jobs` är tomt efteråt. Producenten släpptes först när konsumenten
+kom, vilket är precis den koppling i tid som en broker tar bort.
+
+Gör om samma sak med en katalog som brevlåda:
+
+```bash
+mkdir brevlada
+echo "order-1002" > brevlada/001.msg
+ls brevlada
+```
+
+Den här gången blockerar ingenting, trots att ingen konsument finns. Meddelandet ligger kvar, och
+konsumenten kan komma när som helst:
+
+```bash
+for f in brevlada/*.msg; do cat "$f"; rm "$f"; done
+```
+
+Meddelandet skrivs ut och filen raderas. **Det är en kö**: läst en gång, sedan borta.
+
+Låt nu bli att radera, och läs två gånger:
+
+```bash
+echo "order-1003" > brevlada/002.msg
+cat brevlada/002.msg
+cat brevlada/002.msg
+```
+
+Samma rad kommer två gånger. **Det är en logg** — och nu ligger ansvaret på varje läsare att komma
+ihåg var den var, vilket är exakt det tal Kafka kallar offset.
+
+```bash
+cd ~ && rm -rf ~/ko-ovning
+```
+
+Tre saker kan förvirra. Utskriften från `jobs` skiljer sig mellan skal: `zsh` skriver `running` med
+liten bokstav, medan `bash` skriver `Running` och dessutom rapporterar `Done` när jobbet är klart.
+Terminalen ser ut att hänga sig vid `mkfifo`-steget om `&` glöms bort, och det är då samma
+blockering fast i förgrunden — `Ctrl+C` tar dig ur den. Och en katalog är förstås ingen riktig kö:
+den saknar allt det nästa del handlar om.
+
+<Callout type="kom-ihag">
+- Ett **synkront anrop** ger svaret direkt. Ett **meddelande** ger ett kvitto på avlämning.
+- Fyra synkrona beroenden à 99,9 % ger 99,6 %. Sannolikheterna multipliceras.
+- En **broker** tar emot meddelandet och håller det tills en konsument hämtar det.
+- **Kö**: ett meddelande, en konsument, sedan borta. **Topic**: ett meddelande, alla prenumeranter.
+- **Logg**: meddelandet ligger kvar, och konsumenten minns själv var den var.
+- **Kommando** namnger mottagaren. **Event** namnger bara det som hänt — och vänder beroendet.
+- **Backpressure** syns inte som långsamhet med en broker emellan. Den syns som en växande kö.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Kassan gör fyra synkrona anrop och ett av dem blir långsamt. Varför blir hela kassan långsam?",
+      a: "Ett synkront anrop betyder att den som frågar väntar på svaret innan den går vidare. Kassans svarstid blir därför summan av alla fyra anropen, och kunden väntar på den långsammaste av dem — trots att inget i kassans egen kod är trasigt.",
+    },
+    {
+      q: "Vad är skillnaden mellan en kö och en topic?",
+      a: "En kö delar ut arbete: varje meddelande går till en konsument och försvinner sedan. En topic sprider ett faktum: varje meddelande går till alla som prenumererar. Valet följer av innebörden — ska något göras en gång, eller ska flera reagera på samma händelse?",
+    },
+    {
+      q: "En ny tjänst ska räkna om statistiken för alla ordrar det senaste året. Går det med en kö?",
+      a: "Nej. I en kö försvinner meddelandet när det konsumerats, så historiken finns inte kvar att läsa om. Det kräver en logg, där meddelandena ligger kvar och en ny konsument kan börja om från början. Priset för loggen är att den måste städas på tid eller storlek.",
+    },
+    {
+      q: "Varför ändrar ett event beroendets riktning jämfört med ett kommando?",
+      a: "Kommandot namnger sin mottagare, så avsändaren måste känna till varje mottagare — en ny mottagare betyder en ändring hos avsändaren. Eventet namnger bara det som hänt, så mottagarna känner avsändarens event i stället. Då ändras bara den nya mottagaren.",
+    },
+    {
+      q: "Kassan är lika snabb som vanligt, men kunderna får sina kvitton en timme för sent. Vad tittar du på?",
+      a: "Kölängden och konsumentens lag. Med en broker emellan syns överbelastning inte som långsamma anrop hos producenten — kassan lämnar av lika fort som förut. Det som växer är kön, och det är därför de två talen ersätter svarstiden som signal.",
+    },
+    {
+      q: "Ett `echo` mot en named pipe verkar hänga sig. Varför, och vad har det med brokrar att göra?",
+      a: "En pipe lagrar ingenting, så skrivningen blockerar tills en läsare finns — båda parterna måste vara igång samtidigt. Det är precis den kopplingen i tid som en broker tar bort genom att ta emot meddelandet och hålla det åt konsumenten.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- Ett synkront anrop betyder att den som frågar väntar på svaret innan den går vidare.
+- Väntan ärvs nedåt: en långsam tjänst långt ner gör varje tjänst ovanför långsam.
+- Fyra beroenden à 99,9 % ger 99,6 % tillsammans, eftersom sannolikheterna multipliceras.
+- Ett meddelande skickas i väg utan att avsändaren väntar på att arbetet blir gjort.
+- Kvittot säger att brokern tagit emot meddelandet, inte att arbetet är utfört.
+- En broker tar emot meddelanden och håller dem tills en konsument hämtar dem.
+- Producent och konsument är roller. Samma tjänst är ofta båda, i olika flöden.
+- En kö delar ut arbete: ett meddelande, en konsument, sedan borta.
+- En topic sprider ett faktum: ett meddelande, alla prenumeranter.
+- En logg låter meddelandet ligga kvar, och konsumenten minns själv var den var.
+- Backpressure syns som en växande kö, inte som långsamma anrop.
+- En kö är inte en lagringsplats. Den är byggd för att vara nästan tom.
+- Ett kommando namnger sin mottagare. Ett event namnger bara det som hänt.
+- Event vänder beroendet: en ny mottagare ändrar ingenting hos avsändaren.
+- Priset för att koppla loss är fördröjd konsistens, borttappade svar och längre felsökning.
+
+## Nästa del
+
+Modellen står: brokern tar emot, kön delar ut, loggen ligger kvar, och eventet vänder beroendet.
+
+Kvar står frågan som varje meddelandesystem måste svara på. Konsumenten hämtade meddelandet och
+kraschade mitt i arbetet — får kunden inget kvitto, eller två?

@@ -1998,6 +1998,122 @@ def alla():
       + "\n" + txt([(440,164,"kuvertet")],13,' opacity="0.62"')
       + "\n" + txt([(170,296,"repot"),(720,306,"klustret")],18.5) + "\n</svg>")
 
+    # 97 — Observability 1.3 · Vad varje extra nia kostar
+    # Stegen blir SMALARE och HÖGRE åt höger. Ritas de lika breda blir bilden
+    # en vanlig trappa och säger "lika steg"; poängen är att varje nia ger
+    # mindre tid och kostar mer. Bredden är tiden, höjden är priset.
+    # Höjderna är valda så att det översta steget slutar på y=28 — hade summan
+    # blivit större hade trappan gått ut ur viewBoxen upptill, och bredderna så
+    # att den längsta etiketten ryms i det smalaste steget.
+    def trappa():
+        p=[]; x=90; y=300
+        for br,h in ((190,40),(140,56),(100,76),(84,100)):
+            p.append(f'<path d="{w(x,y-h,br,h)}"/>')
+            x+=br; y-=h
+        return "".join(p)
+    D['niorna-kostar-mer']=(
+      '<svg viewBox="0 0 880 380" role="img" aria-label="En trappa med fyra steg. Varje steg är '
+      'smalare och högre än det förra, märkta 99, 99,9, 99,99 och 99,999 procent.">\n'
+      + G % (trappa() + '<path d="M70 302 Q440 299 810 302"/>')
+      + "\n" + txt([(185,286,"99 %"),(350,236,"99,9 %"),
+                    (470,170,"99,99 %"),(562,82,"99,999 %")],14)
+      + "\n" + txt([(440,346,"bredden är tiden du får, höjden är priset")],15,
+                   ' opacity="0.62"') + "\n</svg>")
+
+    # 98 — Observability 1.3 · Vad en burn rate är
+    # Hinkarna är LIKA STORA och fyllda lika mycket. Enda skillnaden är hålet.
+    # Ritas den ena mindre blir bilden om budgetens storlek i stället för om
+    # takten den töms i — och burn rate handlar just om takten.
+    def hink(x, halstorlek):
+        kropp=(f'<path d="M{x} 110 Q{x+80} 106 {x+160} 110 '
+               f'Q{x+146} 200 {x+134} 258 Q{x+80} 264 {x+26} 258 '
+               f'Q{x+14} 200 {x} 110 Z"/>')
+        niva=f'<path d="M{x+12} 168 Q{x+80} 164 {x+148} 168" stroke-width="1.3" opacity="0.55"/>'
+        yta=markerad(x+16,170,128,80,26)
+        hal=f'<path d="{ell(x+80,258,halstorlek,halstorlek*0.4)}"/>'
+        return kropp+niva+yta+hal
+    droppar=lambda x,n: "".join(f'<path d="M{x+80} {272+i*18} Q{x+82} {280+i*18} {x+80} {286+i*18}"/>'
+                                for i in range(n))
+    D['tva-hinkar-ett-hal']=(
+      '<svg viewBox="0 0 880 380" role="img" aria-label="Två lika stora hinkar med lika mycket i. '
+      'Den vänstra har ett litet hål och en droppe, den högra ett stort hål och en stråle.">\n'
+      + G % (hink(110,7) + droppar(110,1) + hink(610,20) + droppar(610,3))
+      + "\n" + txt([(190,346,"burn rate 1"),(690,346,"burn rate 14,4")],18.5)
+      + "\n</svg>")
+
+    # 99 — Observability 1.4 · Vad larmtrötthet är
+    # Högen ritas som en förskjuten stapel, inte som separata lappar i rad —
+    # många små former tätt i rad renderar som en streckad linje vid 544 px,
+    # och streckat betyder "uteblivet" i formspråket.
+    hog = "".join(f'<path d="{w(90+i*4,96+i*13,220,60)}" opacity="{0.9-i*0.11:.2f}"/>'
+                  for i in range(7))
+    D['hogen-som-ingen-laser']=(
+      '<svg viewBox="0 0 880 340" role="img" aria-label="En hög med sju staplade lappar till '
+      'vänster och en ensam lapp till höger.">\n'
+      + G % (hog + f'<path d="{w(590,150,220,60)}"/>')
+      + "\n" + txt([(210,296,"hundra larm"),(700,246,"ett larm")],18.5) + "\n</svg>")
+
+    # 100 — Observability 1.4 · Sida vs ticket
+    # Telefonen ritas UPPRÄTT och korgen LIGGANDE. Formskillnaden gör jobbet:
+    # den ena kräver att någon tar upp den, den andra att något läggs i den.
+    telefon = (f'<path d="{w(150,80,120,190)}"/>'
+               f'<path d="{w(166,100,88,138)}"/>'
+               f'<path d="{circ(210,254,9)}"/>')
+    korg = ('<path d="M560 200 Q690 196 820 200 Q812 256 806 262 '
+            'Q690 268 574 262 Q568 256 560 200 Z"/>'
+            '<path d="M584 214 Q690 210 796 214" stroke-width="1.2" opacity="0.5"/>'
+            f'<path d="{w(636,140,110,50)}"/>')
+    D['telefonen-och-korgen']=(
+      '<svg viewBox="0 0 880 340" role="img" aria-label="En upprätt telefon till vänster och en '
+      'liggande korg med ett papper i till höger.">\n'
+      + G % (telefon + korg)
+      + "\n" + txt([(210,306,"sidan"),(690,306,"ärendet")],18.5)
+      + "\n" + txt([(210,332,"kostar sömn"),(690,332,"kostar en plats i kön")],13,
+                   ' opacity="0.62"') + "\n</svg>")
+
+    # 101 — Meddelanden 1.0 · Kedjan som faller ihop
+    # Framåtpilarna är heldragna, bakåtpilarna streckade. Det är hela bilden:
+    # anropen går fram, svaren kommer inte tillbaka. Krysset sitter på den
+    # SISTA lådan men det är den FÖRSTA som är drabbad — därför måste båda
+    # bakåtpilarna vara streckade, inte bara den närmast krysset.
+    def bakat(x1, x2, y):
+        return (f'<path d="M{x1} {y} Q{(x1+x2)//2} {y-4} {x2+13} {y}" '
+                f'stroke-dasharray="7 8" opacity="0.45"/>'
+                f'<g opacity="0.45">{arrow(x2, y, "left")}</g>')
+    kryss = ('<g opacity="0.75"><path d="M648 118 Q730 168 812 216"/>'
+             '<path d="M812 118 Q730 168 648 216"/></g>')
+    D['kedjan-som-faller-ihop']=(
+      '<svg viewBox="0 0 880 330" role="img" aria-label="Tre lådor på rad: Kund, Kassa och '
+      'Mejltjänst. Pilarna framåt är heldragna, pilarna tillbaka är streckade, och lådan längst '
+      'till höger är överkryssad.">\n'
+      + G % (f'<path d="{w(50,100,200,120)}"/><path d="{w(340,100,200,120)}"/>'
+             f'<path d="{w(630,100,200,120)}"/>' + kryss
+             + '<path d="M258 142 Q295 139 327 142"/>' + arrow(332,142)
+             + '<path d="M548 142 Q585 139 617 142"/>' + arrow(622,142)
+             + bakat(325, 262, 190) + bakat(615, 552, 190))
+      + "\n" + txt([(150,262,"Kund"),(440,262,"Kassa"),(730,262,"Mejltjänst")],18.5)
+      + "\n" + txt([(730,290,"svarar på 12 s")],13,' opacity="0.62"') + "\n</svg>")
+
+    # 102 — Meddelanden 1.0 · Kö vs logg
+    # Det TREDJE kortet i kön är streckat — streckat betyder "uteblivet" i
+    # formspråket, alltså exakt vad ett konsumerat meddelande är. Loggens kort
+    # är heldragna hela vägen; det som skiljer läsarna åt är bara var pilen står.
+    def lasare(x, y=252):
+        return f'<path d="M{x} {y+26} Q{x+1} {y+14} {x} {y+3}"/>' + arrow(x, y, "up", 11)
+    ko = (f'<path d="{w(40,104,340,146)}"/>'
+          f'<path d="{w(58,124,90,106)}"/><path d="{w(165,124,90,106)}"/>'
+          f'<path d="{w(272,124,90,106)}" stroke-dasharray="7 8" opacity="0.4"/>')
+    logg = ("".join(f'<path d="{w(x,124,60,106)}"/>' for x in (500,570,640,710,780))
+            + lasare(600) + lasare(740) + lasare(810))
+    D['kon-och-loggen']=(
+      '<svg viewBox="0 0 880 380" role="img" aria-label="Till vänster en låda med två hela kort '
+      'och ett streckat. Till höger fem hela kort i rad med tre pilar under, som pekar upp mot '
+      'var sitt kort.">\n'
+      + G % (ko + logg)
+      + "\n" + txt([(210,318,"Kö"),(670,318,"Logg")],18.5)
+      + "\n" + txt([(210,346,"läst är borta"),(670,346,"läst ligger kvar")],13,
+                   ' opacity="0.62"') + "\n</svg>")
+
     return D
 
 if __name__ == "__main__":

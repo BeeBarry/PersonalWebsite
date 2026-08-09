@@ -1899,4 +1899,92 @@ export const DOODLES: Record<string, string> = {
     <text x="720" y="306">klustret</text>
   </g>
 </svg>`,
+
+  /* ---- Observability 1.3 · Vad varje extra nia kostar — STIL: HANDRITAD ---- */
+  "niorna-kostar-mer": `
+<svg viewBox="0 0 880 380" role="img" aria-label="En trappa med fyra steg. Varje steg är smalare och högre än det förra, märkta 99, 99,9, 99,99 och 99,999 procent.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M90 259 Q185 259 279 260 Q280 280 280 300 Q185 302 90 299 Q89 280 90 259 Z"/><path d="M281 204 Q350 204 419 205 Q422 232 420 260 Q350 261 279 260 Q280 232 281 204 Z"/><path d="M419 128 Q470 126 520 128 Q522 166 520 205 Q470 205 421 203 Q419 166 419 128 Z"/><path d="M520 28 Q562 27 603 27 Q606 78 604 127 Q562 130 521 128 Q518 78 520 28 Z"/><path d="M70 302 Q440 299 810 302"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="14" fill="currentColor" text-anchor="middle">
+    <text x="185" y="286">99 %</text>
+    <text x="350" y="236">99,9 %</text>
+    <text x="470" y="170">99,99 %</text>
+    <text x="562" y="82">99,999 %</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="440" y="346">bredden är tiden du får, höjden är priset</text>
+  </g>
+</svg>`,
+
+  /* ---- Observability 1.3 · Vad en burn rate är — STIL: HANDRITAD ---- */
+  "tva-hinkar-ett-hal": `
+<svg viewBox="0 0 880 380" role="img" aria-label="Två lika stora hinkar med lika mycket i. Den vänstra har ett litet hål och en droppe, den högra ett stort hål och en stråle.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M110 110 Q190 106 270 110 Q256 200 244 258 Q190 264 136 258 Q124 200 110 110 Z"/><path d="M122 168 Q190 164 258 168" stroke-width="1.3" opacity="0.55"/><g stroke-width="1.1" opacity="0.42"><path d="M152 250 L126 224"/><path d="M178 250 L126 198"/><path d="M204 250 L126 172"/><path d="M230 250 L150 170"/><path d="M254 248 L176 170"/><path d="M254 222 L202 170"/><path d="M254 196 L228 170"/></g><path d="M190 254 Q197 255 198 259 Q197 261 190 260 Q183 261 182 258 Q183 255 190 254 Z"/><path d="M190 272 Q192 280 190 286"/><path d="M610 110 Q690 106 770 110 Q756 200 744 258 Q690 264 636 258 Q624 200 610 110 Z"/><path d="M622 168 Q690 164 758 168" stroke-width="1.3" opacity="0.55"/><g stroke-width="1.1" opacity="0.42"><path d="M652 250 L626 224"/><path d="M678 250 L626 198"/><path d="M704 250 L626 172"/><path d="M730 250 L650 170"/><path d="M754 248 L676 170"/><path d="M754 222 L702 170"/><path d="M754 196 L728 170"/></g><path d="M691 251 Q710 250 711 259 Q710 266 690 266 Q670 266 670 259 Q670 250 691 251 Z"/><path d="M690 272 Q692 280 690 286"/><path d="M690 290 Q692 298 690 304"/><path d="M690 308 Q692 316 690 322"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="190" y="346">burn rate 1</text>
+    <text x="690" y="346">burn rate 14,4</text>
+  </g>
+</svg>`,
+
+  /* ---- Observability 1.4 · Vad larmtrötthet är — STIL: HANDRITAD ---- */
+  "hogen-som-ingen-laser": `
+<svg viewBox="0 0 880 340" role="img" aria-label="En hög med sju staplade lappar till vänster och en ensam lapp till höger.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M89 95 Q200 95 309 97 Q310 126 311 156 Q200 158 91 157 Q89 126 89 95 Z" opacity="0.90"/><path d="M93 110 Q204 108 314 109 Q314 139 314 168 Q204 170 93 169 Q94 139 93 110 Z" opacity="0.79"/><path d="M98 122 Q208 120 318 121 Q320 152 317 182 Q208 184 98 182 Q96 152 98 122 Z" opacity="0.68"/><path d="M102 135 Q212 133 322 134 Q322 165 322 195 Q212 196 102 195 Q101 165 102 135 Z" opacity="0.57"/><path d="M106 149 Q216 147 325 149 Q326 178 325 209 Q216 210 105 208 Q106 178 106 149 Z" opacity="0.46"/><path d="M109 162 Q220 161 330 162 Q332 191 329 221 Q220 222 109 221 Q109 191 109 162 Z" opacity="0.35"/><path d="M115 173 Q224 172 333 175 Q334 204 334 235 Q224 234 113 234 Q112 204 115 173 Z" opacity="0.24"/><path d="M590 150 Q700 149 810 149 Q811 180 810 210 Q700 211 591 209 Q590 180 590 150 Z"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="210" y="296">hundra larm</text>
+    <text x="700" y="246">ett larm</text>
+  </g>
+</svg>`,
+
+  /* ---- Observability 1.4 · Sida vs ticket — STIL: HANDRITAD ---- */
+  "telefonen-och-korgen": `
+<svg viewBox="0 0 880 340" role="img" aria-label="En upprätt telefon till vänster och en liggande korg med ett papper i till höger.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M149 81 Q210 80 270 80 Q271 175 270 270 Q210 270 149 269 Q149 175 149 81 Z"/><path d="M166 100 Q210 99 254 101 Q254 169 254 238 Q210 239 167 238 Q165 169 166 100 Z"/><path d="M210 245 Q219 245 218 255 Q219 263 210 264 Q201 263 201 255 Q201 245 210 245 Z"/><path d="M560 200 Q690 196 820 200 Q812 256 806 262 Q690 268 574 262 Q568 256 560 200 Z"/><path d="M584 214 Q690 210 796 214" stroke-width="1.2" opacity="0.5"/><path d="M635 139 Q691 138 747 140 Q747 165 746 190 Q691 191 636 189 Q634 165 635 139 Z"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="210" y="306">sidan</text>
+    <text x="690" y="306">ärendet</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="210" y="332">kostar sömn</text>
+    <text x="690" y="332">kostar en plats i kön</text>
+  </g>
+</svg>`,
+  /* ---- Meddelanden 1.0 · Kedjan som faller ihop ---- */
+  "kedjan-som-faller-ihop": `
+<svg viewBox="0 0 880 330" role="img" aria-label="Tre lådor på rad: Kund, Kassa och Mejltjänst. Pilarna framåt är heldragna, pilarna tillbaka är streckade, och lådan längst till höger är överkryssad.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M50 99 Q150 99 250 99 Q251 160 250 220 Q150 220 50 219 Q49 160 50 99 Z"/><path d="M340 100 Q440 99 540 101 Q542 160 540 219 Q440 221 340 221 Q339 160 340 100 Z"/><path d="M631 101 Q730 100 830 99 Q830 160 830 219 Q730 222 631 221 Q628 160 631 101 Z"/><g opacity="0.75"><path d="M648 118 Q730 168 812 216"/><path d="M812 118 Q730 168 648 216"/></g><path d="M258 142 Q295 139 327 142"/><path d="M319 136 L332 142 L319 148"/><path d="M548 142 Q585 139 617 142"/><path d="M609 136 L622 142 L609 148"/><path d="M325 190 Q293 186 275 190" stroke-dasharray="7 8" opacity="0.45"/><g opacity="0.45"><path d="M275 184 L262 190 L275 196"/></g><path d="M615 190 Q583 186 565 190" stroke-dasharray="7 8" opacity="0.45"/><g opacity="0.45"><path d="M565 184 L552 190 L565 196"/></g>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="150" y="262">Kund</text>
+    <text x="440" y="262">Kassa</text>
+    <text x="730" y="262">Mejltjänst</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="730" y="290">svarar på 12 s</text>
+  </g>
+</svg>`,
+
+  /* ---- Meddelanden 1.0 · Kö vs logg ---- */
+  "kon-och-loggen": `
+<svg viewBox="0 0 880 380" role="img" aria-label="Till vänster en låda med två hela kort och ett streckat. Till höger fem hela kort i rad med tre pilar under, som pekar upp mot var sitt kort.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M41 104 Q210 104 379 105 Q380 177 380 251 Q210 252 40 250 Q39 177 41 104 Z"/><path d="M57 124 Q103 122 147 123 Q150 177 148 229 Q103 232 57 230 Q58 177 57 124 Z"/><path d="M166 124 Q210 122 256 123 Q257 177 256 231 Q210 231 166 229 Q164 177 166 124 Z"/><path d="M273 123 Q317 122 362 124 Q364 177 363 230 Q317 232 271 231 Q270 177 273 123 Z" stroke-dasharray="7 8" opacity="0.4"/><path d="M500 124 Q530 122 559 123 Q562 177 561 230 Q530 232 500 230 Q500 177 500 124 Z"/><path d="M570 123 Q600 124 630 125 Q631 177 630 230 Q600 231 570 229 Q570 177 570 123 Z"/><path d="M639 125 Q670 123 700 125 Q701 177 699 229 Q670 230 640 230 Q639 177 639 125 Z"/><path d="M709 125 Q740 124 769 125 Q771 177 770 230 Q740 232 710 229 Q710 177 709 125 Z"/><path d="M780 125 Q810 123 840 124 Q840 177 841 229 Q810 230 779 230 Q780 177 780 125 Z"/><path d="M600 278 Q601 266 600 255"/><path d="M594 263 L600 252 L606 263"/><path d="M740 278 Q741 266 740 255"/><path d="M734 263 L740 252 L746 263"/><path d="M810 278 Q811 266 810 255"/><path d="M804 263 L810 252 L816 263"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="210" y="318">Kö</text>
+    <text x="670" y="318">Logg</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="210" y="346">läst är borta</text>
+    <text x="670" y="346">läst ligger kvar</text>
+  </g>
+</svg>`,
 };

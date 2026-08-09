@@ -18,10 +18,27 @@ export const CATEGORY_GROUPS = [
         title: "Fundamenten",
         description: "Det allt annat vilar på — och det enda som varken är knutet till en leverantör eller ett verktyg.",
     },
+    // Cybersecurity låg tidigare i "fundament". Den flyttades hit när identitet
+    // och hemligheter tillkom: tre kategorier som ställer samma fråga från olika
+    // håll hör ihop, och "fundament" ska bära det som allt annat vilar på.
+    {
+        slug: "sakerhet",
+        title: "Säkerhet & åtkomst",
+        description: "Vem som släpps in, vad som stoppas, och var hemligheterna bor.",
+    },
     {
         slug: "data",
         title: "Data & API:er",
         description: "Kontraktet mellan system, och lagringen bakom det.",
+    },
+    // Gruppen heter varken "Meddelanden" eller "Event" — principkategorin i den
+    // gör det, och en grupp som upprepar sin första kategori utför inget arbete.
+    // "Köer & strömmar" namnger i stället de två formerna: RabbitMQ har köer,
+    // Kafka har en ström som ligger kvar.
+    {
+        slug: "meddelanden",
+        title: "Köer & strömmar",
+        description: "System som slutar vänta på varandra — och vad det kostar i garantier.",
     },
     {
         slug: "containrar",
@@ -137,12 +154,53 @@ export const categories: Category[] = [
         domain: "cloud",
         isVisible: true,
     },
+    // Bröts ut ur "cicd" 2026-08-09, av samma skäl som Prometheus och
+    // OpenTelemetry lämnade "observability": principkategorin ska kunna växa
+    // med deploystrategier och kvalitetsgrindar utan att bli en GitHub-serie.
+    {
+        title: "GitHub Actions",
+        description: "Workflow-filen, jobben och inloggningen som inte bär på en hemlighet.",
+        icon: "skill-icons:githubactions-light",
+        slug: "github-actions",
+        group: "leverans",
+        domain: "cloud",
+        isVisible: true,
+    },
     {
         title: "ArgoCD & GitOps",
         description: "Klustret hämtar hem sitt eget önskade läge från Git.",
         icon: "logos:argo-icon",
         slug: "argocd",
         group: "leverans",
+        domain: "cloud",
+        isVisible: true,
+    },
+    // Samma ordning som i observability-gruppen: principerna först, sedan ett
+    // verktyg per form — strömmen som ligger kvar, och kön som töms.
+    {
+        title: "Meddelanden & event",
+        description: "Hur ett system talar med ett annat utan att stå kvar och vänta på svar.",
+        icon: "mdi:inbox-arrow-down",
+        slug: "meddelanden",
+        group: "meddelanden",
+        domain: "cloud",
+        isVisible: true,
+    },
+    {
+        title: "Kafka",
+        description: "En logg som ligger kvar, delad i partitioner och läst i egen takt.",
+        icon: "skill-icons:kafka",
+        slug: "kafka",
+        group: "meddelanden",
+        domain: "cloud",
+        isVisible: true,
+    },
+    {
+        title: "RabbitMQ",
+        description: "Exchange, binding och kö — och konsumenten som måste kvittera.",
+        icon: "skill-icons:rabbitmq-light",
+        slug: "rabbitmq",
+        group: "meddelanden",
         domain: "cloud",
         isVisible: true,
     },
@@ -213,7 +271,7 @@ export const categories: Category[] = [
         description: "Säkerhet i moderna applikationer.",
         icon: "mdi:shield-lock-outline",
         slug: "cybersecurity",
-        group: "fundament",
+        group: "sakerhet",
         domain: "web",
         isVisible: true,
     },
