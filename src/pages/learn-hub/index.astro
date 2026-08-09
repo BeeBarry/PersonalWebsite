@@ -2,11 +2,8 @@
 import AppLayout from "../../layouts/AppLayout.astro";
 import { getCollection } from "astro:content";
 import { Icon } from "astro-icon/components";
-import { categories } from "../../data/categories";
-import { domains } from "../../data/domains";
+import { categories, CATEGORY_GROUPS } from "../../data/categories";
 import { showEntry } from "../../utils/content";
-import DomainChips from "../../components/site/DomainChips.astro";
-import StickyBar from "../../components/site/StickyBar.astro";
 
 const allArticles = await getCollection("learn", showEntry);
 // Kategorier utan publicerade artiklar listas inte — [category]/index.astro
@@ -19,104 +16,87 @@ const withCounts = categories
   }))
   .filter((c) => c.count > 0);
 
-const has = (slug: string) => withCounts.filter((c) => c.domain === slug).length;
-const filters = [
-  { label: "Alla", value: "all", count: withCounts.length },
-  ...domains
-    .filter((d) => has(d.slug) > 0)
-    .map((d) => ({ label: d.short, value: d.slug, count: has(d.slug) })),
-];
-// Med bara en domän kvar blir chipsraden "Alla / Cloud" — ett filter utan val.
-// Visa den först när det finns minst två domäner att växla mellan.
-const showFilters = filters.length > 2;
+// Grupperna ersätter det gamla domänfiltret. Tre domäner kunde inte organisera
+// nitton kategorier — chipet "Cloud 14" delade korten i 14/3/1/1 och utförde
+// alltså inget arbete. Grupperna är i stället rubriker, samma grepp som
+// <Del /> gör inuti en artikel: de beskriver strukturen i stället för att
+// gömma den bakom ett filter. Ordningen kommer från CATEGORY_GROUPS.
+const groups = CATEGORY_GROUPS.map((g) => ({
+  ...g,
+  items: withCounts.filter((c) => c.group === g.slug),
+})).filter((g) => g.items.length > 0);
 ---
 
 <AppLayout
   title="Learn Hub · Barry Namdari"
   description="Områden jag lär mig om och förklarar enkelt."
 >
-  {
-    showFilters && (
-      <StickyBar title="Learn Hub">
-        <DomainChips filters={filters} compact />
-      </StickyBar>
-    )
-  }
-
   <div class="animate-in p-6 lg:p-8">
-    <header class="mb-6">
-      <h2
+    <header class="mb-8">
+      {/* Etiketten är ett <p>, inte en rubrik: den står ovanför h1 och skulle
+          annars ligga som syskon till gruppernas h2 i dokumentets disposition. */}
+      <p
         class="mb-2 font-mono text-[10px] tracking-[0.22em] text-muted-foreground/50 uppercase"
       >
         Learn Hub
-      </h2>
+      </p>
       <h1 class="text-xl font-bold tracking-tight text-foreground">
         Områden jag lär mig
       </h1>
       <p class="mt-2 max-w-prose text-[13.5px] leading-relaxed text-muted-foreground">
         Ämnen jag lär mig om och försöker förklara på ett lättbegripligt sätt.
+        Ordningen går nedifrån och upp — fundamenten först, det som vilar på dem
+        sedan.
       </p>
     </header>
 
-    {showFilters && <DomainChips filters={filters} />}
-
-    <div data-sticky-anchor aria-hidden="true"></div>
-    <div
-      class="grid grid-cols-2 gap-2 sm:gap-2.5 sm:grid-cols-[repeat(auto-fill,minmax(15.5rem,1fr))]"
-      data-filter-target
-    >
+    <div class="flex flex-col gap-8">
       {
-        withCounts.map((c) => (
-          <a
-            href={`/learn-hub/${c.slug}/`}
-            data-tags={c.domain}
-            class="group flex items-start gap-2.5 rounded-xl border border-border bg-muted/10 p-2.5 sm:gap-3 sm:p-3 transition-all hover:border-primary/40 hover:bg-muted/20"
-          >
-            {/* items-start, inte items-center: ikonen hör ihop med rubriken och
-                ska ligga i linje med den, inte flyta mitt emot ett tre rader
-                högt textblock. */}
-            <Icon name={c.icon} class="h-6 w-auto shrink-0 sm:h-7" />
-            <div class="min-w-0 flex-1">
-              {/* Räknaren flyttad hit uppe till höger. Som egen rad i botten
-                  kostade den ~16px höjd på varje kort medan ytan bredvid
-                  rubriken stod tom — nu bär samma rad båda och kortet blir
-                  lägre. */}
-              {/* mb-0 på BÅDA: h3 ärver 8px och p 16px bottenmarginal från
-                  @layer base, och de nollades aldrig här. Tillsammans 24px som
-                  inte gjorde något — de 16 på sista stycket låg som ren dödyta
-                  i kortets underkant. Uppmätt: kortet gick från 104 till 80px.
-                  Gapet mellan rubrik och text bärs nu av mt-1.5 allena. */}
-              {/* MOBIL: rubrik och räknare staplade. Sida vid sida i ett
-                  halvbrett kort rann räknaren ut ur kortet och lade sig över
-                  rubriken — halva radbredden räcker inte för båda. */}
-              <div class="flex flex-col gap-0.5 sm:flex-row sm:items-start sm:justify-between sm:gap-2">
-                <h3 class="mb-0 text-[13.5px] leading-snug font-bold text-foreground/90 transition-colors group-hover:text-primary">
-                  {c.title}
-                </h3>
-                <span class="shrink-0 font-mono text-[9px] whitespace-nowrap text-muted-foreground/60 sm:pt-px">
-                  {c.count} {c.count === 1 ? "artikel" : "artiklar"}
-                </span>
-              </div>
-              {/* line-clamp i stället för truncate: med tre kolumner kapades
-                  nästan varje beskrivning mitt i ett ord. */}
-              <p class="mt-1.5 mb-0 line-clamp-2 text-[11.5px] leading-snug text-muted-foreground">
-                {c.description}
-              </p>
+        groups.map((g) => (
+          <section>
+            <h2 class="mb-0 text-[13px] font-bold tracking-tight text-foreground">
+              {g.title}
+            </h2>
+            <p class="mt-1 mb-3 max-w-prose text-[11.5px] leading-snug text-muted-foreground/80">
+              {g.description}
+            </p>
+            <div class="grid grid-cols-2 gap-2 sm:gap-2.5 sm:grid-cols-[repeat(auto-fill,minmax(15.5rem,1fr))]">
+              {g.items.map((c) => (
+                <a
+                  href={`/learn-hub/${c.slug}/`}
+                  class="group flex items-start gap-2.5 rounded-xl border border-border bg-muted/10 p-2.5 sm:gap-3 sm:p-3 transition-all hover:border-primary/40 hover:bg-muted/20"
+                >
+                  {/* items-start, inte items-center: ikonen hör ihop med rubriken och
+                      ska ligga i linje med den, inte flyta mitt emot ett tre rader
+                      högt textblock. */}
+                  <Icon name={c.icon} class="h-6 w-auto shrink-0 sm:h-7" />
+                  <div class="min-w-0 flex-1">
+                    {/* mb-0 på BÅDA: h3 ärver 8px och p 16px bottenmarginal från
+                        @layer base, och de nollades aldrig här. Tillsammans 24px som
+                        inte gjorde något. Uppmätt: kortet gick från 104 till 80px. */}
+                    {/* MOBIL: rubrik och räknare staplade. Sida vid sida i ett
+                        halvbrett kort rann räknaren ut ur kortet och lade sig över
+                        rubriken — halva radbredden räcker inte för båda. */}
+                    <div class="flex flex-col gap-0.5 sm:flex-row sm:items-start sm:justify-between sm:gap-2">
+                      <h3 class="mb-0 text-[13.5px] leading-snug font-bold text-foreground/90 transition-colors group-hover:text-primary">
+                        {c.title}
+                      </h3>
+                      <span class="shrink-0 font-mono text-[9px] whitespace-nowrap text-muted-foreground/60 sm:pt-px">
+                        {c.count} {c.count === 1 ? "artikel" : "artiklar"}
+                      </span>
+                    </div>
+                    {/* line-clamp i stället för truncate: med tre kolumner kapades
+                        nästan varje beskrivning mitt i ett ord. */}
+                    <p class="mt-1.5 mb-0 line-clamp-2 text-[11.5px] leading-snug text-muted-foreground">
+                      {c.description}
+                    </p>
+                  </div>
+                </a>
+              ))}
             </div>
-          </a>
+          </section>
         ))
       }
     </div>
-
-    <p class="mt-6 text-sm text-muted-foreground" data-filter-empty hidden>
-      Inga områden i denna domän ännu.
-    </p>
   </div>
-
-  <script>
-    import { initDomainFilter } from "../../scripts/domainFilter";
-    import { initStickyBar } from "../../scripts/stickyBar";
-    initDomainFilter();
-    initStickyBar();
-  </script>
 </AppLayout>

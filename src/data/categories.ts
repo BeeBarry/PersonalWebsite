@@ -1,7 +1,64 @@
-// Learn Hub-kategorier. `domain` mappar varje kategori till sajtens domän-
-// taxonomi (web/cloud/embedded) så learn-hub kan filtreras konsekvent med
-// Arbete/Fältnoteringar. `isVisible` styr om kategorin listas.
+// Learn Hub-kategorier.
+//
+// TVÅ AXLAR, och de gör olika jobb:
+//
+// `domain` är sajtens yrkestaxonomi (web/cloud/embedded) och beskriver vilken
+// del av profilen något hör till. Den delar namn med Arbete och Fältnoteringar.
+// Den används INTE för att navigera hubben — tre domäner kan inte organisera
+// nitton kategorier, och ett filter som säger "Cloud 14" utför inget arbete.
+//
+// `group` är hubbens egen indelning och den enda som renderas. Grupperna följer
+// hubbens röda tråd nedifrån och upp: fundamenten först, det som vilar på dem
+// sedan. Ordningen i CATEGORY_GROUPS är visningsordningen.
 import type { DomainSlug } from "./domains";
+
+export const CATEGORY_GROUPS = [
+    {
+        slug: "fundament",
+        title: "Fundamenten",
+        description: "Det allt annat vilar på — och det enda som varken är knutet till en leverantör eller ett verktyg.",
+    },
+    {
+        slug: "data",
+        title: "Data & API:er",
+        description: "Kontraktet mellan system, och lagringen bakom det.",
+    },
+    {
+        slug: "containrar",
+        title: "Containrar & orkestrering",
+        description: "Paketeringen, och det som kör paketen över flera maskiner.",
+    },
+    {
+        slug: "iac",
+        title: "Infrastruktur som kod",
+        description: "Terraform skapar lådan, Ansible fyller den.",
+    },
+    {
+        slug: "moln",
+        title: "Molnplattformar",
+        description: "De två leverantörerna, med deras egna ord för samma saker.",
+    },
+    {
+        slug: "leverans",
+        title: "Leverans",
+        description: "Vägen från commit till drift — pipelinen som trycker ut, och klustret som hämtar hem.",
+    },
+    // Gruppen heter INTE samma sak som kategorin i den. Samma regel som för
+    // <Del />-etiketter inne i en artikel: en rubrik som upprepar raden under
+    // sig tillför ingenting. Gruppen namnger området, kategorin sin del av det.
+    {
+        slug: "observability",
+        title: "Drift & observability",
+        description: "Principerna för att se sitt system i drift — och verktygen som gör dem konkreta.",
+    },
+    {
+        slug: "iot",
+        title: "IoT & Embedded",
+        description: "Den enda delen av hubben som rör hårdvara, och den enda där batteriet är en designparameter.",
+    },
+] as const;
+
+export type CategoryGroupSlug = (typeof CATEGORY_GROUPS)[number]["slug"];
 
 export interface Category {
     title: string;
@@ -9,7 +66,10 @@ export interface Category {
     /** Iconify-namn från lokalt installerat paket (bundlas, ingen runtime-fetch). */
     icon: string;
     slug: string;
+    /** Yrkestaxonomin. Delas med Arbete/Fältnoteringar, renderas inte i hubben. */
     domain: DomainSlug;
+    /** Hubbens egen indelning — det som faktiskt visas. */
+    group: CategoryGroupSlug;
     isVisible?: boolean;
 }
 
@@ -19,6 +79,7 @@ export const categories: Category[] = [
         description: "Containerisering från grunden till avancerad nivå.",
         icon: "skill-icons:docker",
         slug: "docker",
+        group: "containrar",
         domain: "cloud",
         isVisible: true,
     },
@@ -27,6 +88,7 @@ export const categories: Category[] = [
         description: "Orkestrera och hantera containrar i produktion.",
         icon: "skill-icons:kubernetes",
         slug: "kubernetes",
+        group: "containrar",
         domain: "cloud",
         isVisible: true,
     },
@@ -35,6 +97,7 @@ export const categories: Category[] = [
         description: "Infrastructure as Code med Terraform.",
         icon: "skill-icons:terraform-light",
         slug: "terraform",
+        group: "iac",
         domain: "cloud",
         isVisible: true,
     },
@@ -43,6 +106,7 @@ export const categories: Category[] = [
         description: "Konfiguration som kod — utan agent på maskinerna.",
         icon: "skill-icons:ansible",
         slug: "ansible",
+        group: "iac",
         domain: "cloud",
         isVisible: true,
     },
@@ -51,6 +115,7 @@ export const categories: Category[] = [
         description: "Molntjänster och cloud-native utveckling.",
         icon: "skill-icons:azure-light",
         slug: "azure",
+        group: "moln",
         domain: "cloud",
         isVisible: true,
     },
@@ -59,6 +124,7 @@ export const categories: Category[] = [
         description: "Konton, regioner och ARN — molnet med Amazons ord.",
         icon: "skill-icons:aws-light",
         slug: "aws",
+        group: "moln",
         domain: "cloud",
         isVisible: true,
     },
@@ -67,22 +133,28 @@ export const categories: Category[] = [
         description: "Från commit till drift — utan att någon kör kommandon för hand.",
         icon: "mdi:cog-sync-outline",
         slug: "cicd",
+        group: "leverans",
         domain: "cloud",
         isVisible: true,
     },
     {
         title: "ArgoCD & GitOps",
         description: "Klustret hämtar hem sitt eget önskade läge från Git.",
-        icon: "logos:argo",
+        icon: "logos:argo-icon",
         slug: "argocd",
+        group: "leverans",
         domain: "cloud",
         isVisible: true,
     },
+    // Namnet bär tillägget "& SRE" med flit. Bredvid Grafana och Loki läser
+    // "Observability" ensamt som ett sjätte verktyg; tillägget säger att det är
+    // praktiken och principerna. SLI, SLO, felbudget och jour är SRE-begrepp.
     {
-        title: "Observability",
-        description: "Loggar, mätvärden och spårning — att se sitt system i drift.",
+        title: "Observability & SRE",
+        description: "De tre signalerna, och hur du avgör när något är illa nog att bry sig om.",
         icon: "mdi:pulse",
         slug: "observability",
+        group: "observability",
         domain: "cloud",
         isVisible: true,
     },
@@ -91,6 +163,7 @@ export const categories: Category[] = [
         description: "Från mätvärde till en panel någon faktiskt tittar på.",
         icon: "skill-icons:grafana-light",
         slug: "grafana",
+        group: "observability",
         domain: "cloud",
         isVisible: true,
     },
@@ -101,14 +174,16 @@ export const categories: Category[] = [
         description: "Loggar som går att fråga — utan att indexera varje ord.",
         icon: "mdi:text-box-search-outline",
         slug: "loki",
+        group: "observability",
         domain: "cloud",
         isVisible: true,
     },
     {
         title: "InfluxDB",
         description: "Tidsseriedata — mätvärden som kommer i en aldrig sinande ström.",
-        icon: "logos:influxdb",
+        icon: "logos:influxdb-icon",
         slug: "influxdb",
+        group: "data",
         domain: "cloud",
         isVisible: true,
     },
@@ -117,17 +192,16 @@ export const categories: Category[] = [
         description: "Säkerhet i moderna applikationer.",
         icon: "mdi:shield-lock-outline",
         slug: "cybersecurity",
+        group: "fundament",
         domain: "web",
         isVisible: true,
     },
-    // Fundamenten. Ligger sist eftersom cloud-stacken är den profil en
-    // rekryterare ska se först — men de är förkunskapen till allt ovanför,
-    // och det är dem elever hänvisas till.
     {
         title: "Linux & terminalen",
         description: "Filsystemet, rättigheter och processer från grunden.",
         icon: "skill-icons:linux-light",
         slug: "linux",
+        group: "fundament",
         domain: "cloud",
         isVisible: true,
     },
@@ -136,16 +210,16 @@ export const categories: Category[] = [
         description: "Vad som händer mellan adressfältet och servern.",
         icon: "mdi:lan-connect",
         slug: "natverk",
+        group: "fundament",
         domain: "web",
         isVisible: true,
     },
-    // Enda kategorin i domänen embedded. Utan den döljer domänfiltret på
-    // learn-hub hela domänen, eftersom det bara listar domäner med artiklar.
     {
         title: "IoT & Embedded",
         description: "När datorn är liten, batteridriven och sitter någon annanstans.",
         icon: "mdi:chip",
         slug: "embedded",
+        group: "iot",
         domain: "embedded",
         isVisible: true,
     },
@@ -154,6 +228,7 @@ export const categories: Category[] = [
         description: "Ögonblicksbilder, grenar och konflikter — utan magi.",
         icon: "skill-icons:git",
         slug: "git",
+        group: "fundament",
         domain: "web",
         isVisible: true,
     },
@@ -162,6 +237,7 @@ export const categories: Category[] = [
         description: "Kontraktet mellan system som ska prata med varandra.",
         icon: "mdi:api",
         slug: "api",
+        group: "data",
         domain: "web",
         isVisible: true,
     },
@@ -170,6 +246,7 @@ export const categories: Category[] = [
         description: "Tabeller, relationer och varför frågor blir långsamma.",
         icon: "mdi:database-outline",
         slug: "sql",
+        group: "data",
         domain: "web",
         isVisible: true,
     },
