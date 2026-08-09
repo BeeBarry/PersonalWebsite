@@ -171,10 +171,134 @@
       "junior": "Har byggt pipelines och molnmiljöer i egna projekt eller under handledning, men ännu inte burit driftansvaret själv. Ofta 0–2 år, ibland via en tidigare supportroll.",
       "senior": "Äger produktionsmiljöer med riktiga användare — kostnad, säkerhet, återställning och jourorganisation — och sätter arbetssättet för flera team."
     },
-    { "id": "hr-data", "title": "Data engineer", "typ": "Roll", "dom": "Data & AI", "draft": true, "one": "Bygger rören som flyttar data dit den behövs. Grunden som all AI vilar på." },
-    { "id": "hr-ts", "title": "TypeScript", "typ": "Språk", "dom": "Frontend", "draft": true, "one": "JavaScript med säkerhetsbälte — fångar fel innan koden ens körs." },
-    { "id": "hr-py", "title": "Python", "typ": "Språk", "dom": "Data & AI", "draft": true, "one": "Lättläst språk som dominerar data, AI och automatisering." },
-    { "id": "hr-cs", "title": "C# / .NET", "typ": "Språk", "dom": "Backend", "draft": true, "one": "Microsofts arbetshäst — vanligast i svensk offentlig sektor och hos storbolag." },
+    {
+      "id": "hr-data",
+      "title": "Data engineer",
+      "typ": "Roll",
+      "dom": "Data & AI",
+      "one": "Bygger rören som flyttar data dit den behövs. Grunden som all AI vilar på.",
+      "what": "En data engineer bygger vägarna som data färdas på. Arbetet är att hämta data ur system som inte byggts för att dela med sig, tvätta bort fel och dubbletter, och lägga den där andra kan nå den. Rollen märks sällan när den fungerar och alltid när den inte gör det — en rapport med fel siffra kostar mer förtroende än en sida som laddar långsamt. För dig som rekryterar: det här är ofta rollen som saknas när ett AI-initiativ inte kommer igång.",
+      "analogy": "Tänk på vattenverket. Ingen tänker på det, men allt annat förutsätter det: att vattnet kommer fram, att det är rent och att kranen ger samma sak varje gång. Analytiker och modeller är det som händer vid kranen — någon måste ha dragit rören dit först.",
+      "tasks": [
+        "Bygger flöden som hämtar data ur affärssystem, loggar och externa källor.",
+        "Rensar och strukturerar data så att samma fråga ger samma svar i morgon.",
+        "Övervakar att flödena körde klart i natt — och lagar dem när de inte gjorde det.",
+        "Sitter mellan verksamhet och teknik och översätter \"vi vill veta X\" till en datakälla."
+      ],
+      "fits": [
+        "Är noggrann — fel i datan syns långt senare, i någon annans beslut.",
+        "Gillar att hitta ordning i något som kommer ostrukturerat från många håll.",
+        "Tycker om att bygga det andra står på, även när berömmet hamnar längre fram."
+      ],
+      "confuse": [
+        { "a": "Data engineer ≠ data scientist", "b": "En data scientist analyserar och bygger modeller. En data engineer bygger och driver flödena som ger modellen data att arbeta på. Många team behöver den andra först." },
+        { "a": "Data engineer ≠ dataanalytiker", "b": "Analytikern svarar på verksamhetens frågor, ofta i SQL och i ett rapportverktyg. Data engineern bygger underlaget analytikern frågar. Rollerna sitter nära varandra och byts lätt ihop i annonser." },
+        { "a": "Data engineer ≠ AI-specialist", "b": "Att bygga dataflöden och att träna modeller är två yrken. Söker ni någon som först ska få ordning på datan är det en data engineer — och det är oftast rätt ordning." }
+      ],
+      "cv": ["SQL", "Python", "Airflow", "dbt", "Snowflake", "Databricks", "Azure Data Factory", "Kafka", "ETL", "Spark", "Git"],
+      "ask": [
+        { "q": "Vad hände senast ett dataflöde du byggt gick sönder mitt i natten?", "good": "Beskriver hur felet upptäcktes, vad som hände med gårdagens siffror och vad som ändrades. Den som aldrig varit med om det har sällan haft flöden i drift." },
+        { "q": "Hur vet den som läser en rapport att siffran går att lita på?", "good": "Nämner kontroller i själva flödet, inte bara att koden fungerar. Datakvalitet är kärnan i jobbet — den som tar upp det självmant är oftast rätt person." }
+      ],
+      "junior": "Bygger och underhåller enskilda flöden i en färdig plattform, med granskning av en kollega. Ofta 0–2 år.",
+      "senior": "Äger hur data hämtas, lagras och lämnas ut i hela organisationen — inklusive kostnad, spårbarhet och vem som får se vad."
+    },
+    {
+      "id": "hr-ts",
+      "title": "TypeScript",
+      "typ": "Språk",
+      "dom": "Frontend",
+      "one": "JavaScript med säkerhetsbälte — fångar fel innan koden ens körs.",
+      "what": "TypeScript är JavaScript med ett extra lager som beskriver vilken sorts data som får finnas var: att ett pris alltid är ett tal, och att en kund aldrig saknas. Kontrollen sker medan utvecklaren skriver, och innan koden körs översätts TypeScript till vanlig JavaScript — typerna finns alltså inte kvar i det som når användaren. För dig som rekryterar: den som kan TypeScript kan JavaScript, och språket används lika mycket på serversidan som i webbläsaren.",
+      "analogy": "Tänk på ett sorteringsbräde för barn, där varje kloss bara passar i sitt eget hål. JavaScript är ett bräde med ett enda stort hål — allt går ner, och felet upptäcks när någon vänder på brädet. TypeScript ger varje kloss sin form, så det som inte passar stannar i handen.",
+      "tasks": [
+        "Beskriver vilken form datan har: vad ett kundobjekt innehåller och vad som får saknas.",
+        "Fångar fel i editorn medan koden skrivs, i stället för hos användaren efteråt.",
+        "Inför typer i en befintlig JavaScript-kodbas — ofta stegvis, en del i taget.",
+        "Delar samma typer mellan frontend och backend, så båda sidor är överens om datan."
+      ],
+      "fits": [
+        "Gillar att fånga problem tidigt hellre än att felsöka dem sent.",
+        "Tycker om tydliga överenskommelser — det ska framgå vad ett värde får vara.",
+        "Är tålmodig med verktyg: typer kostar tid i början och betalar tillbaka senare."
+      ],
+      "confuse": [
+        { "a": "TypeScript ≠ ett nytt språk att lära från början", "b": "TypeScript bygger på JavaScript och läggs ovanpå den kod som redan finns. Den som kan JavaScript kommer in i TypeScript på några veckor — det är sällan värt en egen kravrad." },
+        { "a": "TypeScript ≠ bara frontend", "b": "Språket används lika mycket på serversidan, i Node.js-tjänster och i byggverktyg. Ser du TypeScript i ett CV säger det alltså inget om vilken halva av systemet personen arbetat i." },
+        { "a": "TypeScript ≠ garanti mot buggar", "b": "Typerna fångar en sorts fel: att fel data hamnar på fel plats. Logiska fel och trasiga antaganden om verkligheten fångas fortfarande bara av tester och granskning." }
+      ],
+      "cv": ["JavaScript", "React", "Node.js", "Angular", "Vue", "Next.js", "typning", "interface", "ESLint", "Jest", "npm"],
+      "ask": [
+        { "q": "Vad blir lättare för ett team som går över till TypeScript?", "good": "Svarar i vardagsnytta: färre fel av misstag, och att ny kod går att förstå utan att fråga någon. Den som bara säger \"det är bättre\" har oftast inte infört det själv." },
+        { "q": "Har du infört TypeScript i en kodbas som redan fanns, eller bara arbetat i en färdig?", "good": "Båda svaren duger. Att införa det stegvis i gammal kod är ett tyngre uppdrag — den som gjort det kan oftast berätta vad som var jobbigast." }
+      ],
+      "junior": "Skriver TypeScript i en kodbas där uppsättningen redan finns, och förstår felmeddelandena. Vanligt direkt efter utbildning — 0–2 år.",
+      "senior": "Bestämmer hur strikt kodbasen ska vara, delar typer mellan system och lotsar teamet genom en införandeperiod."
+    },
+    {
+      "id": "hr-py",
+      "title": "Python",
+      "typ": "Språk",
+      "dom": "Data & AI",
+      "one": "Lättläst språk som dominerar data, AI och automatisering.",
+      "what": "Python är ett programspråk byggt för att vara lätt att läsa: koden liknar strukturerad engelska och kräver få tecken för att uttrycka mycket. Det gör att språket används av fler än renodlade utvecklare — analytiker, forskare och testare skriver Python utan att kalla sig programmerare. För dig som rekryterar är det viktigaste att veta att ordet Python täcker vitt skilda jobb: dataflöden, AI-modeller, webbtjänster och automatisering av manuellt arbete.",
+      "analogy": "Tänk på en kökskniv. Den finns i varje kök och nästan alla klarar att använda den. Men det är skillnad på att skiva en tomat och på att stycka en oxe. Att någon kan Python säger vilket redskap personen håller i, inte vilket arbete som utförts.",
+      "tasks": [
+        "Bygger flöden som hämtar, tvättar och flyttar data mellan system.",
+        "Tränar och utvärderar modeller, oftast med färdiga bibliotek snarare än egen matematik.",
+        "Automatiserar sådant som annars görs för hand: rapporter, filer, återkommande kontroller.",
+        "Skriver webbtjänster och API:er, oftast med Django eller FastAPI."
+      ],
+      "fits": [
+        "Gillar att komma till ett resultat snabbt och prova sig fram i små steg.",
+        "Är nyfiken på själva problemet, inte bara på tekniken som löser det.",
+        "Tycker om att göra andras arbete lättare genom att automatisera bort det tråkiga."
+      ],
+      "confuse": [
+        { "a": "Python ≠ bara AI", "b": "AI är det som syns mest, men mycket av all Python som körs i drift är dataflöden, webbtjänster och automatisering. Fråga vilken sorts Python rollen faktiskt handlar om." },
+        { "a": "Python ≠ nybörjarspråk", "b": "Att språket är lätt att börja med betyder inte att det är enkelt att bygga stort i. Erfarenhet i Python skiljer sig lika mycket åt som i vilket annat språk som helst." },
+        { "a": "Python ≠ Python 2", "b": "Versionen som används idag är Python 3. Ser du Python 2 i en systembeskrivning handlar det om äldre kod som behöver flyttas, och det är ett eget slags uppdrag." }
+      ],
+      "cv": ["pandas", "NumPy", "Django", "FastAPI", "SQL", "Airflow", "PyTorch", "Jupyter", "Docker", "Git", "REST"],
+      "ask": [
+        { "q": "Vad har du använt Python till senast — och vem använde resultatet?", "good": "Ett konkret svar som placerar arbetet: ett dataflöde, en modell, en tjänst eller ett skript som sparade någon tid varje vecka. Ordet Python ensamt säger inte vilket av dem." },
+        { "q": "Hur vet du att din kod fortfarande fungerar när någon annan ändrar i den?", "good": "Nämner tester och att koden körs automatiskt någonstans. Python är lätt att skriva snabbt, och den som arbetat i skarpa system vet vad som händer när ingenting bromsar." }
+      ],
+      "junior": "Skriver skript och avgränsade uppgifter i ett befintligt projekt, med granskning av en kollega. Ofta 0–2 år.",
+      "senior": "Ansvarar för att koden går att köra, testa och underhålla av andra — och säger till när Python är fel verktyg."
+    },
+    {
+      "id": "hr-cs",
+      "title": "C# / .NET",
+      "typ": "Språk",
+      "dom": "Backend",
+      "one": "Microsofts arbetshäst — vanligast i svensk offentlig sektor och hos storbolag.",
+      "what": "C# är programspråket, och .NET är plattformen som kör koden och levererar de färdiga byggdelarna. Kombinationen är en av de vanligaste för affärssystem, webbtjänster och integrationer — särskilt i svensk offentlig sektor, bank och industri. Modern .NET kör lika gärna på Linux och i molnet som på Windows, och det är en förändring många kravlistor ännu inte hunnit ikapp. För dig som rekryterar betyder det en stor och stabil arbetsmarknad, men också att en del av jobben handlar om att förvalta äldre system.",
+      "analogy": "Tänk på en verkstad med ett fast sortiment. Skruvarna, verktygen och måtten kommer från samma tillverkare och passar ihop utan att någon behöver välja. Det gör arbetet förutsägbart och lätt att lämna över — och lite mindre fritt än en verkstad där varje del är vald för hand.",
+      "tasks": [
+        "Bygger API:er och affärslogik som andra system och appar hämtar data ur.",
+        "Kopplar ihop system som inte var byggda för att prata med varandra.",
+        "Förvaltar och moderniserar äldre kod som fortfarande bär verksamheten.",
+        "Sitter nära verksamheten — reglerna i koden är ofta verksamhetens egna regler."
+      ],
+      "fits": [
+        "Gillar ordning och tydliga strukturer mer än att uppfinna sitt eget upplägg.",
+        "Är intresserad av verksamheten bakom koden: regler, processer och undantag.",
+        "Tycker om långsiktighet — system i den här världen lever ofta i tio år eller mer."
+      ],
+      "confuse": [
+        { "a": "C# ≠ .NET", "b": "C# är språket man skriver i. .NET är plattformen koden körs på, tillsammans med F# och Visual Basic. En annons kan kräva båda orden utan att mena två färdigheter." },
+        { "a": ".NET Framework ≠ .NET", "b": "Det äldre .NET Framework kör bara på Windows och får inga nya funktioner. Moderna .NET är en annan produkt i samma namnfamilj — fråga vilken av dem systemet faktiskt använder." },
+        { "a": "C# ≠ bara Windows", "b": "Sedan flera versioner tillbaka kör .NET på Linux, i containers och i alla stora moln. Därför har en .NET-utvecklare idag ofta både Docker och molnplattformar i sitt CV." }
+      ],
+      "cv": ["C#", "ASP.NET Core", "Entity Framework", "SQL Server", "Azure", "REST", "xUnit", "Blazor", "Docker", "Git", "Visual Studio"],
+      "ask": [
+        { "q": "Har du arbetat i både .NET Framework och modern .NET? Vad skiljer i vardagen?", "good": "Den som gjort båda kan beskriva konkreta skillnader i drift och byggtid. Svaret säger också om personen mest förvaltat äldre system eller byggt nytt." },
+        { "q": "Berätta om en regel i verksamheten som var svår att få rätt i koden.", "good": "Beskriver ett verkligt undantag och hur det löstes tillsammans med någon som kunde verksamheten. I den här världen ligger svårigheten oftare i reglerna än i tekniken." }
+      ],
+      "junior": "Löser avgränsade uppgifter i en befintlig lösning och lär sig verksamhetens regler efter hand. Ofta 0–2 år.",
+      "senior": "Designar hur tjänsterna hänger ihop, äger integrationerna mot andra system och avgör vad som är värt att modernisera."
+    },
     {
       "id": "hr-docker",
       "title": "Docker",
@@ -207,7 +331,38 @@
       "junior": "Kan starta färdiga containers och har paketerat sina egna projekt. Vanligt redan efter en utbildning eller ett år i yrket — 0–2 år.",
       "senior": "Bestämmer hur hela organisationens paketering ska se ut: säkerhet, storlek, bygghastighet och vem som får släppa vad."
     },
-    { "id": "hr-next", "title": "Next.js", "typ": "Ramverk", "dom": "Frontend", "draft": true, "one": "React med extra allt — det vanligaste sättet att bygga React-sajter idag." },
+    {
+      "id": "hr-next",
+      "title": "Next.js",
+      "typ": "Ramverk",
+      "dom": "Frontend",
+      "one": "React med extra allt — det vanligaste sättet att bygga React-sajter idag.",
+      "what": "Next.js är ett ramverk byggt ovanpå React som lägger till det React självt inte gör: sidadresser, en serverdel och färdiga svar på hur sidor ska laddas snabbt. Det används både för publika sajter, där sökmotorer måste kunna läsa innehållet, och för inloggade tjänster. Att någon kan Next.js betyder alltså att personen kan React — det omvända gäller inte alltid.",
+      "analogy": "Tänk på ett tält. React är tältduken och stängerna — allt som behövs, men du reser det själv varje gång. Next.js är popup-tältet: samma duk, redan monterad på ett ställ som fälls ut. Det går snabbare, och du bestämmer mindre om hur stängerna sitter.",
+      "tasks": [
+        "Bygger sidor och sidadresser i en struktur som ramverket bestämmer.",
+        "Avgör vad som ska byggas på servern och vad som ska ske i webbläsaren.",
+        "Hämtar data nära där den används, i stället för i ett separat lager.",
+        "Ser till att sidor laddar snabbt och går att läsa för sökmotorer."
+      ],
+      "fits": [
+        "Ser detaljer i hur snabbt något känns, inte bara i hur det ser ut.",
+        "Gillar att arbeta nära både gränssnitt och server utan att välja sida.",
+        "Är bekväm med att följa ett ramverks konventioner i stället för sina egna."
+      ],
+      "confuse": [
+        { "a": "Next.js ≠ ett alternativ till React", "b": "Next.js bygger på React och ersätter det inte. En annons som ställer dem mot varandra läser som en missförstådd kravlista — skriv React som grunden och Next.js som miljön." },
+        { "a": "Next.js ≠ bara frontend", "b": "Ramverket har en serverdel som hämtar data och skickar färdiga sidor. En Next.js-utvecklare rör därför ofta både gränssnittet och delar av backendarbetet." },
+        { "a": "Next.js ≠ Vercel", "b": "Vercel är företaget bakom ramverket och en av flera platser att köra det på. Next.js går lika bra att köra i AWS, i Azure eller i en egen container." }
+      ],
+      "cv": ["React", "TypeScript", "JavaScript", "Vercel", "SSR", "App Router", "Tailwind", "REST", "Figma", "Node.js", "Git"],
+      "ask": [
+        { "q": "När väljer man Next.js i stället för React ensamt?", "good": "Nämner något konkret: sökmotorer, laddtid eller att slippa bygga upp en struktur från noll. Den som svarar \"det är modernare\" har oftast följt en mall." },
+        { "q": "Vad har du byggt som riktiga användare besökt?", "good": "En adress att titta på väger tyngre än en teknikuppräkning. Fråga sedan vad som var svårast — svaret skiljer den som byggt från den som följt en guide." }
+      ],
+      "junior": "Bygger sidor i ett projekt som redan är uppsatt och följer ramverkets struktur. Ofta 0–2 år, ofta självlärd.",
+      "senior": "Bestämmer hur data hämtas, vad som körs var, och vad prestandan får kosta i komplexitet."
+    },
     {
       "id": "hr-cicd",
       "title": "CI/CD",
@@ -240,7 +395,38 @@
       "junior": "Kan använda en befintlig automatik och förstår varför bygget stannade. Ofta 0–2 år.",
       "senior": "Designar hur hela organisationen bygger och släpper kod — inklusive säkerhetskrav, godkännanden och hur man snabbt tar sig ur en dålig release."
     },
-    { "id": "hr-scrum", "title": "Scrum & agilt", "typ": "Arbetssätt", "dom": "Tvärs över teamet", "draft": true, "one": "Arbetssättet bakom orden sprint, standup och backlog." }
+    {
+      "id": "hr-scrum",
+      "title": "Scrum & agilt",
+      "typ": "Arbetssätt",
+      "dom": "Tvärs över teamet",
+      "one": "Arbetssättet bakom orden sprint, standup och backlog.",
+      "what": "Agilt är ett samlingsnamn för arbetssätt där teamet levererar i korta omgångar och justerar riktningen efter vad det lär sig. Alternativet är att följa en plan som lades långt innan arbetet började. Scrum är den mest spridda varianten, och den som gett oss orden sprint, backlog, standup och retrospektiv. För dig som rekryterar är det värt att veta att nästan alla säger sig arbeta agilt — hur det ser ut i praktiken varierar kraftigt.",
+      "analogy": "Tänk på en seglats mot en hamn. Den som lägger en fast kurs i förväg måste hålla den även när vinden vänder. Den som justerar kursen var timme ser ut att ta en omväg — men är den som faktiskt kommer in i hamnen.",
+      "tasks": [
+        "Delar upp arbetet i bitar som går att bli klar med inom en period.",
+        "Står i den dagliga avstämningen och säger vad som hindrar arbetet just nu.",
+        "Reder ut vad en uppgift egentligen innebär innan den planeras in.",
+        "Ser tillbaka på hur perioden gick och ändrar en sak till nästa."
+      ],
+      "fits": [
+        "Är bekväm med att säga vad som inte blev klart, inför hela teamet.",
+        "Gillar att lämna ifrån sig arbete tidigt för granskning i stället för när allt är perfekt.",
+        "Tycker om att prioritera bort — allt ryms inte i samma period."
+      ],
+      "confuse": [
+        { "a": "Scrum ≠ agilt", "b": "Agilt är hållningen, Scrum är en av flera metoder som bygger på den. Kanban är en annan. En kandidat som arbetat i Kanban har arbetat agilt." },
+        { "a": "Scrum master ≠ projektledare", "b": "En scrum master hjälper teamet att arbeta bra och röjer hinder, men styr inte vad som ska byggas eller när. Det ansvaret ligger hos en produktägare." },
+        { "a": "Agilt ≠ ingen planering", "b": "Planeringen finns kvar, men görs oftare och för kortare perioder. Ett team som inte kan säga vad det gör de närmaste två veckorna arbetar inte agilt — det improviserar." }
+      ],
+      "cv": ["Scrum", "Kanban", "Jira", "sprint", "backlog", "retrospektiv", "SAFe", "Azure DevOps", "standup", "produktägare", "estimering"],
+      "ask": [
+        { "q": "Hur såg en vanlig vecka ut i ditt förra team?", "good": "Ett vardagligt svar med möten, arbete och avbrott — inte en uppräkning av ceremonier. Den som beskriver hur det faktiskt fungerade har varit med på riktigt." },
+        { "q": "Vad hände hos er när ni inte blev klara med det ni planerat?", "good": "Beskriver ett samtal om prioritering, inte övertid. Svaret säger mer om teamets kultur än om personens metodkunskap." }
+      ],
+      "junior": "Deltar i teamets rutiner och lär sig hur arbetet delas upp och uppskattas. Gäller de flesta, oavsett antal år.",
+      "senior": "Ser när ett arbetssätt slutat fungera och vågar ändra det — även när det står i en processbeskrivning."
+    }
   ],
 
   "faqCategories": ["Vanligast", "Teknik i praktiken", "Annonsen", "Screening", "CV & nivåer"],
