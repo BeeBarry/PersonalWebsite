@@ -1,0 +1,481 @@
+---
+title: 'Retention, nedskrivning och de tre frågespråken'
+description: 'Hur du frågar InfluxDB — och vad du väljer bort när gammal data ska bort'
+category: 'influxdb'
+part: 1
+order: 2
+date: '2026-08-09'
+tags: ['Beginner', 'InfluxDB', 'Flux']
+---
+
+## Var vi är
+
+Förra delen gav datamodellen: measurement, taggar, fält och den serie de tillsammans bildar. Du vet
+nu vad som ska vara tagg och varför ett id aldrig får bli en.
+
+Två frågor lämnades öppna. Datan ska hämtas ut igen — och InfluxDB har **tre** frågespråk att göra
+det med, vilket är förvirrande tills man vet varför. Och den ska inte ligga kvar för alltid.
+
+Den här delen tar båda. Zoomen ligger på att fråga och att bestämma livslängd; att drifta lagringen
+och skala ut den ligger utanför. Övningarna körs mot samma publika instans som förra delen.
+
+<Del titel="Frågespråken" />
+
+## Varför InfluxDB har tre frågespråk
+
+InfluxDB har bytt frågespråk två gånger, och alla tre lever kvar samtidigt.
+
+**InfluxQL** kom med 1.x och liknar SQL. **Flux** kom med 2.0 som ett eget språk byggt för
+dataflöden. **SQL** kom med 3.0, när projektet vände tillbaka.
+
+Att veta vilket du tittar på är inte akademiskt. Samma instans jag frågade mot exponerar alla tre —
+som tre olika datakällor i Grafana, mot samma lagring. Ett exempel du hittar på nätet fungerar inte
+om du klistrar in det på fel ställe.
+
+## Vad InfluxQL är
+
+**InfluxQL** är det ursprungliga frågespråket, och det ser ut som SQL med tidsspecifika tillägg.
+
+```sql
+SELECT mean("value")
+FROM "ElectricPowerOperations"
+WHERE time > now() - 2d
+GROUP BY time(6h)
+```
+
+`SELECT`, `FROM`, `WHERE` och `GROUP BY` känns igen från SQL-delen. Det som inte finns där är
+`time(6h)` — en gruppering på tidsintervall i stället för på en kolumn.
+
+InfluxQL saknar `JOIN` mellan measurements och kan bara läsa från en databas i taget. Det är
+tillräckligt för det mesta man faktiskt gör med tidsseriedata.
+
+## Vad Flux är
+
+**Flux** är ett funktionellt språk där data flödar genom en kedja av steg, sammanbundna med `|>`.
+
+```
+from(bucket: "EIAtest7")
+  |> range(start: -2d)
+  |> filter(fn: (r) => r.type == "Demand")
+  |> aggregateWindow(every: 6h, fn: mean)
+```
+
+Varje steg tar en tabell och lämnar en tabell. Röroperatorn `|>` är samma idé som Linux-delens rör
+och som LogQL-kedjan i Loki-delen — och `range()` är obligatorisk, precis som Lokis strömväljare.
+
+Flux kan saker InfluxQL inte kan: läsa från flera buckets, slå ihop dem, anropa externa HTTP-API:er
+och skriva tillbaka resultat. Priset är att det inte liknar något annat du kan.
+
+## InfluxQL vs Flux
+
+Två språk mot samma data, och valet handlar mindre om kraft än om vad som är begripligt.
+
+**InfluxQL** är deklarativt och bekant. Du säger vad du vill ha, och det tar tio sekunder att läsa
+för någon som kan SQL.
+
+**Flux** är en pipeline. Du beskriver stegen i ordning, och du kan göra saker som inte går att
+uttrycka i en `SELECT` alls.
+
+Praktiskt: kan du beskriva frågan som *"medelvärdet per sextimmarsfönster för den här taggen"* är
+InfluxQL kortare och tydligare. Behöver du korsa två buckets eller berika med data utifrån är Flux
+det enda som klarar det.
+
+## Vad SQL-stödet är
+
+Från InfluxDB 3.0 går det att fråga med **riktig SQL**, eftersom lagringsmotorn skrevs om till
+kolumnformatet Apache Arrow.
+
+```sql
+SELECT region, type, value
+FROM "ElectricPowerOperations"
+LIMIT 2
+```
+
+Frågan ovan körde jag mot samma data som exemplen ovan, genom en tredje datakälla. Measurementet
+uppträder som en tabell och taggarna som kolumner.
+
+Det är ett medvetet steg tillbaka från Flux, och skälet är enkelt: fler kan SQL än kan Flux, och
+verktyg som redan talar SQL fungerar direkt.
+
+## Flux vs SQL
+
+Den skillnad som avgör vilken väg ett nytt projekt bör ta.
+
+**Flux** är ett eget språk med egna funktioner. Det är kraftfullt inom InfluxDB och oanvändbart
+utanför, och Influx Data har själva markerat det som i underhållsläge.
+
+**SQL** är samma språk som resten av datavärlden talar. Verktyg, bibliotek och kunskap går att
+återanvända.
+
+För ett nytt system på 3.x är SQL rätt förstahandsval. Möter du Flux är det nästan alltid i ett
+befintligt 2.x-system — läs det, men bygg inte nytt i det.
+
+<Del titel="Fönstret" />
+
+## Vad ett aggregatfönster är
+
+Ett **aggregatfönster** delar tidsintervallet i lika stora bitar och räknar ut ett värde per bit.
+
+Det är den vanligaste operationen i hela tidsseriearbetet. Rådata är alldeles för tät för att ritas
+eller läsas — ett sextimmarsfönster gör tusen punkter till fyra.
+
+Funktionen du väljer avgör vad du ser: `mean` ger nivån, `max` ger toppen, `count` ger hur många
+mätningar som kom in.
+
+## Fönstret i InfluxQL
+
+I InfluxQL skrivs fönstret som `GROUP BY time(...)`.
+
+```sql
+SELECT mean("value") FROM "ElectricPowerOperations"
+WHERE time > now() - 2d AND "type" = 'Demand'
+GROUP BY time(6h)
+```
+
+Svaret blir en rad per fönster, med fönstrets starttid som tidsstämpel:
+
+```
+2026-08-06T18:00:00Z   29939.6
+2026-08-07T00:00:00Z   27450.7
+2026-08-07T06:00:00Z   21214.7
+2026-08-07T12:00:00Z   24212.7
+```
+
+Lägg märke till formen: elförbrukningen sjunker på natten och stiger på dagen. Det mönstret syns
+först när fönstret finns — i rådata drunknar det.
+
+## Fönstret i Flux
+
+I Flux är fönstret ett steg i kedjan, `aggregateWindow()`.
+
+```
+|> aggregateWindow(every: 6h, fn: mean)
+```
+
+Samma fråga, samma svar. Skillnaden är att funktionen är ett argument i stället för inbakad i
+`SELECT`, vilket gör det trivialt att byta `mean` mot `max` utan att skriva om frågan.
+
+`aggregateWindow` lägger dessutom fönstrets **sluttid** som tidsstämpel, medan InfluxQL använder
+starttiden. Samma data ser därför förskjuten ut med ett fönster om du jämför de två sida vid sida.
+
+## Råa punkter vs fönster
+
+Skillnaden i storleksordning är hela anledningen till att fönstret finns.
+
+**Rådata** är varje enskild mätning. På instansen jag frågade fanns **1331 punkter** i det senaste
+tolvtimmarsintervallet för ett enda measurement.
+
+**Fönstrad data** är ett värde per intervall. Samma measurement över två dygn med sextimmarsfönster
+gav **9 rader**.
+
+Det är skillnaden mellan en graf som tar sekunder att rita och en som tar millisekunder — och mellan
+en tabell du kan läsa och en du bara kan skrolla i.
+
+## Vad `fill()` gör med luckor
+
+`fill()` bestämmer vad som händer med fönster där ingen mätning kom in.
+
+Utan angivelse fyller InfluxQL luckorna med `null`, vilket ger tomma rader i tabellen och hål i
+grafen. Alternativen är `fill(none)` som hoppar över fönstret helt, `fill(0)`, `fill(previous)` som
+upprepar föregående värde, och `fill(linear)` som interpolerar.
+
+<Callout type="fallgrop">
+**`fill(previous)` och `fill(linear)` uppfinner data som aldrig mättes.**
+
+En sensor som slutade svara i sex timmar ger en rak, trovärdig linje i grafen i stället för ett hål.
+Ingen ser att något var fel, eftersom hålet var det enda tecknet.
+
+Det är ett rimligt val för en dashboard där luckor är visuellt störande och sällsynta. Det är fel
+val överallt där någon fattar beslut på kurvan, och det är alltid fel val under ett larm.
+
+`fill(none)` eller `null` är standardsvaret. Ett hål i grafen är information.
+</Callout>
+
+<Del titel="Livslängden" />
+
+## Vad retention är
+
+**Retention** är hur länge punkter sparas i en bucket innan de tas bort automatiskt.
+
+Den sitter på bucketen, inte på datan, och den är det enda som hindrar en tidsseriedatabas från att
+växa tills disken tar slut.
+
+<Doodle
+  name="hyllan-har-en-ande"
+  caption="Hyllan har en ände. Retention bestämmer var den sitter — inte vad som är värt att spara."
+/>
+
+Borttagningen är inte en fråga du ställer. Den sker i bakgrunden, och den frågar inte om lov.
+
+## Retention läses i nanosekunder
+
+Retention rapporteras som ett heltal nanosekunder, vilket ger tal som är svåra att läsa i förbifarten.
+
+```
+EIAtest7                          0
+grafana             604800000000000
+noaa-buoys         2592000000000000
+```
+
+`604800000000000` nanosekunder är 604 800 sekunder, alltså **sju dygn**. `2592000000000000` är
+**trettio dygn**.
+
+Och `0` betyder inte noll sekunder. Det betyder **oändlig retention** — datan tas aldrig bort. Det
+är samma nanosekundskonvention som förra delens tidsstämplar, och samma fälla: talet ser ut som en
+sak och betyder en annan.
+
+## Vad nedskrivning är
+
+**Nedskrivning** är att räkna ihop gamla punkter till färre, grövre punkter och spara resultatet i
+en annan bucket innan originalen tas bort.
+
+<Flow
+  caption="Fyra steg. Bara det andra kräver att någon skrivit en fråga — resten sköts av retention."
+  steps={[
+    {
+      label: "Rå bucket",
+      via: "en punkt var 15:e minut",
+      note: "Kort retention, till exempel sju dygn.",
+    },
+    {
+      label: "En task kör regelbundet",
+      via: "`aggregateWindow`",
+      note: "Räknar ut ett värde per timme ur den råa datan.",
+      accent: true,
+    },
+    {
+      label: "Grov bucket",
+      via: "en punkt per timme",
+      note: "Lång retention — två år tar en bråkdel av utrymmet.",
+    },
+    {
+      label: "Rådatan tas bort",
+      note: "Retention på den råa bucketen gör det, utan att någon rör den.",
+    },
+  ]}
+/>
+
+En **task** är en sparad fråga som körs på schema. Den är alltså ingen egen mekanism utan samma
+fönsterfråga du redan skrivit, plus ett `to()`-steg som skriver svaret någon annanstans.
+
+## Retention vs nedskrivning
+
+Två sätt att hantera att data blir gammal, och de utesluter inte varandra.
+
+**Retention** tar bort. Efter sju dygn finns punkten inte, och ingenting återstår av den.
+
+**Nedskrivning** komprimerar. Fyra punkter i timmen blir en, och den enda som överlever bär deras
+medelvärde.
+
+De används nästan alltid tillsammans: kort retention på rådata, lång på den nedskrivna. Utan
+nedskrivning är retention ett rent bortfall; utan retention växer den råa bucketen ändå.
+
+## Vad du förlorar
+
+Nedskrivning är inte gratis, och priset är det du inte längre kan fråga om.
+
+<Split
+  leftTitle="Skriv ner allt direkt"
+  rightTitle="Behåll rådata en period"
+  leftTone="bad"
+  rightTone="good"
+  caption="Samma lagringskostnad i storleksordning. Bara det ena låter dig felsöka gårdagens incident."
+>
+  <div slot="left">
+
+  Allt blir timmedelvärden efter en timme.
+
+  En topp som varade i tio minuter försvinner in i medelvärdet och syns aldrig igen.
+
+  Larmet gick klockan 03, men underlaget för att förstå varför finns inte kvar klockan 09.
+
+  </div>
+  <div slot="right">
+
+  Rådata i sju dygn, timmedelvärden i två år.
+
+  Incidenten i går går att gräva i på minutnivå.
+
+  Trenden över kvartalet finns kvar, i den upplösning en trend behöver.
+
+  </div>
+</Split>
+
+Två saker till försvinner tyst. Taggar du inte grupperade på i nedskrivningsfrågan finns inte i
+resultatet — den nedskrivna datan har bara de dimensioner du valde. Och `max` går inte att räkna ut
+i efterhand ur ett medelvärde, så vill du behålla toppar måste du skriva ner dem separat.
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att skriva fönsterfrågor varje gång du bygger en panel, och sätta retention en gång per
+bucket. Det du gör oftast är att läsa någon annans fråga och avgöra vilket språk den är skriven i.
+
+Det som är värt din tid nu är fönstret. En fråga utan aggregatfönster mot en tidsseriedatabas är
+nästan alltid ett misstag — antingen är den långsam, eller så drunknar mönstret i punkter.
+
+Tasks i produktion, kompaktering, sharding och att dimensionera lagringen kan vänta. De blir dina
+den dag du äger databasen — och de bygger alla på fönstret och retention.
+
+## Vanliga nybörjarförväxlingar
+
+De tre frågespråken är inte tre produkter. Det är samma lagring med tre gränssnitt.
+
+Flux är inte efterföljaren till SQL-stödet. Det är tvärtom — SQL kom efter Flux.
+
+`GROUP BY time()` är inte samma som `GROUP BY` i SQL. Det grupperar på tidsintervall, inte på en
+kolumn.
+
+InfluxQL och Flux stämplar inte fönstret likadant. Det ena använder starttiden, det andra sluttiden.
+
+`fill(previous)` fyller inte i data som fanns. Den uppfinner data som aldrig mättes.
+
+Retention `0` betyder inte noll. Det betyder oändligt.
+
+Nedskrivning är inte samma sak som retention. Den ena komprimerar, den andra tar bort.
+
+## Prova själv
+
+Vi frågar samma publika instans som förra delen, och nu genom två olika gränssnitt.
+
+```bash
+P=https://play.grafana.org/api/datasources/proxy
+P=$P/uid/play-influx-cloud-influxql/query
+q() { curl -s -G "$P" \
+  --data-urlencode 'db=EIAtest7' \
+  --data-urlencode "q=$1"; }
+M='"ElectricPowerOperations"'
+```
+
+Räkna först hur många råa punkter som kom in det senaste halvdygnet:
+
+```bash
+q "SELECT count(\"value\") FROM $M
+   WHERE time > now() - 12h" \
+  | jq -r '.results[0].series[0].values[0][1]'
+```
+
+Jag fick `1331`. Lägg nu ett sextimmarsfönster över två dygn:
+
+```bash
+W="SELECT mean(\"value\") FROM $M
+   WHERE time > now() - 2d
+   AND \"type\" = 'Demand'
+   GROUP BY time(6h)"
+q "$W" | jq -r '.results[0].series[0].values[]
+  | @tsv' | head -4
+```
+
+```
+2026-08-06T18:00:00Z	29939.6
+2026-08-07T00:00:00Z	27450.7
+2026-08-07T06:00:00Z	21214.7
+2026-08-07T12:00:00Z	24212.7
+```
+
+**Nio rader i stället för tusentals** — och dygnsrytmen syns direkt: lägst tidigt på morgonen, högst
+på kvällen. Fråga nu samma instans genom Flux-gränssnittet i stället, och läs av bucketarnas
+retention:
+
+```bash
+G=https://play.grafana.org/api
+curl -s -X POST "$G/ds/query" \
+  -H 'Content-Type: application/json' -d @- <<'EOF' \
+  | jq -r '.results.A.frames[0].data.values
+      | [.[0], .[3]] | transpose[] | @tsv'
+{"queries":[{"refId":"A",
+ "datasource":{"uid":"play-influx-2-flux",
+ "type":"influxdb"},"query":"buckets()"}]}
+EOF
+```
+
+```
+EIAtest7	0
+grafana	604800000000000
+noaa-buoys	2592000000000000
+```
+
+Sju dygn, trettio dygn — och `0` för `EIAtest7`, som alltså sparas för alltid. **Lägg märke till att
+det är samma bucket du nyss frågade som `db=EIAtest7`**, genom ett helt annat gränssnitt och ett
+helt annat språk.
+
+Tre saker som kan förvirra. **Flux-frågan skickas som `POST` med JSON**, medan InfluxQL går som en
+vanlig `GET` — det är gränssnitten som skiljer sig, inte lagringen. `[.[0], .[3]]` i jq plockar
+kolumn ett och fyra, eftersom `buckets()` svarar med `name`, `id`, `retentionPolicy` och
+`retentionPeriod` i den ordningen; kör frågan utan den filtreringen först om du vill se alla fyra.
+Och instansen är publik och datan uppdateras, så dina tal blir inte mina — formen på dygnskurvan
+håller sig däremot.
+
+<Callout type="kom-ihag">
+- InfluxDB har **tre frågespråk** mot samma lagring: InfluxQL, Flux och SQL.
+- InfluxQL liknar SQL. Flux är en pipeline med `|>`. SQL kom med 3.0 och är förstahandsvalet nu.
+- Flux är i underhållsläge. Läs det i befintliga 2.x-system, men bygg inte nytt i det.
+- Ett **aggregatfönster** gör tusen punkter till fyra. `GROUP BY time(6h)` respektive `aggregateWindow`.
+- InfluxQL stämplar fönstret med **starttiden**, Flux med **sluttiden**.
+- `fill(previous)` och `fill(linear)` **uppfinner data**. Ett hål i grafen är information.
+- **Retention** sitter på bucketen och tar bort. `0` betyder oändligt, inte noll.
+- Retention rapporteras i nanosekunder: `604800000000000` är sju dygn.
+- **Nedskrivning** räknar ihop gamla punkter till grövre och sparar dem någon annanstans.
+- Det du inte grupperade på i nedskrivningen finns inte kvar. `max` går inte att räkna ur ett medel.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Du hittar ett kodexempel med `|>` som inte fungerar i din fråga. Vad är fel?",
+      a: "Exemplet är skrivet i Flux och du frågar genom InfluxQL- eller SQL-gränssnittet. Det är samma lagring men tre olika språk, och de är inte utbytbara. `|>` är Flux röroperator; InfluxQL använder `SELECT ... GROUP BY time()`.",
+    },
+    {
+      q: "Varför är en fråga utan aggregatfönster nästan alltid fel mot en tidsseriedatabas?",
+      a: "För att rådata är för tät. På instansen i övningen fanns 1331 punkter på tolv timmar för ett enda measurement. Utan fönster blir grafen långsam att rita och mönstret drunknar i punkter — med sextimmarsfönster blev två dygn nio läsbara rader.",
+    },
+    {
+      q: "Samma data ser förskjuten ut när du jämför en InfluxQL-graf med en Flux-graf. Varför?",
+      a: "De stämplar fönstret olika. InfluxQL sätter fönstrets starttid som tidsstämpel, `aggregateWindow` i Flux sätter sluttiden. Med sextimmarsfönster blir skillnaden sex timmar, vilket ser ut som att den ena datakällan ligger fel.",
+    },
+    {
+      q: "En bucket har `retentionPeriod: 0`. Hur länge sparas datan?",
+      a: "För alltid. `0` betyder oändlig retention, inte noll sekunder. Det är samma sorts fälla som nanosekundsprecisionen i förra delen — talet ser ut att betyda en sak och betyder motsatsen.",
+    },
+    {
+      q: "Vad är skillnaden mellan retention och nedskrivning?",
+      a: "Retention tar bort punkter efter en viss tid, och då finns ingenting kvar av dem. Nedskrivning räknar först ihop dem till färre och grövre punkter i en annan bucket. De används tillsammans: kort retention på rådata, lång på den nedskrivna.",
+    },
+    {
+      q: "Ni skriver ner allt till timmedelvärden efter en timme. Vilket problem upptäcker ni först?",
+      a: "Att en incident inte går att felsöka i efterhand. En topp som varade tio minuter försvinner in i timmedelvärdet, och underlaget för larmet klockan 03 finns inte kvar klockan 09. Lösningen är att behålla rådata en period — till exempel sju dygn — och skriva ner först därefter.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- InfluxQL, Flux och SQL är tre gränssnitt mot samma lagring, från tre versioner.
+- InfluxQL liknar SQL och räcker för det mesta man gör med tidsseriedata.
+- Flux är en pipeline med `|>` och klarar flera buckets, men är i underhållsläge.
+- SQL kom med 3.0 tack vare en kolumnbaserad motor, och är förstahandsvalet i nya system.
+- Ett aggregatfönster delar intervallet i lika bitar och ger ett värde per bit.
+- `GROUP BY time(6h)` i InfluxQL, `aggregateWindow(every: 6h, fn: mean)` i Flux.
+- InfluxQL stämplar med fönstrets starttid, Flux med sluttiden.
+- 1331 råa punkter på tolv timmar blev nio rader med sextimmarsfönster över två dygn.
+- `fill()` styr tomma fönster. `previous` och `linear` uppfinner data som aldrig mättes.
+- Retention sitter på bucketen, tar bort i bakgrunden och frågar inte om lov.
+- Retention rapporteras i nanosekunder, och `0` betyder oändligt.
+- Nedskrivning räknar ihop gamla punkter till grövre och sparar dem i en annan bucket.
+- En task är en sparad fönsterfråga plus ett `to()`-steg, körd på schema.
+- Kort retention på rådata, lång på den nedskrivna — de hör ihop.
+- Taggar du inte grupperade på finns inte i den nedskrivna datan.
+- `max` går inte att räkna fram ur ett medelvärde i efterhand.
+
+## Nästa del
+
+Därmed står InfluxDB-grunderna: datamodellen i förra delen, och nu frågan och livslängden.
+
+Med den stänger sig också en båge som började långt tidigare i hubben. Embedded-delen lämnade datan
+hos brokern; Observability-delen gav den namn som mätvärde; den här serien gav den ett hem.
+
+En sak har återkommit i varje serie som rör lagring. Loki indexerar etiketter men inte innehåll,
+InfluxDB indexerar taggar men inte fält, och Prometheus lagrar ett tal per etikettkombination.
+**Alla tre gör samma vägval:** de begränsar vad du kan söka på, i utbyte mot att kunna lagra
+väldigt mycket av det. Det är inte tre designer — det är en, tillämpad tre gånger.

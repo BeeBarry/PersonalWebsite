@@ -1,0 +1,506 @@
+---
+title: 'Tag, field och measurement'
+description: 'Datamodellen som gör tidsseriedata billig — och den tagg som spränger den'
+category: 'influxdb'
+part: 1
+partTitle: 'Grunderna'
+order: 1
+date: '2026-08-09'
+tags: ['Beginner', 'InfluxDB', 'Tidsserier']
+---
+
+## Var vi är
+
+Embedded-delen om CoAP och MQTT slutade med en fråga: vad händer på andra sidan brokern? Datan ska
+tas emot, lagras och larmas på.
+
+Det är den frågan den här serien svarar på. En flotta sensorer som skickar ett mätvärde var
+femtonde minut ger miljontals rader i månaden, och SQL-delens tabeller är inte byggda för den
+formen.
+
+Den här delen handlar om datamodellen: vad en punkt består av, varför taggar och fält behandlas
+olika, och vilken enskild modelleringsmiss som gör en InfluxDB oanvändbar. Frågespråken och
+livslängden tar vi i nästa del. Övningarna körs mot en publik instans och kräver ingen installation.
+
+<Del titel="Modellen" />
+
+## Vad en tidsseriedatabas är
+
+En **tidsseriedatabas** är en databas byggd för data där varje rad har en tidsstämpel och raderna
+nästan alltid läses som ett intervall.
+
+Antagandet färgar allt. Data skrivs i tidsordning och sällan om, den läses oftast som *"de senaste
+sex timmarna"*, och den blir mindre intressant med åldern.
+
+InfluxDB är en av dem. Prometheus från Observability-delen är en annan — den är också en
+tidsseriedatabas, med ett annat sätt att få tag i datan.
+
+## Tidsseriedatabas vs relationsdatabas
+
+SQL-delens modell och den här löser olika problem, och skillnaden syns tydligast i vad de optimerar.
+
+**Relationsdatabasen** är byggd för att relatera. Rader pekar på varandra med nycklar, frågan sätter
+ihop dem med `JOIN`, och en rad kan uppdateras när som helst.
+
+**Tidsseriedatabasen** är byggd för att lägga till. Det finns inga relationer mellan mätningar, ingen
+`JOIN` i vanlig mening, och en punkt skrivs en gång och ändras aldrig.
+
+Konsekvensen är komprimeringen. Miljontals rader där tidsstämplarna ligger jämnt och värdena liknar
+varandra packas extremt tätt — vilket är hela anledningen till att en tidsseriedatabas kan hålla år
+av sensordata där en relationsdatabas hade behövt partitioneras.
+
+## Vad ett measurement är
+
+Ett **measurement** är namnet på vad som mäts, och den närmaste motsvarigheten till ett tabellnamn.
+
+På den publika instansen jag mätte mot finns två:
+
+```
+ElectricPowerGeneratedByEnergySource
+ElectricPowerOperations
+```
+
+Namnet är det du anger efter `FROM` i en fråga. Till skillnad från en tabell behöver det inte skapas
+i förväg — det uppstår första gången någon skriver en punkt till det.
+
+## Vad en point är
+
+En **point** är en enskild mätning: ett measurement, en uppsättning taggar, ett eller flera fält och
+en tidsstämpel.
+
+Det här är en verklig punkt ur instansen, uppdelad rad för rad:
+
+```
+time    2026-07-09T23:00:00Z
+value   41636
+region  California
+type    Demand
+```
+
+`time` och `value` är obligatoriska i praktiken. `region` och `type` är taggar, och det är
+skillnaden mellan dem och `value` som hela artikeln handlar om.
+
+## Tag vs field
+
+Den viktigaste distinktionen i InfluxDB, och den som avgör om databasen fungerar om ett år.
+
+**En tag** är metadata om mätningen: var, vilken, vems. Den är **indexerad**, lagras som text, och är
+det du filtrerar och grupperar på.
+
+**Ett field** är själva det uppmätta värdet. Det är **inte indexerat**, lagras typat — flyttal,
+heltal, boolean, sträng — och är det du räknar på.
+
+Kontrollfrågan är kort: *ska jag filtrera på det, eller räkna på det?* Filtrera → tag. Räkna → field.
+
+En `WHERE`-fråga på ett field måste läsa igenom värdena; samma fråga på en tag slår upp i indexet.
+Skillnaden är samma sorts skillnad som mellan Lokis etiketter och loggradens innehåll, en nivå ner.
+
+## Vad en serie är
+
+En **serie** är kombinationen av ett measurement och en unik uppsättning taggvärden.
+
+`ElectricPowerOperations` med `region=California` och `type=Demand` är en serie.
+Samma measurement med `region=Florida` och `type=Demand` är en annan.
+
+Serien är enheten databasen lagrar och komprimerar. Alla punkter i en serie ligger tillsammans,
+sorterade på tid — vilket är precis varför en fråga som pekar ut taggarna är snabb.
+
+Det är också enheten som kostar. Hur mycket, tar vi i tredje blocket.
+
+<Del titel="Skrivningen" />
+
+## Vad line protocol är
+
+**Line protocol** är textformatet du skriver punkter i. En rad är en punkt.
+
+```
+ElectricPowerOperations,region=California,
+type=Demand value=41636 1783638000000000000
+```
+
+Raden är bruten här; i verkligheten är line protocol alltid **en** rad. Formatet är fyra delar
+åtskilda av kommatecken och mellanslag:
+
+<Doodle
+  name="line-protocol-raden"
+  caption="Mellanslagen är gränserna. Kommatecken skiljer taggar åt, mellanslag skiljer delarna åt."
+/>
+
+Mellanslaget är alltså syntax. Ett mellanslag i ett taggvärde måste escapas med bakstreck, annars
+tolkas resten av raden som fält — och det felet ger ingen tydlig varning, bara en punkt som ser
+konstig ut.
+
+## Vad en bucket är
+
+En **bucket** är behållaren punkter skrivs till, och den bär också hur länge de sparas.
+
+```
+EIAtest7
+grafana
+junkbucket
+mybucket
+mybucket2
+```
+
+Fem buckets på instansen jag frågade. Varje bucket hör till en organisation och har en
+**retention** — en tid efter vilken punkter tas bort automatiskt.
+
+Att livslängden sitter på behållaren och inte på datan är ett medvetet val: det gör att en hel
+kategori av data får en gemensam livslängd som någon bestämt en gång.
+
+## Bucket vs databas
+
+Två ord för nästan samma sak, och båda används fortfarande — vilket förvirrar rejält när man läser
+dokumentation.
+
+**En databas** är namnet från InfluxDB 1.x, och det lever kvar i InfluxQL-gränssnittet. Frågan ovan
+skickades faktiskt med `db=EIAtest7`.
+
+**En bucket** är namnet från 2.x och framåt, och det bär retention direkt i stället för att ha den i
+ett separat objekt.
+
+Praktiskt möter du båda samtidigt: samma lagring nås som `db=EIAtest7` genom det äldre gränssnittet
+och som bucketen `EIAtest7` genom det nyare. Det är inte två sorters lagring, utan två namn på
+samma.
+
+## Prometheus vs InfluxDB
+
+Två tidsseriedatabaser som gör motsatta val på nästan varje punkt.
+
+Observability-delen införde skillnaden mellan pull och push. **Prometheus hämtar** från en lista över
+mål den känner till. **InfluxDB tar emot** — applikationen eller en agent skickar in punkterna.
+
+Det gör dem bra på olika saker. Prometheus märker att en tjänst är borta, eftersom hämtningen
+misslyckas. InfluxDB kan ta emot från tiotusen enheter som ingen server kan nå — precis den flotta
+sensorer bakom en NAT som Embedded-delen beskrev.
+
+Den andra skillnaden är formen: Prometheus lagrar ett tal per serie, InfluxDB flera fält per punkt.
+En sensor som rapporterar temperatur, luftfuktighet och batterinivå blir tre serier i Prometheus och
+en punkt med tre fält i InfluxDB.
+
+## Vad tidsstämpelns precision gör
+
+Tidsstämpeln skrivs som ett heltal sedan epoch, och **precisionen avgör vad talet betyder**.
+
+Talet `1783638000000000000` är nanosekunder, vilket är standard. Samma tidpunkt i sekunder är
+`1783638000` — tio siffror i stället för nitton.
+
+Skickar du sekunder men databasen förväntar sig nanosekunder hamnar punkten runt år 1970. Det är den
+vanligaste skrivfelet i InfluxDB, och det syns som att datan "försvann" när den i själva verket
+ligger femtiofem år bort i grafen.
+
+<Del titel="Kostnaden" />
+
+## Vad seriekardinalitet är
+
+**Seriekardinalitet** är antalet unika serier i databasen, alltså antalet unika kombinationer av
+measurement och taggvärden.
+
+Observability-delen införde kardinalitet som begrepp. Här är det inte en abstraktion utan den enskilt
+viktigaste dimensioneringssiffran: minnesbehovet växer med den, och frågehastigheten sjunker.
+
+Räknat på instansens taggar blir det konkret. `type` har 3 värden, `region` har 15 och `respondent`
+har 74:
+
+```
+type          3
+region       15
+respondent   74
+```
+
+Tre tusen möjliga kombinationer är helt oproblematiskt. Nästa sektion visar var gränsen går.
+
+## Taggen som spränger kardinaliteten
+
+Regeln följer direkt av att varje kombination är en egen serie: **en tagg får aldrig innehålla
+något unikt per mätning.**
+
+<Split
+  leftTitle="Id som tagg"
+  rightTitle="Id som field"
+  leftTone="bad"
+  rightTone="good"
+  caption="Samma information sparad. Bara det ena sättet skapar en ny serie per anrop."
+>
+  <div slot="left">
+
+  ```
+  api,region=eu,request_id=a7f3 ms=142
+  ```
+
+  Varje anrop får ett nytt `request_id`, alltså en ny serie.
+
+  En miljon anrop ger en miljon serier, var och en med **en enda punkt** i.
+
+  Komprimeringen slutar fungera, minnet tar slut, och frågorna blir långsamma.
+
+  </div>
+  <div slot="right">
+
+  ```
+  api,region=eu ms=142,request_id="a7f3"
+  ```
+
+  `request_id` ligger som field. Antalet serier styrs bara av `region`.
+
+  Värdet finns kvar och går att läsa ut.
+
+  Du kan inte filtrera snabbt på det — vilket du sällan behöver, och aldrig i en graf.
+
+  </div>
+</Split>
+
+Kandidater att se upp med är id:n, e-postadresser, sessionsnycklar, fullständiga URL:er och
+tidsstämplar som råkat hamna i en tagg. Behöver du ändå söka på dem hör de hemma i en logg, som
+Loki-delen beskrev — inte i en tidsseriedatabas.
+
+## Schemat skrivs av datan
+
+InfluxDB har inget schema du deklarerar i förväg. Measurementet, taggarna och fälten uppstår när
+första punkten skrivs.
+
+Det gör det snabbt att komma igång och lätt att göra fel. En felstavad tagg skapar inget fel — den
+skapar en ny tagg, och därmed nya serier.
+
+<Callout type="fallgrop">
+**Ett fält kan inte byta typ inom samma serie.**
+
+Skriver du `value=41636` skapas fältet som heltal. Skickar en annan avsändare senare
+`value="41636"` med citattecken blir det en sträng, och den punkten **avvisas** — fälttypen är låst
+per serie och skrivperiod.
+
+Felet dyker upp hos den som skrev fel, inte hos den som skrev först, och det ser ut som ett problem
+med den nya avsändaren. Orsaken är att en tidigare punkt bestämde typen.
+
+Bestäm typerna innan flera avsändare börjar skriva till samma measurement. Det är den ena gången
+schemalöshet kostar mer än den ger.
+</Callout>
+
+## När InfluxDB är fel verktyg
+
+<Split
+  leftTitle="Ta InfluxDB"
+  rightTitle="Ta något annat"
+  caption="Frågan är om datan är mätningar över tid — eller något som råkar ha en tidsstämpel."
+>
+  <div slot="left">
+
+  **Sensorer, mätvärden och telemetri.** Många små punkter, skrivna en gång, lästa som intervall.
+
+  **Taggarna har rimligt få värden.** Region, enhetstyp, tjänst — inte id per anrop.
+
+  **Datan blir mindre värd med åldern.** Då betalar retention och nedskrivning för sig direkt.
+
+  </div>
+  <div slot="right">
+
+  **Rader som ska uppdateras.** En order som byter status hör hemma i SQL-delens tabeller.
+
+  **Frågor som relaterar saker.** Behöver du `JOIN` över flera entiteter är modellen fel.
+
+  **Fritextsökning i innehållet.** Det är en logg, och Loki-delen beskriver rätt verktyg.
+
+  </div>
+</Split>
+
+## Vad som händer med gammal data
+
+Punkter försvinner inte av sig själva — de försvinner för att bucketens retention säger till.
+
+Utan retention växer databasen tills disken tar slut. Med retention försvinner data du kanske ville
+ha kvar, fast i grövre form.
+
+Det finns en tredje väg: att räkna ihop gamla punkter till färre, grövre punkter innan de tas bort.
+Den vägen heter nedskrivning, och den tar vi i nästa del.
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att välja vad som ska vara tagg och vad som ska vara field varje gång ett nytt mätvärde
+ska in. Det beslutet fattas på trettio sekunder och lever i flera år.
+
+Det som är värt din tid nu är kontrollfrågan: *filtrera på det, eller räkna på det?* Den räcker för
+nästan varje val — och den hindrar den enda modelleringsmissen som gör en InfluxDB obrukbar.
+
+Kompaktering, sharding, klustring och att drifta lagringen kan vänta. De blir dina den dag du äger
+databasen — och de bygger alla på serien.
+
+## Vanliga nybörjarförväxlingar
+
+Ett measurement är inte en tabell. Det behöver inte skapas, och det uppstår när första punkten skrivs.
+
+En tag är inte ett field. Taggen är indexerad text du filtrerar på, fältet det typade värdet du
+räknar på.
+
+En serie är inte ett measurement. Serien är measurement plus en unik uppsättning taggvärden.
+
+Fler taggar gör inte frågorna snabbare. Varje unik kombination är en ny serie.
+
+En bucket är inte något annat än en databas. Det är två namn på samma lagring, från två versioner.
+
+Tidsstämpeln är inte i sekunder som standard. Den är i nanosekunder, och fel precision lägger punkten
+i 1970.
+
+Schemalöst betyder inte typlöst. Fälttypen låses av den första punkten.
+
+## Prova själv
+
+Vi frågar en publik InfluxDB genom Grafanas datakälle-proxy. Ingen inloggning behövs, och allt nedan
+är läsande.
+
+```bash
+P=https://play.grafana.org/api/datasources/proxy
+P=$P/uid/play-influx-cloud-influxql/query
+q() { curl -s -G "$P" \
+  --data-urlencode 'db=EIAtest7' \
+  --data-urlencode "q=$1"; }
+```
+
+Fråga först vilka measurements som finns:
+
+```bash
+q 'SHOW MEASUREMENTS' \
+  | jq -r '.results[0].series[0].values[][]'
+```
+
+```
+ElectricPowerGeneratedByEnergySource
+ElectricPowerOperations
+```
+
+Riktig elproduktionsdata. Titta nu på skillnaden mellan taggar och fält i ett av dem:
+
+```bash
+M='"ElectricPowerOperations"'
+q "SHOW TAG KEYS FROM $M" \
+  | jq -r '.results[0].series[0].values[][]'
+```
+
+```
+region
+respondent
+type
+```
+
+```bash
+q "SHOW FIELD KEYS FROM $M" \
+  | jq -r '.results[0].series[0].values[] | @tsv'
+```
+
+```
+value	float
+```
+
+**Tre taggar och ett enda fält.** Det är den normala formen: mycket metadata, ett uppmätt tal. Räkna
+nu hur många värden varje tagg har:
+
+```bash
+for t in type region respondent; do
+  printf "%-11s " "$t"
+  q "SHOW TAG VALUES FROM $M WITH KEY = \"$t\"" \
+    | jq '.results[0].series[0].values | length'
+done
+```
+
+```
+type        3
+region      15
+respondent  74
+```
+
+Där är kardinaliteten, konkret. Hade någon lagt ett anrops-id som tagg hade sista raden inte varit
+`74` utan miljontals. Hämta slutligen ett aggregat per tagg:
+
+```bash
+q "SELECT mean(\"value\") FROM $M
+   WHERE time > now() - 7d GROUP BY \"type\"" \
+  | jq -r '.results[0].series[]
+      | "\(.tags.type) \(.values[0][1])"'
+```
+
+```
+Demand 24549.8
+Net generation 21876.4
+Total interchange -235.6
+```
+
+`GROUP BY` fungerar på taggen just för att den är indexerad. Samma gruppering på ett field hade
+databasen fått läsa igenom varje punkt för att göra.
+
+Tre saker som kan förvirra. **`SHOW SERIES` och `SHOW SERIES CARDINALITY` svarar
+`not implemented` på den här instansen** — den kör en nyare motor där de kommandona utgått, och det
+är inte ett fel i din fråga. Instansen är dessutom publik och datan uppdateras, så dina medelvärden
+blir inte mina. Och `db=EIAtest7` i anropet är samma lagring som bucketen `EIAtest7` — det gamla och
+det nya namnet, sida vid sida.
+
+<Callout type="kom-ihag">
+- En tidsseriedatabas antar att data **läggs till i tidsordning** och läses som intervall.
+- Ett **measurement** är vad som mäts. Det uppstår när första punkten skrivs.
+- En **point** är measurement + taggar + fält + tidsstämpel.
+- **Taggen är indexerad text du filtrerar på. Fältet är det typade värdet du räknar på.**
+- Kontrollfrågan: filtrera på det → tag. Räkna på det → field.
+- En **serie** är measurement plus en unik uppsättning taggvärden. Det är enheten som kostar.
+- **En tagg får aldrig innehålla något unikt per mätning.** Ett id som tagg spränger databasen.
+- Prometheus hämtar, InfluxDB tar emot. Därför passar InfluxDB en flotta enheter bakom NAT.
+- Tidsstämpeln är i nanosekunder som standard. Fel precision lägger punkten i 1970.
+- Fälttypen låses av första punkten. Schemalöst betyder inte typlöst.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Du ska lagra svarstid, region och anrops-id. Vad blir tag och vad blir field?",
+      a: "Region blir tag — du filtrerar och grupperar på den, och den har få värden. Svarstiden blir field, eftersom du räknar på den. Anrops-id blir field trots att det är metadata: som tag hade det gett en ny serie per anrop och spräckt kardinaliteten.",
+    },
+    {
+      q: "Vad är en serie, och varför spelar antalet roll?",
+      a: "En serie är ett measurement plus en unik uppsättning taggvärden. Det är enheten databasen lagrar och komprimerar, och minnesbehovet växer med antalet. Många serier med få punkter i varje förstör dessutom komprimeringen, som bygger på att närliggande värden liknar varandra.",
+    },
+    {
+      q: "Varför är InfluxDB ett bättre val än Prometheus för en flotta batteridrivna sensorer?",
+      a: "För att Prometheus hämtar från mål den kan nå, och sensorer bakom NAT går inte att nå utifrån — det var precis Embedded-delens poäng. InfluxDB tar emot, så enheten initierar. Dessutom blir temperatur, fuktighet och batterinivå en punkt med tre fält i stället för tre separata serier.",
+    },
+    {
+      q: "Er data ligger i grafen runt år 1970. Vad har hänt?",
+      a: "Fel precision på tidsstämpeln. Standard är nanosekunder, ett nittonsiffrigt tal. Skickas sekunder — tio siffror — tolkas talet som ett mycket litet antal nanosekunder efter epoch, och punkten hamnar strax efter 1970-01-01.",
+    },
+    {
+      q: "En ny tjänst börjar skriva till samma measurement och får sina punkter avvisade. Vad kontrollerar du först?",
+      a: "Fälttypen. Den låses av den första punkten i serien, så om det befintliga `value` skapades som heltal och den nya tjänsten skickar det som sträng avvisas punkten. Felet dyker upp hos den nya avsändaren men orsakades av den gamla.",
+    },
+    {
+      q: "När ska du inte använda InfluxDB?",
+      a: "När raderna ska uppdateras, när frågorna behöver relatera flera entiteter med `JOIN`, eller när du ska söka fritext i innehållet. Det första och andra hör hemma i SQL-delens relationsdatabas; det tredje är en logg, och Loki-delen beskriver rätt verktyg för den.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- En tidsseriedatabas antar data som läggs till i tidsordning, sällan ändras och läses som intervall.
+- Relationsdatabasen relaterar rader; tidsseriedatabasen lägger till dem och komprimerar hårt.
+- Ett measurement är namnet på det som mäts och behöver inte skapas i förväg.
+- En point är measurement, taggar, fält och tidsstämpel.
+- Taggen är indexerad text. Fältet är det typade värdet och är inte indexerat.
+- Kontrollfrågan: filtrera på det → tag. Räkna på det → field.
+- En serie är measurement plus en unik uppsättning taggvärden, och det är enheten som lagras.
+- Line protocol är en punkt per rad, med mellanslag som gräns mellan delarna.
+- En bucket är behållaren och bär retention. Det är samma sak som 1.x kallade en databas.
+- Prometheus hämtar, InfluxDB tar emot — därför fungerar den för enheter bakom NAT.
+- Prometheus lagrar ett tal per serie, InfluxDB flera fält per punkt.
+- Tidsstämpeln är nanosekunder som standard. Sekunder tolkas som strax efter 1970.
+- Seriekardinalitet är antalet unika serier, och det är den viktigaste dimensioneringssiffran.
+- En tagg får aldrig innehålla något unikt per mätning. Id hör hemma som field.
+- Schemat uppstår av datan, men fälttypen låses av den första punkten.
+- Retention på bucketen är det som gör att gammal data försvinner.
+
+## Nästa del
+
+Nu kan du läsa en punkt och avgöra vad som ska vara tagg och vad som ska vara field.
+
+Kvar står två frågor den här delen bara nuddat vid. Datan ska hämtas ut igen — och InfluxDB har
+**tre** frågespråk att göra det med, vilket är förvirrande tills man vet varför.
+
+Och den ska inte ligga kvar för alltid. Nästa del handlar om retention, om att räkna ihop gamla
+punkter till färre och grövre innan de tas bort, och om vad du faktiskt förlorar när du gör det.
