@@ -2293,6 +2293,41 @@ def alla():
       + "\n" + txt([(440,320,"samma nyckel hela vägen")],15,' opacity="0.62"')
       + "\n</svg>")
 
+    # 113 — Testning 1.0 · Pyramiden och isglassen
+    # Lagren har samma HÖJD i båda och skiljer sig bara i BREDD. Ritas de med
+    # olika höjd läser bilden som att nivåerna tar olika lång tid var för sig;
+    # poängen är antalet tester på varje nivå.
+    def trekant(mitt, bredder):
+        return "".join(f'<path d="{w(mitt-b//2, 60+i*70, b, 60)}"/>'
+                       for i, b in enumerate(bredder))
+    D['pyramiden-och-isglassen']=(
+      '<svg viewBox="0 0 880 360" role="img" aria-label="Två staplar med tre lager var. Den vänstra '
+      'är bredast nederst, den högra bredast överst. Lagren heter e2e, integration och enhet.">\n'
+      + G % (trekant(230, (100,180,280)) + trekant(650, (280,180,100)))
+      + "\n" + txt([(230,98,"e2e"),(230,168,"integration"),(230,238,"enhet"),
+                    (650,98,"e2e"),(650,168,"integration"),(650,238,"enhet")],15)
+      + "\n" + txt([(230,312,"pyramiden"),(650,312,"isglassen")],18.5) + "\n</svg>")
+
+    # 114 — Testning 1.0 · Kulissen och huset
+    # Båda har samma fasad och samma fönster — likheten framifrån ÄR poängen.
+    # Skillnaden ligger i det ena har djup och det andra stöttor, och därför
+    # måste marklinjen finnas: utan den ser stöttorna ut att sväva.
+    # Taket är inte dekoration. Utan det läser sidoväggen som en öppen dörr på
+    # en platt fasad — parallellogrammet är det som binder ihop de två planen
+    # och gör kroppen tredimensionell.
+    hus = (f'<path d="{w(90,120,220,180)}"/><path d="{w(150,160,100,80)}"/>'
+           '<path d="M310 120 Q340 106 368 96 Q371 190 368 274 Q340 288 310 300"/>'
+           '<path d="M90 120 Q120 108 148 96 L368 96"/>')
+    kuliss = (f'<path d="{w(560,120,220,180)}"/><path d="{w(620,160,100,80)}"/>'
+              '<path d="M780 142 Q812 200 836 296" stroke-width="1.4" opacity="0.65"/>'
+              '<path d="M780 214 Q806 250 828 298" stroke-width="1.4" opacity="0.65"/>')
+    D['kulissen-och-huset']=(
+      '<svg viewBox="0 0 880 400" role="img" aria-label="Två likadana fasader med var sitt fönster. '
+      'Den vänstra har en sidovägg och därmed djup, den högra har två stöttor bakom sig.">\n'
+      + G % (hus + kuliss + '<path d="M60 302 Q440 298 850 302"/>')
+      + "\n" + txt([(200,350,"det riktiga"),(670,350,"dubbeln")],18.5)
+      + "\n" + txt([(670,378,"inget bakom")],13,' opacity="0.62"') + "\n</svg>")
+
     return D
 
 if __name__ == "__main__":

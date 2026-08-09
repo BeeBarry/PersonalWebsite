@@ -1,0 +1,446 @@
+---
+title: 'Vad ett test bevisar'
+description: 'Påståendet, nivåerna och ersättarna — och varför ett grönt test ibland inte betyder någonting'
+category: 'testning'
+part: 1
+partTitle: 'Grunderna'
+order: 1
+date: '2026-08-09'
+tags: ['Beginner', 'Testning', 'Kvalitet']
+---
+
+## Var vi är
+
+CI/CD-serien beskrev pipelinen som maskinen som bygger, testar och rullar ut. Den tog aldrig ordet
+*testar* på allvar — den förutsatte att testerna finns och att de betyder något.
+
+Den här delen tar det ordet. Zoomen ligger på vad ett enskilt test är, vilka nivåer som finns och
+vad ett grönt resultat faktiskt bevisar.
+
+Ingenting här är knutet till ett språk eller ett ramverk. Begreppen heter samma sak i xUnit, JUnit,
+Jest och pytest, och övningen längst ner använder det som redan finns på din maskin.
+
+<Del titel="Testet" />
+
+## Vad ett test är
+
+Ett **test** är kod som kör annan kod och kontrollerar att resultatet blev det förväntade.
+
+Två delar måste finnas: något körs, och något kontrolleras. Saknas den andra delen är det inte ett
+test — det är kod som råkar köras.
+
+Testet är också en beskrivning. Ett testfall som heter `test_moms_for_tyskland` säger vad systemet
+ska göra, och den beskrivningen är kvar när den som skrev koden har slutat.
+
+Det är den dubbla nyttan som gör tester värda tiden: de fångar fel i dag, och de förklarar avsikten
+i morgon.
+
+## Arrange, act, assert
+
+Ett testfall har tre steg, och de kommer alltid i den ordningen.
+
+```python
+def test_svensk_moms(self):
+    pris = 100                      # arrange
+    resultat = moms(pris)           # act
+    self.assertEqual(resultat, 25)  # assert
+```
+
+**Arrange** ställer i ordning det som behövs. **Act** utför den handling som testas. **Assert**
+påstår vad resultatet ska vara.
+
+Det tredje steget är det enda som gör testet till ett test. En **assertion** är ett påstående som
+får testet att misslyckas när det inte stämmer, och utan en sådan kan testet aldrig bli rött.
+
+Mönstret är värt att följa även när det känns onödigt. Ett testfall där de tre stegen går i varandra
+är svårare att läsa än koden det testar.
+
+## Vad ett testramverk gör
+
+Ett **testramverk** hittar dina testfall, kör dem, och rapporterar vilka som lyckades.
+
+Tre saker ingår nästan alltid: en konvention för hur testfall känns igen, en uppsättning
+assertion-funktioner, och en sammanfattning på slutet.
+
+Ramverket sätter också **exitkoden**. Noll betyder att allt gick bra, och allt annat att något
+sprack — och det är den siffran en pipeline läser för att avgöra om bygget ska stoppas.
+
+Det är alltså inte utskriften som stoppar en utrullning. Det är exitkoden, och den kommer från
+ramverket.
+
+<Del titel="Nivåerna" />
+
+## Vad ett enhetstest är
+
+Ett **enhetstest** testar en liten, avgränsad del av koden utan att gå utanför processen.
+
+Ingen databas, inget nätverk, ingen fil. Testet anropar en funktion eller en klass och kontrollerar
+vad den svarar.
+
+Följden är att enhetstester är snabba — tusentals av dem kör på sekunder — och att de pekar rakt på
+felet. Går ett enhetstest sönder vet du vilken funktion det gäller.
+
+Priset är att de inte säger något om hur delarna fungerar ihop.
+
+## Vad ett integrationstest är
+
+Ett **integrationstest** testar att flera delar fungerar tillsammans, ofta över en gräns som en
+databas eller ett API.
+
+Här startas riktiga saker. En testdatabas, en container, en lokal webbserver — något som gör att
+testet mäter samspelet och inte bara logiken.
+
+Det gör dem långsammare och känsligare. Ett integrationstest kan misslyckas för att databasen inte
+hann starta, vilket ett enhetstest aldrig kan.
+
+I gengäld fångar de den vanligaste sortens fel: två delar som var för sig är korrekta och
+tillsammans inte är det.
+
+## Enhetstest vs integrationstest
+
+Gränsen dras vid vad testet får röra, och den skillnaden bestämmer nästan allt annat.
+
+**Ett enhetstest** håller sig inuti processen. Det är snabbt, det är stabilt, och när det går sönder
+vet du var.
+
+**Ett integrationstest** går över minst en gräns. Det är långsammare, det går sönder av fler skäl,
+och det bevisar något ett enhetstest aldrig kan.
+
+Konsekvensen är att antalet inte ska vara lika. Enhetstester är billiga nog att ha tusen av;
+integrationstester kostar tid vid varje körning, och det talet ska vara medvetet valt.
+
+## Vad ett e2e-test är
+
+Ett **e2e-test**, end-to-end, kör hela systemet som en användare gör det — genom gränssnittet, mot
+en riktig uppsättning tjänster.
+
+Det är det enda testet som svarar på frågan *fungerar produkten?* Allt annat svarar på om delarna
+gör vad de ska.
+
+Det är också den dyraste sortens test. Det tar minuter, det kräver en miljö som liknar
+produktionsmiljön, och det går sönder av skäl som inte har med koden att göra — en långsam sida, en
+ändrad knapptext, en utloggad session.
+
+Därför handlar e2e-tester om urval. Några stycken som täcker de flöden verksamheten inte klarar sig
+utan, inte ett per funktion.
+
+## Pyramiden vs isglassen
+
+De två formerna beskriver hur testerna fördelar sig, och bara den ena går att leva med.
+
+**Testpyramiden** har många enhetstester i botten, färre integrationstester i mitten och ett fåtal
+e2e-tester i toppen. Merparten av felen fångas snabbt och billigt.
+
+**Isglassen** är samma triangel upp och ner: några enhetstester och en tung topp av e2e-tester. Den
+uppstår sällan av ett beslut, utan av att det är lättare att lägga till ett e2e-test än att göra
+koden testbar.
+
+<Doodle name="pyramiden-och-isglassen" caption="Samma tre nivåer, motsatt fördelning. Den vänstra körs på sekunder, den högra på timmar." />
+
+Konsekvensen är körtiden och tilliten. En isglass tar en halvtimme att köra, går sönder ofta, och
+efter tredje falsklarmet slutar teamet läsa resultatet — vilket är värre än att inte ha testerna.
+
+<Del titel="Ersättarna" />
+
+## Vad en test double är
+
+En **test double** är något som ersätter en riktig del under ett test.
+
+Namnet kommer från stuntmannen i film: den ser ut som det äkta, men står där för att det äkta inte
+kan eller ska vara på plats.
+
+Skälen är tre. Den riktiga delen är långsam, den är opålitlig, eller den gör något du inte vill ska
+hända — som att skicka ett mejl eller dra ett kort.
+
+<Doodle name="kulissen-och-huset" caption="Framifrån ser de likadana ut. Bakom den ena finns ingenting." />
+
+Doubles är alltså ett verktyg för att avgränsa. Det är också det verktyg som oftast används för
+mycket, vilket sista avsnittet i blocket handlar om.
+
+## Stub, fake och spy
+
+Tre sorters doubles med olika uppgift, och namnen används slarvigt överallt.
+
+En **stub** svarar med ett förbestämt värde. Den frågas något och ger alltid samma svar, utan egen
+logik.
+
+En **fake** är en enklare men fungerande version. En lagring i minnet i stället för en databas är
+det vanligaste exemplet — den beter sig som det äkta, fast bara tillräckligt.
+
+En **spy** gör sitt jobb och antecknar samtidigt vad som hände. Efteråt kan testet fråga den hur
+många gånger den anropades och med vad.
+
+En **mock** liknar en spy men har förväntningarna inbyggda: den vet i förväg hur den ska anropas och
+gör testet rött när det inte stämmer.
+
+## Mock vs stub
+
+De två blandas ihop mer än något annat par i ämnet, och skillnaden är vad testet påstår.
+
+**En stub** matar testet med indata. Den finns för att koden ska ha något att arbeta med, och testet
+kontrollerar sedan resultatet.
+
+**En mock** är i sig påståendet. Testet säger att koden ska anropa något på ett visst sätt, och
+mocken är det som avgör om den gjorde det.
+
+Konsekvensen är att en stub testar **vad koden kommer fram till**, och en mock **hur den bar sig
+åt**. Det senare binder testet till implementationen — byter du hur något görs går testet sönder
+trots att beteendet är oförändrat.
+
+Tumregeln: mocka vid systemgränser, där anropet självt är beteendet — att ett mejl faktiskt skickas.
+Stubba inåt, där bara resultatet betyder något.
+
+## Dubbeln som testar sig själv
+
+Ersätts tillräckligt mycket testar testet till slut bara sina egna ersättare.
+
+Ett testfall där databasen, betaltjänsten och tidsfunktionen alla är doubles kör knappt någon riktig
+kod. Det blir grönt oavsett vad den verkliga integrationen gör.
+
+<Callout type="fallgrop">
+Symtomet är en svit med hög täckning och tusen gröna tester, där buggarna ändå hittas i produktion.
+
+Kontrollen är att fråga vad varje double ersätter, och varför. Är svaret "för att testet ska gå
+igenom" är den fel — då är det koden som är svår att testa, och det problemet flyttar inte på sig
+för att det göms bakom en mock.
+
+Motmedlet är oftast att ändra koden, inte testet: låt funktionen ta emot det den behöver som
+argument i stället för att hämta det själv. Då behövs ingen double alls.
+</Callout>
+
+<Del titel="Förtroendet" />
+
+## Vad determinism betyder
+
+Ett **deterministiskt** test ger samma svar varje gång det körs, med samma kod.
+
+Tre saker bryter det oftare än allt annat: **tiden**, **slumpen** och **ordningen**. Ett test som
+använder dagens datum går sönder vid årsskiftet, och ett som förutsätter att ett annat test kört
+först går sönder när sviten körs i annan ordning.
+
+Motmedlet är att göra det oförutsägbara till indata. Skicka in tidpunkten i stället för att läsa
+klockan, och skicka in fröet i stället för att slumpa.
+
+Ett test som bara ibland stämmer är inte ett halvt test. Det är ett problem.
+
+## Vad ett flaky test är
+
+Ett **flaky test** är ett test som växlar mellan grönt och rött utan att koden ändrats.
+
+Orsaken är nästan alltid en väntan som inte är en väntan: testet antar att något är klart efter en
+halv sekund, och ibland är det inte det. Delad testdata mellan parallella körningar ger samma sak.
+
+Skadan är större än den ser ut. Ett flaky test lär teamet att röda resultat kan ignoreras, och den
+vanan gäller sedan även de tester som har rätt.
+
+Därför är rätt åtgärd att laga eller ta bort det, inte att köra om det tills det blir grönt. Att
+lägga ett flaky test i karantän är en tillfällig lösning som behöver ett datum.
+
+## Vad täckning mäter
+
+**Täckning**, code coverage, är andelen kodrader som kördes medan testerna kördes.
+
+Notera ordet *kördes*. Måttet vet ingenting om assertions — en rad räknas som täckt så snart den
+passerats, oavsett om något kontrollerades.
+
+Det gör täckning användbart åt ett håll. Låg täckning bevisar att stora delar aldrig ens körs, och
+det är värt att veta.
+
+Åt andra hållet bevisar det ingenting, och det är den vanligaste missuppfattningen om måttet.
+
+## Täckning vs tillit
+
+De förväxlas i varje diskussion om kvalitetsmål, och de mäter olika saker.
+
+**Täckning** är ett tal om kodrader. Det går att räkna ut maskinellt, och det går att höja utan att
+ett enda nytt påstående skrivs.
+
+**Tillit** är frågan om du vågar rulla ut på en fredag. Den kommer ur att testerna kontrollerar rätt
+saker, är deterministiska, och går sönder när något faktiskt är fel.
+
+Konsekvensen syns när täckning blir ett mål i sig. Ett testfall som kör en funktion utan att påstå
+något höjer talet och sänker inte risken alls — och övningen längst ner visar exakt det testet, grönt
+och tomt.
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att skriva enhetstester varje vecka, och du kommer att läsa fler än du skriver. Det du
+gör oftast är att avgöra vad ett testfall egentligen påstår — och den frågan besvaras av
+assert-raden, inte av namnet.
+
+Du kommer också att möta ett rött test som inte är ditt fel. Frågan att ställa först är om det är
+flaky: gick det sönder av koden, eller av tid, ordning eller delad data?
+
+Att sätta upp testmiljöer, välja ramverk och bestämma täckningsmål är oftast någon annans beslut. Att
+veta att täckning inte är tillit är däremot ditt, eftersom det är du som blir ombedd att höja talet.
+
+Kontraktstest, testdata i skala, utforskande testning och testet som grind i pipelinen tar nästa del.
+Det som inte kan vänta är påståendet — utan det finns inget test att bygga vidare på.
+
+## Vanliga nybörjarförväxlingar
+
+Ett test utan assertion är inte ett svagt test. Det kan aldrig bli rött, och bevisar därför
+ingenting.
+
+Ett grönt test betyder inte att koden är rätt. Det betyder att de påståenden som finns stämmer.
+
+Ett enhetstest som rör databasen är inte ett enhetstest. Gränsen går vid vad testet får röra.
+
+Fler e2e-tester ger inte mer trygghet. De ger längre körtid och fler falsklarm.
+
+En mock är inte samma sak som en stub. Stuben matar in, mocken påstår hur koden bar sig åt.
+
+Ett flaky test ska inte köras om tills det blir grönt. Omkörningen lär teamet att ignorera rött.
+
+Täckning mäter inte om något kontrollerades. Den mäter vilka rader som passerades.
+
+## Prova själv
+
+Övningen kräver ingen installation — `unittest` ingår i Python, som finns på macOS och de flesta
+Linux-system. Testet är Lisas momsberäkning från Git-serien.
+
+```bash
+mkdir ~/test-ovning && cd ~/test-ovning
+```
+
+Skapa funktionen som ska testas:
+
+```bash
+cat > moms.py <<'EOF'
+def moms(pris, land="SE"):
+    return pris * 0.25
+EOF
+```
+
+Skapa sedan tre testfall — ett som stämmer, ett som inte gör det, och ett utan påstående:
+
+```bash
+cat > test_moms.py <<'EOF'
+import unittest
+from moms import moms
+
+
+class TestMoms(unittest.TestCase):
+    def test_svensk_moms(self):
+        self.assertEqual(moms(100), 25)
+
+    def test_tysk_moms(self):
+        self.assertEqual(moms(100, "DE"), 19)
+
+    def test_utan_pastaende(self):
+        moms(100)
+EOF
+```
+
+Kör dem:
+
+```bash
+python3 -m unittest -v
+```
+
+```
+test_svensk_moms ... ok
+test_tysk_moms ... FAIL
+test_utan_pastaende ... ok
+```
+
+```
+AssertionError: 25.0 != 19
+
+Ran 3 tests in 0.001s
+
+FAILED (failures=1)
+```
+
+Tre saker på en gång. **`test_tysk_moms` är rött** eftersom funktionen alltid räknar med 25 procent —
+felmeddelandet visar både det faktiska och det förväntade värdet, och det är därför en bra assertion
+är halva felsökningen.
+
+**`test_utan_pastaende` är grönt.** Den körde `moms(100)` och kontrollerade ingenting. Ett sådant
+testfall kan aldrig bli rött, det höjer täckningen, och det bevisar exakt noll.
+
+Titta slutligen på det pipelinen läser:
+
+```bash
+python3 -m unittest
+echo $?
+```
+
+Sista raden skriver `1`. Rätta funktionen så att `land="DE"` ger 19, kör om, och se att siffran blir
+`0` — det är den enda signal ett CI-steg behöver för att avgöra om bygget ska stoppas.
+
+Tre saker kan förvirra. **`unittest` hittar testfilerna själv** genom att leta efter filer som börjar
+med `test` och metoder som börjar med `test_` — döper du om något faller det tyst bort ur körningen.
+**`25.0 != 19` har en decimal** eftersom `100 * 0.25` ger ett flyttal; att jämföra pengar som
+flyttal är i sig något att undvika i skarp kod. Och **`-v` styr bara utskriften** — utan flaggan får
+du en punkt per test i stället för en rad, och samma resultat.
+
+<Callout type="kom-ihag">
+- Ett test kör kod **och kontrollerar resultatet**. Utan assertion kan det aldrig bli rött.
+- **Arrange, act, assert.** Det tredje steget är det som gör testet till ett test.
+- Ramverket sätter **exitkoden**, och det är den pipelinen läser.
+- **Enhetstest** håller sig i processen. **Integrationstest** går över en gräns. **E2E** kör allt.
+- **Pyramiden**: många snabba, få långsamma. Isglassen är motsatsen och slutar med ignorerade larm.
+- En **stub** matar in, en **mock** påstår hur koden bar sig åt. Mocka vid gränser, stubba inåt.
+- Ersätts för mycket testar testet bara sina egna doubles.
+- Ett **flaky test** ska lagas eller tas bort — inte köras om.
+- **Täckning mäter körda rader, inte kontroller.** Låg täckning betyder något; hög gör det inte.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Ett testfall anropar en funktion men innehåller ingen assertion. Vad bevisar det?",
+      a: "Att funktionen går att anropa utan att krascha, och ingenting mer. Testet kan aldrig bli rött, eftersom det inte påstår något — och det höjer ändå täckningen, vilket är varför täckning och tillit inte är samma sak.",
+    },
+    {
+      q: "Vad är skillnaden mellan ett enhetstest och ett integrationstest?",
+      a: "Vad testet får röra. Ett enhetstest håller sig inuti processen — ingen databas, inget nätverk — och är därför snabbt och stabilt, och pekar rakt på felet. Ett integrationstest går över minst en gräns och fångar fel som uppstår mellan delar som var för sig är korrekta.",
+    },
+    {
+      q: "Teamets svit tar 35 minuter och går sönder ungefär var tredje körning. Vad har hänt?",
+      a: "Testfördelningen har blivit en isglass: tung topp av e2e-tester och tunn bas av enhetstester. Följden är lång körtid och falsklarm. Efter några omgångar slutar teamet läsa resultatet, och då kostar sviten tid utan att ge trygghet — vilket är sämre än att inte ha den.",
+    },
+    {
+      q: "När ska du använda en mock i stället för en stub?",
+      a: "När själva anropet är beteendet du vill kontrollera — att ett mejl faktiskt skickas, att betaltjänsten anropas en gång. En stub används när koden bara behöver något att arbeta med och det är resultatet du kontrollerar. En mock binder testet till hur koden bär sig åt, så inåt i systemet blir den snabbt ett hinder vid refaktorisering.",
+    },
+    {
+      q: "Ett test blir rött var femte körning utan att koden ändrats. Kör du om det?",
+      a: "Nej. Det är ett flaky test, och orsaken är oftast tid, ordning eller delad data. Att köra om det tills det blir grönt lär teamet att röda resultat kan ignoreras, och den vanan gäller sedan också de tester som har rätt. Laga det, eller ta bort det — karantän behöver ett datum.",
+    },
+    {
+      q: "Ledningen vill höja täckningen från 40 till 80 procent. Vad invänder du?",
+      a: "Att täckning mäter vilka rader som kördes, inte om något kontrollerades. Talet går att fördubbla med testfall som anropar kod utan att påstå något, och risken sjunker då inte alls. Låg täckning är ändå värd att åtgärda — den bevisar att stora delar aldrig körs — men målet bör formuleras som vilka flöden som ska vara testade.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- Ett test kör kod och kontrollerar resultatet. Utan kontrollen är det inte ett test.
+- Arrange, act, assert — och det är assert-steget som kan göra testet rött.
+- Ett testramverk hittar testfallen, kör dem och sätter exitkoden pipelinen läser.
+- Ett enhetstest håller sig inuti processen och är snabbt och entydigt.
+- Ett integrationstest går över en gräns och fångar fel mellan delar.
+- Ett e2e-test kör hela systemet och är det dyraste och känsligaste.
+- Testpyramiden har många snabba tester i botten och få långsamma i toppen.
+- Isglassen är motsatsen: lång körtid, falsklarm och till slut ignorerade resultat.
+- En test double ersätter en riktig del som är långsam, opålitlig eller har bieffekter.
+- Stub svarar förbestämt, fake är en enklare fungerande version, spy antecknar, mock förväntar sig.
+- En stub matar in indata; en mock är i sig testets påstående om hur koden bar sig åt.
+- Ersätts för mycket testar testet bara sina egna doubles, och buggarna hittas i produktion.
+- Ett deterministiskt test ger samma svar varje gång. Tid, slump och ordning bryter det oftast.
+- Ett flaky test ska lagas eller tas bort — omkörning lär teamet att ignorera rött.
+- Täckning mäter vilka rader som kördes, inte vad som kontrollerades.
+- Låg täckning bevisar något. Hög täckning bevisar ingenting om tilliten.
+
+## Nästa del
+
+Nu vet du vad ett testfall är, vilka nivåer som finns och vad ett grönt resultat betyder.
+
+Kvar står frågan om var testerna körs och vem som bryr sig om svaret. Vad gör testdata till ett eget
+problem, hur testar man ett kontrakt mellan två tjänster som ändras var för sig — och vad gör en
+QA-roll i ett team där alla skriver tester?

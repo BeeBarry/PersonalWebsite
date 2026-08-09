@@ -81,6 +81,7 @@ const learn = defineCollection({
       "cybersecurity",
       "linux",
       "natverk",
+      "testning",
       "git",
       "api",
       "sql",

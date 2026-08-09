@@ -311,6 +311,19 @@ export const categories: Category[] = [
         domain: "web",
         isVisible: true,
     },
+    // Ligger i "fundament" och inte i en egen verktygsgrupp med flit: hela
+    // poängen med kategorin är att den är oberoende av ramverk. Bo sa
+    // uttryckligen nej till ett xUnit-spår — bevisramverket i artiklarna är
+    // `python3 -m unittest`, som finns på varje macOS utan installation.
+    {
+        title: "Testning & QA",
+        description: "Vad ett test bevisar — och vad det bara ser ut att bevisa.",
+        icon: "mdi:test-tube",
+        slug: "testning",
+        group: "fundament",
+        domain: "web",
+        isVisible: true,
+    },
     {
         title: "API:er & REST",
         description: "Kontraktet mellan system som ska prata med varandra.",

@@ -2177,4 +2177,37 @@ export const DOODLES: Record<string, string> = {
     <text x="440" y="320">samma nyckel hela vägen</text>
   </g>
 </svg>`,
+  /* ---- Testning 1.0 · Pyramiden och isglassen ---- */
+  "pyramiden-och-isglassen": `
+<svg viewBox="0 0 880 360" role="img" aria-label="Två staplar med tre lager var. Den vänstra är bredast nederst, den högra bredast överst. Lagren heter e2e, integration och enhet.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M180 60 Q230 60 280 59 Q281 90 280 120 Q230 122 181 121 Q178 90 180 60 Z"/><path d="M141 130 Q230 129 321 130 Q322 160 321 189 Q230 190 141 191 Q140 160 141 130 Z"/><path d="M90 200 Q230 199 369 201 Q371 230 371 259 Q230 261 91 259 Q90 230 90 200 Z"/><path d="M511 60 Q650 60 790 59 Q791 90 789 120 Q650 121 510 120 Q509 90 511 60 Z"/><path d="M559 131 Q650 129 740 130 Q742 160 740 189 Q650 191 560 190 Q558 160 559 131 Z"/><path d="M599 199 Q650 199 700 201 Q701 230 701 259 Q650 260 601 260 Q598 230 599 199 Z"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle">
+    <text x="230" y="98">e2e</text>
+    <text x="230" y="168">integration</text>
+    <text x="230" y="238">enhet</text>
+    <text x="650" y="98">e2e</text>
+    <text x="650" y="168">integration</text>
+    <text x="650" y="238">enhet</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="230" y="312">pyramiden</text>
+    <text x="650" y="312">isglassen</text>
+  </g>
+</svg>`,
+  /* ---- Testning 1.0 · Kulissen och huset ---- */
+  "kulissen-och-huset": `
+<svg viewBox="0 0 880 400" role="img" aria-label="Två likadana fasader med var sitt fönster. Den vänstra har en sidovägg och därmed djup, den högra har två stöttor bakom sig.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M90 120 Q200 119 310 121 Q310 210 311 300 Q200 300 89 300 Q89 210 90 120 Z"/><path d="M149 161 Q200 160 250 159 Q251 200 250 239 Q200 242 149 239 Q149 200 149 161 Z"/><path d="M310 120 Q340 106 368 96 Q371 190 368 274 Q340 288 310 300"/><path d="M90 120 Q120 108 148 96 L368 96"/><path d="M561 120 Q670 119 780 120 Q781 210 780 299 Q670 300 561 300 Q559 210 561 120 Z"/><path d="M619 161 Q670 158 719 160 Q721 200 721 241 Q670 241 621 240 Q620 200 619 161 Z"/><path d="M780 142 Q812 200 836 296" stroke-width="1.4" opacity="0.65"/><path d="M780 214 Q806 250 828 298" stroke-width="1.4" opacity="0.65"/><path d="M60 302 Q440 298 850 302"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="200" y="350">det riktiga</text>
+    <text x="670" y="350">dubbeln</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="670" y="378">inget bakom</text>
+  </g>
+</svg>`,
 };
