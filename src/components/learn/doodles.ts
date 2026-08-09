@@ -2060,4 +2060,38 @@ export const DOODLES: Record<string, string> = {
     <text x="710" y="384">konsumentgrupp</text>
   </g>
 </svg>`,
+  /* ---- Kafka 1.1 · Hot partition ---- */
+  "partitionerna-i-obalans": `
+<svg viewBox="0 0 880 400" role="img" aria-label="Tre högar av kort märkta P0, P1 och P2. Den mittersta högen är sex kort hög, de andra två och ett.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M91 250 Q185 249 280 250 Q281 265 280 281 Q185 280 90 280 Q90 265 91 250 Z"/><path d="M91 213 Q185 212 281 212 Q282 227 281 241 Q185 244 91 243 Q88 227 91 213 Z"/><path d="M346 250 Q440 248 535 250 Q535 265 536 281 Q440 281 346 280 Q343 265 346 250 Z"/><path d="M345 211 Q440 211 534 213 Q535 227 534 243 Q440 243 345 243 Q343 227 345 211 Z"/><path d="M345 174 Q440 172 534 175 Q535 189 535 203 Q440 204 346 203 Q345 189 345 174 Z"/><path d="M345 136 Q440 134 534 135 Q537 151 536 166 Q440 166 346 167 Q345 151 345 136 Z"/><path d="M346 98 Q440 96 535 99 Q536 113 534 128 Q440 129 344 128 Q345 113 346 98 Z"/><path d="M345 60 Q440 58 536 61 Q536 75 535 90 Q440 91 346 90 Q345 75 345 60 Z"/><path d="M600 250 Q695 248 791 251 Q791 265 790 280 Q695 282 601 280 Q598 265 600 250 Z"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="185" y="322">P0</text>
+    <text x="440" y="322">P1</text>
+    <text x="695" y="322">P2</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="440" y="372">en nyckel dominerar</text>
+  </g>
+</svg>`,
+  /* ---- Kafka 1.1 · Compaction lämnar luckor ---- */
+  "compaction-lamnar-luckor": `
+<svg viewBox="0 0 880 310" role="img" aria-label="Fem kort i rad, där de tre första är överkryssade. Under korten står offsetnumren noll till fyra, och de tre första är blekta.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M60 61 Q130 59 199 59 Q202 110 200 160 Q130 161 61 161 Q58 110 60 61 Z"/><path d="M226 59 Q295 59 364 60 Q367 110 364 160 Q295 162 225 161 Q224 110 226 59 Z"/><path d="M389 60 Q460 60 530 60 Q530 110 530 160 Q460 161 390 160 Q388 110 389 60 Z"/><path d="M554 59 Q625 59 695 61 Q695 110 695 161 Q625 161 556 160 Q553 110 554 59 Z"/><path d="M720 59 Q790 60 860 60 Q861 110 860 160 Q790 160 719 161 Q719 110 720 59 Z"/><g opacity="0.62"><path d="M78 78 Q130 110 182 142"/><path d="M182 78 Q130 110 78 142"/></g><g opacity="0.62"><path d="M243 78 Q295 110 347 142"/><path d="M347 78 Q295 110 243 142"/></g><g opacity="0.62"><path d="M408 78 Q460 110 512 142"/><path d="M512 78 Q460 110 408 142"/></g>
+  </g>
+  <g font-family="var(--font-mono)" font-size="17" fill="currentColor" text-anchor="middle" opacity="0.38">
+    <text x="130" y="200">0</text>
+    <text x="295" y="200">1</text>
+    <text x="460" y="200">2</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="17" fill="currentColor" text-anchor="middle">
+    <text x="625" y="200">3</text>
+    <text x="790" y="200">4</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="440" y="268">numren räknas inte om</text>
+  </g>
+</svg>`,
 };

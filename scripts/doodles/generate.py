@@ -2185,6 +2185,37 @@ def alla():
       + "\n" + txt([(170,348,"topic ordrar"),(710,384,"konsumentgrupp")],15,
                    ' opacity="0.62"') + "\n</svg>")
 
+    # 107 — Kafka 1.1 · Hot partition
+    # Staplarna måste ha LUFT mellan korten. Sex kort tätt på varandra renderar
+    # som en streckad yta vid 544 px, och streckat betyder "uteblivet" i
+    # formspråket — raka motsatsen till "den här har mest".
+    def stapel(x, antal):
+        return "".join(f'<path d="{w(x,250-i*38,190,30)}"/>' for i in range(antal))
+    D['partitionerna-i-obalans']=(
+      '<svg viewBox="0 0 880 400" role="img" aria-label="Tre högar av kort märkta P0, P1 och P2. '
+      'Den mittersta högen är sex kort hög, de andra två och ett.">\n'
+      + G % (stapel(90,2) + stapel(345,6) + stapel(600,1))
+      + "\n" + txt([(185,322,"P0"),(440,322,"P1"),(695,322,"P2")],18.5)
+      + "\n" + txt([(440,372,"en nyckel dominerar")],15,' opacity="0.62"') + "\n</svg>")
+
+    # 108 — Kafka 1.1 · Compaction lämnar luckor
+    # Korten som stryks ritas KVAR med kryss. Ritas de bort blir bilden en rad
+    # med tre kort och luckan i numreringen syns inte — och luckan är poängen.
+    kort5 = "".join(f'<path d="{w(x,60,140,100)}"/>' for x in (60,225,390,555,720))
+    kryssa = "".join(
+        f'<g opacity="0.62"><path d="M{x+18} 78 Q{x+70} 110 {x+122} 142"/>'
+        f'<path d="M{x+122} 78 Q{x+70} 110 {x+18} 142"/></g>' for x in (60,225,390))
+    # Korten är TOMMA. Ett kryss rakt genom en etikett gör den svårläst, och
+    # hubbens konvention (service-vagskylten) är att ett överkryssat objekt bär
+    # sin text utanför krysset. Här räcker offsetnumren — luckan är poängen.
+    D['compaction-lamnar-luckor']=(
+      '<svg viewBox="0 0 880 310" role="img" aria-label="Fem kort i rad, där de tre första är '
+      'överkryssade. Under korten står offsetnumren noll till fyra, och de tre första är blekta.">\n'
+      + G % (kort5 + kryssa)
+      + "\n" + txt([(130,200,"0"),(295,200,"1"),(460,200,"2")],17,' opacity="0.38"')
+      + "\n" + txt([(625,200,"3"),(790,200,"4")],17)
+      + "\n" + txt([(440,268,"numren räknas inte om")],15,' opacity="0.62"') + "\n</svg>")
+
     return D
 
 if __name__ == "__main__":

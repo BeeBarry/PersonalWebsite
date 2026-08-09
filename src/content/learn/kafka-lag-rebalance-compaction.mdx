@@ -1,0 +1,552 @@
+---
+title: 'Lag, rebalance och compaction'
+description: 'Konsumenten som ligger efter, omflyttningen som stannar allt, och loggen som bara behåller det senaste'
+category: 'kafka'
+part: 1
+order: 2
+date: '2026-08-09'
+tags: ['Beginner', 'Kafka', 'Drift']
+---
+
+## Var vi är
+
+Förra delen gav anatomin: topicen är namnet, partitionen är loggen, offseten är platsen, och nyckeln
+väljer vilken partition ett record hamnar i. Den lämnade tre frågor.
+
+Konsumenten ligger efter — hur mycket, och sedan när? En konsument tillkommer och alla slutar läsa i
+några sekunder — varför? Och hur kan en topic behålla det senaste värdet per nyckel för alltid utan
+att växa i oändlighet?
+
+Den här delen svarar på alla tre. Zoomen ligger på drift: talen du tittar på, inställningarna som
+biter, och det som går sönder i produktion. Kafka Streams, Connect och schemaregister ligger utanför.
+
+<Del titel="Läget" />
+
+## Vad consumer lag är
+
+**Consumer lag** är antalet records som skrivits till en partition men ännu inte behandlats av en
+konsumentgrupp.
+
+Talet är en skillnad mellan två offsetar: den sist skrivna i partitionen och den gruppen committat.
+Ligger de på samma tal är lagen noll.
+
+Lag räknas per partition och per grupp. En grupp kan ha noll lag i två partitioner och tiotusen i
+den tredje, och det är den tredje som avgör om något är fel.
+
+Meddelandedelen kallade det signalen som ersätter svarstiden. Här är det ett tal du kan hämta med
+ett kommando.
+
+## Hur lag mäts
+
+Kommandot `kafka-consumer-groups.sh --describe` ger en rad per partition, och tre kolumner som hör
+ihop:
+
+```
+PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG
+0          0               0               0
+1          2               3               1
+2          3               5               2
+```
+
+`LOG-END-OFFSET` är nästa lediga plats i partitionen. `CURRENT-OFFSET` är gruppens bokmärke.
+`LAG` är skillnaden, och den räknas ut åt dig.
+
+Talen finns kvar även när ingen konsument kör. Positionerna tillhör gruppen, inte de konsumenter som
+råkar vara igång — och därför är lag mätbart också när allt står stilla.
+
+Samma tal exporteras som mätvärden från brokrarna, och det är dem observability-delens larm ska
+bygga på. Ett engångskommando visar läget; ett larm ser trenden.
+
+## Lag vs fördröjning
+
+De två blandas ihop i varje incident, och de svarar på olika frågor.
+
+**Lag** är ett antal. Tretusen records väntar, och talet säger ingenting om hur lång tid det tar att
+beta av dem.
+
+**Fördröjning** är en tid. Det senaste behandlade recordet skrevs för fyrtio minuter sedan, oavsett
+hur många som ligger i kö.
+
+Konsekvensen är att lag ensamt är svårt att larma på. Tretusen records är en sekund för en snabb
+konsument och en timme för en långsam — så det tal som betyder något för en användare är tiden, och
+den räknas ut ur lagen delat med behandlingstakten.
+
+## Vad en hot partition är
+
+En **hot partition** är en partition som får mycket mer trafik än de andra i samma topic.
+
+Orsaken är nästan alltid nyckeln. En kund, en butik eller en enhet står för en stor del av
+händelserna, och eftersom nyckeln bestämmer partition hamnar allt det i samma logg.
+
+<Doodle name="partitionerna-i-obalans" caption="Samma topic, tre partitioner. Nyckeln avgjorde att den mittersta fick nästan allt." />
+
+Följden är att en konsument ligger efter medan de andra är sysslolösa. Genomsnittlig lag ser bra ut,
+och det är därför genomsnitt är fel sätt att titta på det här — precis som observability-delen visade
+för svarstider.
+
+Motmedlet är en nyckel med finare fördelning: `kundnummer + datum` i stället för `kundnummer`, om
+ordningen tillåter det. Priset är att ordningsgarantin blir smalare.
+
+## Varför fler konsumenter inte alltid hjälper
+
+En grupp kan aldrig ha fler arbetande konsumenter än topicen har partitioner. Det står i förra delen,
+och det är den vanligaste besvikelsen i drift.
+
+Ligger gruppen efter är den första reflexen att starta fler konsumenter. Har topicen tre partitioner
+och gruppen redan tre konsumenter gör den fjärde ingenting alls.
+
+Då återstår tre vägar: göra behandlingen snabbare, öka antalet partitioner, eller behandla flera
+records parallellt inuti konsumenten.
+
+Den andra vägen har priset förra delen beskrev — nycklar flyttas och ordningen bryts. Den tredje
+kostar ordningen inom partitionen. Det finns ingen väg som är gratis.
+
+<Del titel="Omflyttningen" />
+
+## Vad en rebalance är
+
+En **rebalance** är omfördelningen av partitioner mellan konsumenterna i en grupp.
+
+Kafka räknar om vem som äger vad, och tilldelningen syns i samma `--describe`-utskrift som lagen. Med
+en konsument står samma id på alla partitioner:
+
+```
+PARTITION  CONSUMER-ID
+0          console-consumer-603b6467…
+1          console-consumer-603b6467…
+2          console-consumer-603b6467…
+```
+
+Startas en till konsument i gruppen fördelas partitionerna om, och två av dem byter ägare:
+
+```
+PARTITION  CONSUMER-ID
+0          console-consumer-59268cb7…
+1          console-consumer-59268cb7…
+2          console-consumer-603b6467…
+```
+
+Under omräkningen behandlas inga records. I den klassiska varianten släpper *alla* konsumenter
+*alla* sina partitioner först, och tar sedan emot en ny tilldelning — vilket är därför en enda ny
+konsument kan få hela gruppen att stanna i några sekunder.
+
+## Vad som utlöser en rebalance
+
+Fyra saker, och bara den första är avsiktlig.
+
+En **konsument tillkommer eller lämnar** gruppen. Det är en utrullning, en skalning eller en
+omstart.
+
+En **konsument slutar svara** på gruppens hjärtslag. Maskinen dog, nätverket försvann, eller
+processen frös.
+
+En **konsument tar för lång tid** på sig mellan två hämtningar. Den lever, men Kafka räknar den som
+borta — nästa avsnitt handlar om just det.
+
+**Partitioner läggs till** i en topic gruppen läser. Tilldelningen måste då räknas om för att den
+nya partitionen ska få en ägare.
+
+## Vad cooperative rebalancing gör
+
+**Cooperative rebalancing** flyttar bara de partitioner som faktiskt byter ägare, i stället för att
+alla släpper allt.
+
+Konsumenter som behåller sina partitioner fortsätter arbeta under omräkningen. Bara den partition
+som ska flyttas pausas.
+
+Det är standard i moderna klienter, och det är den enskilt största förbättringen för grupper som
+skalas ofta.
+
+Skillnaden märks mest när gruppen är stor. Tjugo konsumenter som alla släpper allt för att en ny
+tillkommer är tjugo pauser; med cooperative är det en.
+
+## Eager vs cooperative
+
+De två strategierna löser samma uppgift med olika kostnad.
+
+**Eager** låter alla konsumenter släppa alla partitioner, och delar sedan ut på nytt. Enkelt att
+resonera om, och hela gruppen pausar.
+
+**Cooperative** räknar ut skillnaden mot den nuvarande tilldelningen och flyttar bara det som
+behöver flyttas. Mer bokföring, och nästan ingen paus.
+
+Konsekvensen är att valet syns i hur en utrullning känns. Med eager dyker det upp ett hack i
+genomströmningen varje gång en pod startas om — och den som felsöker det hackar letar ofta i
+applikationen, där felet inte finns.
+
+## Timeouten som kastar ut en frisk konsument
+
+Kafka skiljer på två sätt att vara borta, och det är den skillnaden som gör felet svårt att känna
+igen.
+
+Ett **hjärtslag** skickas av en bakgrundstråd med några sekunders mellanrum. Uteblir det i tiotals
+sekunder räknas konsumenten som död.
+
+**`max.poll.interval.ms`** mäter något annat: tiden mellan två hämtningar av records. Standard är
+fem minuter.
+
+<Callout type="fallgrop">
+En konsument som hämtar femhundra records och behandlar dem i en slinga skickar hjärtslag hela
+tiden — bakgrundstråden gör sitt jobb. Tar behandlingen längre än `max.poll.interval.ms` kastas
+konsumenten ändå ut ur gruppen.
+
+Resultatet är en rebalance, en ny konsument som får partitionen, och att arbetet börjar om från den
+senast committade offseten. Ofta hinner den nya konsumenten lika lite, och gruppen fastnar i en
+slinga av rebalances där ingenting blir klart.
+
+Symtomet är en konsument som ser frisk ut i loggen och ändå inte kommer framåt. Botemedlet är att
+hämta färre records per gång — `max.poll.records` — eller att höja intervallet så det rymmer den
+långsammaste batchen.
+</Callout>
+
+<Del titel="Commiten" />
+
+## Automatisk vs manuell commit
+
+Var bokmärket flyttas är den enda inställning som avgör om du tappar arbete eller gör om det.
+
+<Split
+  leftTitle="Automatisk commit"
+  rightTitle="Manuell commit"
+  leftTone="neutral"
+  rightTone="neutral"
+  caption="Bekvämt eller förutsägbart. Skillnaden syns bara vid en krasch."
+>
+  <div slot="left">
+
+  Klienten committar med jämna mellanrum, oftast var femte sekund.
+
+  Bokmärket flyttas till det som *hämtats*, oavsett hur långt behandlingen kommit.
+
+  Kraschar konsumenten efter en commit men mitt i arbetet är de recorden överhoppade — de räknas som
+  klara.
+
+  </div>
+  <div slot="right">
+
+  Koden committar själv, efter att arbetet är gjort.
+
+  Bokmärket flyttas till det som faktiskt är *behandlat*.
+
+  Kraschar konsumenten före commiten görs samma records om — och det är dubbletter i stället för
+  förlust.
+
+  </div>
+</Split>
+
+Valet är därmed samma val som meddelandedelens: högst en gång eller minst en gång, uttryckt i två
+rader kod.
+
+## Vad som händer vid en omstart
+
+Konsumenten frågar Kafka efter gruppens committade offset och börjar där.
+
+Finns ingen committad offset — en ny grupp, eller en gammal vars positioner hunnit tas bort — styrs
+starten av `auto.offset.reset`. `earliest` börjar från loggens början, `latest` från nästa nya
+record.
+
+Skillnaden är dramatisk och märks först i produktion. En ny grupp med `earliest` mot en topic med
+sju dagars retention behandlar en veckas historik direkt vid start.
+
+Det är samtidigt precis den egenskapen som gör loggen värdefull. Samma beteende som är en olycka vid
+ett stavfel i gruppnamnet är det som låter dig läsa om allt när du vill.
+
+## Varför Kafka ger minst en gång
+
+Standarduppsättningen ger **minst en gång**, och det är ett medvetet val i klienten snarare än en
+begränsning i Kafka.
+
+Kafka har transaktioner som gör läs-behandla-skriv atomärt *inom* Kafka. Skriver konsumenten till en
+databas eller anropar en tjänst gäller de inte — det är samma avgränsning som meddelandedelen
+beskrev.
+
+Därför är svaret detsamma här: en idempotent konsument med en dedupliceringsnyckel. Recordets topic,
+partition och offset är en färdig sådan nyckel, unik och stabil.
+
+<Del titel="Städningen" />
+
+## Vad compaction är
+
+**Compaction** är en städning som behåller det senaste recordet per nyckel och tar bort de äldre.
+
+Den sätts per topic med `cleanup.policy=compact` och ersätter den tidsbaserade raderingen. Loggen
+slutar då växa med antalet händelser, och börjar i stället växa med antalet *nycklar*.
+
+Det gör en topic användbar som ett tillstånd. `saldon` med kundnummer som nyckel innehåller efter
+compaction ett saldo per kund, hur många ändringar som än skett.
+
+<Doodle name="compaction-lamnar-luckor" caption="Tre kort stryks, två blir kvar. Numren under dem räknas inte om — luckan blir permanent." />
+
+Städningen sker i bakgrunden och inte vid skrivning. Det senast skrivna ligger dessutom i ett segment
+som aldrig komprimeras, så en nyss skriven dubblett finns kvar ett tag — vilket är den vanligaste
+orsaken till att compaction ser ut att inte fungera.
+
+## Vad en tombstone är
+
+En **tombstone** är ett record med en nyckel och värdet `null`. Det betyder *den här nyckeln är
+borta*.
+
+Utan tombstones skulle en komprimerad topic aldrig kunna glömma något. Nyckeln skulle behålla sitt
+senaste värde för alltid, även för en kund som avslutat sitt konto.
+
+Tombstonen ligger kvar en tid efter compaction, så att konsumenter som ligger efter hinner se den.
+Först därefter försvinner både den och nyckeln.
+
+Det är också så en radering sprids i ett system byggt på event: inte som ett kommando, utan som ett
+record vars värde saknas.
+
+## Retention vs compaction
+
+De två är olika sätt att svara på frågan vad som får kastas.
+
+**Retention** raderar på ålder eller storlek. Den bryr sig inte om nycklar, och den passar en ström
+av händelser där gammalt är ointressant.
+
+**Compaction** raderar per nyckel och behåller det senaste. Den bryr sig inte om ålder, och den
+passar ett tillstånd som ska gå att bygga upp från början.
+
+Konsekvensen är att valet följer av vad topicen är. `klick` är en ström och ska ha retention;
+`kundsaldon` är ett tillstånd och ska ha compaction. En topic kan ha båda, och tar då bort det som
+antingen är för gammalt eller ersatt.
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att titta på lag. Kommandot i övningen nedan är det du kör först när någon säger att
+kvittona kommer sent, och tabellen säger direkt om problemet gäller alla partitioner eller en.
+
+Du kommer också att möta en konsument som ser frisk ut men inte kommer framåt. Leta då efter en
+rebalance-slinga i loggen och jämför behandlingstiden per batch mot `max.poll.interval.ms` — det är
+felet som ser ut som något annat.
+
+Att välja mellan automatisk och manuell commit gör du en gång per konsument, och det valet avgör om
+en krasch ger förlust eller dubbletter. Med manuell commit efter arbetet och en idempotent konsument
+har du täckt det mesta.
+
+Kafka Streams, Connect, schemaregister och tiering kan vänta. De bygger alla på det här: en logg med
+partitioner, en grupp med bokmärken, och två sätt att städa.
+
+## Vanliga nybörjarförväxlingar
+
+Lag är inte en tid. Det är ett antal records, och tiden får du först när du delar med
+behandlingstakten.
+
+Genomsnittlig lag över en topic säger inte mycket. En hot partition försvinner i genomsnittet.
+
+Fler konsumenter än partitioner ger inte mer genomströmning. Överskottet står stilla.
+
+En rebalance beror inte alltid på att något dött. Den vanligaste orsaken är att en konsument
+tillkommit.
+
+`max.poll.interval.ms` är inte hjärtslaget. Hjärtslaget sköts av en bakgrundstråd, medan intervallet
+mäter tiden mellan två hämtningar.
+
+Automatisk commit bekräftar inte att arbetet är gjort. Den flyttar bokmärket till det som hämtats.
+
+Compaction sker inte vid skrivning. Den körs i bakgrunden, och det senast skrivna segmentet
+komprimeras inte alls.
+
+Compaction räknar inte om offsetarna. Efter städningen finns luckor i numreringen, och det är
+normalt.
+
+## Prova själv
+
+Övningen mäter lag på riktigt och tvingar fram en compaction. Kafka körs i Docker och tas bort på
+sista raden.
+
+```bash
+docker run -d --name kafka-ovning \
+  -p 9092:9092 apache/kafka:latest
+docker exec -it kafka-ovning bash
+cd /opt/kafka/bin
+```
+
+Skapa en topic och skriv fem records med nyckel:
+
+```bash
+./kafka-topics.sh --create --topic ordrar \
+  --partitions 3 --bootstrap-server :9092
+./kafka-console-producer.sh --topic ordrar \
+  --bootstrap-server :9092 \
+  --reader-property parse.key=true \
+  --reader-property key.separator=:
+```
+
+```
+kund-7:order-1001
+kund-9:order-1002
+kund-7:order-1003
+kund-4:order-1004
+kund-9:order-1005
+```
+
+Avsluta med `Ctrl+C`. Läs nu allt med en **namngiven grupp**, så att positionen sparas:
+
+```bash
+./kafka-console-consumer.sh --topic ordrar \
+  --bootstrap-server :9092 --from-beginning \
+  --group kassa --timeout-ms 8000
+```
+
+Konsumenten skriver ut de fem raderna och avslutar sig själv efter åtta sekunder utan nya records.
+Skriv sedan tre records till, **utan** att läsa dem:
+
+```bash
+./kafka-console-producer.sh --topic ordrar \
+  --bootstrap-server :9092 \
+  --reader-property parse.key=true \
+  --reader-property key.separator=:
+```
+
+```
+kund-7:order-1006
+kund-9:order-1007
+kund-7:order-1008
+```
+
+Fråga nu efter gruppens läge:
+
+```bash
+./kafka-consumer-groups.sh --describe \
+  --group kassa --bootstrap-server :9092
+```
+
+```
+PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG
+0          0               0               0
+1          2               3               1
+2          3               5               2
+```
+
+**Lagen är 1 och 2 i två partitioner, och 0 i den tredje.** Summan är tre — precis de records du
+skrev utan att läsa. Utskriften börjar dessutom med `has no active members`, eftersom positionen
+tillhör gruppen och inte den konsument som råkar köra.
+
+Gör nu en topic som komprimeras, med inställningar som tvingar fram städningen på sekunder:
+
+```bash
+./kafka-topics.sh --create --topic saldon \
+  --partitions 1 \
+  --config cleanup.policy=compact \
+  --config segment.ms=100 \
+  --config min.cleanable.dirty.ratio=0.01 \
+  --bootstrap-server :9092
+```
+
+Skriv fem saldon, där två kunder ändrar sig:
+
+```bash
+./kafka-console-producer.sh --topic saldon \
+  --bootstrap-server :9092 \
+  --reader-property parse.key=true \
+  --reader-property key.separator=:
+```
+
+```
+kund-7:100
+kund-7:200
+kund-9:50
+kund-7:300
+kund-9:75
+```
+
+Läs direkt, och du får **alla fem** — städningen har inte hunnit köra. Vänta ungefär en minut, skriv
+en rad till för att rulla segmentet, och läs igen:
+
+```bash
+./kafka-console-consumer.sh --topic saldon \
+  --bootstrap-server :9092 --from-beginning \
+  --timeout-ms 5000 \
+  --formatter-property print.offset=true \
+  --formatter-property print.key=true
+```
+
+```
+Offset:3	kund-7	300
+Offset:4	kund-9	75
+```
+
+**Två rader kvar av fem, och numreringen börjar på 3.** Det senaste värdet per nyckel överlevde, och
+offsetarna räknades inte om — luckan där 0, 1 och 2 låg är permanent. Städa sedan:
+
+```bash
+exit
+docker rm -f kafka-ovning
+```
+
+Tre saker kan förvirra. **Inställningarna i compact-topicen är orealistiska med flit**:
+`segment.ms=100` och `min.cleanable.dirty.ratio=0.01` finns för att städningen ska hinna köra medan
+du tittar, och standardvärdena i drift är mycket trögare. **Den extra raden behövs** eftersom det
+segment som skrivs till just nu aldrig komprimeras — utan den ligger dina fem records kvar hur länge
+du än väntar. Och **partition 0 är tom** i lagtabellen av samma skäl som i förra delen: fyra nycklar
+räcker inte för att fylla tre partitioner jämnt.
+
+<Callout type="kom-ihag">
+- **Lag** är ett antal records, inte en tid. Tiden får du genom att dela med behandlingstakten.
+- Lag räknas **per partition och per grupp**, och finns kvar när ingen konsument kör.
+- En **hot partition** kommer av nyckeln, och försvinner i ett genomsnitt.
+- En **rebalance** utlöses oftast av att en konsument tillkommer — inte av att något dött.
+- **Cooperative** flyttar bara det som byter ägare. **Eager** låter alla släppa allt.
+- `max.poll.interval.ms` mäter tiden **mellan hämtningar**, inte hjärtslaget. Den kastar ut friska konsumenter.
+- **Automatisk commit** flyttar bokmärket till det hämtade. **Manuell** till det behandlade.
+- **Compaction** behåller senaste värdet per nyckel. En **tombstone** är hur en nyckel tas bort.
+- Compaction **räknar inte om offsetarna**. Luckorna är normala.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Gruppen har lag 50 000. Är det illa?",
+      a: "Det går inte att avgöra utan behandlingstakten. Lag är ett antal records, inte en tid — 50 000 kan vara tio sekunder för en snabb konsument och flera timmar för en långsam. Det tal som betyder något för en användare är fördröjningen, alltså lagen delad med hur många records konsumenten hinner per sekund.",
+    },
+    {
+      q: "Två av tre partitioner har lag 0, den tredje har 80 000. Vad misstänker du?",
+      a: "En hot partition. Nyckeln fördelar ojämnt, så en kund eller enhet står för större delen av trafiken och allt det hamnar i samma partition. Genomsnittet över topicen döljer det, och att lägga till konsumenter hjälper inte — en partition kan bara läsas av en konsument i gruppen.",
+    },
+    {
+      q: "En konsument skickar hjärtslag men kastas ändå ut ur gruppen. Hur går det till?",
+      a: "Hjärtslaget sköts av en bakgrundstråd och fortsätter medan behandlingen pågår. Tar behandlingen av en hämtad batch längre än `max.poll.interval.ms` — fem minuter som standard — räknas konsumenten som borta ändå. Botemedlet är färre records per hämtning eller ett högre intervall.",
+    },
+    {
+      q: "Vad är skillnaden mellan automatisk och manuell commit vid en krasch?",
+      a: "Automatisk commit flyttar bokmärket till det som hämtats, med jämna mellanrum. Kraschar konsumenten efter en sådan commit men mitt i arbetet hoppas de recorden över — förlust. Manuell commit sker efter att arbetet är gjort, så en krasch före commiten gör om samma records — dubbletter. Det är samma val som mellan högst en gång och minst en gång.",
+    },
+    {
+      q: "Du sätter `cleanup.policy=compact`, skriver tre värden för samma nyckel och läser direkt. Alla tre kommer tillbaka. Är något fel?",
+      a: "Nej. Compaction körs i bakgrunden och aldrig på det segment som skrivs till just nu. Städningen sker när segmentet rullats och tröskeln för hur smutsig loggen får vara har passerats — med standardinställningar kan det dröja länge.",
+    },
+    {
+      q: "Efter compaction börjar loggen på offset 3. Var tog 0, 1 och 2 vägen?",
+      a: "De var äldre versioner av nycklar som fått nyare värden, och togs bort av städningen. Offsetarna räknas aldrig om, så numreringen får permanenta luckor. Ett record identifieras fortfarande av topic, partition och offset — talen är bara inte längre en obruten följd.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- Consumer lag är antalet skrivna men obehandlade records, räknat per partition och grupp.
+- `--describe` ger CURRENT-OFFSET, LOG-END-OFFSET och LAG, även när ingen konsument kör.
+- Lag är ett antal, fördröjning är en tid. Tiden räknas ut ur lagen och behandlingstakten.
+- En hot partition kommer av nyckeln och döljs av genomsnitt.
+- Fler konsumenter än partitioner ger inget. Kvar finns snabbare kod, fler partitioner eller parallellism inuti konsumenten.
+- En rebalance är omfördelningen av partitioner mellan gruppens konsumenter.
+- Den utlöses av att en konsument tillkommer eller lämnar, slutar svara, tar för lång tid, eller av nya partitioner.
+- Eager låter alla släppa allt; cooperative flyttar bara det som byter ägare.
+- `max.poll.interval.ms` mäter tiden mellan hämtningar och kastar ut konsumenter som arbetar för länge.
+- Automatisk commit flyttar bokmärket till det hämtade, manuell till det behandlade.
+- Vid omstart börjar konsumenten på gruppens committade offset, annars enligt `auto.offset.reset`.
+- Standarduppsättningen ger minst en gång. Svaret är en idempotent konsument, med topic-partition-offset som nyckel.
+- Compaction behåller senaste värdet per nyckel och gör topicen till ett tillstånd.
+- En tombstone är ett record med värdet `null` och betyder att nyckeln är borta.
+- Compaction körs i bakgrunden, aldrig på det aktiva segmentet, och räknar inte om offsetarna.
+- Retention raderar på ålder, compaction per nyckel. Valet följer av om topicen är en ström eller ett tillstånd.
+
+## Nästa del
+
+Därmed står Kafka: loggen och partitionen i förra delen, och talen och inställningarna i den här. Du
+kan läsa en topicbeskrivning, mäta en grupps läge och avgöra varför en konsument inte kommer framåt.
+
+Nästa serie tar den andra brokern. RabbitMQ löser samma problem med rakt motsatt utgångspunkt —
+meddelandet försvinner när det ackas, och producenten skickar inte till en kö utan till något som
+bestämmer vilka köer som ska få det.
