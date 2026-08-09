@@ -2367,6 +2367,66 @@ def alla():
       + "\n" + txt([(160,272,"konsument"),(720,272,"leverantör")],18.5)
       + "\n" + txt([(440,292,"kontraktet")],15,' opacity="0.62"') + "\n</svg>")
 
+    # 117 — Helm 1.0 · Ett chart, tre releaser
+    # Skillnaden mellan releaserna måste SYNAS i bilden, annars säger tre
+    # likadana lådor bara "tre kopior". Replikantalet under varje namn är det
+    # som gör poängen — samma mall, olika värden.
+    paket = (f'<path d="{w(60,150,210,130)}"/>'
+             '<path d="M60 186 Q165 183 270 186"/>'
+             '<path d="M165 152 Q168 215 165 278"/>')
+    releaser = "".join(f'<path d="{w(540,y,280,85)}"/>' for y in (45,160,275))
+    pilar = ("".join(f'<path d="M276 {a} Q400 {(a+b)//2} 530 {b}"/>' + arrow(536, b)
+                     for a, b in ((196,90),(214,203),(232,316))))
+    D['chartet-och-releaserna']=(
+      '<svg viewBox="0 0 880 400" role="img" aria-label="Ett paket märkt chart till vänster med tre '
+      'pilar till tre lådor märkta test, stage och prod, med olika replikantal.">\n'
+      + G % (paket + releaser + pilar)
+      + "\n" + txt([(680,86,"test"),(680,201,"stage"),(680,316,"prod")],17)
+      + "\n" + txt([(680,112,"replicas: 1"),(680,227,"replicas: 2"),
+                    (680,342,"replicas: 3")],13,' opacity="0.62"')
+      + "\n" + txt([(165,318,"chart")],18.5) + "\n</svg>")
+
+    # 118 — Helm 1.0 · Helm är bara en klient
+    # Klienten står UTANFÖR ringen och Secreten ligger inuti. Ritas klienten
+    # inuti klustret blir bilden Helm 2 med Tiller — alltså den arkitektur
+    # artikeln säger inte finns längre.
+    D['helm-ar-bara-en-klient']=(
+      '<svg viewBox="0 0 880 400" role="img" aria-label="En låda märkt helm utanför en stor ring '
+      'märkt klustret. En pil går in i ringen till en mindre låda märkt Secret.">\n'
+      + G % (f'<path d="{ell(610,190,230,150)}" stroke-width="1.5" opacity="0.5"/>'
+             + f'<path d="{w(60,140,200,110)}"/><path d="{w(520,150,180,90)}"/>'
+             + '<path d="M266 194 Q390 190 508 194"/>' + arrow(514, 194))
+      + "\n" + txt([(610,203,"Secret")],16)
+      + "\n" + txt([(160,290,"helm")],18.5)
+      + "\n" + txt([(610,372,"klustret")],15,' opacity="0.62"') + "\n</svg>")
+
+    # 119 — Helm 1.1 · Trevägsjämförelsen
+    # Tre pilar som möts i EN nod. Ritas de som en kedja (förra → nya → klustret)
+    # blir bilden ett flöde i tiden, och poängen är motsatsen: tre källor som
+    # vägs mot varandra i samma ögonblick.
+    ihop = ('<path d="M165 146 Q250 200 364 262"/>' + arrow(370, 268, "down")
+            + '<path d="M440 146 Q443 205 440 262"/>' + arrow(440, 268, "down")
+            + '<path d="M715 146 Q630 200 516 262"/>' + arrow(510, 268, "down"))
+    D['trevagsjamforelsen']=(
+      '<svg viewBox="0 0 880 400" role="img" aria-label="Tre lådor märkta förra manifestet, nya '
+      'manifestet och klustret, med var sin pil ner till en fjärde låda märkt det som skickas.">\n'
+      + G % ("".join(f'<path d="{w(x,50,230,90)}"/>' for x in (50,325,600))
+             + f'<path d="{w(330,270,220,90)}"/>' + ihop)
+      + "\n" + txt([(165,102,"förra"),(440,102,"nya"),(715,102,"klustret")],17)
+      + "\n" + txt([(440,322,"det som skickas")],16) + "\n</svg>")
+
+    # 120 — Helm 1.1 · Rollback går framåt
+    # Bågen landar EFTER ruta 3, inte mellan 1 och 3. Ritas den som en pil
+    # bakåt till ruta 2 säger bilden att historiken går bakåt — vilket är
+    # precis missuppfattningen sektionen finns för att rätta.
+    rutor = "".join(f'<path d="{w(x,120,150,110)}"/>' for x in (70,260,450,640))
+    D['rollback-gar-framat']=(
+      '<svg viewBox="0 0 880 340" role="img" aria-label="Fyra rutor i rad märkta 1 till 4. En båge '
+      'går från ruta 2 över raden och ner till ruta 4, som är märkt kopia av 2.">\n'
+      + G % (rutor + '<path d="M335 112 Q525 42 710 112"/>' + arrow(715, 118, "down"))
+      + "\n" + txt([(145,196,"1"),(335,196,"2"),(525,196,"3"),(715,196,"4")],21)
+      + "\n" + txt([(715,266,"kopia av 2")],13,' opacity="0.62"') + "\n</svg>")
+
     return D
 
 if __name__ == "__main__":

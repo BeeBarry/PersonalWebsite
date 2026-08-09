@@ -1,0 +1,477 @@
+---
+title: 'Uppgraderingen, beroendena och hookarna'
+description: 'Vad helm upgrade gör med det som redan finns — och varför rollback går framåt'
+category: 'helm'
+part: 1
+order: 2
+date: '2026-08-09'
+tags: ['Beginner', 'Helm', 'Drift']
+---
+
+## Var vi är
+
+Förra delen gav paketet: chartet är mallen, values fyller i den, och releasen är en installation med
+namn och namespace. Allt handlade om den första installationen.
+
+Den lämnade tre frågor. Vad gör `helm upgrade` med resurser som redan finns, varför är `version` och
+`appVersion` två fält, och vad händer när uppgraderingen misslyckas halvvägs?
+
+Den här delen svarar på alla tre, och tar dessutom beroenden och hooks. Zoomen ligger på livet efter
+den första installationen.
+
+<Del titel="Uppgraderingen" />
+
+## Vad `helm upgrade` gör
+
+`helm upgrade` renderar chartet på nytt med de värden du anger och skickar skillnaden till klustret.
+
+Kommandot skapar en ny **revision** av samma release. Förra delen definierade revisionen som ett
+numrerat läge; det är här numren börjar räknas upp.
+
+```bash
+helm upgrade minbutik ./demo --set replicaCount=3
+```
+
+Resurser som redan finns ändras, nya skapas, och sådant som försvunnit ur chartet tas bort. Vad som
+räknas som en ändring avgörs av nästa avsnitt.
+
+## Vad trevägsjämförelsen är
+
+Helm jämför **tre** lägen innan den bestämmer vad som ska skickas: det förra renderade manifestet,
+det nya renderade manifestet, och det som faktiskt finns i klustret just nu.
+
+<Doodle name="trevagsjamforelsen" caption="Tre källor, ett beslut. Det tredje är anledningen till att manuella ändringar inte försvinner tyst." />
+
+Det tredje läget är poängen. Har någon ändrat replikantalet för hand med `kubectl` ser Helm att
+klustret skiljer sig från vad den senast skickade, och den skriver inte över ändringen bara för att
+den inte känner till den.
+
+Kubernetes-delen beskrev den deklarativa slingan: klustret håller det önskade läget. Helm lägger ett
+lager ovanpå, och behöver därför veta vad *den* senast bad om — inte bara vad chartet säger nu.
+
+Följden är att en `helm upgrade` utan ändringar i chartet ändå kan ändra något: om klustret glidit
+ifrån, förs det tillbaka.
+
+## Upgrade vs reinstall
+
+Frestelsen när något krånglar är att avinstallera och installera om. Det är sällan rätt.
+
+**En upgrade** behåller releasen. Historiken finns kvar, resurser som är oförändrade rörs inte, och
+Kubernetes byter ut poddar enligt Deploymentens vanliga ordning.
+
+**En reinstall** — `helm uninstall` följt av `helm install` — tar bort allt och skapar det på nytt.
+Historiken nollställs, och mellan de två kommandona finns ingenting.
+
+Konsekvensen är nertid och förlorad möjlighet att backa. Det som ser ut som en ren omstart är i
+själva verket en radering av allt Helm visste om releasen.
+
+Undantaget är när något ändrats som inte går att uppgradera — ett fält som Kubernetes inte tillåter
+att ändra på en befintlig resurs. Då säger felmeddelandet det, och en reinstall är ett medvetet val
+snarare än en genväg.
+
+## Vad som händer med borttagna resurser
+
+Tas en template bort ur chartet försvinner resursen ur klustret vid nästa upgrade.
+
+Beteendet är värt att stanna vid, för `kubectl apply -f mapp/` gör inte samma sak. En fil som
+försvinner ur mappen lämnar resursen kvar i klustret, eftersom `apply` bara vet om det du pekar på.
+
+Helm vet vad som ingick i förra revisionen, och kan därför räkna ut vad som ska bort. Det är samma
+egenskap som ArgoCD kallar prune, och som ArgoCD-delen behandlade som ett eget beslut.
+
+Skillnaden är att Helm gör det som standard vid upgrade. Att veta det är skillnaden mellan en
+avsiktlig städning och en oväntad borttagning.
+
+## Vad `--atomic` gör
+
+`--atomic` gör uppgraderingen till allt eller inget: misslyckas den rullas releasen automatiskt
+tillbaka till förra revisionen.
+
+Flaggan innebär också `--wait`, vilket betyder att Helm väntar tills resurserna rapporterar sig
+klara innan den anser uppgraderingen lyckad.
+
+```bash
+helm upgrade minbutik ./demo --atomic --timeout 5m
+```
+
+Utan flaggan kan du hamna i ett halvvägsläge: några resurser uppdaterade, andra inte, och en release
+markerad som misslyckad. Med den är slutläget alltid ett av två.
+
+Priset är väntetiden. En uppgradering som annars returnerar direkt tar nu så lång tid som det tar
+för poddarna att bli redo — och `--timeout` avgör hur länge Helm står kvar.
+
+## Vad `helm rollback` gör
+
+`helm rollback` tar en tidigare revision och skickar tillbaka den till klustret.
+
+```bash
+helm rollback minbutik 2
+```
+
+Utan nummer går den till närmast föregående. Med nummer går den till just den revisionen, förutsatt
+att den fortfarande finns sparad.
+
+Det Helm skickar är det renderade manifestet från den revisionen — inte chartet, och inte värdena i
+efterhand. Bokföringen från förra delen är vad som gör det möjligt.
+
+## Rollback vs ny upgrade
+
+De känns som motsatser och är samma sorts operation.
+
+**En upgrade** skapar en ny revision med innehåll från chartet och de värden du anger.
+
+**En rollback** skapar också **en ny revision** — med innehåll kopierat från en tidigare. Rullar du
+tillbaka från revision 3 till 2 blir resultatet revision **4**, vars innehåll är identiskt med 2.
+
+<Doodle name="rollback-gar-framat" caption="Historiken går bara framåt. Det fjärde läget är en kopia av det andra, inte en återgång till det." />
+
+Konsekvensen är att historiken aldrig krymper eller går bakåt. `helm history` visar alla lägen i
+ordning, och en rollback syns som ytterligare ett steg — vilket är precis vad du vill när någon
+frågar vad som hände.
+
+<Del titel="Versionerna" />
+
+## Vad `version` är
+
+**`version`** i `Chart.yaml` är chartets egen version, och den måste följa SemVer.
+
+Den ändras när chartet ändras: en ny template, ett nytt värde, en rättad indentering. Programmet som
+installeras kan vara exakt detsamma.
+
+Det är den här versionen ett register sorterar på, och den du låser med `--version` vid installation.
+
+Den syns också i de renderade manifesten, som etiketten `helm.sh/chart` — övningen längst ner visar
+den.
+
+## Vad `appVersion` är
+
+**`appVersion`** är versionen av programmet chartet installerar.
+
+Den är informativ och behöver inte följa SemVer — `1.16.0`, `2024.3` eller `stable` är alla giltiga.
+Helm använder den inte för att fatta beslut.
+
+Den sätts vanligen till samma tagg som containerbilden, och den skrivs ut som etiketten
+`app.kubernetes.io/version`.
+
+Fältet finns för människors skull. Det svarar på frågan *vilken version av programmet kör vi?* när
+chartets eget versionsnummer inte säger något om det.
+
+## `version` vs `appVersion`
+
+De två talen i samma fil förväxlas nästan alltid, och de rör sig oberoende av varandra.
+
+**`version`** beskriver **paketet**. Rättar du ett stavfel i en template höjs den, medan programmet
+är oförändrat.
+
+**`appVersion`** beskriver **innehållet**. Kommer en ny version av programmet höjs den, medan mallen
+kan vara identisk.
+
+Konsekvensen är att båda behövs för att svara på frågan vad som körs. Chart 0.3.1 med appVersion
+1.16.0 säger att paketet ändrats tre gånger sedan starten och att programmet är 1.16.0 — och de två
+uppgifterna går inte att härleda ur varandra.
+
+<Del titel="Beroendena" />
+
+## Vad ett subchart är
+
+Ett **subchart** är ett chart som ingår i ett annat chart.
+
+Det ligger antingen som en katalog under `charts/`, eller deklareras i `Chart.yaml` under
+`dependencies` och hämtas med `helm dependency update`.
+
+När föräldern installeras installeras subchartet med. Resurserna blir en del av **samma release** —
+en `helm uninstall` tar bort båda, och `helm list` visar en post, inte två.
+
+Det är så ett program som behöver en databas kan levereras i ett paket: ditt chart som förälder,
+databasens chart som beroende.
+
+## Hur values når ett subchart
+
+Subchartets värden nås under **subchartets namn**.
+
+```yaml
+replicaCount: 1        # förälderns eget värde
+barn:
+  replicaCount: 5      # går till subchartet "barn"
+```
+
+Nyckeln `barn` motsvarar subchartets namn, och allt under den skickas dit. Förälderns egna värden
+ligger kvar på toppnivån.
+
+Behöver flera charts samma värde finns `global:`, som når alla subcharts oavsett namn. Den används
+för sådant som en gemensam imagepull-hemlighet eller ett miljönamn.
+
+Ett subchart kan inte läsa förälderns vanliga värden. Det är därför `global` finns, och varför en
+bra chart-författare exponerar det som behöver delas.
+
+## Vad `Chart.lock` är
+
+**`Chart.lock`** låser vilka versioner av beroendena som faktiskt hämtades.
+
+`Chart.yaml` kan säga `version: ~1.2.0`, alltså ett spann. Låsfilen säger `1.2.4`, alltså exakt vad
+som användes — samma uppdelning som Terraform-delens `.terraform.lock.hcl`.
+
+Filen ska versionshanteras. Utan den hämtar `helm dependency update` det senaste som matchar spannet,
+och två personer kan bygga samma chart och få olika resultat.
+
+`helm dependency build` installerar exakt det låsfilen säger, medan `update` löser om spannet och
+skriver en ny låsfil. Skillnaden mellan dem är samma som mellan att installera och att uppdatera i
+vilken pakethanterare som helst.
+
+<Del titel="Hookarna" />
+
+## Vad en Helm-hook är
+
+En **hook** är en vanlig Kubernetes-resurs med en annotation som säger när i Helms förlopp den ska
+köras.
+
+```yaml
+annotations:
+  "helm.sh/hook": pre-upgrade
+```
+
+Det är hela mekanismen. Resursen är ett Job, en Pod eller vad som helst, och annotationen lyfter ut
+den ur den vanliga ordningen.
+
+Värdena beskriver punkter i förloppet: `pre-install`, `post-install`, `pre-upgrade`, `post-upgrade`,
+`pre-delete` och `test`. Övningen längst ner visar en riktig — standardchartets testpod bär
+`"helm.sh/hook": test`.
+
+Ordningen mellan flera hooks styrs av `helm.sh/hook-weight`, där lägre tal körs först.
+
+## Vad hooks används till
+
+Tre användningar täcker det mesta.
+
+**Databasmigrationer** före en uppgradering. SQL-delens migrationer körs som ett Job med
+`pre-upgrade`, så schemat är på plats innan den nya koden startar.
+
+**Städning** efter en avinstallation, med `pre-delete`.
+
+**Rökprov** efter installation, med `test` — som körs av `helm test` och inte av installationen
+själv.
+
+<Callout type="fallgrop">
+Hook-resurser hanteras **utanför** releasens vanliga livscykel. Helm skapar dem, men de räknas inte
+som en del av releasens innehåll.
+
+Följden är att ett hook-Job ligger kvar efter att det körts, och att nästa uppgradering misslyckas
+med att resursen redan finns. Det ser ut som ett Helm-fel och är en utebliven städning.
+
+Lösningen är `helm.sh/hook-delete-policy` — `hook-succeeded` tar bort jobbet när det lyckats,
+`before-hook-creation` tar bort en tidigare körning innan en ny startar.
+
+Utelämnas den städar ingen. Och eftersom en misslyckad hook stoppar hela uppgraderingen är det ett
+fel som märks vid sämsta tänkbara tillfälle.
+</Callout>
+
+## Helm-hook vs Argo sync wave
+
+Båda ordnar i vilken följd saker sker, och kör du Helm genom ArgoCD finns de samtidigt.
+
+**En Helm-hook** hör till Helms förlopp. Den vet vad en install och en upgrade är, och körs vid en
+punkt i den livscykeln.
+
+**En sync wave** hör till ArgoCD. Den ordnar alla resurser i en Application i numrerade vågor,
+oavsett om de kommer från ett Helm-chart, Kustomize eller vanliga manifest.
+
+Konsekvensen är att ordningsfrågan har två svar i ett GitOps-uppsätt, och att det är ArgoCD som
+driver synkningen. ArgoCD-delen beskrev vågorna; vilken av mekanismerna som gäller i ett givet läge
+står i ArgoCDs dokumentation och är värt att läsa innan man förlitar sig på en hook där.
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att köra `helm upgrade` oftare än `helm install`, och med `--atomic` som vana. Den flaggan
+är skillnaden mellan ett halvvägsläge och ett slutläge du kan resonera om.
+
+Du kommer också att svara på frågan vilken version som körs. Svaret har två delar, och `helm list`
+visar båda — chartets version och programmets `appVersion`.
+
+Att skriva charts med subcharts och hooks blir aktuellt när ni paketerar något åt andra. Att läsa dem
+blir aktuellt direkt, eftersom nästan varje publikt chart använder båda.
+
+Chart-register, signering, `helm diff` och bibliotekscharts kan vänta. De blir dina när charten är
+många nog att behöva förvaltas — och de bygger alla på chart, values och release.
+
+## Vanliga nybörjarförväxlingar
+
+`helm upgrade` jämför inte bara chart mot chart. Den tittar också på vad som faktiskt finns i
+klustret.
+
+En rollback går inte bakåt i historiken. Den skapar en ny revision med gammalt innehåll.
+
+`--atomic` är inte samma sak som en snabb uppgradering. Den väntar tills resurserna är redo.
+
+`version` och `appVersion` är inte samma tal. Det första beskriver paketet, det andra programmet.
+
+Ett subchart blir inte en egen release. Det ingår i förälderns, och `helm list` visar en post.
+
+Ett subchart läser inte förälderns vanliga värden. Det som ska delas ligger under `global`.
+
+En hook är inte en särskild resurstyp. Det är en vanlig resurs med en annotation.
+
+Ett hook-Job städas inte automatiskt. Utan `hook-delete-policy` ligger det kvar och stoppar nästa
+uppgradering.
+
+## Prova själv
+
+Övningen bygger ett chart med ett subchart och renderar allt lokalt — inget kluster behövs, precis
+som i förra delen.
+
+```bash
+mkdir ~/helm-ovning && cd ~/helm-ovning
+helm() { docker run --rm -v "$PWD":/apps \
+  -w /apps alpine/helm "$@"; }
+```
+
+Skapa två charts och gör det ena till subchart åt det andra:
+
+```bash
+helm create foralder
+helm create barn
+mkdir -p foralder/charts && mv barn foralder/charts/
+```
+
+Rendera nu föräldern och räkna resurserna:
+
+```bash
+helm template minbutik ./foralder | grep -c "^kind:"
+```
+
+```
+8
+```
+
+**Åtta i stället för fyra.** Subchartet renderades med, som en del av samma release. Titta på namnen:
+
+```bash
+helm template minbutik ./foralder \
+  | grep "^  name: minbutik" | sort -u
+```
+
+```
+  name: minbutik-barn
+  name: minbutik-foralder
+```
+
+Ett releasenamn, två charts. Sätt nu ett värde som bara gäller subchartet:
+
+```bash
+helm template minbutik ./foralder \
+  --set barn.replicaCount=5 | grep replicas:
+```
+
+```
+  replicas: 5
+  replicas: 1
+```
+
+**Nyckeln `barn` styrde vilket chart värdet gick till.** Leta sedan upp de två versionerna i
+utdatan:
+
+```bash
+helm template minbutik ./foralder \
+  | grep -E "helm.sh/chart|app.kub.*version" | sort -u
+```
+
+```
+        app.kubernetes.io/version: "1.16.0"
+        helm.sh/chart: barn-0.1.0
+        helm.sh/chart: foralder-0.1.0
+```
+
+Chartversionen skiljer sig mellan förälder och barn, medan `appVersion` är densamma — det är de två
+fälten som labels. Titta slutligen på en riktig hook:
+
+```bash
+helm template minbutik ./foralder \
+  | grep -A1 "helm.sh/hook"
+```
+
+```
+    "helm.sh/hook": test
+```
+
+**Det är hela hooken.** Standardchartets testpod är en vanlig Pod med en annotation, och det är
+annotationen som gör den till något Helm behandlar särskilt. Städa sedan:
+
+```bash
+cd ~ && rm -rf ~/helm-ovning
+```
+
+Tre saker kan förvirra. **`grep -c "^kind:"` räknar rader, inte resurser** — det stämmer här
+eftersom varje resurs har exakt en `kind`-rad på radbörjan, men ett chart med `kind` inuti ett
+värde skulle ge fel siffra. **`helm.sh/hook` står med citattecken** i utdatan eftersom punkten i
+nyckeln kräver det i YAML. Och **subchartet syns inte i `Chart.yaml`** när det ligger direkt i
+`charts/` — deklarationen under `dependencies` behövs bara för charts som ska hämtas.
+
+<Callout type="kom-ihag">
+- `helm upgrade` gör en **trevägsjämförelse**: förra manifestet, det nya, och läget i klustret.
+- Resurser som försvinner ur chartet **tas bort** vid upgrade. `kubectl apply` gör inte det.
+- **`--atomic`** rullar tillbaka vid fel och väntar tills resurserna är redo.
+- En **rollback skapar en ny revision**. Historiken går bara framåt.
+- **`version`** är paketets, **`appVersion`** är programmets. De rör sig oberoende.
+- Ett **subchart** blir en del av förälderns release, inte en egen.
+- Subchartets värden ligger under **dess namn**; `global` når alla.
+- **`Chart.lock`** låser de upplösta versionerna och ska versionshanteras.
+- En **hook** är en vanlig resurs med en annotation — och den städas inte utan `hook-delete-policy`.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Någon har ändrat replikantalet med `kubectl`. Vad händer vid nästa `helm upgrade`?",
+      a: "Helm ser skillnaden. Den jämför tre lägen: det förra renderade manifestet, det nya, och vad som faktiskt finns i klustret. Därför skriver den inte automatiskt över en ändring den inte känner till — det är trevägsjämförelsen som gör det möjligt.",
+    },
+    {
+      q: "Du tar bort en template ur chartet och kör upgrade. Vad händer med resursen i klustret?",
+      a: "Den tas bort. Helm vet vad som ingick i förra revisionen och kan därför räkna ut vad som ska bort. Det är skillnaden mot `kubectl apply -f mapp/`, som lämnar kvar resurser vars filer försvunnit — den vet bara om det du pekar på.",
+    },
+    {
+      q: "Du rullar tillbaka från revision 3 till revision 2. Vilken revision har releasen efteråt?",
+      a: "Revision 4, med innehåll identiskt med revision 2. En rollback går inte bakåt utan skapar ett nytt läge med gammalt innehåll, så historiken växer och `helm history` visar hela förloppet i ordning.",
+    },
+    {
+      q: "Chartets `version` är 0.3.1 och `appVersion` är 1.16.0. Vad betyder det?",
+      a: "Att paketet har ändrats sedan det skapades — nya templates, nya värden eller rättningar — och att programmet det installerar är version 1.16.0. Talen rör sig oberoende: en rättad indentering höjer det första utan att röra det andra, och en ny programversion tvärtom.",
+    },
+    {
+      q: "Ett chart har ett subchart som heter `postgres`. Var sätter du subchartets replikantal?",
+      a: "Under nyckeln `postgres` i values: `postgres.replicaCount`. Subchartets värden nås under subchartets namn, medan förälderns egna ligger på toppnivån. Behöver flera charts samma värde används `global`, eftersom ett subchart inte kan läsa förälderns vanliga värden.",
+    },
+    {
+      q: "En uppgradering misslyckas med att ett Job redan finns. Vad är troligen orsaken?",
+      a: "Ett hook-Job från en tidigare körning som aldrig städades bort. Hook-resurser ligger utanför releasens vanliga livscykel, så de tas inte bort automatiskt. Sätt `helm.sh/hook-delete-policy` till `hook-succeeded` eller `before-hook-creation`.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- `helm upgrade` renderar om chartet och skapar en ny revision av samma release.
+- Trevägsjämförelsen väger förra manifestet, det nya och klustrets faktiska läge.
+- Därför skriver Helm inte tyst över en manuell ändring den inte känner till.
+- Resurser som tagits bort ur chartet försvinner ur klustret vid upgrade.
+- En reinstall nollställer historiken och ger nertid — upgrade behåller båda.
+- `--atomic` rullar tillbaka vid fel och väntar tills resurserna rapporterar sig klara.
+- `helm rollback` skickar tillbaka en tidigare revisions manifest.
+- En rollback skapar en ny revision. Historiken går alltid framåt.
+- `version` är chartets egen version och följer SemVer.
+- `appVersion` är programmets version, är informativ och behöver inte följa SemVer.
+- Ett subchart ingår i förälderns release; `helm list` visar en post.
+- Subchartets värden ligger under dess namn, och `global` når alla subcharts.
+- `Chart.lock` låser de upplösta versionerna och ska versionshanteras.
+- En hook är en vanlig resurs med annotationen `helm.sh/hook`, ordnad av `hook-weight`.
+- Hook-resurser städas inte automatiskt — `hook-delete-policy` behövs.
+- En Helm-hook hör till Helms förlopp; en sync wave hör till ArgoCD.
+
+## Nästa del
+
+Därmed står Helm: paketet i förra delen, och livet efter installationen i den här. Du kan läsa ett
+okänt chart, installera det, uppgradera det och backa när något går fel.
+
+Nästa serie tar databasen som charten så ofta installerar. PostgreSQL har egna ord för sådant
+SQL-serien beskrev generellt — och en städmekanism som förklarar varför en tabell kan växa medan
+raderna blir färre.

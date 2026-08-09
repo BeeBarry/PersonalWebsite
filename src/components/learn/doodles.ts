@@ -2238,4 +2238,71 @@ export const DOODLES: Record<string, string> = {
     <text x="440" y="292">kontraktet</text>
   </g>
 </svg>`,
+  /* ---- Helm 1.0 · Ett chart, tre releaser ---- */
+  "chartet-och-releaserna": `
+<svg viewBox="0 0 880 400" role="img" aria-label="Ett paket märkt chart till vänster med tre pilar till tre lådor märkta test, stage och prod, med olika replikantal.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M59 150 Q165 149 270 149 Q270 215 270 281 Q165 282 59 281 Q58 215 59 150 Z"/><path d="M60 186 Q165 183 270 186"/><path d="M165 152 Q168 215 165 278"/><path d="M539 44 Q680 44 820 44 Q821 88 819 129 Q680 132 540 130 Q540 88 539 44 Z"/><path d="M540 161 Q680 159 821 160 Q820 202 820 245 Q680 247 539 246 Q540 202 540 161 Z"/><path d="M539 275 Q680 273 819 275 Q821 318 821 360 Q680 361 540 360 Q540 318 539 275 Z"/><path d="M276 196 Q400 143 530 90"/><path d="M523 84 L536 90 L523 96"/><path d="M276 214 Q400 208 530 203"/><path d="M523 197 L536 203 L523 209"/><path d="M276 232 Q400 274 530 316"/><path d="M523 310 L536 316 L523 322"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="17" fill="currentColor" text-anchor="middle">
+    <text x="680" y="86">test</text>
+    <text x="680" y="201">stage</text>
+    <text x="680" y="316">prod</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="680" y="112">replicas: 1</text>
+    <text x="680" y="227">replicas: 2</text>
+    <text x="680" y="342">replicas: 3</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="165" y="318">chart</text>
+  </g>
+</svg>`,
+  /* ---- Helm 1.0 · Helm är bara en klient ---- */
+  "helm-ar-bara-en-klient": `
+<svg viewBox="0 0 880 400" role="img" aria-label="En låda märkt helm utanför en stor ring märkt klustret. En pil går in i ringen till en mindre låda märkt Secret.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M609 41 Q835 43 839 189 Q835 337 609 339 Q385 337 380 189 Q385 43 609 41 Z" stroke-width="1.5" opacity="0.5"/><path d="M61 139 Q160 140 260 141 Q261 195 259 249 Q160 251 61 250 Q60 195 61 139 Z"/><path d="M520 151 Q610 150 701 149 Q702 195 700 241 Q610 241 519 241 Q518 195 520 151 Z"/><path d="M266 194 Q390 190 508 194"/><path d="M501 188 L514 194 L501 200"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="16" fill="currentColor" text-anchor="middle">
+    <text x="610" y="203">Secret</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="160" y="290">helm</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="610" y="372">klustret</text>
+  </g>
+</svg>`,
+  /* ---- Helm 1.1 · Trevägsjämförelsen ---- */
+  "trevagsjamforelsen": `
+<svg viewBox="0 0 880 400" role="img" aria-label="Tre lådor märkta förra manifestet, nya manifestet och klustret, med var sin pil ner till en fjärde låda märkt det som skickas.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M51 49 Q165 48 281 51 Q282 95 280 140 Q165 141 50 141 Q50 95 51 49 Z"/><path d="M325 51 Q440 49 555 50 Q556 95 554 140 Q440 142 324 141 Q325 95 325 51 Z"/><path d="M601 49 Q715 49 830 51 Q832 95 830 139 Q715 140 601 140 Q598 95 601 49 Z"/><path d="M331 269 Q440 270 549 269 Q551 315 551 361 Q440 361 329 359 Q328 315 331 269 Z"/><path d="M165 146 Q250 200 364 262"/><path d="M364 255 L370 268 L376 255"/><path d="M440 146 Q443 205 440 262"/><path d="M434 255 L440 268 L446 255"/><path d="M715 146 Q630 200 516 262"/><path d="M504 255 L510 268 L516 255"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="17" fill="currentColor" text-anchor="middle">
+    <text x="165" y="102">förra</text>
+    <text x="440" y="102">nya</text>
+    <text x="715" y="102">klustret</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="16" fill="currentColor" text-anchor="middle">
+    <text x="440" y="322">det som skickas</text>
+  </g>
+</svg>`,
+  /* ---- Helm 1.1 · Rollback går framåt ---- */
+  "rollback-gar-framat": `
+<svg viewBox="0 0 880 340" role="img" aria-label="Fyra rutor i rad märkta 1 till 4. En båge går från ruta 2 över raden och ner till ruta 4, som är märkt kopia av 2.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M70 121 Q145 120 219 120 Q222 175 219 231 Q145 230 69 231 Q69 175 70 121 Z"/><path d="M260 120 Q335 118 409 120 Q410 175 411 229 Q335 231 261 230 Q259 175 260 120 Z"/><path d="M450 121 Q525 119 600 120 Q600 175 601 229 Q525 231 449 230 Q448 175 450 121 Z"/><path d="M641 120 Q715 118 791 120 Q791 175 791 231 Q715 231 640 231 Q640 175 641 120 Z"/><path d="M335 112 Q525 42 710 112"/><path d="M709 105 L715 118 L721 105"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="21" fill="currentColor" text-anchor="middle">
+    <text x="145" y="196">1</text>
+    <text x="335" y="196">2</text>
+    <text x="525" y="196">3</text>
+    <text x="715" y="196">4</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="13" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="715" y="266">kopia av 2</text>
+  </g>
+</svg>`,
 };

@@ -1,0 +1,454 @@
+---
+title: 'Chart, values och release'
+description: 'Mallen, värdena och den installerade instansen — och varför Helm renderar hos dig och inte i klustret'
+category: 'helm'
+part: 1
+partTitle: 'Grunderna'
+order: 1
+date: '2026-08-09'
+tags: ['Beginner', 'Helm', 'Kubernetes']
+---
+
+## Var vi är
+
+Kubernetes-serien lärde ut manifestet: en YAML-fil som beskriver ett önskat läge, och som `kubectl
+apply` lämnar till klustret.
+
+Den lämnade en sak osagd. Samma applikation ska köras i test, stage och produktion med olika
+replikantal, olika bildtaggar och olika domännamn — och tre nästan identiska mappar med manifest är
+det som händer när ingen löser det.
+
+Den här delen tar Helms lösning: en mall plus en uppsättning värden. Zoomen ligger på chart, values
+och release, och på var renderingen faktiskt sker. Uppgraderingar, beroenden och hooks tar nästa del.
+
+<Del titel="Paketet" />
+
+## Vad Helm är
+
+**Helm** är en pakethanterare för Kubernetes. Den tar en mall och en uppsättning värden och
+producerar färdiga manifest.
+
+Jämförelsen med `apt` eller `npm` håller halvvägs. Helm hämtar och installerar färdiga paket, men
+det den installerar är inte program utan **beskrivningar** av resurser i ett kluster.
+
+Helm är också en ren klient. Det finns ingen Helm-server i klustret — versionen som hade en, Helm 2
+med Tiller, är borta sedan länge, och det är därför gamla guider ser annorlunda ut.
+
+## Vad ett chart är
+
+Ett **chart** är ett paket med mallar och standardvärden för en applikation.
+
+Det är en katalog med en bestämd struktur, och den kan packas till en `.tgz`-fil och läggas i ett
+register. `helm create` skapar en fungerande katalog att utgå från.
+
+Chartet innehåller ingen information om var det ska installeras. Samma chart används mot test och
+produktion, och skillnaden ligger i värdena.
+
+Det gör chartet till den återanvändbara enheten — och det är också vad som gör att någon annan kan
+publicera ett chart för PostgreSQL som du installerar utan att skriva ett manifest själv.
+
+## Vad som ligger i ett chart
+
+Tre delar återkommer i varje chart.
+
+```txt
+demo/
+  Chart.yaml      namn, version, beskrivning
+  values.yaml     standardvärdena
+  templates/      mallarna som blir manifest
+```
+
+**`Chart.yaml`** beskriver paketet. Två versionsnummer står där: `version` för chartet självt och
+`appVersion` för programmet det installerar. De ändras oberoende av varandra, och skillnaden tar
+nästa del.
+
+**`values.yaml`** innehåller standardvärdena — det chartet gör om ingen säger något annat.
+
+**`templates/`** innehåller mallarna. Där ligger också `_helpers.tpl` med återanvändbara
+namnfunktioner, och `NOTES.txt` som skrivs ut efter installation.
+
+## Vad en template är
+
+En **template** är en manifestfil där delar av innehållet är uttryck som fylls i vid rendering.
+
+```yaml
+spec:
+  replicas: {{ .Values.replicaCount }}
+```
+
+Filen är alltså inte giltig YAML förrän den renderats. `kubectl apply` på en template misslyckas,
+och det är den första överraskningen för den som kommer från Kubernetes-serien.
+
+Uttrycken skrivs i Go:s mallspråk, med dubbla klammerparenteser. Allt utanför dem lämnas orört.
+
+## Manifest vs template
+
+De ser likadana ut i en editor och används på helt olika sätt.
+
+**Ett manifest** är färdigt. Det beskriver ett bestämt läge med bestämda värden, och klustret kan ta
+emot det som det är.
+
+**En template** är ett recept på ett manifest. Den innehåller platshållare, och den behöver värden
+för att bli något klustret förstår.
+
+Konsekvensen är att felsökning sker i två steg. Ett fel i mallen syns vid rendering; ett fel i det
+renderade manifestet syns först när klustret svarar. Att rendera lokalt är därför det första du gör
+när något ser konstigt ut.
+
+## Vad values är
+
+**Values** är de värden som fyller i mallens platshållare.
+
+De är vanlig YAML med en godtycklig struktur, och de nås i mallen genom `.Values` följt av sökvägen:
+`.Values.image.repository` hämtar `repository` under `image`.
+
+Standardvärdena ligger i chartets `values.yaml`. Det är chartets författare som bestämmer vilka
+värden som går att ändra — finns ingen platshållare för något går det inte att ställa in.
+
+Values styr inte bara innehåll utan också **vad som finns**. Ett chart där `ingress.enabled` är
+`false` renderar ingen Ingress alls, och det är en skillnad som syns i övningen längst ner.
+
+## Var values kommer ifrån
+
+Fyra källor, och de överlagrar varandra i en bestämd ordning.
+
+```txt
+1. chartets values.yaml       lägst prioritet
+2. ett subcharts värden
+3. -f minavarden.yaml         (flera -f: sist vinner)
+4. --set nyckel=värde         högst prioritet
+```
+
+Det praktiska mönstret är en fil per miljö: `values-prod.yaml` med det som skiljer, och `--set` för
+det som varierar per körning — oftast bildtaggen från pipelinen.
+
+`--set` är bekvämt och blir snabbt oläsligt. Ett kommando med sex `--set` hör hemma i en fil, av
+samma skäl som CI/CD-delen föredrar en versionshanterad pipelinefil framför klick i ett gränssnitt.
+
+<Del titel="Renderingen" />
+
+## Vad `helm template` gör
+
+`helm template` renderar chartet och skriver de färdiga manifesten till skärmen.
+
+Ingenting installeras, ingen release skapas, och **inget kluster behövs**. Renderingen sker i din
+egen maskin.
+
+```bash
+helm template minbutik ./demo
+```
+
+Det första argumentet är releasenamnet. Det används i renderingen, vilket syns direkt i utdatan:
+resurserna heter `minbutik-demo` — releasenamnet plus chartnamnet.
+
+Kommandot är det snabbaste sättet att förstå ett okänt chart. Du ser exakt vad det skulle skapa,
+utan att något händer.
+
+## Vad mallspråket gör
+
+Mallspråket är Go:s `text/template` med tillägg, och tre saker räcker långt.
+
+**`{{ .Values.x }}`** hämtar ett värde. **`{{ .Release.Name }}`** hämtar något om installationen.
+**`{{ include "demo.fullname" . }}`** anropar en namnfunktion ur `_helpers.tpl`.
+
+Det finns också villkor och slingor — `{{ if .Values.ingress.enabled }}` är det som gör att en hel
+fil kan försvinna ur resultatet.
+
+Du behöver inte lära dig språket för att använda charts. Det behövs den dag du skriver ett eget, och
+tills dess räcker det att känna igen formen.
+
+## `helm template` vs `helm install`
+
+De renderar samma sak och skiljer sig i allt annat.
+
+**`helm template`** skriver resultatet till skärmen. Den kräver inget kluster, den sparar ingenting,
+och den kan köras hur många gånger som helst utan följder.
+
+**`helm install`** renderar, skickar resultatet till klustret och **sparar en release**. Den kräver
+en fungerande anslutning, och utan kluster svarar den `cluster reachability check failed`.
+
+Konsekvensen är arbetsgången. Rendera lokalt medan du skriver, installera när det ser rätt ut — och
+använd `helm template` i en pipeline när du bara vill granska diffen.
+
+## Vad `--dry-run` gör
+
+`--dry-run` kör `helm install` utan att skapa något, och flaggan har två lägen som beter sig olika.
+
+**`--dry-run=client`** renderar lokalt, precis som `helm template`. Det är vad du får om du skriver
+bara `--dry-run` utan värde.
+
+**`--dry-run=server`** skickar resultatet till API-servern för validering utan att spara det.
+Klustret kontrollerar då att resurstyperna finns och att fälten är giltiga.
+
+<Callout type="fallgrop">
+Ett `--dry-run` som går igenom betyder inte att installationen kommer att lyckas.
+
+Uppmätt på Helm 4.2: `helm install ./demo --dry-run` utan kluster ger fullständig utdata och
+exitkod noll, eftersom bara klientläget körs. Samma kommando med `--dry-run=server` svarar
+`kubernetes cluster unreachable`.
+
+Klientläget kontrollerar mallens syntax, inte om klustret accepterar resultatet. En felstavad
+resurstyp eller ett fält som din Kubernetes-version inte känner till passerar utan invändning.
+
+Vill du ha en kontroll som betyder något: använd `--dry-run=server`, och läs skillnaden i
+felmeddelandet — `template:` betyder mallfel, allt annat kommer från klustret.
+</Callout>
+
+## `kubectl apply` vs `helm install`
+
+Frågan är vad Helm tillför när `kubectl apply -f` redan fungerar.
+
+**`kubectl apply`** skickar de filer du pekar ut. Klustret vet efteråt vilka resurser som finns, men
+ingenting om att de hör ihop.
+
+**`helm install`** skickar samma sorts resurser och **håller reda på gruppen**. Den vet vilka
+resurser som ingår, vilken version av chartet de kom från, och vad som gällde före den senaste
+ändringen.
+
+Konsekvensen syns när något ska bort eller backas. `kubectl delete` kräver att du minns varje resurs;
+`helm uninstall` tar gruppen. Att backa en ändring med `kubectl` betyder att leta upp den gamla
+filen; med Helm är det ett kommando.
+
+Kustomize löser samma grundproblem utan mallspråk, genom att lägga överlagringar ovanpå färdiga
+manifest. Valet mellan dem är ett teambeslut, och båda stöds av ArgoCD.
+
+<Del titel="Releasen" />
+
+## Vad en release är
+
+En **release** är en installerad instans av ett chart, med ett namn.
+
+Samma chart kan installeras flera gånger i samma kluster under olika namn — `minbutik-test` och
+`minbutik-prod` är två releaser av ett chart, med var sina värden.
+
+Namnet är inte kosmetiskt. Det går in i renderingen och blir en del av resursnamnen, vilket är
+varför två releaser av samma chart inte krockar med varandra.
+
+En release lever i ett **namespace**. Två releaser med samma namn i olika namespaces är olika
+releaser.
+
+## Vad en revision är
+
+En **revision** är ett numrerat läge av en release.
+
+Första installationen är revision 1. Varje `helm upgrade` skapar nästa nummer, och det gamla läget
+finns kvar.
+
+Det är den bokföringen som gör `helm rollback` möjlig: Helm har kvar vad som gällde, och kan skicka
+tillbaka det till klustret.
+
+Antalet sparade revisioner är begränsat, och det är en inställning värd att känna till innan du
+behöver gå långt tillbaka.
+
+## Release vs chart
+
+De två orden används om vartannat och betyder olika saker.
+
+**Chartet** är mallen. Det ligger i ett repo eller ett register, det har en version, och det är
+likadant för alla som använder det.
+
+**Releasen** är en installation av chartet i ett kluster. Den har ett namn, ett namespace, en
+revision och en egen uppsättning värden.
+
+Konsekvensen är att `helm list` visar releaser, inte charts — och att frågan "vilken version kör
+vi?" har två svar: chartets version och programmets `appVersion`.
+
+<Doodle name="chartet-och-releaserna" caption="Ett chart, tre installationer. Det som skiljer dem är värdena, inte mallen." />
+
+## Var Helm sparar sitt läge
+
+Helm sparar varje revision som en **Secret i samma namespace som releasen**.
+
+Det förklarar varför Helm inte behöver någon egen databas eller server. Klustret är lagringen, och
+klienten läser därifrån varje gång du kör `helm list`.
+
+<Doodle name="helm-ar-bara-en-klient" caption="Klienten står utanför. Läget ligger i klustret, som en Secret bland andra." />
+
+Två följder är värda att veta. Den som har läsrätt på Secrets i ett namespace kan läsa releasens
+värden — och Kubernetes-delen visade redan att en Secret bara är base64, inte kryptering.
+
+Den andra följden är trevligare: försvinner din maskin finns inget att återställa. Allt Helm vet
+ligger redan i klustret.
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att installera charts som andra skrivit, och det första du gör med ett okänt chart är att
+rendera det lokalt. `helm template` visar exakt vad som skulle hamna i klustret, utan att något
+händer.
+
+Du kommer också att skriva en `values-prod.yaml`. Det är den fil som skiljer miljöerna åt, och den
+ska innehålla det som faktiskt varierar — inte en kopia av hela `values.yaml`.
+
+Att skriva egna charts från grunden är ovanligare än man tror. Det blir aktuellt när ni har flera
+tjänster som ser likadana ut, och då är det ett bibliotekschart som gör jobbet.
+
+Uppgraderingar, rollback, hooks och subcharts tar nästa del. Det som inte kan vänta är skillnaden
+mellan mall, värden och installerad instans — utan den betyder felmeddelandena ingenting.
+
+## Vanliga nybörjarförväxlingar
+
+Helm har ingen server i klustret. Versionen som hade det, Helm 2 med Tiller, är borta.
+
+En template är inte ett manifest. `kubectl apply` på en mallfil misslyckas, eftersom klamrarna inte
+är giltig YAML.
+
+Values fyller inte bara i värden. De avgör också vilka resurser som renderas alls.
+
+`--dry-run` utan värde betyder klientläge och rör inte klustret. Det kontrollerar mallen, inte att
+installationen kommer att lyckas.
+
+Ett chart är inte en release. Chartet är mallen; releasen är en installation av den, med namn och
+namespace.
+
+`helm list` visar inte charts. Den visar releaser i ett namespace.
+
+Helm sparar inte sitt läge lokalt. Varje revision ligger som en Secret i klustret.
+
+## Prova själv
+
+Övningen renderar ett chart **utan kluster** — det är hela poängen med `helm template`. Helm körs i
+en container, så ingenting installeras på din maskin.
+
+```bash
+mkdir ~/helm-ovning && cd ~/helm-ovning
+helm() { docker run --rm -v "$PWD":/apps \
+  -w /apps alpine/helm "$@"; }
+```
+
+Funktionen låter dig skriva `helm …` som vanligt. Har du redan Helm installerat kan du hoppa över
+den. Skapa ett chart att titta på:
+
+```bash
+helm create demo
+ls demo demo/templates
+```
+
+Du får `Chart.yaml`, `values.yaml` och en `templates/`-katalog med åtta filer. Rendera nu chartet:
+
+```bash
+helm template minbutik ./demo | grep "^kind:"
+```
+
+```
+kind: ServiceAccount
+kind: Service
+kind: Deployment
+kind: Pod
+```
+
+**Åtta filer i `templates/`, fyra resurser i utdatan.** Ingress, HTTPRoute och HPA saknas eftersom de
+är avstängda i `values.yaml` — värdena avgör alltså inte bara innehåll utan vad som finns. Titta på
+namnet:
+
+```bash
+helm template minbutik ./demo \
+  | grep -m1 "name: minbutik"
+```
+
+```
+  name: minbutik-demo
+```
+
+Releasenamnet du angav plus chartets namn. Ändra nu ett värde utan att röra en enda fil:
+
+```bash
+helm template minbutik ./demo --set replicaCount=3 \
+  | grep -m1 replicas
+```
+
+```
+  replicas: 3
+```
+
+Pröva slutligen vad som händer när klustret behövs:
+
+```bash
+helm install minbutik ./demo
+```
+
+```
+Error: INSTALLATION FAILED: cluster reachability
+check failed: kubernetes cluster unreachable
+```
+
+**Renderingen fungerade, installationen gjorde det inte.** Skillnaden är att `helm template` arbetar
+lokalt medan `helm install` ska skapa något. Städa sedan:
+
+```bash
+cd ~ && rm -rf ~/helm-ovning
+```
+
+Tre saker kan förvirra. **`kind: Pod` i utdatan är ett testfall**, inte din applikation — den ligger
+i `templates/tests/` och körs bara av `helm test`. **`helm install --dry-run` lyckas utan kluster**,
+eftersom bara klientläget körs; lägg till `=server` för att se samma fel som ovan. Och **chartet som
+`helm create` skapar ser olika ut i olika versioner** — uppmätt på Helm 4.2 finns `httproute.yaml`
+med, vilket saknas i Helm 3.
+
+<Callout type="kom-ihag">
+- **Helm är en ren klient.** Ingen server i klustret sedan Helm 2 med Tiller försvann.
+- Ett **chart** är mallen och standardvärdena. En **release** är en installation av det, med namn.
+- En **template** är inte ett manifest. Den behöver värden för att bli giltig YAML.
+- **Values** avgör inte bara innehåll utan vilka resurser som renderas alls.
+- Ordningen är `values.yaml` → subchart → `-f` → `--set`, med `--set` högst.
+- **`helm template` kräver inget kluster.** `helm install` gör det, och sparar en release.
+- `--dry-run` utan värde är **klientläge** och kontrollerar bara mallen.
+- Helm håller reda på **gruppen** av resurser — det är skillnaden mot `kubectl apply`.
+- Varje **revision** sparas som en Secret i releasens namespace.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Du kör `kubectl apply -f templates/deployment.yaml` från ett chart. Vad händer?",
+      a: "Det misslyckas. Filen är en template, inte ett manifest — uttrycken i dubbla klammerparenteser är inte giltig YAML förrän Helm renderat dem. Kör `helm template` först och titta på resultatet.",
+    },
+    {
+      q: "Ett chart har åtta filer i `templates/` men renderar bara fyra resurser. Är något fel?",
+      a: "Nej. Värdena avgör vilka resurser som finns, inte bara vad de innehåller. Ett block som `{{ if .Values.ingress.enabled }}` gör att hela filen försvinner ur resultatet när värdet är falskt, och i standardchartet är Ingress, HTTPRoute och HPA avstängda.",
+    },
+    {
+      q: "Vad är skillnaden mellan `helm template` och `helm install --dry-run`?",
+      a: "`helm template` renderar lokalt och skriver till skärmen. `--dry-run` utan värde gör i praktiken samma sak, eftersom det betyder klientläge. Skillnaden uppstår med `--dry-run=server`, som skickar resultatet till API-servern för validering utan att spara — och därmed kräver ett kluster.",
+    },
+    {
+      q: "Två releaser av samma chart i samma kluster. Hur undviker de att krocka?",
+      a: "Releasenamnet går in i renderingen och blir en del av resursnamnen, så `minbutik-test` och `minbutik-prod` ger olika resurser ur samma mall. Namespace skiljer dem dessutom åt — två releaser med samma namn i olika namespaces är olika releaser.",
+    },
+    {
+      q: "Vad tillför `helm install` jämfört med `kubectl apply -f`?",
+      a: "Att gruppen hålls ihop. Helm vet vilka resurser som ingår i releasen, vilken chartversion de kom från och vad som gällde före den senaste ändringen. Med `kubectl` måste du själv minnas varje resurs när något ska tas bort eller backas.",
+    },
+    {
+      q: "Var ligger informationen som `helm list` visar?",
+      a: "I klustret, som en Secret per revision i releasens namespace. Helm har ingen egen server eller databas — klienten läser från klustret. Följden är att den som kan läsa Secrets i namespacet också kan läsa releasens värden.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- Helm är en pakethanterare för Kubernetes som gör manifest av mallar och värden.
+- Helm är en ren klient. Ingen server i klustret sedan Helm 2 med Tiller togs bort.
+- Ett chart är en katalog med `Chart.yaml`, `values.yaml` och `templates/`.
+- `Chart.yaml` har två versioner: chartets `version` och programmets `appVersion`.
+- En template är en manifestfil med uttryck som fylls i vid rendering.
+- En template är inte giltig YAML förrän den renderats — `kubectl apply` på den misslyckas.
+- Values fyller i platshållarna och avgör dessutom vilka resurser som renderas alls.
+- Värden överlagras: `values.yaml` → subchart → `-f` → `--set`, där den sista vinner.
+- `helm template` renderar lokalt, kräver inget kluster och skapar ingen release.
+- Releasenamnet går in i renderingen och blir en del av resursnamnen.
+- `helm install` renderar, skickar till klustret och sparar en release.
+- `--dry-run` utan värde är klientläge; `--dry-run=server` validerar mot API-servern.
+- Helm håller reda på gruppen av resurser, vilket `kubectl apply` inte gör.
+- En release är en installerad instans av ett chart, med namn, namespace och revision.
+- Varje revision sparas som en Secret i releasens namespace, och gör rollback möjlig.
+
+## Nästa del
+
+Nu vet du vad ett chart är, vad values gör och var renderingen sker. Allt hittills har handlat om den
+första installationen.
+
+Nästa del tar det som händer efteråt. Vad gör `helm upgrade` med resurser som redan finns, varför är
+`version` och `appVersion` två fält, och vad händer när uppgraderingen misslyckas halvvägs?

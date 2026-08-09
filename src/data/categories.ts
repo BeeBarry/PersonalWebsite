@@ -110,6 +110,15 @@ export const categories: Category[] = [
         isVisible: true,
     },
     {
+        title: "Helm",
+        description: "Chart, values och release — paketet som gör manifesten återanvändbara.",
+        icon: "logos:helm",
+        slug: "helm",
+        group: "containrar",
+        domain: "cloud",
+        isVisible: true,
+    },
+    {
         title: "Terraform",
         description: "Infrastructure as Code med Terraform.",
         icon: "skill-icons:terraform-light",

@@ -62,6 +62,7 @@ const learn = defineCollection({
     category: z.enum([
       "docker",
       "kubernetes",
+      "helm",
       "terraform",
       "ansible",
       "azure",
