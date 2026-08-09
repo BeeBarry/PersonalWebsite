@@ -1,0 +1,466 @@
+---
+title: 'Testdata, kontrakt och grinden'
+description: 'Var testerna körs, vad de delar med varandra — och vad QA gör i ett team där alla skriver tester'
+category: 'testning'
+part: 1
+order: 2
+date: '2026-08-09'
+tags: ['Beginner', 'Testning', 'QA']
+---
+
+## Var vi är
+
+Förra delen tog det enskilda testet: påståendet, nivåerna, ersättarna och vad ett grönt resultat
+betyder.
+
+Kvar stod frågan om var testerna körs och vem som bryr sig om svaret. Vad gör testdata till ett eget
+problem, hur testar man ett kontrakt mellan två tjänster som ändras var för sig, och vad gör en
+QA-roll i ett team där alla skriver tester?
+
+Den här delen svarar på alla tre. Zoomen ligger på sviten som helhet och på dess plats i arbetet —
+inte på hur ett enskilt testfall skrivs.
+
+<Del titel="Datan" />
+
+## Vad testdata är
+
+**Testdata** är den data ett test behöver för att kunna köra: en kund, en order, en fil, ett svar
+från en tjänst.
+
+Kravet på den är strängare än det verkar. Datan ska vara **känd** — testet måste veta exakt vad som
+finns — och den ska vara **tillräcklig**, alltså innehålla det fall som testas och inget annat.
+
+Ett tredje krav syns först när sviten växer: datan ska tillhöra ett test i taget. Delas den uppstår
+beroenden som ingen skrivit avsiktligt.
+
+Det är därför testdata blir ett eget problem. Ett enskilt testfall behöver knappt någon; en svit på
+tusen behöver en strategi.
+
+## Vad en fixture är
+
+En **fixture** är det förberedda tillstånd ett testfall utgår från.
+
+I de flesta ramverk är det en funktion som körs före varje testfall — `setUp`, `beforeEach` eller
+en dekorerad funktion. Den skapar det testet behöver och lämnar över.
+
+En fixture kan också vara en fil med färdig data som läses in. Det är den formen som oftast växer
+sig obehaglig.
+
+Poängen med fixturen är att den körs **om** för varje testfall. Det som skapas i ett test finns inte
+kvar i nästa, och det är just den egenskapen övningen längst ner handlar om.
+
+## Fixture vs factory
+
+De två sätten att få fram testdata drar åt olika håll när sviten växer.
+
+**En fixture** är en färdig uppsättning som flera testfall delar. Den är bekväm i början, och den
+växer: ett testfall behöver ett extra fält, och det fältet läggs till för alla.
+
+**En factory** är en funktion som skapar data på begäran, med förvalda värden och möjlighet att
+ändra det testet bryr sig om — `skapa_order(land="DE")`.
+
+Konsekvensen syns i läsbarheten. Med en fixture måste du leta i en annan fil för att förstå vad
+testet förutsätter; med en factory står det som testet bryr sig om i testet självt.
+
+Tumregeln: fixture för det som är sant i hela sviten, factory för det som varierar mellan fall.
+
+## Vad isolering betyder
+
+**Isolering** betyder att ett testfall inte påverkar resultatet av ett annat.
+
+Bryts den blir sviten opålitlig på ett förrädiskt sätt: testerna är gröna var för sig och röda
+tillsammans, eller tvärtom.
+
+Tre saker läcker oftast. **Delat minne** — en variabel som lever kvar mellan testfall. **Delad
+databas** — rader som ett tidigare test skrev. **Delade filer** — en fil på disk som ingen städade
+bort.
+
+<Doodle name="testerna-delar-korgen" caption="Det ena testet lade något i korgen. Det andra räknade med att den var tom." />
+
+Fällan är att ordningen sällan är slumpmässig. Ramverket kör testfallen i en bestämd ordning —
+`unittest` tar dem i bokstavsordning — så felet är stabilt tills någon döper om ett test.
+
+## Hur testdatabasen hålls ren
+
+Tre sätt används, och de skiljer sig i hastighet snarare än i princip.
+
+**Transaktion och rollback.** Testet öppnar en transaktion, gör sitt, och rullar tillbaka i stället
+för att spara. SQL-delens allt-eller-inget används här som städmetod, och det är det snabbaste
+alternativet.
+
+**Tömma mellan tester.** Tabellerna rensas före varje testfall. Enkelt att förstå, långsammare, och
+det fungerar även när koden själv hanterar transaktioner.
+
+**Ny databas per körning.** En container startas, används och kastas — samma engångsprincip som
+Docker-serien byggde på. Det ger starkast isolering och kostar sekunder vid uppstart.
+
+Johan i driftteamet ser en fjärde variant ibland: en gemensam testdatabas som alla kör mot. Den är
+snabbast att sätta upp och den enda som garanterat går sönder när två pipelines kör samtidigt.
+
+<Del titel="Kontraktet" />
+
+## Vad ett kontraktstest är
+
+Ett **kontraktstest** kontrollerar att två tjänster är överens om formatet — utan att köra båda
+samtidigt.
+
+API-serien beskrev kontraktet som det två system kommer överens om. Kontraktstestet gör det
+kontrollerbart: överenskommelsen skrivs ner som en fil, och båda sidorna testar mot den var för sig.
+
+<Doodle name="kontraktet-i-mitten" caption="Ingen av tjänsterna anropar den andra. Båda mäts mot samma papper." />
+
+Vanligast är den **konsumentdrivna** varianten. Marias tjänst spelar in vad den förväntar sig av
+leverantören — den här sökvägen, de här fälten — och leverantören kör den inspelningen som ett test
+i sin egen pipeline.
+
+Följden är att leverantören får veta att en ändring bryter något **innan** den rullas ut, och att
+Maria slipper vänta på en miljö där båda tjänsterna är uppe.
+
+## Kontraktstest vs e2e-test
+
+Båda finns för att fånga fel mellan tjänster, och kostnaden skiljer sig med en storleksordning.
+
+**Ett e2e-test** startar allt och klickar igenom ett flöde. Det bevisar att helheten fungerar, kräver
+en fullständig miljö, och tar minuter.
+
+**Ett kontraktstest** kör en tjänst i taget mot en nedskriven överenskommelse. Det bevisar att
+formatet håller, kräver ingen miljö, och tar sekunder.
+
+Konsekvensen är att de fångar olika fel och att det ena inte ersätter det andra. Ett brutet fältnamn
+hittas billigast av kontraktstestet; att kassan faktiskt går att slutföra hittas bara av e2e-testet.
+
+## Vad ett snapshot-test är
+
+Ett **snapshot-test** sparar utdata första gången det körs och jämför mot den sparade bilden vid
+varje senare körning.
+
+Det används oftast på sådant som är omständligt att påstå fält för fält: en renderad vy, ett stort
+JSON-svar, en genererad rapport.
+
+Bekvämligheten är verklig. Ett snapshot fångar oavsiktliga ändringar i något du aldrig orkat skriva
+assertions för.
+
+Priset står i nästa avsnitt, och det är större än det ser ut.
+
+## Snapshot vs assertion
+
+Skillnaden är vem som bestämmer vad som är rätt.
+
+**En assertion** är ditt påstående om vad resultatet **ska** vara. Den kommer ur kravet, och den är
+lika giltig innan koden är skriven.
+
+**Ett snapshot** är en inspelning av vad koden **gjorde**. Den kommer ur körningen, och den säger
+ingenting om huruvida det var rätt.
+
+Konsekvensen är att ett snapshot godkänner buggen om buggen fanns när bilden togs. Och eftersom
+verktygen har ett kommando som uppdaterar alla snapshots på en gång, är avståndet mellan "det här
+ser konstigt ut" och "nu är det godkänt" en knapptryckning.
+
+Använd snapshots som ett skyddsnät mot oavsiktliga ändringar, aldrig som den enda kontrollen av
+något som betyder något.
+
+<Del titel="Grinden" />
+
+## Testet som grind
+
+En **grind** är ett steg i pipelinen som stoppar allt efter sig när det misslyckas.
+
+Mekaniken är exitkoden från förra delen: noll släpper igenom, allt annat stoppar. CI/CD-delens jobb
+och steg är det som läser den.
+
+En grind är värd något bara under två villkor. Den ska vara **pålitlig** — röda resultat ska betyda
+att något är fel — och den ska vara **obligatorisk**, alltså gå att köra förbi bara medvetet.
+
+Det andra villkoret är organisatoriskt och inte tekniskt. En grind som alla har rätt att kringgå är
+en rekommendation.
+
+## Ordningen i pipelinen
+
+Snabbt först, långsamt sist. Regeln är enkel och bryts ändå ofta.
+
+Linting och enhetstester tar sekunder och körs först. Integrationstester tar minuter. E2E-tester tar
+längre än så och körs sist, ofta bara mot huvudgrenen.
+
+Skälet är återkopplingstiden. Ett fel som upptäcks efter trettio sekunder rättas medan du fortfarande
+har koden i huvudet; ett som dyker upp efter fyrtio minuter möter dig i en annan uppgift.
+
+Det är också därför "bygg en gång, distribuera överallt" från CI/CD-delen hör ihop med testordningen:
+samma artefakt går genom grindarna i tur och ordning, i stället för att byggas om för varje steg.
+
+## När grinden blir opålitlig
+
+Ett flaky test i en grind startar en kedja som slutar illa.
+
+Först körs det om. Sedan blir omkörningen rutin. Sedan slutar folk läsa vilket test som var rött, och
+till sist rullas en ändring ut trots att grinden faktiskt hittade något.
+
+Vid det laget kostar sviten tid utan att ge trygghet — samma slutläge som isglassen i förra delen,
+men av en annan orsak.
+
+Det som bryter kedjan är att behandla ett flaky test som en bugg i sviten, med samma allvar som en
+bugg i produkten.
+
+## Retry vs karantän
+
+De två sätten att hantera ett opålitligt test skiljer sig i vad de gör synligt.
+
+**En retry** kör om testet tills det blir grönt. Problemet försvinner ur utskriften och finns kvar i
+sviten, och ingen vet längre hur ofta det slår till.
+
+**Karantän** flyttar testet ur grinden men låter det köras och rapporteras separat. Felet syns,
+sviten går igenom, och någon kan laga det.
+
+Konsekvensen är att karantän är rätt val — men bara med ett datum. En karantänlista utan sista
+förbrukningsdag är en soptipp, och de tester som ligger där testar ingenting.
+
+<Del titel="Människan" />
+
+## Vad utforskande testning är
+
+**Utforskande testning** är strukturerad manuell undersökning av produkten, där testaren följer sina
+iakttagelser i stället för ett manus.
+
+Det är inte samma sak som att klicka runt. Arbetet har ett område, en tidsram och anteckningar, och
+resultatet är fynd som ingen tänkt på i förväg.
+
+Det är precis den delen automatiserade tester inte kan göra. Ett automatiskt test kontrollerar det
+någon redan förutsett, och kan per definition inte upptäcka något utanför det.
+
+Därför står de två inte mot varandra. Automatiseringen håller det kända grönt; människan letar efter
+det okända.
+
+## Vad QA gör när alla skriver tester
+
+**QA** äger frågan om kvalitet, inte utförandet av testfall.
+
+När utvecklarna skriver sina egna tester flyttas rollen uppåt: att avgöra vad som är värt att testa,
+vilka risker som finns i en ändring, och om acceptanskriterierna ens går att kontrollera.
+
+Tre uppgifter blir tydligare. **Testbarhet** — går funktionen att verifiera alls, eller behöver koden
+ändras först? **Riskanalys** — vad kostar det om just det här går fel? **Utforskande testning** — det
+ingen automatisering hittar.
+
+Rollen som körde manuella testfall inför varje release är borta i team som automatiserat. Rollen som
+frågar *hur vet vi att det blev rätt?* har blivit viktigare.
+
+## Vad en användbar buggrapport innehåller
+
+En **buggrapport** är användbar när mottagaren kan återskapa felet utan att fråga något.
+
+Fem delar räcker nästan alltid: vad du gjorde, vad du förväntade dig, vad som hände i stället, i
+vilken miljö, och hur ofta det inträffar.
+
+Den viktigaste delen är den första, och den ska vara **minsta** möjliga väg till felet. Sju steg där
+tre räcker gör att någon annan letar i fel del av systemet.
+
+<Callout type="sa-gor-du" title="Skriv rapporten som ett testfall">
+Arrange, act, assert fungerar lika bra i en buggrapport som i kod: det här var läget, det här gjorde
+jag, det här förväntade jag mig.
+
+Lägg till versionen eller commit-hashen. En bugg som rapporteras utan att man vet vilken kod som kördes
+tar dubbelt så lång tid att bekräfta.
+
+Och skriv vad du **förväntade** dig, inte bara att något är fel. Ofta är det där oenigheten sitter —
+och då är det inte en bugg utan ett krav som aldrig blev formulerat.
+</Callout>
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att felsöka en svit som är grön var för sig och röd tillsammans. Det första du kontrollerar
+är delat tillstånd: en variabel som lever kvar, en rad i databasen, en fil som inte städades.
+
+Du kommer också att skriva testdata varje gång du skriver ett test, och valet mellan en delad fixture
+och en factory avgör om sviten går att läsa om ett år.
+
+Att bygga kontraktstest mellan tjänster och att sätta upp grindarna i pipelinen är ofta ett teambeslut
+snarare än ditt eget. Att veta varför ett kontraktstest är billigare än ett e2e-test är däremot ditt,
+eftersom det är du som blir tillfrågad om varför bygget tar fyrtio minuter.
+
+Prestandatester, säkerhetstester och testning av tillgänglighet ligger utanför den här serien. De
+bygger alla på samma sak: ett påstående, körbart, med ett resultat någon läser.
+
+## Vanliga nybörjarförväxlingar
+
+Testdata är inte bara indata. Kravet är att den är känd, tillräcklig och inte delad med andra tester.
+
+En fixture är inte en fil. Det är det förberedda tillstånd testet utgår från, oavsett var det kommer
+ifrån.
+
+Testordningen är inte slumpmässig. Ramverket har en bestämd ordning, vilket gör ordningsfel stabila
+tills någon döper om ett test.
+
+Ett kontraktstest är inte ett litet e2e-test. Det kör en tjänst i taget mot en nedskriven
+överenskommelse, utan miljö.
+
+Ett snapshot är inte en assertion. Det spelar in vad koden gjorde, inte vad den skulle göra.
+
+En grind som går att kringgå är inte en grind. Den är en rekommendation.
+
+En retry lagar inte ett flaky test. Den döljer hur ofta det slår till.
+
+Utforskande testning är inte att klicka runt. Det har område, tidsram och anteckningar.
+
+## Prova själv
+
+Övningen visar det svåraste felet att hitta i en testsvit: ett test som passerar ensamt och
+misslyckas i sviten. Ingen installation behövs.
+
+```bash
+mkdir ~/isolering && cd ~/isolering
+```
+
+Skapa två testfall som delar en lista. Listan ligger på klassen, inte i en fixture:
+
+```bash
+cat > test_korg.py <<'EOF'
+import unittest
+
+
+class TestKorg(unittest.TestCase):
+    korg = []
+
+    def test_a_lagg_till(self):
+        self.korg.append("bok")
+        self.assertEqual(len(self.korg), 1)
+
+    def test_b_tom_korg(self):
+        self.assertEqual(len(self.korg), 0)
+EOF
+python3 -m unittest -v
+```
+
+```
+test_a_lagg_till ... ok
+test_b_tom_korg ... FAIL
+
+AssertionError: 1 != 0
+```
+
+Det andra testet förväntade sig en tom korg och hittade en bok. Kör nu **bara** det testet:
+
+```bash
+python3 -m unittest test_korg.TestKorg.test_b_tom_korg
+```
+
+```
+Ran 1 test in 0.000s
+
+OK
+```
+
+**Samma test, motsatt resultat.** Det passerar ensamt och misslyckas i sviten, och skillnaden är
+enbart att ett annat testfall hann köra först. Lägg nu listan i en fixture i stället:
+
+```bash
+cat > test_korg.py <<'EOF'
+import unittest
+
+
+class TestKorg(unittest.TestCase):
+    def setUp(self):
+        self.korg = []
+
+    def test_a_lagg_till(self):
+        self.korg.append("bok")
+        self.assertEqual(len(self.korg), 1)
+
+    def test_b_tom_korg(self):
+        self.assertEqual(len(self.korg), 0)
+EOF
+python3 -m unittest -v
+```
+
+```
+test_a_lagg_till ... ok
+test_b_tom_korg ... ok
+
+OK
+```
+
+`setUp` körs före **varje** testfall och ger var och en en egen tom lista. Städa sedan:
+
+```bash
+cd ~ && rm -rf ~/isolering
+```
+
+Tre saker kan förvirra. **Ordningen är inte slumpmässig** — `unittest` kör testfallen i
+bokstavsordning, så `test_a` går alltid före `test_b`. Det är därför felet är stabilt, och därför det
+plötsligt försvinner om någon döper om ett test. **`korg = []` på klassen delas av alla instanser**,
+vilket är ett Python-beteende och inte något ramverket hittar på — samma fälla finns i andra språk med
+statiska fält. Och **`self.korg.append()` fungerar trots att listan ligger på klassen**, eftersom
+listan ändras på plats i stället för att tilldelas om.
+
+<Callout type="kom-ihag">
+- **Testdata** ska vara känd, tillräcklig och inte delad mellan testfall.
+- En **fixture** är det förberedda tillståndet, och den körs om för varje testfall.
+- **Fixture** för det som gäller hela sviten, **factory** för det som varierar.
+- Bruten **isolering** ger tester som är gröna var för sig och röda tillsammans.
+- Testordningen är **bestämd**, inte slumpmässig — därför är ordningsfel stabila.
+- Ett **kontraktstest** kör en tjänst i taget mot en nedskriven överenskommelse.
+- Ett **snapshot** spelar in vad koden gjorde. En **assertion** påstår vad den ska göra.
+- En **grind** kräver två saker: att den är pålitlig och att den inte går att kringgå.
+- **Karantän** gör ett flaky test synligt. **Retry** döljer det. Karantän behöver ett datum.
+- **QA** äger frågan om kvalitet — testbarhet, risk och det ingen automatisering hittar.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Ett test passerar när du kör det ensamt men misslyckas i sviten. Vad letar du efter?",
+      a: "Delat tillstånd. Ett tidigare testfall har lämnat något kvar — en variabel på klassen, en rad i databasen eller en fil på disk. Eftersom ramverket kör testfallen i en bestämd ordning är felet stabilt, ända tills någon döper om ett test och ordningen ändras.",
+    },
+    {
+      q: "När är en factory bättre än en delad fixture?",
+      a: "När data varierar mellan testfall. Factoryn skapar det som behövs på begäran och låter testet ange bara det den bryr sig om, så förutsättningen står i testet självt. En delad fixture växer i stället med varje nytt fält som något testfall behöver, och till slut måste man läsa en annan fil för att förstå vad ett test förutsätter.",
+    },
+    {
+      q: "Varför är ett kontraktstest billigare än ett e2e-test för att fånga ett brutet fältnamn?",
+      a: "Därför att det kör en tjänst i taget mot en nedskriven överenskommelse, utan att någon miljö behöver vara uppe. Leverantören kör konsumentens förväntningar som ett test i sin egen pipeline och får veta att ändringen bryter något innan den rullas ut. E2E-testet fångar samma fel men kräver att hela systemet startas, och tar minuter i stället för sekunder.",
+    },
+    {
+      q: "Vad är risken med att luta sig mot snapshot-tester?",
+      a: "Att de spelar in vad koden gjorde i stället för att påstå vad den ska göra. Fanns buggen när bilden togs blir den godkänd. Verktygen kan dessutom uppdatera alla snapshots med ett kommando, så avståndet mellan tveksamhet och godkännande är en knapptryckning.",
+    },
+    {
+      q: "Teamet kör om bygget varje gång ett visst test blir rött. Vad är problemet?",
+      a: "Omkörningen döljer hur ofta testet slår till och gör grinden opålitlig. Efter ett tag slutar folk läsa vilket test som var rött, och då kan en ändring rullas ut trots att grinden faktiskt hittade något. Rätt åtgärd är karantän med ett datum — testet flyttas ur grinden men fortsätter köras och rapporteras.",
+    },
+    {
+      q: "Vad gör en QA-roll i ett team där utvecklarna skriver alla tester?",
+      a: "Äger frågan om kvalitet snarare än utförandet. Fyra saker: om en funktion är testbar alls, vilka risker en ändring bär, om acceptanskriterierna går att kontrollera, och den utforskande testningen som hittar det ingen förutsett. Rollen som körde manuella testfall inför varje release är borta; rollen som frågar hur vi vet att det blev rätt har blivit viktigare.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- Testdata ska vara känd, tillräcklig och tillhöra ett test i taget.
+- En fixture är det förberedda tillstånd ett testfall utgår från, och den körs om varje gång.
+- Fixture passar det som gäller hela sviten; factory det som varierar mellan fall.
+- Isolering betyder att ett testfall inte påverkar ett annat.
+- Delat minne, delad databas och delade filer är de tre vanligaste läckorna.
+- Testordningen är bestämd, inte slumpmässig, vilket gör ordningsfel stabila.
+- Testdatabasen hålls ren med rollback, tömning eller en ny container per körning.
+- Ett kontraktstest kontrollerar att två tjänster är överens, utan att båda körs samtidigt.
+- Konsumentdrivet: konsumenten spelar in sina förväntningar, leverantören kör dem som test.
+- Ett e2e-test bevisar att helheten fungerar; ett kontraktstest att formatet håller.
+- Ett snapshot spelar in vad koden gjorde, och godkänner buggen om den fanns vid inspelningen.
+- En grind stoppar allt efter sig vid rött, och kräver att vara både pålitlig och obligatorisk.
+- Snabba tester först, långsamma sist — återkopplingstiden avgör om de används.
+- Retry döljer ett flaky test; karantän gör det synligt, och behöver ett datum.
+- Utforskande testning har område, tidsram och anteckningar, och hittar det ingen förutsett.
+- QA äger testbarhet, risk och acceptanskriterier — inte utförandet av testfall.
+- En buggrapport är användbar när mottagaren kan återskapa felet utan att fråga.
+
+## Nästa del
+
+Därmed står testgrunderna: påståendet och nivåerna i förra delen, och sviten, kontraktet och grinden i
+den här.
+
+Serien stänger sig här. Det som återstår är sådant som bygger vidare på samma idé i egna riktningar —
+prestandatester som mäter i stället för att påstå, och säkerhetstester som letar efter det som inte
+ska gå.
+
+Varje senare serie kan ankra hit när något ska bevisas i stället för antas.

@@ -2328,6 +2328,45 @@ def alla():
       + "\n" + txt([(200,350,"det riktiga"),(670,350,"dubbeln")],18.5)
       + "\n" + txt([(670,378,"inget bakom")],13,' opacity="0.62"') + "\n</svg>")
 
+    # 115 — Testning 1.1 · Testerna delar korgen
+    # Pilarna går åt OLIKA håll: ner från det ena testet, upp till det andra.
+    # Två nedåtpilar hade läst som att båda lägger i, och poängen är att det
+    # ena skriver och det andra råkar läsa.
+    korg = ('<path d="M300 238 Q304 296 314 350 Q440 356 566 350 '
+            'Q576 296 580 238"/>')
+    D['testerna-delar-korgen']=(
+      '<svg viewBox="0 0 880 400" role="img" aria-label="Två rutor märkta test A och test B med en '
+      'korg emellan. En pil går ner från test A i korgen, och en pil går upp från korgen till '
+      'test B.">\n'
+      + G % (f'<path d="{w(90,50,220,90)}"/><path d="{w(570,50,220,90)}"/>'
+             + korg + f'<path d="{w(362,262,96,68)}"/>'
+             + '<path d="M240 146 Q300 186 344 224"/>' + arrow(350, 230, "down")
+             + '<path d="M536 224 Q580 186 640 146"/>' + arrow(646, 140, "up"))
+      + "\n" + txt([(200,102,"test A"),(680,102,"test B")],17)
+      + "\n" + txt([(440,384,"delad korg")],15,' opacity="0.62"') + "\n</svg>")
+
+    # 116 — Testning 1.1 · Kontraktet i mitten
+    # Båda pilarna pekar INÅT. Ritas en pil mellan tjänsterna säger bilden att
+    # de anropar varandra — vilket är precis vad ett kontraktstest slipper.
+    def dokument(x, y, b, h, v=32):
+        return (f'<path d="M{x} {y} Q{x+b//2} {y-3} {x+b-v} {y} L{x+b} {y+v} '
+                f'Q{x+b+3} {y+h//2} {x+b} {y+h} Q{x+b//2} {y+h+3} {x} {y+h} '
+                f'Q{x-3} {y+h//2} {x} {y} Z"/>'
+                f'<path d="M{x+b-v} {y} Q{x+b-v+2} {y+v//2} {x+b-v+1} {y+v} '
+                f'Q{x+b-v+v//2} {y+v+2} {x+b} {y+v}"/>')
+    textrader = "".join(
+        f'<path d="M396 {y} Q440 {y-1} {478} {y}" stroke-width="1.2" opacity="0.5"/>'
+        for y in (152, 182, 212))
+    D['kontraktet-i-mitten']=(
+      '<svg viewBox="0 0 880 340" role="img" aria-label="Två lådor märkta konsument och leverantör, '
+      'med ett dokument mellan sig. Båda pilarna pekar in mot dokumentet, ingen mellan lådorna.">\n'
+      + G % (f'<path d="{w(50,110,220,120)}"/><path d="{w(610,110,220,120)}"/>'
+             + dokument(375, 85, 130, 170) + textrader
+             + '<path d="M276 170 Q322 166 362 170"/>' + arrow(368, 170)
+             + '<path d="M604 170 Q558 166 518 170"/>' + arrow(512, 170, "left"))
+      + "\n" + txt([(160,272,"konsument"),(720,272,"leverantör")],18.5)
+      + "\n" + txt([(440,292,"kontraktet")],15,' opacity="0.62"') + "\n</svg>")
+
     return D
 
 if __name__ == "__main__":

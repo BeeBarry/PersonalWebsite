@@ -2210,4 +2210,32 @@ export const DOODLES: Record<string, string> = {
     <text x="670" y="378">inget bakom</text>
   </g>
 </svg>`,
+  /* ---- Testning 1.1 · Testerna delar korgen ---- */
+  "testerna-delar-korgen": `
+<svg viewBox="0 0 880 400" role="img" aria-label="Två rutor märkta test A och test B med en korg emellan. En pil går ner från test A i korgen, och en pil går upp från korgen till test B.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M90 51 Q200 50 310 51 Q310 95 311 140 Q200 141 91 139 Q89 95 90 51 Z"/><path d="M571 50 Q680 50 789 51 Q790 95 790 141 Q680 141 570 139 Q568 95 571 50 Z"/><path d="M300 238 Q304 296 314 350 Q440 356 566 350 Q576 296 580 238"/><path d="M361 262 Q410 261 459 262 Q459 296 458 331 Q410 332 362 329 Q360 296 361 262 Z"/><path d="M240 146 Q300 186 344 224"/><path d="M344 217 L350 230 L356 217"/><path d="M536 224 Q580 186 640 146"/><path d="M640 153 L646 140 L652 153"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="17" fill="currentColor" text-anchor="middle">
+    <text x="200" y="102">test A</text>
+    <text x="680" y="102">test B</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="440" y="384">delad korg</text>
+  </g>
+</svg>`,
+  /* ---- Testning 1.1 · Kontraktet i mitten ---- */
+  "kontraktet-i-mitten": `
+<svg viewBox="0 0 880 340" role="img" aria-label="Två lådor märkta konsument och leverantör, med ett dokument mellan sig. Båda pilarna pekar in mot dokumentet, ingen mellan lådorna.">
+  <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M50 110 Q160 108 269 110 Q272 170 271 230 Q160 230 49 231 Q48 170 50 110 Z"/><path d="M609 110 Q720 109 829 111 Q830 170 831 229 Q720 232 611 230 Q610 170 609 110 Z"/><path d="M375 85 Q440 82 473 85 L505 117 Q508 170 505 255 Q440 258 375 255 Q372 170 375 85 Z"/><path d="M473 85 Q475 101 474 117 Q489 119 505 117"/><path d="M396 152 Q440 151 478 152" stroke-width="1.2" opacity="0.5"/><path d="M396 182 Q440 181 478 182" stroke-width="1.2" opacity="0.5"/><path d="M396 212 Q440 211 478 212" stroke-width="1.2" opacity="0.5"/><path d="M276 170 Q322 166 362 170"/><path d="M355 164 L368 170 L355 176"/><path d="M604 170 Q558 166 518 170"/><path d="M525 164 L512 170 L525 176"/>
+  </g>
+  <g font-family="var(--font-mono)" font-size="18.5" fill="currentColor" text-anchor="middle">
+    <text x="160" y="272">konsument</text>
+    <text x="720" y="272">leverantör</text>
+  </g>
+  <g font-family="var(--font-mono)" font-size="15" fill="currentColor" text-anchor="middle" opacity="0.62">
+    <text x="440" y="292">kontraktet</text>
+  </g>
+</svg>`,
 };

@@ -33,7 +33,8 @@ stilpreferens utan ett arbetsdokument med mätbara regler, och den gäller undan
 - **Kör varje kommando i *Prova själv* innan du påstår vad det ger.** Den regeln har fångat fyra
   faktiska fel. Kontrollera också *varför* något lyckades, inte bara att det gjorde det.
 - **Kontrollera överlapp mot redan skrivna serier.** Ett begrepp definieras en gång i hubben.
-- **Kör sveptestet över hela hubben**, inte bara den artikel du rört.
+- **Kör sveptestet över hela hubben**, inte bara den artikel du rört:
+  `python3 scripts/sveptest.py`. Exitkod 1 om något faller ut.
 
 ### Lärkitet
 
