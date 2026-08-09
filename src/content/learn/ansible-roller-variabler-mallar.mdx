@@ -1,0 +1,584 @@
+---
+title: 'Roller, variabler och mallar'
+description: 'Samma beskrivning för test och produktion — och varför värdet du satte inte vann'
+category: 'ansible'
+part: 1
+order: 2
+date: '2026-08-09'
+tags: ['Beginner', 'Ansible', 'Roller']
+---
+
+## Var vi är
+
+Förra delen gav de tre delarna i en körning: inventoryt, playbooken och utskriften. Filen fungerar,
+och den går att köra om utan att något går sönder.
+
+Den har dock samma svaghet som Terraform-filen hade före variablerna. Allt står inskrivet i klartext,
+och en andra miljö innebär en andra kopia som ska hållas lika för hand.
+
+Den här delen tar bort det: värden bryts ut till variabler, stegen paketeras i roller, och
+konfigurationsfilerna genereras ur mallar. Zoomen ligger på en roll som körs mot en maskin;
+hemligheter och att köra Ansible från en pipeline ligger utanför.
+
+<Del titel="Värdena" />
+
+## Vad en variabel är
+
+En **variabel** i Ansible är ett namngivet värde som kan läsas i tasks, mallar och villkor.
+
+Den skrivs med dubbla klammerpar där den används: `{{ app_port }}`. Samma syntax gäller överallt —
+i en mall, i ett modulargument och i ett villkor.
+
+Till skillnad från Terraform-delens variabler deklareras de inte i förväg. Det finns inget
+`variable`-block och ingen typkontroll; en variabel finns för att någon satt den, och den saknas
+tyst om ingen gjort det.
+
+## Var värdet kan komma ifrån
+
+Ett variabelvärde kan sättas på **ett tjugotal ställen**, och det är den enskilt vanligaste källan
+till förvirring i Ansible.
+
+De du kommer att möta är fem: rollens `defaults`, `group_vars`, `host_vars`, `vars` i playen, och
+`-e` på kommandoraden.
+
+<Stack
+  caption="Högst upp vinner. Rollens defaults ligger längst ner och förlorar mot allt annat — vilket är hela poängen med dem."
+  ground="`roles/webb/defaults/main.yml` — svagast, tänkt att skrivas över"
+  layers={[
+    {
+      label: "`-e` på kommandoraden",
+      note: "Starkast. Slår allt, och är därför rätt för en engångskörning.",
+      accent: true,
+    },
+    {
+      label: "`vars:` i playen",
+      note: "Gäller alla maskiner playen riktar sig mot.",
+    },
+    {
+      label: "`host_vars/web1.yml`",
+      note: "Värden för **en** maskin. Slår gruppens.",
+    },
+    {
+      label: "`group_vars/webb.yml`",
+      note: "Värden för en grupp ur inventoryt.",
+    },
+  ]}
+/>
+
+Ordningen ovan täcker det du behöver. Den fullständiga listan har fler nivåer, och den behöver du
+inte kunna nu — poängen som ska sitta är att **rollens defaults alltid förlorar**.
+
+## `group_vars` och `host_vars`
+
+`group_vars` och `host_vars` är kataloger där filnamnet avgör vilka maskiner värdena gäller.
+
+```
+group_vars/all.yml     alla maskiner
+group_vars/webb.yml    gruppen webb
+host_vars/web1.yml     bara web1
+```
+
+Katalogerna ligger bredvid playbooken eller bredvid inventoryt, och Ansible läser dem automatiskt.
+Du refererar aldrig till dem — namnet är kopplingen.
+
+Det är här miljöskillnaderna hör hemma. Samma playbook, två inventories, och `group_vars` som säger
+`app_port: 8080` i produktion och `3000` i test.
+
+## `defaults` vs `vars`
+
+Två kataloger i varje roll som båda innehåller variabler, och skillnaden är vem som får bestämma.
+
+**`defaults/main.yml`** är rollens förslag. Det är den svagaste nivån av alla, och den finns för att
+rollen ska fungera direkt utan att någon sätter något.
+
+**`vars/main.yml`** ligger nästan högst upp. Den finns för värden som hör till rollens *inre* och
+inte ska ändras utifrån — sökvägar i paketet, namn på systemtjänsten.
+
+Regeln är kort: **allt en användare av rollen kan tänkas vilja ändra hör hemma i `defaults`.**
+
+<Callout type="fallgrop">
+**Ett värde i `vars/` går inte att skriva över, och du får inget felmeddelande om att du försökte.**
+
+Sätter någon `app_port` i rollens `vars/main.yml` och du sedan sätter samma variabel i
+`group_vars/all.yml`, vinner rollen. Playbooken kör igenom, alla tasks blir gröna, och porten är
+fortfarande den gamla.
+
+Det finns ingen varning för det, eftersom Ansible inte kan veta att du menade något annat — den
+tillämpar bara sin precedensordning. Symptomet är alltid detsamma: *värdet jag satte används inte*.
+
+Öppnar du en okänd roll och något inte går att konfigurera, titta i `vars/main.yml` först. Det är
+oftast ett misstag att värdet ligger där, och rättningen är att flytta det till `defaults/`.
+</Callout>
+
+## Vad precedens betyder i praktiken
+
+Precedensen syns tydligast i en genererad fil. Med `app_port: 3000` i rollens `defaults` och
+`app_port: 8080` i `group_vars/all.yml` blir resultatet:
+
+```
+namn   = shop
+port   = 8080
+worker = 2
+```
+
+`port` kom från `group_vars`, som slog rollens `defaults`. `worker` kom från `defaults`, eftersom
+ingen satt den någon annanstans. `namn` fanns bara på ett ställe.
+
+Det är den vanligaste felsökningen i Ansible: *värdet jag satte används inte*. Svaret är nästan
+alltid att något ligger högre upp i listan.
+
+## Vad `when` gör
+
+`when` är ett villkor på en task. Är det falskt hoppas tasken över, och utskriften visar `skipping`.
+
+```yaml
+- name: Hoppas över
+  ansible.builtin.debug:
+    msg: "installerar"
+  when: installera
+```
+
+Uttrycket skrivs **utan** klammerpar — `when: installera`, inte `when: {{ installera }}`. Det är
+undantaget från variabelsyntaxen, och det beror på att `when` alltid tolkas som ett uttryck.
+
+Villkoret används oftast mot fakta från förra delen: `when: ansible_os_family == "Debian"` gör en
+roll användbar på flera sorters system.
+
+<Del titel="Rollen" />
+
+## Vad en roll är
+
+En **roll** är en katalog med en bestämd struktur som paketerar tasks, variabler, mallar och filer
+till något återanvändbart.
+
+Rollen är Ansibles motsvarighet till Terraform-delens modul: en mapp som gör en sak, med tydliga
+ingångar. Skillnaden är att rollen har en **fast** kataloglayout i stället för fria filnamn.
+
+Det gör att vem som helst kan öppna en okänd roll och veta var saker ligger. Det gör också att
+Ansible hittar dem själv, utan att du pekar ut en enda sökväg.
+
+## Rollens kataloger
+
+`ansible-galaxy init` skapar hela strukturen åt dig, och den ser likadan ut varje gång.
+
+```
+defaults  files     handlers
+meta      tasks     templates
+tests     vars
+```
+
+De du kommer att använda är fyra: **`tasks/main.yml`** är stegen och den enda som är obligatorisk.
+**`defaults/main.yml`** är de överskrivbara värdena. **`templates/`** är mallarna. **`handlers/main.yml`**
+är stegen som körs på begäran.
+
+Resten kan du låta ligga tomma. `meta/main.yml` behövs först när rollen publiceras och behöver
+beskriva sina beroenden.
+
+## Roll vs modul
+
+Ordet *modul* betyder olika saker i Ansible och i Terraform, och blandningen sitter djupt.
+
+**En modul** i Ansible är koden som utför ett steg på målet — `file`, `copy`, `template`. Den är
+verktyget, och du skriver aldrig en själv i början.
+
+**En roll** är en katalog som paketerar många steg till något återanvändbart. Den är beskrivningen,
+och det är den du skriver.
+
+Kommer du från Terraform är det alltså **rollen** som motsvarar en modul där. Ansibles modul har
+ingen motsvarighet i Terraform alls — den ligger närmare det en provider gör internt.
+
+## Hur en roll anropas
+
+En roll anropas ur playen med `roles:` och sitt katalognamn.
+
+```yaml
+- name: Konfigurera webben
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  roles:
+    - webb
+```
+
+Playbooken innehåller nu inga tasks alls. Utskriften avslöjar var stegen kommer ifrån genom att
+prefixa varje task med rollens namn:
+
+```
+TASK [webb : Katalogen ska finnas]
+```
+
+Det prefixet är värt att känna igen. I en körning med fem roller är det enda sättet att se vilken
+roll ett fel kom ifrån.
+
+## Var rollen hämtas ifrån
+
+Ansible letar efter roller i `roles/` bredvid playbooken, och sedan i systemets rollsökväg.
+
+Roller andra skrivit hämtas med `ansible-galaxy install` från Ansible Galaxy, som är ett publikt
+register — samma förhållande som mellan Docker och Docker Hub.
+
+Beroendena listas i en `requirements.yml` som checkas in i Git, och installationen körs innan
+playbooken. Låt versionen stå utskriven där: en roll som hämtas utan version är samma sorts löfte
+som `latest` var i Docker-delen.
+
+<Del titel="Filerna" />
+
+## Vad en mall är
+
+En **mall** är en textfil med platshållare som fylls i vid körning. Ansible använder Jinja2, och
+filerna får ändelsen `.j2`.
+
+```jinja
+# genererad av Ansible - redigera inte
+namn   = {{ app_namn }}
+port   = {{ app_port }}
+worker = {{ arbetare }}
+```
+
+Mallen ligger i rollens `templates/` och läggs ut med `template`-modulen. Variablerna löses upp med
+den precedens vi just gick igenom.
+
+{/* DOODLE bortvald i steg 2: en bild med mallen till vänster och den ifyllda
+    filen till höger hade visat exakt samma två textblock som redan står i
+    artikeln — `.j2`-filen här ovanför och resultatet i precedens-sektionen.
+    Substitutionen är text, och text bär den bättre än en teckning av text. */}
+
+Kommentaren på första raden är ingen artighet. En genererad fil som saknar den blir förr eller senare
+handredigerad på en server, och nästa körning skriver över ändringen utan att någon förstår varför.
+
+## `template` vs `copy`
+
+Två moduler som båda lägger ut en fil, och valet avgör om innehållet får bero på maskinen.
+
+**`copy`** lägger ut filen precis som den ser ut. Innehållet är detsamma på varje maskin.
+
+**`template`** kör filen genom Jinja2 först. Variabler och villkor löses upp, och resultatet kan
+skilja sig per maskin och per grupp.
+
+Båda är idempotenta: de jämför resultatet med filen som redan ligger där och rapporterar `ok` när den
+stämmer. Skillnaden är bara vad de jämför mot — källfilen respektive den renderade texten.
+
+## Vad en handler är
+
+En **handler** är en task som bara körs om någon annan task **ändrade** något och talade om det.
+
+```yaml
+- name: Konfigurationen ska vara utlagd
+  ansible.builtin.template:
+    src: app.conf.j2
+    dest: ./ut/app.conf
+    mode: "0644"
+  notify: Starta om tjänsten
+```
+
+`notify` pekar på handlerns namn. Handlers ligger i `handlers/main.yml` och körs **sist i playen**,
+inte direkt efter tasken som anropade dem.
+
+Att de körs sist är avsiktligt. Fem tasks som alla ändrar i samma konfiguration ska ge **en** omstart,
+inte fem.
+
+## Handler vs task
+
+Skillnaden är när de körs, och den är hela anledningen till att handlers finns.
+
+**En task** körs varje gång playen når den. Den rapporterar `ok` eller `changed`, men den *körs*
+alltid.
+
+**En handler** körs bara om en task som notifierat den rapporterade `changed`. Blev allt `ok`
+händer ingenting alls — handlern nämns inte ens i utskriften.
+
+<Doodle
+  name="klockan-som-inte-ringer"
+  caption="Två trådar till samma klocka. Bara den heldragna rycker i den."
+/>
+
+Det är också beviset på att din playbook är idempotent. En andra körning som fortfarande startar om
+tjänsten betyder att någon task rapporterar `changed` i onödan.
+
+## Vad `loop` gör
+
+`loop` kör samma task en gång per värde i en lista, och variabeln `item` håller det aktuella värdet.
+
+```yaml
+- name: Visa varje paket
+  ansible.builtin.debug:
+    msg: "{{ item }}"
+  loop: "{{ paket }}"
+```
+
+Utskriften visar en rad per varv med värdet i parentes:
+
+```
+ok: [localhost] => (item=nginx)
+ok: [localhost] => (item=curl)
+ok: [localhost] => (item=jq)
+```
+
+Varje varv rapporterar sitt eget utfall, och tasken räknas som `changed` om något varv ändrade något.
+
+Det frestande är att lägga en loop runt allt som förekommer i flera exemplar. För paket är det fel.
+
+<Split
+  leftTitle="Loop runt modulen"
+  rightTitle="Lista i modulen"
+  leftTone="bad"
+  rightTone="good"
+  caption="Samma tio paket. Det ena sättet frågar pakethanteraren tio gånger."
+>
+  <div slot="left">
+
+  ```yaml
+  - name: Paketen ska finnas
+    ansible.builtin.package:
+      name: "{{ item }}"
+      state: present
+    loop: "{{ paket }}"
+  ```
+
+  Tio separata anrop, tio beroendeuppslag.
+
+  Utskriften blir tio rader att läsa igenom.
+
+  </div>
+  <div slot="right">
+
+  ```yaml
+  - name: Paketen ska finnas
+    ansible.builtin.package:
+      name: "{{ paket }}"
+      state: present
+  ```
+
+  Ett anrop. Pakethanteraren löser beroendena en gång.
+
+  En rad i utskriften, och märkbart snabbare.
+
+  </div>
+</Split>
+
+Samma sak gäller flera andra moduler. Läs dokumentationen innan du lägger en loop runt en modul —
+ofta tar argumentet redan en lista.
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att lägga till en variabel i `group_vars` och en task i en befintlig roll betydligt oftare
+än du skapar en ny roll. Det du gör varje gång är att fråga dig var ett värde ska bo.
+
+Det som är värt din tid nu är precedensen. *Värdet jag satte används inte* är den vanligaste
+Ansible-frågan som ställs, och svaret är nästan alltid att `defaults` förlorade mot något högre upp —
+eller att någon lagt värdet i `vars` där det inte går att skriva över.
+
+Ansible Vault för hemligheter, `block`/`rescue` för felhantering, egna moduler och att köra Ansible
+från en pipeline kan vänta. De blir dina när fler än du underhåller playbooken — och de bygger alla
+på rollen, variabeln och mallen.
+
+## Vanliga nybörjarförväxlingar
+
+En variabel deklareras inte i förväg. Den finns för att någon satt den, och saknas tyst annars.
+
+`defaults` och `vars` är inte samma sak. Det ena är svagast av allt, det andra nästan starkast.
+
+En roll är inte en modul. Rollen är beskrivningen du skriver; modulen är verktyget som utför steget.
+
+`when` skrivs utan klammerpar. Uttrycket tolkas alltid som ett uttryck.
+
+En handler körs inte där den anropas. Den körs sist i playen, och bara om något ändrades.
+
+`template` och `copy` är inte utbytbara. Bara den ena renderar variabler.
+
+En loop runt en paketmodul är inte snabbare. Det är tio anrop i stället för ett.
+
+## Prova själv
+
+Vi kör i samma slängbara container som förra delen. Skapa en tom mapp och arbeta där.
+
+```bash
+ans() { docker run --rm -v "$PWD":/w \
+  -w /w alpine/ansible "$@"; }
+```
+
+Låt Ansible skapa rollstrukturen åt dig:
+
+```bash
+ans ansible-galaxy init roles/webb
+ls roles/webb
+```
+
+```
+defaults  files     handlers
+meta      tasks     templates
+tests     vars
+```
+
+Åtta kataloger, varav du behöver fyra. Lägg nu ett värde på två ställen — ett svagt och ett starkt.
+I `roles/webb/defaults/main.yml`:
+
+```yaml
+app_port: 3000
+arbetare: 2
+```
+
+Och i `group_vars/all.yml`:
+
+```yaml
+app_port: 8080
+app_namn: shop
+```
+
+Skapa mallen `roles/webb/templates/app.conf.j2`:
+
+```jinja
+# genererad av Ansible - redigera inte
+namn   = {{ app_namn }}
+port   = {{ app_port }}
+worker = {{ arbetare }}
+```
+
+Lägg stegen i `roles/webb/tasks/main.yml`:
+
+```yaml
+- name: Katalogen ska finnas
+  ansible.builtin.file:
+    path: ./ut
+    state: directory
+    mode: "0755"
+
+- name: Konfigurationen ska vara utlagd
+  ansible.builtin.template:
+    src: app.conf.j2
+    dest: ./ut/app.conf
+    mode: "0644"
+  notify: Starta om tjänsten
+```
+
+En handler i `roles/webb/handlers/main.yml`:
+
+```yaml
+- name: Starta om tjänsten
+  ansible.builtin.debug:
+    msg: "tjänsten startades om"
+```
+
+Och en playbook helt utan tasks, som `site.yml`:
+
+```yaml
+- name: Konfigurera webben
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  roles:
+    - webb
+```
+
+Kör den och läs den genererade filen:
+
+```bash
+ans ansible-playbook site.yml
+cat ut/app.conf
+```
+
+```
+namn   = shop
+port   = 8080
+worker = 2
+```
+
+**Där är precedensen i tre rader.** `port` blev `8080` trots att rollens `defaults` sa `3000` —
+`group_vars` ligger högre upp. `worker` kom från `defaults`, eftersom ingen skrev över den.
+
+Titta också på utskriften: varje task har prefixet `webb :`, och handlern kördes efter dem båda.
+Kör nu om samma kommando:
+
+```bash
+ans ansible-playbook site.yml
+```
+
+```
+TASK [webb : Katalogen ska finnas]
+ok: [localhost]
+...
+ok=2  changed=0
+```
+
+Allt är `ok`, och **handlern nämns inte alls**. Den körs bara när något faktiskt ändrades — vilket är
+hela skillnaden mot en vanlig task.
+
+Tre saker som kan förvirra. **Byt `8080` mot `9090` i `group_vars/all.yml` och kör om**: nu blir
+mall-tasken `changed` igen och handlern dyker upp — det är så du ser att kedjan hänger ihop. Den
+fullständiga `PLAY RECAP`-raden är dessutom bredare än den ryms här. Och `ansible-galaxy init`
+skriver över en befintlig roll utan att fråga, så kör den i en tom mapp.
+
+<Callout type="kom-ihag">
+- En variabel deklareras aldrig. Den finns om någon satt den, annars saknas den tyst.
+- **Rollens `defaults` är svagast av allt.** Det är därför de heter så och därför de är rätt plats.
+- `vars/` ligger nästan högst upp och går inte att skriva över med `group_vars`.
+- `group_vars/` och `host_vars/` kopplas på **filnamnet**. Du refererar dem aldrig.
+- *Värdet jag satte används inte* betyder nästan alltid att något ligger högre upp i listan.
+- En **roll** är Ansibles motsvarighet till en Terraform-modul. Ansibles **modul** är verktyget.
+- Utskriftens `webb :`-prefix visar vilken roll en task kom ifrån.
+- `template` renderar Jinja2, `copy` lägger ut filen som den är. Båda är idempotenta.
+- En **handler** körs sist i playen, och bara om en notifierande task blev `changed`.
+- `when` skrivs utan klammerpar. `loop` ger `item` per varv.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Du sätter `app_port: 3000` i rollens `defaults` och `8080` i `group_vars/all.yml`. Vilket värde hamnar i den genererade filen?",
+      a: "`8080`. Rollens `defaults` är den svagaste nivån av alla och förlorar mot allt annat — det är hela poängen med dem. `group_vars` ligger högre upp och vinner.",
+    },
+    {
+      q: "Ett värde du satt i `group_vars` slår inte igenom, och inget felmeddelande syns. Vad kontrollerar du?",
+      a: "Om rollen lagt samma variabel i `vars/main.yml` i stället för `defaults/main.yml`. `vars` ligger nästan högst upp i precedensen och går inte att skriva över med `group_vars`. Den som försöker får sitt gamla värde utan varning.",
+    },
+    {
+      q: "Vad är skillnaden mellan en roll och en modul i Ansible?",
+      a: "Rollen är en katalog med fast struktur som paketerar tasks, variabler och mallar till något återanvändbart — det är den du skriver. Modulen är koden som utför ett enskilt steg på målet, som `file` eller `template`. Kommer du från Terraform motsvarar rollen en modul där.",
+    },
+    {
+      q: "Din playbook startar om tjänsten vid varje körning, även när inget ändrats. Vad betyder det?",
+      a: "Att någon task rapporterar `changed` i onödan, eftersom en handler bara körs när en notifierande task faktiskt ändrade något. Leta efter ett `command` eller en fil som skrivs om varje gång — handlern är alltså en indikator på att playbooken inte är idempotent.",
+    },
+    {
+      q: "När använder du `template` i stället för `copy`?",
+      a: "När innehållet ska bero på maskinen. `copy` lägger ut filen precis som den ser ut; `template` kör den genom Jinja2 först så variabler och villkor löses upp. Båda jämför resultatet med det som redan ligger där och rapporterar `ok` när det stämmer.",
+    },
+    {
+      q: "Varför ska du inte lägga en `loop` runt en paketmodul för att installera tio paket?",
+      a: "För att det blir tio separata anrop till pakethanteraren, med tio uppkopplingar och tio beroendeuppslag. De flesta paketmoduler tar en lista direkt i `name` och gör allt i ett anrop. Samma sak gäller flera andra moduler — läs dokumentationen innan du lägger en loop runt den.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- En variabel skrivs `{{ namn }}` och deklareras aldrig i förväg.
+- Värdet kan komma från ett tjugotal ställen. Fem räcker att kunna.
+- Ordningen uppifrån: `-e`, playens `vars`, `host_vars`, `group_vars`, rollens `defaults`.
+- Rollens `defaults` är svagast och tänkt att skrivas över. `vars/` ligger nästan högst upp.
+- `group_vars` och `host_vars` kopplas på filnamnet och läses automatiskt.
+- Miljöskillnader hör hemma i `group_vars` — samma roll, olika värden.
+- `when` är ett villkor på en task och skrivs utan klammerpar.
+- En roll är en katalog med fast struktur, och Ansibles motsvarighet till en Terraform-modul.
+- `ansible-galaxy init` skapar åtta kataloger; fyra av dem används i praktiken.
+- Rollen anropas med `roles:` och playbooken kan då sakna tasks helt.
+- Utskriftens prefix `webb :` visar vilken roll tasken kom ifrån.
+- Roller andra skrivit hämtas från Galaxy via en `requirements.yml` — med version utskriven.
+- En mall är en `.j2`-fil som renderas med Jinja2 vid körning.
+- `template` renderar variabler, `copy` gör det inte. Båda är idempotenta.
+- En handler körs sist i playen och bara efter ett `changed` från en task som notifierade den.
+- Handlern som uteblir vid andra körningen är beviset på att playbooken är idempotent.
+- `loop` kör tasken en gång per värde, med värdet i `item`. Loopa inte runt paketmoduler.
+
+## Nästa del
+
+Därmed står Ansible-grunderna: maskinerna, beskrivningen, och nu återanvändningen.
+
+En tråd härifrån löper vidare genom hubben. Ansible pressar en maskin mot ett önskat läge när du kör
+kommandot — precis som Terraform gör med `apply`, och precis som Kubernetes gör oavbrutet av sig
+självt. Skillnaden mellan de tre är bara **vem som håller i klockan**.
+
+Nästa serie tar den frågan till sin ytterlighet: ett system där ingen kör kommandot alls, utan där
+klustret själv hämtar hem sitt önskade läge från Git och rättar allt som avviker.

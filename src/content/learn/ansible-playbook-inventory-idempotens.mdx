@@ -1,0 +1,549 @@
+---
+title: 'Playbook, inventory och idempotens'
+description: 'Konfiguration som kod — utan agent på maskinerna, och utan att köra samma sak två gånger'
+category: 'ansible'
+part: 1
+partTitle: 'Grunderna'
+order: 1
+date: '2026-08-09'
+tags: ['Beginner', 'Ansible', 'Playbook']
+---
+
+## Var vi är
+
+Terraform-delen slog fast arbetsfördelningen i en mening: *"Terraform skapar den virtuella maskinen
+och Ansible installerar det som ska köra på den."*
+
+Den här serien tar den andra halvan. Maskinen finns — nu ska den få paket, filer, tjänster och
+inställningar, och det ska gå att göra om utan att något går sönder.
+
+Den här delen handlar om de tre delarna i varje Ansible-körning: vilka maskiner, vad som ska göras,
+och vad utskriften säger efteråt. Roller, mallar och variabler tar vi i nästa del. Övningarna körs i
+en slängbar container och rör inga riktiga servrar.
+
+<Del titel="Maskinerna" />
+
+## Vad Ansible är
+
+**Ansible** är ett verktyg som utför konfigurationsändringar på maskiner du pekar ut, beskrivna i
+YAML-filer.
+
+Du skriver vad som ska gälla på maskinen — paketet ska vara installerat, filen ska ha det här
+innehållet, tjänsten ska vara igång — och Ansible ser till att det stämmer.
+
+Ansible skapar inga servrar. Det är därför den och Terraform sällan konkurrerar: Terraform skapar
+lådan, Ansible fyller den.
+
+## Ansible är agentlöst
+
+**Agentlöst** betyder att målmaskinen inte behöver ha något Ansible installerat.
+
+Ansible kopplar upp sig över SSH, kopierar över en liten Python-modul, kör den, läser svaret och
+tar bort modulen igen. Efteråt finns ingenting kvar som Ansible lämnat.
+
+<Doodle
+  name="paketet-som-inte-blir-kvar"
+  caption="Paketet följer med dit, körs, och plockas bort. Servern ser likadan ut som innan."
+/>
+
+Kraven på målet är därför korta: SSH och en Python-tolk. Nyckelparet och `known_hosts` från
+Linux-delen är precis det Ansible använder — det är samma inloggning, gjord av ett program i stället
+för av dig.
+
+Priset är att varje task kostar en uppkoppling och en överföring. Ansible är därför långsammare per
+maskin än en agent hade varit, och snabbare att komma igång med än någon agent någonsin blir.
+
+## Vad ett inventory är
+
+Ett **inventory** är listan över maskinerna Ansible får arbeta med, och vad de heter.
+
+```ini
+[webb]
+web1 ansible_host=10.0.1.11
+web2 ansible_host=10.0.1.12
+
+[db]
+db1 ansible_host=10.0.2.21
+
+[prod:children]
+webb
+db
+```
+
+`web1` är namnet Ansible använder i utskrifter. `ansible_host` är adressen den faktiskt kopplar upp
+mot — de behöver inte vara samma, och namnet är oftast det som står i din egen dokumentation.
+
+Utan ett inventory har Ansible bara **implicit localhost**, alltså maskinen du står på. Det är
+tillräckligt för att öva, och otillräckligt för allt annat.
+
+## Vad en grupp är
+
+En **grupp** är ett namn på en uppsättning maskiner, och det är grupper du riktar en play mot.
+
+I filen ovan finns `webb` och `db` som vanliga grupper. Raden `[prod:children]` skapar en grupp som
+innehåller andra grupper — `prod` är alltså alla tre maskinerna.
+
+Alla maskiner hamnar dessutom automatiskt i gruppen `all`. Riktar du något mot `all` gäller det hela
+inventoryt, vilket är bekvämt och farligt i ungefär lika delar.
+
+## Statiskt vs dynamiskt inventory
+
+Var listan kommer ifrån, och valet avgör hur ofta den är sann.
+
+**Ett statiskt inventory** är en fil du skriver för hand, som den ovan. Den är enkel att läsa och
+granska, och den ligger i Git bredvid playbooken.
+
+**Ett dynamiskt inventory** är ett skript eller en plugin som frågar källan — molnleverantörens API,
+en CMDB — och bygger listan vid körning.
+
+Tumregeln följer av hur maskinerna skapas. Sätter du upp servrar för hand räcker en fil. Skapar
+Terraform dem, och river dem, hinner filen aldrig bli aktuell — då är dynamiskt inventory det enda
+som stämmer.
+
+<Del titel="Beskrivningen" />
+
+## Vad en playbook är
+
+En **playbook** är en YAML-fil med en eller flera plays, och det är den du kör.
+
+```yaml
+- name: Konfigurera webbservern
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Katalogen ska finnas
+      ansible.builtin.file:
+        path: ./konfig
+        state: directory
+        mode: "0755"
+```
+
+Filen ovan har en play med en task. `hosts` säger vilka maskiner, och `tasks` vad som ska göras på
+dem.
+
+<Stack
+  caption="Fyra nivåer, varje inuti den ovanför. Det är den här kedjan `ansible-playbook` går igenom uppifrån och ner."
+  ground="Maskinerna i inventoryt som `hosts` pekade ut"
+  layers={[
+    {
+      label: "Playbook",
+      note: "Filen du kör. Innehåller en eller flera plays.",
+    },
+    {
+      label: "Play",
+      note: "Kopplar **en uppsättning maskiner** till en lista tasks.",
+      accent: true,
+    },
+    {
+      label: "Task",
+      note: "Ett steg med ett namn. Anropar exakt en modul.",
+    },
+    {
+      label: "Modul",
+      note: "Koden som körs på målet — `file`, `copy`, `service`, `package`.",
+    },
+  ]}
+/>
+
+## Playbook vs play
+
+Två ord som används om vartannat i handledningar, och skillnaden märks först när filen växer.
+
+**Playbooken** är filen. Den är en lista, och listans poster är plays.
+
+**Playen** är en post i den listan. Den binder ihop ett urval maskiner med en uppsättning tasks.
+
+En playbook med två plays kan därför göra olika saker på olika maskiner i en enda körning — först
+databaserna, sedan webbservrarna. Det är den vanligaste anledningen att skriva mer än en.
+
+## Vad en task är
+
+En **task** är ett steg med ett namn, och den anropar exakt en modul.
+
+Namnet är inte dekoration. Det är vad som skrivs ut när tasken körs, och det du letar efter när
+något gick fel klockan tre.
+
+Skriv namnet som ett **tillstånd**, inte som en handling: *"Katalogen ska finnas"* snarare än
+*"Skapa katalogen"*. Andra körningen skapas ingenting, och då ljuger det andra namnet.
+
+## Vad en modul är
+
+En **modul** är den kod som faktiskt utför arbetet på målet, och den tar emot vad som ska gälla —
+inte hur det ska göras.
+
+`ansible.builtin.file` med `state: directory` betyder *katalogen ska finnas*. Modulen kontrollerar
+själv om den redan gör det, och gör bara något om den inte gör det.
+
+Det fullständiga namnet har tre delar: `ansible.builtin` är samlingen, `file` är modulen. Kortformen
+`file` fungerar också, men det långa namnet är det som inte blir tvetydigt när du börjar använda
+moduler från andra samlingar.
+
+## Modul vs `command`
+
+Den viktigaste distinktionen i hela Ansible, och den som avgör om din playbook är säker att köra om.
+
+**En modul** vet vad den ska åstadkomma och kontrollerar läget först. Den rapporterar `changed` bara
+när den faktiskt ändrade något.
+
+**`command`** kör en godtycklig rad på målet. Ansible vet ingenting om vad raden gör, så den
+rapporterar `changed` **varje gång** — även när kommandot inte ändrade något.
+
+<Split
+  leftTitle="Med `command`"
+  rightTitle="Med en modul"
+  leftTone="bad"
+  rightTone="good"
+  caption="Samma slutläge. Bara den ena går att köra om utan att du behöver läsa efteråt."
+>
+  <div slot="left">
+
+  ```yaml
+  - name: Skapa katalogen
+    ansible.builtin.command: mkdir -p ./konfig
+  ```
+
+  Rapporterar `changed` varje körning, för alltid.
+
+  Du kan inte se på utskriften om något faktiskt hände.
+
+  Och rättigheterna sätts inte — `mkdir` tar inte `mode`.
+
+  </div>
+  <div slot="right">
+
+  ```yaml
+  - name: Katalogen ska finnas
+    ansible.builtin.file:
+      path: ./konfig
+      state: directory
+      mode: "0755"
+  ```
+
+  Rapporterar `changed` första gången och `ok` sedan.
+
+  En utskrift utan `changed` betyder att allt redan stämde.
+
+  Rättigheterna kontrolleras varje körning.
+
+  </div>
+</Split>
+
+`command` finns för att det alltid finns något ingen modul täcker. Använd den, men vet att varje
+sådan rad är ett hål i det som gör Ansible pålitligt.
+
+## Vad `become` gör
+
+`become` säger att tasken ska köras som en annan användare på målet, nästan alltid `root`.
+
+```yaml
+- name: Paketet ska vara installerat
+  ansible.builtin.package:
+    name: nginx
+    state: present
+  become: true
+```
+
+Det motsvarar `sudo` från Linux-delen, och det sätts helst per task i stället för på hela playen.
+Då syns det i filen exakt vilka steg som behövde utökade rättigheter.
+
+<Del titel="Körningen" />
+
+## Vad utskriften säger
+
+Varje task rapporterar ett av fyra utfall per maskin, och de skrivs ut allteftersom.
+
+```
+ok        inget behövde göras
+changed   modulen ändrade något
+failed    tasken misslyckades
+skipped   ett villkor hoppade över den
+```
+
+Sist kommer `PLAY RECAP` med summan per maskin. Den raden är bredare än så här och innehåller även
+`unreachable`, `rescued` och `ignored`, men de två första talen är de du läser:
+
+```
+ok=3  changed=3     (första körningen)
+ok=3  changed=1     (andra körningen)
+```
+
+## changed vs ok
+
+Två ord som ser ut som "lyckades" respektive "hände inget", och betyder något viktigare än så.
+
+**`changed`** betyder att modulen faktiskt ändrade målet. Det är inte ett tecken på framgång — det
+är ett tecken på att maskinen inte var i det läge du beskrivit.
+
+**`ok`** betyder att läget redan stämde. Det är det normala utfallet för en playbook som körts förut,
+och det du vill se.
+
+Den andra körningen ovan är beviset. Två av tre tasks blev `ok`, för att katalogen och filen redan
+fanns med rätt innehåll. Den tredje blev `changed` — och den var ett `command`.
+
+**En playbook som rapporterar `changed` på allt varje gång är inte idempotent.** Det är oftast det
+enda felet, och `changed`-talet är hur du upptäcker det.
+
+## Vad `--check` gör
+
+`--check` kör playbooken utan att ändra något, och rapporterar vad som **skulle** ha ändrats.
+
+```bash
+ansible-playbook site.yml --check
+```
+
+Modulerna kontrollerar läget som vanligt och rapporterar `changed`, men skriver ingenting. Lägger du
+till `--diff` får du dessutom se raderna som skulle ha ändrats.
+
+<Callout type="fallgrop">
+**Torrkörningen har ett hål exakt där du använt `command`.**
+
+Ansible kan inte veta vad en godtycklig kommandorad gör, så i check-läge **hoppar den över** sådana
+tasks helt. Utskriften visar `skipping` och recapen räknar dem som `skipped`:
+
+```
+changed: [localhost]
+changed: [localhost]
+skipping: [localhost]
+ok=2  changed=2  skipped=1
+```
+
+Det betyder att just de steg som är minst förutsägbara också är de du inte får någon förhandsvisning
+av. Ju fler `command`-rader, desto mindre är `--check` värd.
+</Callout>
+
+<Doodle
+  name="halet-i-torrkorningen"
+  caption="Två steg går att se i förväg. Det tredje är en tom ruta."
+/>
+
+## `--check` vs `terraform plan`
+
+Två torrkörningar som låter likadana och ger olika mycket förtroende.
+
+**`terraform plan`** jämför hela konfigurationen mot state och listar varje ändring innan något
+körs. Planen är komplett, eftersom Terraform känner varje resurstyp den hanterar.
+
+**`--check`** kör playbooken steg för steg och frågar varje modul vad den skulle ha gjort. Resultatet
+är lika komplett som modulerna tillåter — och `command` tillåter ingenting.
+
+Praktiskt: en Terraform-plan går att granska i en pull request som beslutsunderlag. En Ansible-check
+är en indikation, och den blir bättre ju färre kommandorader playbooken innehåller.
+
+## Vad fakta är
+
+**Fakta** är information Ansible samlar in om målmaskinen innan tasksen körs: operativsystem,
+IP-adresser, minne, monterade filsystem.
+
+```bash
+ansible localhost -m setup \
+  -a 'filter=ansible_os_family'
+```
+
+Svaret är ett fält som `"ansible_os_family": "Alpine"`. Det används för att skriva en playbook som
+fungerar på flera sorters system — installera med `apt` på Debian och `dnf` på Red Hat, utifrån samma
+fil.
+
+Insamlingen kostar dock en extra omgång per maskin. Behöver du inga fakta stänger du av den med
+`gather_facts: false`, vilket exemplet i den här artikeln gör.
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att läsa fler playbooks än du skriver, och de flesta ändringar du gör är att lägga till en
+task i en befintlig fil. Det du gör varje gång är att köra om den och läsa recapen.
+
+Det som är värt din tid nu är `changed`-talet. Går det inte ner till noll på andra körningen finns
+det något i filen som inte är idempotent, och nästan alltid är det ett `command`.
+
+Roller från Ansible Galaxy, Vault för hemligheter, callback-plugins och att köra Ansible från en
+pipeline kan vänta. De blir dina när fler än du underhåller playbooken — och de bygger alla på
+inventoryt, playen och modulen.
+
+## Vanliga nybörjarförväxlingar
+
+Ansible skapar inga servrar. Det konfigurerar maskiner som redan finns.
+
+Målmaskinen behöver inget Ansible. Den behöver SSH och en Python-tolk.
+
+En playbook är inte en play. Filen är en lista, och listans poster är plays.
+
+`changed` betyder inte att det gick bra. Det betyder att maskinen inte var i det läge du beskrivit.
+
+En modul är inte ett kommando. Modulen kontrollerar läget först; `command` kör bara raden.
+
+`--check` visar inte allt. Tasks som använder `command` hoppas över helt.
+
+Namnet på en task är inte en kommentar. Det är vad du läser i utskriften när något gått fel.
+
+## Prova själv
+
+Vi kör Ansible i en slängbar container, så du behöver inte installera något. Skapa en tom mapp och
+arbeta där.
+
+```bash
+ans() { docker run --rm -v "$PWD":/w \
+  -w /w alpine/ansible "$@"; }
+```
+
+```bash
+ans ansible --version | head -1
+```
+
+Du får `ansible [core 2.21.0]` eller nyare. Spara nu inventoryt från artikeln som `inventory.ini`
+och läs av det:
+
+```bash
+ans ansible-inventory -i inventory.ini --graph
+```
+
+```
+@all:
+  |--@ungrouped:
+  |--@prod:
+  |  |--@webb:
+  |  |  |--web1
+  |  |  |--web2
+  |  |--@db:
+  |  |  |--db1
+```
+
+Där är grupperna, och `prod` som innehåller de andra två. Kontrollera sedan att Ansible når något:
+
+```bash
+ans ansible localhost -m ping
+```
+
+Du får en varning om att inget inventory lästes — det är riktigt, och `localhost` fungerar ändå
+eftersom den alltid finns implicit. Svaret är `"ping": "pong"` och `"changed": false`.
+
+Spara nu den här playbooken som `site.yml`:
+
+```yaml
+- name: Konfigurera webbservern
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Katalogen ska finnas
+      ansible.builtin.file:
+        path: ./konfig
+        state: directory
+        mode: "0755"
+
+    - name: Filen ska ha rätt innehåll
+      ansible.builtin.copy:
+        dest: ./konfig/app.conf
+        content: "port=8080\n"
+        mode: "0644"
+
+    - name: Samma sak, men som kommando
+      ansible.builtin.command: mkdir -p ./konfig
+```
+
+Kör den två gånger i rad:
+
+```bash
+ans ansible-playbook site.yml
+ans ansible-playbook site.yml
+```
+
+Första körningen ger `changed` på alla tre. **Den andra är hela poängen:**
+
+```
+TASK [Katalogen ska finnas]
+ok: [localhost]
+TASK [Filen ska ha rätt innehåll]
+ok: [localhost]
+TASK [Samma sak, men som kommando]
+changed: [localhost]
+```
+
+De två modulerna såg att läget redan stämde. Kommandot körde igen, som det alltid gör. Ta slutligen
+bort katalogen och gör en torrkörning:
+
+```bash
+rm -rf konfig
+ans ansible-playbook site.yml --check
+```
+
+Två tasks rapporterar `changed`, den tredje `skipping` — och `konfig` finns inte efteråt.
+
+Tre saker som kan förvirra. **Skriver du en sökväg utanför den monterade mappen — till exempel
+`/tmp/demo` — rapporterar tasken `changed` varje gång**, eftersom containern kastas mellan
+körningarna och filen aldrig finns kvar. Det ser ut som att modulen inte är idempotent, men det är
+miljön som nollställs. Fakta som `ansible_os_family` svarar dessutom `Alpine` här och beskriver
+containern, inte din dator. Och den fullständiga `PLAY RECAP`-raden är bredare än den ryms här; den
+innehåller även `unreachable`, `rescued` och `ignored`.
+
+<Callout type="kom-ihag">
+- Ansible **konfigurerar** maskiner som redan finns. Terraform skapar dem.
+- **Agentlöst**: SSH plus en Python-tolk på målet. Modulen kopieras dit, körs, och tas bort.
+- **Inventoryt** är listan över maskiner. Grupper riktar en play, och `[x:children]` grupperar grupper.
+- Playbook → play → task → modul. Playen binder ihop maskiner med steg.
+- **Modulen kontrollerar läget först. `command` gör det aldrig.**
+- `changed` betyder att maskinen inte var i det läge du beskrivit — inte att det gick bra.
+- Andra körningen ska ge `changed=0`. Gör den inte det finns ett `command` i filen.
+- `--check` hoppar över `command`-tasks helt, så torrkörningen har ett hål just där.
+- Namnge tasks som tillstånd — *"Katalogen ska finnas"*, inte *"Skapa katalogen"*.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Vad behöver installeras på maskinen Ansible ska konfigurera?",
+      a: "Inget Ansible. Målet behöver SSH och en Python-tolk. Ansible kopplar upp, kopierar över en liten modul, kör den, läser svaret och tar bort modulen igen — därför kallas den agentlös. Priset är en uppkoppling per task i stället för en agent som redan är på plats.",
+    },
+    {
+      q: "Din playbook rapporterar `changed=5` varje gång du kör den. Vad är fel?",
+      a: "Något i filen är inte idempotent, och nästan alltid är det ett `command`. Ansible vet inte vad en godtycklig kommandorad gör, så den rapporterar `changed` varje gång. En modul kontrollerar läget först och rapporterar `ok` när allt redan stämmer.",
+    },
+    {
+      q: "Vad är skillnaden mellan en playbook och en play?",
+      a: "Playbooken är filen, och den är en lista. En play är en post i listan som binder ihop ett urval maskiner (`hosts`) med en uppsättning tasks. En playbook med två plays kan därför göra olika saker på databaserna och webbservrarna i samma körning.",
+    },
+    {
+      q: "Varför ger `--check` mindre förtroende än `terraform plan`?",
+      a: "För att resultatet bara är så komplett som modulerna tillåter. Ansible frågar varje modul vad den skulle gjort, men `command`-tasks hoppas över helt eftersom Ansible inte kan veta vad raden gör. Terraform känner varje resurstyp den hanterar och kan därför lista hela ändringen.",
+    },
+    {
+      q: "Vad gör raden `[prod:children]` i ett inventory?",
+      a: "Den skapar en grupp som innehåller andra grupper. Raderna under är gruppnamn, inte maskinnamn, så `prod` blir alla maskiner i `webb` och `db` tillsammans. Alla maskiner hamnar dessutom automatiskt i gruppen `all`.",
+    },
+    {
+      q: "Varför ska en task heta \"Katalogen ska finnas\" och inte \"Skapa katalogen\"?",
+      a: "För att namnet skrivs ut vid varje körning, och andra gången skapas ingenting. Ett namn som beskriver ett tillstånd stämmer oavsett utfall; ett som beskriver en handling ljuger så fort tasken rapporterar `ok`.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- Ansible konfigurerar maskiner som redan finns. Terraform skapar dem — de konkurrerar sällan.
+- Agentlöst betyder att målet bara behöver SSH och Python. Modulen kopieras dit och tas bort.
+- Inventoryt listar maskinerna. `ansible_host` är adressen, namnet är vad du kallar den.
+- Grupper riktar en play. `[prod:children]` innehåller andra grupper, och `all` finns alltid.
+- Statiskt inventory är en fil i Git. Dynamiskt frågar källan vid körning och stämmer alltid.
+- En playbook är en lista av plays. En play binder maskiner till tasks.
+- En task har ett namn och anropar exakt en modul.
+- Modulen tar emot önskat läge och kontrollerar själv om det redan stämmer.
+- `command` kör en godtycklig rad och rapporterar `changed` varje gång.
+- `become: true` motsvarar `sudo`, och hör helst hemma per task.
+- Utfallen är `ok`, `changed`, `failed` och `skipped`. `PLAY RECAP` summerar per maskin.
+- `changed` betyder att maskinen inte stämde med beskrivningen. `ok` är det normala.
+- Andra körningen ska ge `changed=0` för allt utom kommandon.
+- `--check` torrkör, men hoppar över `command`-tasks — hålet sitter där du var minst förutsägbar.
+- `--diff` visar raderna som skulle ha ändrats.
+- Fakta är insamlad information om målet, och `gather_facts: false` stänger av insamlingen.
+
+## Nästa del
+
+Nu kan du läsa en playbook och avgöra om den går att köra om.
+
+Filen i den här delen har dock samma svaghet som Terraform-filen hade före variablerna: allt står
+inskrivet i klartext, och en andra miljö innebär en andra kopia.
+
+Nästa del tar bort det. Vi bryter ut värden till variabler, delar upp playbooken i roller som går att
+återanvända, och genererar konfigurationsfiler ur mallar — så att samma beskrivning kan konfigurera
+både test och produktion.
