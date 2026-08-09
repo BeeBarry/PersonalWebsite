@@ -1,0 +1,462 @@
+---
+title: 'Larmet som är värt att väcka någon för'
+description: 'Varför de flesta larm är skadliga — och vad som skiljer ett någon agerar på från ett någon stänger av'
+category: 'observability'
+part: 1
+order: 5
+date: '2026-08-09'
+tags: ['Beginner', 'Larm', 'SRE']
+---
+
+## Var vi är
+
+Del 1.1 visade hur en larmregel skrivs, och del 1.3 hur en gräns motiveras med en felbudget. Du kan
+alltså både formulera ett larm och räkna fram var det ska gå.
+
+Ingen av dem svarar på den fråga som avgör om övervakningen är värd något: **vilka larm ska
+överhuvudtaget finnas?** Det är inte en teknisk fråga, och den ställs sällan.
+
+Den här delen handlar om urvalet och om vad som händer efter att telefonen ringt. Zoomen ligger på
+larmet som praktik, inte på syntaxen i något verktyg — den bor i Prometheus- och Grafana-delarna.
+
+<Del titel="Vilka larm som ska finnas" />
+
+## Vad larmtrötthet är
+
+**Larmtrötthet** är vad som händer när larm går så ofta att de slutar betyda något.
+
+Det yttrar sig inte som att någon stänger av dem. Det yttrar sig som att någon **slutar läsa** dem
+— kanalen finns kvar, telefonen ringer, och ingen tittar förrän någon annan säger till.
+
+Det är den vanligaste orsaken till att ett riktigt haveri upptäcks sent, och den byggs upp av ett
+larm i taget under månader.
+
+<Doodle
+  name="hogen-som-ingen-laser"
+  caption="Hundra lappar och en lapp. Bara den ena blir läst — och det är inte den i högen."
+/>
+
+Konsekvensen är motsatsen till avsikten: **fler larm ger sämre övervakning.** Varje larm du lägger
+till gör alla andra lite mindre trovärdiga.
+
+## Vad ett larm ska svara på
+
+Ett larm ska svara på tre frågor innan det får finnas: *märker någon det?*, *måste någon göra något
+nu?* och *vad ska den göra?*
+
+Faller något av de tre är larmet fel utformat. Märker ingen det ska det vara ett mätvärde, inte ett
+larm. Behöver ingen göra något nu ska det vara ett ärende. Vet ingen vad man ska göra saknas en
+runbook.
+
+Testet är brutalt och det ska det vara. De flesta larm som finns i ett system i dag skulle inte
+klara det.
+
+## Symptom vs orsak i praktiken
+
+Del 1.0 slog fast regeln: larma på symptom, inte på orsak. Här är hur den tillämpas, för den är
+lättare att hålla med om än att följa.
+
+**Ett symptomlarm** mäter något användaren märker: andelen anrop som misslyckas, andelen som är
+långsamma. Det går oavsett vad orsaken råkar vara.
+
+**Ett orsakslarm** mäter en intern tillstånd: disken är åttio procent full, en podd startade om, en
+kö är lång. Det går även när ingen märkt något.
+
+Frestelsen är att lägga till orsakslarm efter varje incident — *"vi såg att disken var full, lägg ett
+larm på disken"*. Efter tio incidenter har du tio orsakslarm som går för sig själva, och
+symptomlarmet som faktiskt betyder något drunknar bland dem.
+
+Regeln som håller: **orsaker hör hemma i instrumentbrädan du öppnar när symptomlarmet gått.** De är
+felsökningsmaterial, inte väckningsskäl.
+
+## Vad ett actionable larm är
+
+Ett larm är **actionable** om den som väcks kan göra något åt saken direkt.
+
+Det är ett hårdare krav än det låter. "Databasen svarar långsamt" är inte actionable om jouren
+saknar rättigheter att röra databasen — då är larmet bara en påminnelse om maktlöshet klockan tre.
+
+Kontrollfrågan är konkret: *finns det en handling, och får personen som väcks utföra den?* Är svaret
+nej ska larmet gå till någon annan, eller inte alls.
+
+## Sida vs ticket
+
+Två sätt att leverera samma information, och valet är egentligen en fråga om sömn.
+
+**En sida** väcker någon. Den är rätt när något pågår som blir värre av att vänta — användare
+påverkas nu, och varje minut kostar.
+
+**Ett ärende** hamnar i en kö och tas nästa arbetsdag. Det är rätt när något behöver åtgärdas men
+inte i natt: en disk som fylls i den takten tar tre veckor på sig.
+
+<Doodle
+  name="telefonen-och-korgen"
+  caption="Samma information, två vägar. Den ena kostar sömn, den andra en plats i kön."
+/>
+
+De flesta larm som i dag sidar borde vara ärenden. Ett bra prov: **hade du velat bli väckt av det
+här om det var din tur i natt?** Om svaret är nej ska det inte sida någon annan heller.
+
+## Larmet ingen kan åtgärda
+
+Vissa larm går för saker som varken går att förhindra eller påverka — en leverantörs API som är nere,
+ett nät som fladdrar.
+
+De är inte värdelösa. De är värdefulla som **kontext** när något annat går fel, och som underlag för
+ett samtal med leverantören.
+
+Men de ska inte väcka någon. De hör hemma i en instrumentbräda eller i ett ärende, och det är ett av
+de vanligaste sätten att bygga larmtrötthet utan att någon märker det.
+
+<Del titel="Hur de utformas" />
+
+## Tröskel vs varaktighet
+
+Två sätt att göra ett larm mindre känsligt, och de gör olika jobb.
+
+**Tröskeln** är hur illa det ska vara. Höjer du den missar du milda men verkliga problem.
+
+**Varaktigheten** är hur länge det ska vara illa. Höjer du den missar du korta men skarpa problem —
+och slipper allt brus.
+
+Prometheus-delen införde `for:` som fältet som mäter varaktigheten. Poängen här är valet mellan de
+två: **höj varaktigheten först.** En hög tröskel gör larmet blint för det som är lite fel länge; en
+längre varaktighet gör det bara långsammare.
+
+## Vad ett larm utan varaktighet gör
+
+Ett larm utan varaktighet går på en enda utvärdering — en mätpunkt över gränsen räcker.
+
+Det låter som en detalj och är den enskilt största källan till brus. Ett mätvärde som svänger runt
+gränsen ger då ett larm var femtonde sekund, och varje enskilt är formellt korrekt.
+
+<Callout type="fallgrop">
+**Det här är inte ett hypotetiskt problem, och det syns i verkliga system.**
+
+Jag räknade larmreglerna på Grafanas publika instans. Av 121 regler hade **36 ingen varaktighet
+alls** — de går på en enda utvärdering. Ytterligare 21 hade en minut, vilket för många mätvärden är
+samma sak.
+
+Samma mätning visade två saker till: **84 av 121 saknade helt en `severity`-etikett**, och därmed
+allt som skulle kunna avgöra om de ska väcka någon. Och **87 av 121 saknade `runbook_url`** — inget
+larm av dem talar om vad mottagaren ska göra.
+
+Det är en välskött publik instans. Poängen är inte att någon slarvat, utan att de tre sakerna som
+gör ett larm användbart är precis de som glöms bort när regeln skrivs.
+</Callout>
+
+## Vad severity är till för
+
+**Severity** är etiketten som säger hur illa det är, och den finns för att styra vad som händer med
+larmet — inte för att beskriva känslan.
+
+Två nivåer räcker längre än man tror: en som sidar och en som blir ett ärende. Fler nivåer är bara
+meningsfulla om varje nivå har ett **eget beteende** kopplat till sig.
+
+Har `warning` och `info` samma väg ut som `critical` är de tre etiketterna dekoration. Grafana-delen
+visade mekaniken — det som avgör värdet är att någon bestämt vad varje nivå faktiskt utlöser.
+
+## Vad gruppering löser
+
+**Gruppering** slår ihop flera larminstanser till en notifiering.
+
+En regel som utvärderas per tjänst kan bli fyrtio instanser när ett kluster får problem. Utan
+gruppering blir det fyrtio meddelanden om samma sak, och det är larmtrötthet på tre minuter.
+
+Grupperingen görs på etiketter — samla per kluster, per team, per incident. Resultatet är en
+notifiering som säger *fyrtio tjänster i kluster A* i stället för fyrtio som säger *en tjänst*.
+
+## Vad en tystnad är
+
+En **tystnad** stänger av notifieringar som matchar vissa etiketter under en bestämd tid.
+
+Den finns för två situationer: planerat underhåll, och en pågående incident där alla redan vet och
+larmen bara stör.
+
+Två regler gör tystnaden ofarlig. Den ska ha en **sluttid** — en tystnad utan tidsgräns är ett
+avstängt larm. Och den ska ha en **anteckning om varför**, så att nästa person förstår varför det är
+tyst.
+
+<Del titel="Efteråt" />
+
+## Vad jour är
+
+**Jour** är att någon är utpekad som den som svarar, med rimlig förväntan på att kunna göra det.
+
+Det är en organisatorisk konstruktion, inte en teknisk. Den kräver ett schema, en ersättning, och
+en gräns för hur ofta någon får väckas innan schemat räknas som trasigt.
+
+<Flow
+  caption="Fem steg. Bara det första är automatiskt — resten avgör om larmet var värt något."
+  steps={[
+    {
+      label: "Larmet går",
+      note: "Ett symptom har varit sant tillräckligt länge.",
+    },
+    {
+      label: "Jouren tittar",
+      via: "notifieringen",
+      note: "Etiketterna säger vilken tjänst och hur illa.",
+    },
+    {
+      label: "Runbooken öppnas",
+      via: "`runbook_url`",
+      note: "Vad betyder larmet, och vad gör jag först?",
+      accent: true,
+    },
+    {
+      label: "Åtgärden",
+      note: "Rulla tillbaka, skala upp, koppla bort. Sällan en riktig fix mitt i natten.",
+    },
+    {
+      label: "Postmortem",
+      note: "Dagen efter. Vad hände, varför, och vad ändras.",
+    },
+  ]}
+/>
+
+Ett jourschema utan de tre sista stegen är bara en lista över vem som ska må dåligt.
+
+## Vad en runbook ska innehålla
+
+En **runbook** är instruktionen som hör till ett larm, och den skrivs för någon som just vaknat.
+
+<Split
+  leftTitle="Utan runbook"
+  rightTitle="Med runbook"
+  leftTone="bad"
+  rightTone="good"
+  caption="Samma larm klockan tre. Skillnaden är om personen behöver förstå systemet först."
+>
+  <div slot="left">
+
+  Larmet säger `HighErrorRate on checkout`.
+
+  Jouren måste själv lista ut vad tjänsten gör, vad som brukar orsaka det, och vem som äger den.
+
+  Tiden går till orientering i stället för till åtgärd — och den som var mest insatt blir uppringd
+  ändå.
+
+  </div>
+  <div slot="right">
+
+  Länken öppnar en sida med fyra saker:
+
+  **Vad larmet betyder** i en mening. **Vad du kollar först** — tre konkreta steg. **Vad du gör** om
+  det är det vanliga fallet. **Vem du väcker** om det inte är det.
+
+  Åtgärd inom minuter, av vem som helst i schemat.
+
+  </div>
+</Split>
+
+Runbooken behöver inte vara lång. Den ska vara **skriven i förväg**, för ingen skriver en bra
+instruktion mitt i en incident.
+
+## Vad en postmortem är
+
+En **postmortem** är genomgången efter en incident: vad hände, i vilken ordning, och vad ändras.
+
+Den viktigaste delen är tidslinjen, och den ska skrivas medan minnet är färskt. Den näst viktigaste
+är listan över åtgärder — med en ägare och ett datum, annars är det önskningar.
+
+En postmortem som inte ändrar något är en uppsats. Har inget i systemet, i larmen eller i
+runbooken ändrats efteråt kommer samma incident tillbaka.
+
+## Blameless vs skuldfrågan
+
+Två sätt att hålla samma möte, och skillnaden avgör om du får veta vad som faktiskt hände.
+
+**Skuldfrågan** letar efter vem som gjorde fel. Den ger ett svar snabbt, och den lär alla i rummet
+att nästa gång berätta mindre.
+
+**Blameless** utgår från att den som agerade gjorde det rimliga givet vad hen såg och visste. Frågan
+blir varför det verkade rimligt — vilket nästan alltid pekar på systemet.
+
+Det är inte snällhet, det är metod. Ett system där ett enda felklick kan fälla produktionen är ett
+systemfel, och det upptäcks bara om den som klickade vågar berätta exakt hur det gick till.
+
+## Larmet som ska tas bort
+
+Den mest underskattade åtgärden efter en incident är att **ta bort ett larm**.
+
+Gick fem larm och bara ett var användbart ska de fyra andra granskas. Gick ett larm som ingen agerade
+på ska det bli ett ärende eller försvinna.
+
+Ingen gör det spontant, eftersom ett borttaget larm känns som en risk. Därför hör det hemma som en
+punkt på postmortemen: **vilka larm gick, och vilka av dem hjälpte?** Utan den frågan växer antalet
+larm monotont, och larmtröttheten med det.
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att ärva larm, inte bygga dem från noll. Det du gör oftast är att titta på ett larm som
+just gått och avgöra om det borde ha gått alls.
+
+Det som är värt din tid nu är de tre frågorna: märker någon det, måste någon göra något nu, och vet
+den vad. Ställ dem på ett befintligt larm i veckan så förbättras övervakningen mer än av något nytt
+du lägger till.
+
+Jourverktyg och eskaleringskedjor, felbudgetbaserade larmpolicyer, incidentbefäl och
+statusuppdateringar utåt kan vänta. De blir dina när du står i en jour — och de bygger alla på
+urvalet, runbooken och postmortemen.
+
+## Vanliga nybörjarförväxlingar
+
+Fler larm ger inte bättre övervakning. Varje nytt larm gör alla andra lite mindre trovärdiga.
+
+Ett larm som ingen kan åtgärda är inte ofarligt. Det bygger larmtrötthet tills något viktigt missas.
+
+En hög tröskel är inte samma sak som en lång varaktighet. Den ena gör larmet blint, den andra
+långsammare.
+
+Severity är inte en känsla. Har nivåerna inte olika beteende är de dekoration.
+
+En tystnad utan sluttid är inte en tystnad. Det är ett avstängt larm.
+
+En postmortem utan ändringar är inte en postmortem. Det är en uppsats.
+
+Blameless är inte snällhet. Det är metoden som gör att du får veta vad som faktiskt hände.
+
+## Prova själv
+
+Vi mäter larmhygienen på en riktig instans i stället för att spekulera. Grafanas publika instans
+kräver ingen inloggning, och allt nedan är läsande.
+
+```bash
+G=https://play.grafana.org/api
+curl -s $G/v1/provisioning/alert-rules | jq length
+```
+
+Jag fick `121`. Titta nu på varaktigheten i dem:
+
+```bash
+curl -s $G/v1/provisioning/alert-rules \
+  | jq -c '[.[] | .for // "(saknas)"] | group_by(.)
+      | map({(.[0]): length}) | add'
+```
+
+```
+{"0s":36,"1d":6,"1m":21,"20m":2,"2m":44,"5m":2,"6h":10}
+```
+
+**Trettiosex av hundratjugoen har `0s`** — de går på en enda utvärdering över gränsen. Ytterligare
+tjugoen har en minut, vilket för ett mätvärde som skrapas var femtonde sekund är fyra mätpunkter.
+
+Räkna sedan hur många som saknar det som avgör vart de ska:
+
+```bash
+F='[.[] | select((.labels // {})
+   | has("severity") | not)] | length'
+curl -s $G/v1/provisioning/alert-rules | jq "$F"
+```
+
+```
+84
+```
+
+Och hur många som saknar instruktionen till den som väcks:
+
+```bash
+R='[.[] | select((.annotations // {})
+   | has("runbook_url") | not)] | length'
+curl -s $G/v1/provisioning/alert-rules | jq "$R"
+```
+
+```
+87
+```
+
+**Sammanfattat: av 121 larm går 36 på en mätpunkt, 84 kan inte prioriteras, och 87 talar inte om
+vad man ska göra.** Det är en välskött instans — poängen är att de tre sakerna som gör ett larm
+användbart är exakt de som glöms när regeln skrivs.
+
+Titta slutligen på ett larm som gör det rätt:
+
+```bash
+A='.[] | select(.annotations.runbook_url)
+   | "\(.title) | for=\(.for)"'
+curl -s $G/v1/provisioning/alert-rules \
+  | jq -r "$A" | head -3
+```
+
+Tre saker som kan förvirra. **Instansen är publik och reglerna ändras**, så dina tal blir inte mina;
+förhållandet mellan dem har hållit sig över tiden. `for: "0s"` och ett saknat `for` betyder samma
+sak i praktiken, men de räknas som olika värden i grupperingen ovan. Och ett larm utan
+`runbook_url` kan mycket väl ha instruktionen i `description` i stället — måttet är en indikation
+på hygien, inte en dom över varje enskild regel.
+
+<Callout type="kom-ihag">
+- **Fler larm ger sämre övervakning.** Varje nytt larm gör alla andra mindre trovärdiga.
+- Tre frågor innan ett larm får finnas: märker någon det, måste någon agera **nu**, vet den vad.
+- Larma på **symptom**. Orsaker hör hemma i instrumentbrädan du öppnar när symptomlarmet gått.
+- Ett larm är actionable bara om den som väcks både kan och **får** göra något.
+- **Höj varaktigheten före tröskeln.** Hög tröskel gör larmet blint; lång varaktighet bara långsammare.
+- Ett larm utan varaktighet går på en mätpunkt — 36 av 121 på en verklig instans gjorde det.
+- **Severity utan olika beteende är dekoration.** Två nivåer räcker längre än man tror.
+- Gruppering gör fyrtio meddelanden om samma sak till ett.
+- En tystnad ska ha **sluttid och motivering**. Utan sluttid är det ett avstängt larm.
+- En **runbook** skrivs i förväg, för någon som just vaknat: vad, kolla först, gör, väck vem.
+- En postmortem utan ändringar är en uppsats. **Ta bort larm** är den mest underskattade åtgärden.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Efter en incident vill någon lägga till ett larm på diskutrymme. Vad invänder du?",
+      a: "Att det är ett orsakslarm. Det går även när ingen märkt något, och efter tio incidenter har du tio sådana som drunknar symptomlarmet. Disken hör hemma i instrumentbrädan du öppnar när symptomlarmet gått — den är felsökningsmaterial, inte ett väckningsskäl.",
+    },
+    {
+      q: "Vilka tre frågor ska ett larm klara innan det får finnas?",
+      a: "Märker någon det? Måste någon göra något nu? Vet den vad den ska göra? Faller den första ska det vara ett mätvärde, faller den andra ett ärende, faller den tredje saknas en runbook. De flesta befintliga larm klarar inte testet.",
+    },
+    {
+      q: "Ett larm svänger runt gränsen och går tio gånger i timmen. Höjer du tröskeln eller varaktigheten?",
+      a: "Varaktigheten först. En höjd tröskel gör larmet blint för problem som är lite fel under lång tid — precis den sorten som kostar mest. En längre varaktighet gör larmet långsammare men inte blint, och tar bort just det brus som svängningen orsakar.",
+    },
+    {
+      q: "Varför är ett larm som ingen kan åtgärda skadligt, och inte bara onödigt?",
+      a: "För att det bygger larmtrötthet. Kanalen slutar läsas, inte stängas av — och när ett riktigt haveri kommer upptäcks det sent. Larm för sådant som varken går att förhindra eller påverka hör hemma som kontext i en instrumentbräda eller som underlag för ett samtal med leverantören.",
+    },
+    {
+      q: "Vad ska en runbook innehålla?",
+      a: "Fyra saker, skrivna i förväg för någon som just vaknat: vad larmet betyder i en mening, vad du kollar först i tre konkreta steg, vad du gör i det vanliga fallet, och vem du väcker om det inte är det vanliga fallet. Ingen skriver en bra instruktion mitt i en incident.",
+    },
+    {
+      q: "Vad gör en postmortem blameless, och varför spelar det roll praktiskt?",
+      a: "Att den utgår från att den som agerade gjorde det rimliga givet vad hen såg. Frågan blir varför det verkade rimligt, vilket nästan alltid pekar på systemet. Det är metod, inte snällhet: ett system där ett felklick kan fälla produktionen upptäcks bara om den som klickade vågar berätta exakt hur det gick till.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- Larmtrötthet yttrar sig som att ingen läser larmen, inte som att någon stänger av dem.
+- Fler larm ger sämre övervakning — varje nytt gör alla andra mindre trovärdiga.
+- Tre frågor: märker någon det, måste någon agera nu, vet den vad den ska göra.
+- Symptomlarm mäter det användaren märker. Orsakslarm mäter interna tillstånd och hör inte till jouren.
+- Ett larm är actionable bara om mottagaren både kan och får utföra åtgärden.
+- En sida väcker någon, ett ärende hamnar i kön. De flesta larm som sidar borde vara ärenden.
+- Larm för sådant ingen kan åtgärda är kontext, inte väckningsskäl.
+- Höj varaktigheten före tröskeln. Tröskeln gör larmet blint, varaktigheten bara långsammare.
+- Ett larm utan varaktighet går på en enda mätpunkt. 36 av 121 regler på en verklig instans gjorde det.
+- Severity finns för att styra vad som händer. Utan olika beteende per nivå är etiketterna dekoration.
+- Gruppering slår ihop fyrtio instanser av samma problem till en notifiering.
+- En tystnad ska ha sluttid och motivering, annars är det ett avstängt larm.
+- Jour kräver schema, ersättning och en gräns för hur ofta någon får väckas.
+- Runbooken skrivs i förväg och innehåller vad, kolla först, gör, väck vem.
+- Postmortemens tidslinje skrivs medan minnet är färskt; åtgärderna får ägare och datum.
+- Blameless är metod: det är enda sättet att få veta vad som faktiskt hände.
+- Att ta bort ett larm är den mest underskattade åtgärden efter en incident.
+
+## Nästa del
+
+Därmed står Observability & SRE: de tre signalerna, mätvärdena, spåren, talet — och nu urvalet.
+
+Något har blivit tydligt på vägen. De två första delarna handlade om att **kunna se**, de tre sista
+om att **avgöra vad som är värt att se**. Det första är ett verktygsproblem och löses med Prometheus,
+Grafana och Loki. Det andra är ett omdömesproblem, och inget verktyg löser det åt dig.
+
+Det är också varför den här serien är den enda i hubben som blir mer värd med åren. Verktygen byts
+ut; frågan *vem ska väckas, och varför* ser likadan ut om tio år.

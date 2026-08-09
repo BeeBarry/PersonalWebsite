@@ -1,0 +1,458 @@
+---
+title: 'Att sätta talet'
+description: 'Hur du väljer en SLI, avgör hur många nior som räcker, och vad du gör när budgeten är slut'
+category: 'observability'
+part: 1
+order: 4
+date: '2026-08-09'
+tags: ['Beginner', 'SLO', 'SRE']
+---
+
+## Var vi är
+
+Del 1.0 definierade SLI, SLO och felbudget: måttet användaren märker, målet du satt för det, och
+det som blir över när målet dras från hundra procent.
+
+Del 1.1 och 1.2 gav verktygen — Prometheus för mätvärdena, OpenTelemetry för spåren. Du kan alltså
+mäta.
+
+Kvar står det svåraste och det enda som inte är en teknisk fråga: **vilket tal ska stå där?** Den
+här delen handlar om att välja SLI, sätta siffran, och veta vad budgeten är till för. Zoomen ligger
+på en tjänst; kontrakt med kunder och organisationsdesign ligger utanför.
+
+<Del titel="Måttet" />
+
+## Varför talet inte går att gissa
+
+Nästan alla team börjar i fel ände: de bestämmer *"vi vill ha 99,9 procent"* och mäter sedan.
+
+Talet blir då ett önsketänkande, och första månaden avslöjar det. Antingen är målet redan missat
+och alla slutar bry sig, eller så är det så lågt satt att det aldrig säger något.
+
+Ordningen är den omvända. **Mät först, i några veckor, och sätt sedan talet strax under det du
+faktiskt levererar.** Ett mål ska vara möjligt att missa men inte garanterat missat.
+
+## Vad de fyra gyllene signalerna är
+
+**De fyra gyllene signalerna** är en checklista över vad som är värt att mäta på en tjänst:
+latens, trafik, fel och mättnad.
+
+Latens är hur lång tid ett svar tar. Trafik är hur mycket som kommer in. Fel är hur stor andel som
+misslyckas. Mättnad är hur nära någon gräns tjänsten ligger — minne, kö, anslutningar.
+
+Listan är inte en modell utan en påminnelse. Har du inget mått för en av de fyra är det värt att
+fråga varför.
+
+## RED vs USE
+
+Två förkortningar som delar upp samma sak för två olika sorters resurs.
+
+**RED** står för Rate, Errors, Duration och beskriver en **tjänst**: hur många anrop, hur många som
+misslyckas, hur lång tid de tar. Det är utifrån och in — det användaren möter.
+
+**USE** står för Utilization, Saturation, Errors och beskriver en **resurs**: en disk, en kö, en
+processor. Det är inifrån och ut.
+
+Kopplingen till SLI:n är enkel: **en SLI byggs nästan alltid av RED-måtten**, eftersom de mäter
+något användaren märker. USE-måtten är felsökningsmaterial — de förklarar varför RED försämrades.
+
+## Vad som gör en SLI dålig
+
+Del 1.0 slog fast att processorlast inte är en SLI. Det finns tre andra fallgropar som är
+vanligare och svårare att se.
+
+<Split
+  leftTitle="Dålig SLI"
+  rightTitle="Bra SLI"
+  leftTone="bad"
+  rightTone="good"
+  caption="Samma tjänst. Bara det ena måttet ändras när användarens upplevelse gör det."
+>
+  <div slot="left">
+
+  **Andel tid processen var uppe.** En process kan vara uppe och svara fel på allt.
+
+  **Genomsnittlig svarstid.** Döljer svansen — Prometheus-delen visade 16 ms i genomsnitt mot 51 ms
+  vid p95.
+
+  **Antal fel.** Ett absolut tal säger inget utan trafiken bredvid. Tio fel av tio är en katastrof,
+  tio av en miljon är brus.
+
+  </div>
+  <div slot="right">
+
+  **Andel anrop som svarade utan serverfel.** Ändras direkt när användaren märker något.
+
+  **Andel anrop snabbare än 300 ms.** En andel, inte ett medelvärde — och gränsen är ett val någon
+  gjort medvetet.
+
+  **Andel lyckade utcheckningar.** Mäter affären, inte tekniken.
+
+  </div>
+</Split>
+
+Den gemensamma nämnaren i högerkolumnen: alla tre är **andelar av något användaren gör**, och alla
+tre rör sig i samma riktning som en klagomålskurva.
+
+## Vad ett SLI-fönster är
+
+Ett **SLI-fönster** är tidsintervallet andelen räknas över, och det avgör hur känsligt måttet är.
+
+Ett kort fönster reagerar snabbt och hoppar mycket. Ett långt fönster är stabilt och märker en kort
+störning knappt alls.
+
+Det är därför en SLO nästan alltid anges över ett långt fönster — trettio dagar — medan larmen
+räknar på korta. Samma SLI, två olika fönster, två olika syften.
+
+<Del titel="Målet" />
+
+## Hur många nior som är rimligt
+
+Frågan ställs ofta som *"hur många nior vill vi ha?"* och det är fel fråga. Rätt fråga är **vad
+skillnaden är värd för den som använder tjänsten**.
+
+Uttryckt i tid över trettio dagar blir valet konkret:
+
+```
+   99 %      7,2 h
+ 99,5 %      3,6 h
+ 99,9 %     43,2 min
+99,95 %     21,6 min
+99,99 %      4,3 min
+```
+
+Tabellen är hela argumentet. Skillnaden mellan 99,9 och 99,99 är att gå från *"vi kan ha en dålig
+kvart i månaden"* till *"vi har fyra minuter, sammanlagt, inklusive utrullningar"*.
+
+## Vad varje extra nia kostar
+
+Kostnaden för en nia till är inte linjär — den är närmast exponentiell, och den betalas i arbete
+och i tempo.
+
+<Doodle
+  name="niorna-kostar-mer"
+  caption="Varje steg är kortare i tid och högre i pris. Det sista är det som stoppar utvecklingen."
+/>
+
+Från 99 till 99,9 räcker ofta bättre utrullningar och en hälsokontroll som fungerar. Från 99,9 till
+99,99 krävs redundans i flera zoner, automatisk failover och en jour som faktiskt svarar. Från
+99,99 och uppåt börjar du betala med att inte våga ändra något.
+
+Det är också därför en SLO på hundra procent är ett självmål, som del 1.0 påpekade. Den gör varje
+utrullning till en risk ingen vill ta.
+
+## SLO vs SLA
+
+Två ord som skiljer sig med en bokstav och med hela sin konsekvens.
+
+**En SLO** är ditt interna mål. Missas det får teamet ett problem att lösa, och ingen utomstående
+behöver veta.
+
+**En SLA** — service level agreement — är ett löfte till en kund, oftast med pengar kopplade till
+sig. Missas det utgår kompensation.
+
+Regeln som följer: **SLO:n ska alltid vara strängare än SLA:n.** Lovar du 99,5 procent i avtal
+sätter du 99,9 internt, så att du hinner reagera innan löftet bryts. En SLO som är lika med SLA:n
+ger noll marginal.
+
+## Rullande fönster vs kalenderfönster
+
+Två sätt att räkna samma trettio dagar, med olika beteende i slutet av perioden.
+
+**Ett rullande fönster** tittar alltid trettio dagar bakåt från nu. Budgeten återhämtar sig
+gradvis, och en dålig dag försvinner ur beräkningen exakt trettio dagar senare.
+
+**Ett kalenderfönster** nollställs den första i månaden. Budgeten fylls på i ett hopp.
+
+Kalenderfönstret är lättare att kommunicera och skapar en märklig drivkraft: den sista dagen i en
+dålig månad är alla försiktiga, och den första i nästa är alla oförsiktiga. Rullande fönster
+undviker det, och är därför standardvalet.
+
+## Vad felbudgeten faktiskt är till för
+
+Felbudgeten beskrivs ofta som ett mått på hur trasigt något får vara. Det är inte dess syfte.
+
+Syftet är att **göra en avvägning mätbar**. Ett team har alltid två motstridiga krav — släpp nytt
+snabbt, och håll det stabilt — och utan ett tal vinner den som pratar högst.
+
+Med en budget blir det ett räknestycke i stället för en åsikt. Finns budget kvar får ni ta risker.
+Är den slut får ni inte. Ingen behöver ha rätt.
+
+## Vad du gör när budgeten är slut
+
+Det är här SLO:er antingen betyder något eller inte gör det alls.
+
+Är budgeten förbrukad ska något faktiskt ändras: nya funktioner pausas, och arbetet flyttas till
+stabilitet tills budgeten återhämtat sig. Det kallas ofta en release freeze.
+
+<Callout type="fallgrop">
+**En SLO utan konsekvens är en siffra i en instrumentbräda.**
+
+Det vanligaste sättet att införa SLO:er fel är att sätta talet, bygga panelen, och sedan aldrig
+låta det påverka ett enda beslut. Efter tre månader tittar ingen på den.
+
+Konsekvensen behöver inte vara dramatisk, och den behöver inte heta release freeze. Den kan vara
+att nästa sprint börjar med den incident som kostade mest budget. Men den måste finnas, och den
+måste vara bestämd **innan** budgeten tar slut — annars blir varje överskridande en förhandling.
+</Callout>
+
+<Del titel="Förbrukningen" />
+
+## Vad en burn rate är
+
+En **burn rate** är hur snabbt felbudgeten förbrukas, uttryckt som en multipel av den takt som
+skulle göra slut på den precis på perioden.
+
+Burn rate 1 betyder att budgeten tar slut exakt när de trettio dagarna är slut. Burn rate 2 betyder
+dubbelt så fort, alltså på femton dygn.
+
+```
+   1x   slut efter 30,0 dygn
+   6x   slut efter  5,0 dygn
+14,4x   slut efter  2,1 dygn
+```
+
+Talet `14,4` ser godtyckligt ut och är det inte: det är den takt som förbrukar **två procent** av en
+trettiodagarsbudget på en timme. Det är därför det dyker upp i nästan varje SLO-larm du kommer att
+läsa.
+
+## Burn rate vs felfrekvens
+
+Två tal som mäter samma sak i olika enheter, och skillnaden avgör om larmet går att återanvända.
+
+**Felfrekvensen** är en andel: *en procent av anropen misslyckas*. Den säger ingenting om huruvida
+det är illa, eftersom den inte känner till ditt mål.
+
+**Burn raten** är felfrekvensen delad med den felfrekvens budgeten tillåter. Den är alltså ett tal
+som redan väger in SLO:n.
+
+Praktiskt: ett larm på *"felfrekvensen över 1 procent"* måste skrivas om för varje tjänst med ett
+annat mål. Ett larm på *"burn rate över 14,4"* betyder samma sak överallt.
+
+<Doodle
+  name="tva-hinkar-ett-hal"
+  caption="Samma budget i båda. Det är hålets storlek som avgör om den räcker månaden ut."
+/>
+
+## Larm på burn rate
+
+Ett **burn rate-larm** går när budgeten förbrukas snabbare än en gräns du satt, i stället för när
+ett tröskelvärde passeras.
+
+Skillnaden mot ett vanligt tröskellarm är att det skalar med hur allvarligt det är. Ett totalstopp
+ger en enorm burn rate och larmar inom minuter; en långsam förhöjning ger en låg och larmar först
+om den håller i sig.
+
+Det är samma larmregel med `for:` som Prometheus-delen införde — men uttrycket räknar på budget i
+stället för på rå felfrekvens.
+
+## Två fönster i samma larm
+
+Ett burn rate-larm med ett enda fönster har ett problem: det korta fönstret larmar på brus, det
+långa upptäcker för sent.
+
+Lösningen är att kräva att **båda** är över gränsen samtidigt. Ett kort fönster — några minuter —
+säger *det pågår nu*. Ett långt — en timme — säger *det har pågått ett tag*.
+
+<Flow
+  caption="Larmet går bara när båda är sanna. Det korta fönstret ger snabbhet, det långa filtrerar bort brus."
+  steps={[
+    {
+      label: "Långt fönster",
+      via: "1 h",
+      note: "Burn rate över gränsen — problemet har pågått en stund.",
+    },
+    {
+      label: "Kort fönster",
+      via: "5 min",
+      note: "Burn rate fortfarande över gränsen — det pågår **nu**.",
+      accent: true,
+    },
+    {
+      label: "Larmet går",
+      note: "Ett kort avbrott som redan gått över uppfyller aldrig båda.",
+    },
+  ]}
+/>
+
+Konstruktionen har ett namn — multi-window multi-burn-rate — och den låter dig ha två larm på samma
+SLO: ett snabbt och skarpt för branta förbrukningar, ett långsamt och tåligt för lätta.
+
+## När SLO:er är fel verktyg
+
+SLO:er förutsätter tillräckligt med trafik för att en andel ska betyda något.
+
+En tjänst med tio anrop om dagen får en SLI som hoppar mellan hundra och nittio procent beroende på
+ett enda fel. Där är SLO:n brus, och en enkel kontroll av att tjänsten svarar gör mer nytta.
+
+Samma sak gäller batchjobb som kör en gång per natt, och interna verktyg där den enda användaren
+sitter bredvid dig och kan säga till. **SLO:er är för tjänster med många användare som du inte
+träffar.**
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer sällan att sätta en SLO själv i början. Det du kommer att göra är att läsa en och avgöra
+om den mäter något användaren märker — och det är oftare fel än man tror.
+
+Det som är värt din tid nu är ordningen: mät först, sätt talet strax under det uppmätta, och bestäm
+konsekvensen innan budgeten tar slut. Tre steg, och de flesta hoppar över minst ett.
+
+Multi-window-larm i produktion, SLO:er per kundsegment, felbudgetpolicy på organisationsnivå och
+avtalade SLA:er kan vänta. De blir dina när tjänsten har kunder som betalar — och de bygger alla på
+SLI:n, talet och budgeten.
+
+## Vanliga nybörjarförväxlingar
+
+En SLO är inte en SLA. Den ena är ett internt mål, den andra ett löfte med pengar bakom.
+
+Hundra procent är inte ett mål. Det är ett förbud mot att ändra något.
+
+Antal fel är inte en SLI. Utan trafiken bredvid betyder talet ingenting.
+
+Burn rate är inte felfrekvens. Den är felfrekvensen delad med vad budgeten tillåter.
+
+Ett kalenderfönster återhämtar sig inte gradvis. Budgeten fylls på i ett hopp den första.
+
+En felbudget är inte ett tak för hur trasigt något får vara. Den är en avvägning gjord mätbar.
+
+En SLO utan konsekvens är ingen SLO. Den är en siffra på en instrumentbräda.
+
+## Prova själv
+
+Vi räknar ut en riktig SLI ur en riktig tjänst. PromLabs demo är samma som i del 1.1 och kräver
+ingen inloggning.
+
+```bash
+P=https://demo.promlabs.com/api/v1
+S=demo_api_request_duration_seconds
+Q="sum(rate(${S}_count{status!~\"5..\"}[30m]))"
+Q="$Q/sum(rate(${S}_count[30m]))"
+curl -s "$P/query" --data-urlencode "query=$Q" \
+  | jq -r '.data.result[0].value[1]'
+```
+
+```
+0.9910569903913303
+```
+
+**Det är en SLI.** Andelen anrop som inte gav serverfel, mätt över trettio minuter — 99,1 procent.
+Räkna nu om den till tid över en månad, och jämför med två olika mål:
+
+```bash
+python3 -c "
+sli = 0.99106
+m = 30*24*60
+for slo in (99.0, 99.9):
+    print(slo, m*(100-slo)/100, m*(1-sli))
+"
+```
+
+```
+99.0   432.0   386.6
+99.9    43.2   386.6
+```
+
+Första kolumnen är budgeten i minuter, andra är vad tjänsten faktiskt förbrukar. **Mot ett mål på
+99 procent håller den. Mot 99,9 spräcker den budgeten nio gånger om.**
+
+Det är hela artikelns poäng i två rader: hade någon gissat *"vi kör 99,9"* utan att mäta först hade
+målet varit missat från dag ett, och alla hade slutat titta på det inom en månad.
+
+Räkna slutligen ut vad olika burn rates innebär:
+
+```bash
+python3 -c "
+for r in (1, 6, 14.4):
+    print(r, round(30/r, 1), round(r/7.2, 1))
+"
+```
+
+```
+1     30.0   0.1
+6      5.0   0.8
+14.4   2.1   2.0
+```
+
+Kolumnerna är burn rate, dygn tills budgeten är slut, och procent av budgeten som förbrukas per
+timme. `14,4` ger exakt två procent i timmen — därav talet.
+
+Tre saker som kan förvirra. **Demons SLI ändras mellan körningar**, eftersom den producerar riktiga
+fel i varierande takt; ditt tal blir inte mitt, men storleksordningen håller. `status!~"5.."` räknar
+4xx som lyckade anrop, vilket är rätt för en tillgänglighets-SLI — ett `404` är användarens fel, inte
+tjänstens. Och `[30m]` är ett mycket kortare fönster än en riktig SLO använder; det står där för att
+övningen ska gå att köra på en minut.
+
+<Callout type="kom-ihag">
+- **Mät först, sätt talet sedan.** Ett gissat mål är missat eller meningslöst från dag ett.
+- **RED** beskriver tjänsten och bygger SLI:n. **USE** beskriver resursen och förklarar varför.
+- En bra SLI är en **andel av något användaren gör**, aldrig ett absolut tal och aldrig ett medelvärde.
+- 99,9 procent är 43 minuter i månaden. 99,99 är fyra. Skillnaden är arbete och tempo, inte teknik.
+- **SLO:n ska vara strängare än SLA:n** — annars finns ingen marginal att reagera i.
+- Rullande fönster återhämtar sig gradvis. Kalenderfönster i ett hopp, med sämre beteende.
+- Felbudgeten finns för att göra avvägningen **släppa nytt mot hålla stabilt** till ett räknestycke.
+- **En SLO utan konsekvens är ingen SLO.** Bestäm konsekvensen innan budgeten tar slut.
+- **Burn rate** är felfrekvensen delad med vad budgeten tillåter — därför fungerar samma larm överallt.
+- Två fönster i samma larm: det korta ger snabbhet, det långa filtrerar bort brus.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Ert team vill sätta 99,9 procent som mål för en ny tjänst. Vad frågar du först?",
+      a: "Vad tjänsten faktiskt levererar i dag. Talet ska sättas strax under det uppmätta, annars är målet antingen missat från början eller så lågt att det aldrig säger något. Mät i några veckor först — i övningen låg en verklig tjänst på 99,1 procent, vilket hade spräckt en 99,9-budget nio gånger om.",
+    },
+    {
+      q: "Varför är \"antal fel per timme\" en dålig SLI?",
+      a: "För att ett absolut tal saknar nämnare. Tio fel av tio anrop är ett totalstopp; tio av en miljon är brus. En SLI ska vara en andel av något användaren gör, så att den rör sig i takt med upplevelsen och inte med trafikvolymen.",
+    },
+    {
+      q: "Vad är skillnaden mellan en SLO och en SLA, och hur ska de förhålla sig till varandra?",
+      a: "SLO:n är ditt interna mål; SLA:n är ett löfte till en kund, oftast med kompensation kopplad till sig. SLO:n ska alltid vara strängare — lovar du 99,5 i avtal sätter du 99,9 internt, så att du hinner reagera innan löftet bryts.",
+    },
+    {
+      q: "Vad gör en burn rate mer användbar i ett larm än en felfrekvens?",
+      a: "Att den redan väger in SLO:n. Felfrekvensen är en rå andel som måste tolkas mot varje tjänsts mål, så ett larm på \"över 1 procent\" måste skrivas om per tjänst. Burn rate är felfrekvensen delad med vad budgeten tillåter, så \"över 14,4\" betyder samma sak överallt.",
+    },
+    {
+      q: "Varför kräver ett bra SLO-larm att två tidsfönster är över gränsen samtidigt?",
+      a: "För att ett enda fönster antingen är för känsligt eller för långsamt. Det korta fönstret säger att problemet pågår nu, det långa att det pågått ett tag. Ett kort avbrott som redan gått över uppfyller aldrig båda, så bruset filtreras bort utan att svarstiden på riktiga problem blir sämre.",
+    },
+    {
+      q: "När är en SLO fel verktyg?",
+      a: "När trafiken är för låg för att en andel ska betyda något. Tio anrop om dagen ger en SLI som hoppar mellan hundra och nittio procent på ett enda fel. Samma sak gäller nattliga batchjobb och interna verktyg med en handfull användare — där gör en enkel kontroll av att tjänsten svarar mer nytta.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- Mät i några veckor och sätt sedan talet strax under det uppmätta. Gissa aldrig först.
+- De fyra gyllene signalerna är latens, trafik, fel och mättnad — en checklista, inte en modell.
+- RED beskriver en tjänst utifrån och in. USE beskriver en resurs inifrån och ut.
+- SLI:n byggs av RED-måtten. USE-måtten förklarar varför RED försämrades.
+- En bra SLI är en andel av något användaren gör. Uppetid, medelvärden och absoluta tal är det inte.
+- SLI-fönstret avgör känsligheten. SLO:n använder ett långt, larmen korta.
+- 99 % är 7,2 h i månaden, 99,9 % är 43 min, 99,99 % är 4,3 min.
+- Kostnaden per extra nia är närmast exponentiell och betalas i arbete och tempo.
+- SLO är internt mål, SLA är ett löfte med pengar bakom. SLO:n ska vara strängare.
+- Rullande fönster återhämtar sig gradvis; kalenderfönster i ett hopp den första i månaden.
+- Felbudgeten gör avvägningen mellan tempo och stabilitet mätbar i stället för en åsikt.
+- Är budgeten slut ska något ändras. Konsekvensen bestäms innan, inte under.
+- Burn rate är hur snabbt budgeten förbrukas, som multipel av takten som räcker perioden ut.
+- `14,4` är den takt som förbrukar två procent av en trettiodagarsbudget på en timme.
+- Burn rate väger redan in SLO:n, så samma larmgräns fungerar för alla tjänster.
+- Ett larm med två fönster kräver att båda är över gränsen — snabbhet utan brus.
+- SLO:er är för tjänster med många användare du inte träffar. Vid låg trafik blir de brus.
+
+## Nästa del
+
+Nu kan du sätta ett tal som betyder något, och räkna ut hur snabbt det förbrukas.
+
+Larmet har dock bara nämnts i förbifarten. Del 1.1 visade hur en larmregel skrivs, och den här hur
+en gräns motiveras — men ingen av dem svarar på den fråga som avgör om övervakningen är värd något:
+**vilka larm ska överhuvudtaget finnas?**
+
+Nästa del handlar om det. Om varför de flesta larm är skadliga, vad som skiljer ett larm någon
+agerar på från ett någon stänger av, och vad som händer efter att telefonen ringt.
