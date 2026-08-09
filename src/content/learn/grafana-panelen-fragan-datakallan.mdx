@@ -1,0 +1,519 @@
+---
+title: 'Panelen, frågan och datakällan'
+description: 'Vad Grafana gör med mätvärdet Prometheus redan sparat — och vad den aldrig gör'
+category: 'grafana'
+part: 1
+partTitle: 'Grunderna'
+order: 1
+date: '2026-08-08'
+tags: ['Beginner', 'Grafana', 'Dashboard']
+---
+
+## Var vi är
+
+Observability-delen om Prometheus slutade med en mening som lämnades ofylld: *"Prometheus ritar inga
+grafer. Den lagrar och svarar; Grafana ritar."*
+
+Det är hålet den här serien fyller. Du kan redan skriva `sum by (status) (rate(...[5m]))` och veta
+varför ett genomsnitt ljuger. Nu handlar det om vad som händer med den frågan när den ska bli
+något Johan kan titta på klockan tre på natten.
+
+Den här delen stannar vid en dashboard som redan finns: hur den är byggd och var frågan sitter i
+den. Att skriva larm och lägga dashboards i Git tar vi i nästa del. Övningarna körs mot Grafanas
+publika instans och kräver ingen installation.
+
+<Del titel="Verktyget" />
+
+## Vad Grafana är
+
+**Grafana** är ett gränssnitt som ställer frågor till andra system och ritar upp svaren.
+
+Du pekar ut var datan finns, skriver en fråga i det systemets eget språk, och väljer hur svaret ska
+visas. Grafana sköter inhämtningen, tidsfönstret och uppritningen.
+
+Grafana är i dag på version 13. Versionsnumret spelar sällan roll för det du gör i gränssnittet, men
+det är värt att veta när du läser handledningar — mycket material på nätet beskriver version 9 eller
+10, där menyerna låg annorlunda.
+
+## Grafana lagrar ingenting
+
+Det här är den enskilt viktigaste egenskapen, och den som gör resten begriplig.
+
+Grafana har en egen databas, men i den ligger bara **dashboards, användare och inställningar**. Inte
+ett enda mätvärde.
+
+Varje gång du öppnar en panel ställs frågan på nytt mot det system som faktiskt äger datan. Stänger
+du av Prometheus blir panelen tom direkt — det finns ingenting sparat i Grafana att falla tillbaka på.
+
+Det förklarar också varför en dashboard laddar långsamt: väntetiden är nästan aldrig Grafana, utan
+frågan den skickade vidare.
+
+## Vad en datakälla är
+
+En **datakälla** är en konfigurerad koppling till ett system som Grafana kan fråga.
+
+Den har ett namn, en typ, en adress och eventuella inloggningsuppgifter. Typen avgör vilket
+frågespråk panelen får skriva i — en Prometheus-datakälla ger dig PromQL, en PostgreSQL-datakälla
+ger dig SQL.
+
+Varje datakälla har också en **uid**, en kort sträng som är den identitet paneler pekar på. Namnet
+går att byta; uid:n gör det inte, och det är därför en dashboard inte går sönder när någon döper om
+datakällan.
+
+## Datakälla vs databas
+
+Två ord som beskriver samma system från två håll, och skillnaden är värd att hålla isär.
+
+**Databasen** är där datan bor. Prometheus, Loki, InfluxDB, PostgreSQL — de äger värdena och svarar
+på frågor.
+
+**Datakällan** är Grafanas anteckning om hur den når databasen. Adress, typ, autentisering och ett
+uid.
+
+En databas kan ha flera datakällor i samma Grafana — till exempel en med läsrättigheter för alla och
+en med bredare rättigheter för ett driftteam. Och en datakälla utan en databas bakom sig är bara en
+rad i en tabell.
+
+## Varför frågan går genom Grafana
+
+Din webbläsare pratar aldrig med Prometheus. Den pratar med Grafanas server, som frågar vidare.
+
+<Flow
+  caption="Fyra steg. Bara det sista rör systemet som faktiskt äger mätvärdet."
+  steps={[
+    {
+      label: "Panelen i webbläsaren",
+      note: "Skickar sin fråga och sitt tidsfönster till Grafanas server.",
+    },
+    {
+      label: "Grafana-servern",
+      via: "slår upp datakällans uid",
+      note: "Hittar adress och inloggningsuppgifter för rätt datakälla.",
+      accent: true,
+    },
+    {
+      label: "Frågan skickas vidare",
+      via: "PromQL över HTTP",
+      note: "Samma anrop du själv gjorde med `curl` i Prometheus-delen.",
+    },
+    {
+      label: "Svaret ritas upp",
+      note: "Grafana normaliserar svaret och panelen ritar det.",
+    },
+  ]}
+/>
+
+Konstruktionen har två följder du märker i vardagen. Prometheus behöver aldrig vara nåbar från
+internet — bara från Grafanas server. Och lösenordet till datakällan lämnar aldrig servern, så det
+går inte att läsa ur webbläsaren.
+
+<Del titel="Panelen" />
+
+## Vad en panel är
+
+En **panel** är en ruta på en dashboard som visar resultatet av en eller flera frågor.
+
+Panelen äger tre saker: vilken datakälla den frågar, vad den frågar om, och hur svaret ska ritas.
+Byter du bara den sista av dem — från kurva till siffra — är det fortfarande samma fråga som körs.
+
+En panel behöver inte ha en fråga alls. En textpanel med en rubrik eller en länk är också en panel,
+och den frågar ingenting.
+
+## Panel vs dashboard
+
+Den vanligaste sammanblandningen när man börjar, eftersom man nästan alltid ser dem tillsammans.
+
+**Panelen** är en enda ruta med en fråga och en visualisering.
+
+**Dashboarden** är behållaren: en samling paneler, ett gemensamt tidsfönster och de variabler
+panelerna delar.
+
+Konsekvensen är att en panel sällan går att förstå lösryckt. Den ärver tidsfönstret och variablerna
+från dashboarden den sitter i, och samma panel visar därför olika saker på olika dashboards.
+
+## Frågan som bor i panelen
+
+Frågan lagras i panelens `targets`-lista, och för en Prometheus-datakälla ligger den i fältet `expr`.
+
+```json
+{
+  "id": 23,
+  "type": "stat",
+  "title": "Running pods",
+  "gridPos": { "h": 3, "w": 6, "x": 12, "y": 4 },
+  "targets": [
+    { "expr": "sum(kubelet_running_pods{...})" }
+  ]
+}
+```
+
+Det är exakt samma PromQL du redan kan. `sum()` runt om, ett urval inom klamrar — Prometheus-delen
+äger det språket och Grafana lägger inte till något eget.
+
+Vill du att fler serier ska ritas i samma panel lägger du till fler poster i `targets`. Varje post
+blir en egen fråga med en egen bokstav: `A`, `B`, `C`.
+
+## Vad en data frame är
+
+En **data frame** är den tabellform Grafana översätter varje datakällas svar till: en lista med
+namngivna fält, där varje fält har en typ.
+
+Prometheus svarar med tidsserier, Loki med loggrader och PostgreSQL med tabellrader. Ingen panel
+skulle kunna rita alla tre om den behövde förstå tre svarsformat.
+
+Därför gör datakällans plugin om svaret till en frame med fält som `Time` och `Value` plus
+etiketterna som medföljande metadata. Panelen ser bara framen.
+
+Det är den översättningen som gör att du kan byta paneltyp fritt, och att en tabellpanel kan visa
+data som kom från en tidsseriedatabas.
+
+<Doodle
+  name="tre-kallor-en-frame"
+  caption="Tre olika behållare, samma bricka ut. Panelen ser aldrig något annat än brickan."
+/>
+
+## Time series vs stat vs table
+
+Tre paneltyper som täcker det mesta, och valet mellan dem handlar om vilken fråga läsaren har.
+
+**Time series** ritar utvecklingen över tid som en kurva. Den svarar på *hur har det sett ut?* och är
+rätt val när formen bär informationen — en topp, en trend, en lucka.
+
+**Stat** visar ett enda tal, ofta med en färgad tröskel. Den svarar på *hur är det nu?* och är rätt
+på den översta raden, där någon ska kunna se läget utan att tolka en kurva.
+
+**Table** visar frames som rader och kolumner. Den svarar på *vilka?* — vilka poddar, vilka
+instanser, vilka etiketter.
+
+En stat-panel som får många serier visar bara en av dem om du inte säger något annat. Det ser ut som
+att datan saknas, men frågan behövde en aggregering.
+
+## Vad tidsfönstret är
+
+**Tidsfönstret** är dashboardens gemensamma *från* och *till*, och det skickas med varje fråga.
+
+Det syns i gränssnittet som `Last 6 hours` uppe till höger, och i frågan som `from` och `to`. Ändrar
+du det ställs alla panelernas frågor om, mot samma nya intervall.
+
+Fönstret styr också upplösningen. Grafana räknar ut ett `step` utifrån hur många bildpunkter panelen
+är bred — samma fråga över sex timmar och över trettio dagar ger alltså olika täta datapunkter.
+
+<Callout type="fallgrop">
+**En tom panel betyder oftast fel fönster, inte saknad data.** Ställer du in `Last 5 minutes` på en
+tjänst som skrapas var femte minut kan svaret bli en enda punkt — eller ingen alls.
+
+Samma sak händer åt andra hållet. En `rate(...[5m])` behöver fem minuters historik; frågar du en
+tjänst som just startat om finns den inte, och panelen är tom trots att allt fungerar.
+
+Kontrollera fönstret **innan** du felsöker frågan. Det är den vanligaste falsklarmet i Grafana, och
+det kostar minuter varje gång.
+</Callout>
+
+## Instant vs range
+
+Två sätt att fråga samma datakälla, och paneltypen avgör vilket som är rätt.
+
+**En instant-fråga** ger ett värde per serie: läget just nu. Det är vad en stat-panel behöver, och
+det är en snabb fråga.
+
+**En range-fråga** ger en punkt per steg över hela tidsfönstret. Det är vad en time series-panel
+behöver för att kunna rita en kurva.
+
+Skillnaden märks när en panel är långsam. En range-fråga över trettio dagar med tät upplösning kan
+returnera hundratusentals punkter, medan samma uttryck som instant-fråga returnerar ett fåtal.
+
+<Doodle
+  name="instant-vs-range"
+  caption="Ett fotografi mot en filmremsa. Samma fråga — den ena beställer ett ögonblick, den andra en följd."
+/>
+
+<Del titel="Dashboarden" />
+
+## Rutnätet är 24 kolumner brett
+
+Dashboardens layout är ett rutnät som alltid är **24 kolumner** brett, oavsett skärmstorlek.
+
+Varje panel har en `gridPos` med fyra tal: `w` och `h` för bredd och höjd, `x` och `y` för position.
+Bredden räknas i kolumner, höjden i rader om cirka 30 bildpunkter.
+
+```
+w:12 h:7  @ 0,0     halva bredden
+w:12 h:4  @ 12,0    andra halvan
+w:6  h:3  @ 12,4    en fjärdedel
+```
+
+Att bredden alltid är 24 är därför en praktisk sak att kunna: `w: 12` är halva dashboarden, `w: 8` en
+tredjedel, `w: 6` en fjärdedel. Talen är inte bildpunkter och ändras inte när fönstret ändras.
+
+{/* DOODLE bortvald i steg 2: en bild av rutnätet med tre olika stora paneler
+    hade sagt exakt det blocket ovanför redan säger — samma tre `w`-värden i
+    samma ordning. Poängen är ett talförhållande, inte en form, och då bär
+    raderna det bättre än en teckning. */}
+
+## Vad en variabel är
+
+En **variabel** är ett värde som väljs högst upp på dashboarden och sätts in i panelernas frågor.
+
+I frågan skrivs den med dollartecken. Den här raden är hämtad ur en riktig dashboard:
+
+```
+sum(kubelet_running_pods{cluster="$cluster", job="in
+```
+
+Väljer Johan ett annat kluster i listan skrivs `$cluster` om, alla paneler frågar om, och hela
+dashboarden visar det nya klustret. Utan variabler hade samma dashboard behövt kopieras en gång per
+kluster.
+
+## Query-variabel vs custom-variabel
+
+Var listan med val kommer ifrån, och det är skillnaden mellan en dashboard som håller sig aktuell
+och en som inte gör det.
+
+**En query-variabel** hämtar sina val genom att fråga datakällan. Listan över kluster byggs ur datan
+och innehåller alltid precis de kluster som finns just nu.
+
+**En custom-variabel** är en handskriven lista med värden, separerade med komma. Den ändras bara när
+någon redigerar dashboarden.
+
+Query-variabeln är nästan alltid rätt val för något som förändras — kluster, namnrum, instanser.
+Custom passar för val som inte finns i datan alls, till exempel vilken av två datakällor panelen ska
+fråga.
+
+## Dashboarden är JSON
+
+Allt du klickar ihop i gränssnittet sparas som ett JSON-dokument, och det dokumentet är den enda
+sanningen om dashboarden.
+
+Fältet `schemaVersion` säger vilken version av formatet den är sparad i. Grafana uppgraderar äldre
+dashboards när de öppnas, vilket är därför en dashboard exporterad för tre år sedan fortfarande går
+att importera.
+
+<Split
+  leftTitle="Klickad i gränssnittet"
+  rightTitle="JSON i Git"
+  leftTone="bad"
+  rightTone="good"
+  caption="Samma dashboard. Skillnaden är om någon kan svara på vem som ändrade den, och varför."
+>
+  <div slot="left">
+
+  Dashboarden finns bara i Grafanas databas.
+
+  Ingen historik utöver versionsnumret, ingen granskning, och ingen väg tillbaka om någon råkar
+  spara över en panel.
+
+  En ny miljö får bygga om den för hand.
+
+  </div>
+  <div slot="right">
+
+  JSON-filen ligger i repot och granskas i en pull request, precis som manifesten i
+  Kubernetes-delen.
+
+  Samma fil rullas ut till test och produktion.
+
+  Ändringen syns i diffen: en rad, en fråga, en tröskel.
+
+  </div>
+</Split>
+
+Hur filen faktiskt hamnar i Grafana utan att någon importerar den för hand heter **provisionering**,
+och det tar vi i nästa del.
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer sällan att bygga en dashboard från tomt läge. Det du gör varje vecka är att **läsa** någon
+annans: hitta vilken fråga en panel ställer, och avgöra om den mäter det du tror.
+
+Det som är värt din tid nu är kedjan panel → target → datakälla. Kan du följa den vet du var ett
+felaktigt tal kommer ifrån, och du slipper gissa om problemet sitter i grafen eller i systemet
+bakom.
+
+Egna paneltyper, transformationer, korrelationer mellan datakällor och Grafanas rättighetsmodell kan
+vänta. De blir dina den dag du äger instansen — och de bygger alla på panelen, frågan och
+datakällan.
+
+## Vanliga nybörjarförväxlingar
+
+Grafana lagrar inga mätvärden. Den frågar vidare varje gång du öppnar en panel.
+
+En datakälla är inte en databas. Den är Grafanas anteckning om hur databasen nås.
+
+En långsam dashboard är sällan Grafanas fel. Väntetiden ligger nästan alltid i frågan som skickades
+vidare.
+
+En tom panel betyder inte att datan saknas. Kontrollera tidsfönstret först.
+
+Att byta paneltyp ändrar inte frågan. Det ändrar bara hur samma svar ritas.
+
+Talen i `gridPos` är inte bildpunkter. Bredden räknas i kolumner, och de är alltid 24.
+
+En dashboard som bara finns i gränssnittet finns bara på ett ställe. JSON-filen är dashboarden.
+
+## Prova själv
+
+Vi frågar Grafanas publika instans, `play.grafana.org`. Den kräver ingen inloggning, och alla
+kommandon nedan är läsande.
+
+Börja med att se vilken version du talar med:
+
+```bash
+G=https://play.grafana.org/api
+curl -s $G/health | jq -r .version
+```
+
+Du får något i stil med `13.2.0-31000685436`. Leta sedan upp dashboards:
+
+```bash
+curl -s "$G/search?query=prometheus&limit=3" \
+  | jq -r '.[] | "\(.type)  \(.title)"'
+```
+
+Titta på `type`-kolumnen. Den första raden är `dash-folder` — en **mapp**, inte en dashboard. Söket
+returnerar båda sorterna, och det är den vanligaste anledningen till att en uid från sökningen ger
+`Dashboard not found`.
+
+Hämta en riktig dashboard och räkna dess paneler:
+
+```bash
+D=bf26a4fb-4c49-44b7-a9f2-8f6f57b4c847
+curl -s $G/dashboards/uid/$D \
+  | jq '.dashboard.panels | length'
+```
+
+Svaret är `10`. Titta nu på frågan i en av dem:
+
+```bash
+curl -s $G/dashboards/uid/$D | jq -r '
+  .dashboard.panels[]
+  | select(.title=="Running pods")
+  | .targets[0].expr' | cut -c1-52
+```
+
+```
+sum(kubelet_running_pods{cluster="$cluster", job="in
+```
+
+**Där är hela artikeln i en rad.** Det är PromQL du redan kan läsa, och mitt i den står `$cluster` —
+en variabel som ersätts innan frågan skickas. Fråga efter dashboardens variabler:
+
+```bash
+curl -s $G/dashboards/uid/$D | jq -r '
+  .dashboard.templating.list[]
+  | "\(.name)  \(.type)"'
+```
+
+```
+datasource  custom
+cluster     query
+instance    query
+lokids      datasource
+```
+
+Två query-variabler och två som inte frågar datan. Titta slutligen på rutnätet:
+
+```bash
+curl -s $G/dashboards/uid/$D | jq -r '
+  .dashboard.panels[]
+  | "\(.gridPos.w)x\(.gridPos.h)  \(.type)"' \
+  | head -4
+```
+
+```
+12x7  text
+12x4  stat
+6x3   stat
+6x3   stat
+```
+
+Första panelen är halva bredden, de två sista en fjärdedel var. Bevisa till sist att Grafana bara
+skickar frågan vidare:
+
+```bash
+P=$G/datasources/proxy/uid/grafanacloud-prom
+curl -s "$P/api/v1/query?query=up" | jq -r .status
+```
+
+Svaret är `success`. Lägg märke till sökvägen: `/api/v1/query` är **Prometheus eget API**, exakt det
+du anropade direkt i Prometheus-delen. Du har just ställt samma fråga genom Grafana, och Grafana
+lade ingenting till.
+
+Tre saker som kan förvirra. Instansen är publik och innehållet ändras — försvinner uid:n ovan, kör
+sökkommandot igen och ta en annan. En panel av typen `text` har ändå en `targets`-lista, men utan
+`expr`, vilket ser ut som en trasig fråga och bara betyder att panelen inte frågar något. Och
+`jq -r` på ett fält som saknas skriver `null` i stället för att fela, så en tom rad i utdatan är ett
+svar, inte ett avbrott.
+
+<Callout type="kom-ihag">
+- Grafana **lagrar inga mätvärden**. Den ställer frågan på nytt varje gång panelen öppnas.
+- En **datakälla** är kopplingen till databasen: typ, adress och ett `uid` som paneler pekar på.
+- Webbläsaren frågar Grafanas server, som frågar vidare. Databasen behöver aldrig vara publik.
+- **Panelen** äger datakälla, fråga och visualisering. **Dashboarden** äger tidsfönster och variabler.
+- Frågan bor i `targets`, och för Prometheus i fältet `expr` — samma PromQL som förut.
+- Alla svar översätts till en **data frame**, och det är därför paneltypen går att byta fritt.
+- Rutnätet är alltid **24 kolumner** brett. `w: 12` är halva dashboarden.
+- En **variabel** skrivs `$namn` i frågan. Query-variabeln hämtar sina val ur datan.
+- Dashboarden **är** sitt JSON-dokument. Ligger den bara i gränssnittet finns den på ett ställe.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Du stänger av Prometheus. Vad händer med dashboarden i Grafana?",
+      a: "Panelerna blir tomma direkt. Grafana lagrar inga mätvärden — den ställer frågan på nytt varje gång en panel öppnas. Själva dashboarden finns kvar, eftersom den ligger i Grafanas egen databas tillsammans med användare och inställningar.",
+    },
+    {
+      q: "Vad är skillnaden mellan en datakälla och databasen den pekar på?",
+      a: "Databasen äger värdena och svarar på frågor. Datakällan är Grafanas anteckning om hur den nås: typ, adress, inloggning och ett `uid`. Samma databas kan ha flera datakällor med olika rättigheter, och en datakälla utan databas bakom sig är bara en konfigurationsrad.",
+    },
+    {
+      q: "En panel är tom. Vad kontrollerar du först?",
+      a: "Tidsfönstret. Ett för kort fönster ger för få datapunkter — en `rate(...[5m])` behöver fem minuters historik, och `Last 5 minutes` mot en tjänst som skrapas var femte minut kan ge en enda punkt eller ingen. Det är vanligare än ett fel i frågan.",
+    },
+    {
+      q: "Du byter en panel från time series till stat. Vad händer med frågan?",
+      a: "Ingenting med själva uttrycket — panelen äger datakälla, fråga och visualisering som tre skilda saker. Däremot behöver en stat-panel ett värde per serie, alltså en instant-fråga, medan time series behöver en range-fråga över hela fönstret.",
+    },
+    {
+      q: "Vad betyder `$cluster` mitt i en PromQL-fråga i en panel?",
+      a: "Det är en dashboardvariabel. Värdet väljs i listan högst upp och sätts in i frågan innan den skickas till datakällan. Är den en query-variabel hämtas listan med val ur datan, så den innehåller alltid de kluster som faktiskt finns.",
+    },
+    {
+      q: "Varför spelar det roll om dashboarden ligger som JSON i Git eller bara i Grafana?",
+      a: "För att JSON-filen är dashboarden. Ligger den bara i Grafanas databas finns den på ett ställe, utan granskning och utan väg tillbaka när någon sparar över en panel. I Git granskas ändringen i en pull request och samma fil kan rullas ut till flera miljöer.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- Grafana ställer frågor till andra system och ritar svaren. Den lagrar inga mätvärden själv.
+- I Grafanas egen databas ligger dashboards, användare och inställningar — ingenting annat.
+- En datakälla är en konfigurerad koppling: namn, typ, adress och ett `uid` som inte ändras.
+- Datakällans typ avgör frågespråket. Prometheus ger PromQL, PostgreSQL ger SQL.
+- Webbläsaren frågar Grafanas server, som frågar vidare. Lösenordet lämnar aldrig servern.
+- En panel äger tre saker: datakälla, fråga och visualisering. En textpanel frågar ingenting.
+- Dashboarden äger tidsfönstret och variablerna som panelerna delar.
+- Frågan ligger i `targets`. För Prometheus i `expr`, och det är samma PromQL som förut.
+- Varje datakällas svar översätts till en data frame, vilket gör paneltypen fritt utbytbar.
+- Time series svarar på hur det sett ut, stat på hur det är nu, table på vilka.
+- Tidsfönstret skickas med varje fråga och styr även hur tät upplösningen blir.
+- En tom panel beror oftare på fönstret än på frågan.
+- Instant ger ett värde per serie, range en punkt per steg över hela fönstret.
+- Rutnätet är 24 kolumner brett. `gridPos` räknas i kolumner och rader, inte i bildpunkter.
+- En variabel skrivs `$namn` och ersätts innan frågan skickas.
+- Query-variabeln hämtar sina val ur datan, custom-variabeln ur en handskriven lista.
+- Dashboarden är ett JSON-dokument med ett `schemaVersion`, och det dokumentet är sanningen.
+
+## Nästa del
+
+Nu kan du läsa en dashboard och följa en panel hela vägen ner till frågan den ställer.
+
+Men en dashboard är något någon måste titta på. Det som väcker Johan klockan tre är ett larm, och
+larmet bor inte i panelen — det är ett eget objekt med egen utvärdering och egen väg ut till en
+telefon.
+
+Nästa del handlar om larmregeln i Grafana, varför den inte är samma sak som Prometheus larmregel,
+och hur dashboarden och larmet hamnar i Git i stället för i en databas.

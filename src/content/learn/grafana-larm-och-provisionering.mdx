@@ -1,0 +1,504 @@
+---
+title: 'Larmet, etiketterna och vägen ut'
+description: 'Grafanas larmregel är en kedja, inte ett uttryck — och etiketterna avgör vem som väcks'
+category: 'grafana'
+part: 1
+order: 2
+date: '2026-08-08'
+tags: ['Beginner', 'Grafana', 'Larm']
+---
+
+## Var vi är
+
+Förra delen följde en panel ner till frågan den ställer, och slutade med att dashboarden är ett
+JSON-dokument som hör hemma i Git.
+
+En dashboard är dock något någon måste titta på. Det som väcker Johan klockan tre är ett larm, och
+larmet bor inte i panelen — det är ett eget objekt med egen utvärdering och egen väg ut till en
+telefon.
+
+Den här delen går från regeln till mottagaren. Zoomen ligger på en enskild larmregel och dess väg
+ut; jourrotation, eskalering och postmortem hör till driftarbetet och ligger utanför. Övningarna
+körs mot samma publika instans som förra delen.
+
+<Del titel="Regeln" />
+
+## Vad en larmregel i Grafana är
+
+En **larmregel** i Grafana är ett objekt som utvärderas med jämna mellanrum och som producerar ett
+tillstånd: normalt, väntande eller larmande.
+
+Regeln bor i en mapp och i en regelgrupp, inte i en dashboard. Den kan peka tillbaka på en panel,
+men den lever vidare även om panelen tas bort.
+
+Det gör larmet till något annat än en visualisering. En panel visar något för den som tittar; en
+regel frågar även när ingen tittar.
+
+## Grafana-larm vs Prometheus-larm
+
+Prometheus-delen införde larmregeln som en PromQL-fråga plus ett villkor. Grafana gör det
+annorlunda, och skillnaden förklarar det mesta som förvirrar i gränssnittet.
+
+**Prometheus larmregel** är **ett** uttryck som i sig är sant eller falskt: `... > 0.05`. Villkoret
+är inbakat i PromQL:en, och regeln kan bara fråga Prometheus.
+
+**Grafanas larmregel** är en **kedja av steg**. Först en eller flera frågor, sedan ett eller flera
+uttryck som bearbetar svaren, och sist ett steg som avgör om det ska larma.
+
+Priset är fler rutor i gränssnittet. Vinsten är att stegen kan fråga *olika* datakällor — en
+Prometheus-fråga och en SQL-fråga i samma regel — och att villkoret är synligt som ett eget steg i
+stället för nedgrävt i en textrad.
+
+## Frågan, reduceringen och tröskeln
+
+Den vanligaste kedjan har tre steg, och den ser likadan ut i nästan varje regel du kommer att läsa.
+
+<Flow
+  caption="Tre steg. Bara det första lämnar Grafana — de två andra räknar på svaret som redan kommit."
+  steps={[
+    {
+      label: "Frågan",
+      via: "PromQL mot datakällan",
+      note: "Ger en serie värden över tid, precis som en panel skulle fått.",
+    },
+    {
+      label: "Reduceringen",
+      via: "`reduce`",
+      note: "Pressar ihop varje serie till **ett** tal — senaste, medel eller max.",
+      accent: true,
+    },
+    {
+      label: "Tröskeln",
+      via: "`threshold`",
+      note: "Jämför talet mot en gräns och svarar sant eller falskt.",
+    },
+  ]}
+/>
+
+Reduceringen finns för att en tröskel inte kan jämföra en kurva med ett tal. Något måste först
+bestämma *vilket* värde i kurvan som ska prövas, och det är precis det steget.
+
+Hoppar du över reduceringen och lägger tröskeln direkt på frågan får du ofta ett fel om att
+uttrycket fick flera värden där det väntade ett.
+
+## Vad ett uttryck är
+
+Ett **uttryck** är ett steg som räknar på resultatet från ett tidigare steg i stället för att fråga
+en datakälla.
+
+Uttryck känns igen på att deras datakälla heter `__expr__`. Det är inte en riktig datakälla utan en
+markör för att steget körs i Grafanas server.
+
+De vanligaste är `reduce`, `threshold` och `math`. Det sista låter dig räkna fritt — dividera två
+frågor med varandra, eller dra bort en baslinje.
+
+## Query vs uttryck
+
+Två steg som ser likadana ut i listan och gör helt olika saker.
+
+**En query** går ut på nätet. Den har ett riktigt datakälle-uid, tar tid, och kan misslyckas för att
+databasen är nere.
+
+**Ett uttryck** går ingenstans. Det har `__expr__` som datakälla, räknar på data som redan finns i
+minnet, och pekar på ett tidigare steg genom dess refId.
+
+Konsekvensen märks vid felsökning. Ett långsamt larm beror på en query; ett larm som ger konstiga
+tal beror nästan alltid på ett uttryck.
+
+## Vad `condition` pekar på
+
+Fältet **`condition`** namnger vilket steg i kedjan som avgör larmet.
+
+```json
+{
+  "title": "ChatServiceErrorRate",
+  "condition": "alert",
+  "for": "1m",
+  "noDataState": "OK",
+  "execErrState": "Error",
+  "labels": {
+    "severity": "warning",
+    "team_name": "platform"
+  }
+}
+```
+
+Här heter det avgörande steget `alert`, och det är tröskeln. De två stegen före kör också, men deras
+svar används bara som indata.
+
+Det förklarar en förvirrande egenskap: du kan ha uttryck i en regel som inte påverkar någonting.
+Pekar inte `condition` på dem är de bara mellanled.
+
+<Del titel="Tillstånden" />
+
+## Vad en larminstans är
+
+En **larminstans** är regeln utvärderad för **en** etikettuppsättning.
+
+Frågar regeln efter felfrekvensen per tjänst får du en serie per tjänst — och därmed en instans per
+tjänst. Var och en har sitt eget tillstånd, sin egen väntetid och sin egen väg ut.
+
+Det är därför en enda regel kan skicka fem notifieringar. Regeln är en; instanserna är så många som
+frågan råkade returnera.
+
+<Doodle
+  name="en-regel-tre-instanser"
+  caption="Ett papper, tre kort. Regeln skrevs en gång — etiketterna gjorde den till tre."
+/>
+
+Och det är också därför en fråga utan aggregering är farlig i en larmregel. Glömmer du `sum by` kan
+en regel bli hundra instanser, och hundra notifieringar.
+
+## Normal, Pending och Alerting
+
+En instans rör sig mellan tre tillstånd, och namnen är Grafanas egna.
+
+**Normal** betyder att villkoret är falskt. Inget händer, och ingenting skickas.
+
+**Pending** betyder att villkoret just blivit sant men ännu inte varit sant tillräckligt länge.
+Prometheus-delen införde `for:` — det är samma fält, och Pending är namnet på tiden det mäter.
+
+**Alerting** betyder att villkoret varit sant hela `for`-perioden. Först nu skickas något.
+
+Att väntetiden har ett eget tillståndsnamn är praktiskt: i gränssnittet ser du skillnaden mellan
+"ingenting händer" och "något håller på att bli fel", vilket är två helt olika lägen.
+
+## Vad `noDataState` gör
+
+**`noDataState`** bestämmer vad instansen ska bli när frågan inte returnerar någon data alls.
+
+Skillnaden mot ett falskt villkor är viktig. Ett falskt villkor betyder *jag frågade och svaret var
+bra*. Ingen data betyder *jag fick inget svar att bedöma*.
+
+De tre valen är `NoData`, som gör det till ett eget larm, `OK`, som behandlar det som normalt, och
+`Alerting`, som larmar.
+
+<Callout type="fallgrop">
+**`noDataState: OK` gör att larmet tystnar precis när systemet är som mest trasigt.**
+
+Slutar exportören svara försvinner serierna. Med `OK` blir instansen normal, larmet slutar gälla,
+och gränssnittet ser lugnt ut — samtidigt som ingen vet någonting om tjänsten.
+
+Det är inte ett teoretiskt problem. På den publika instansen jag mätte hade **85 regler `OK` och
+16 hade `NoData`** — det bekväma valet är också det vanliga.
+
+Regeln som följer: `OK` är rimligt för något som legitimt kan sluta rapportera, till exempel ett
+batchjobb som bara kör på natten. För en tjänst som ska svara dygnet runt är `NoData` rätt.
+</Callout>
+
+## `noDataState` vs `execErrState`
+
+Två fält bredvid varandra som täcker två olika sorters tystnad.
+
+**`noDataState`** gäller när frågan lyckades men gav noll serier. Databasen svarade — det fanns
+bara ingenting att svara med.
+
+**`execErrState`** gäller när utvärderingen misslyckades: datakällan var nere, frågan var
+syntaktiskt fel, eller ett uttryck kraschade.
+
+`execErrState` har dessutom ett val som `noDataState` saknar: **`KeepLast`**, som behåller
+föregående tillstånd. Det är ofta rätt för en flaky datakälla, eftersom ett kort avbrott annars
+skickar ett larm om Grafana i stället för om tjänsten.
+
+<Del titel="Vägen ut" />
+
+## Larmets etiketter vs mätvärdets etiketter
+
+Ordet *etikett* betyder två saker i den här kedjan, och blandningen kostar felsökningstid.
+
+**Mätvärdets etiketter** kommer från datan. `status="500"`, `instance="web-3"` — Prometheus-delen
+äger dem, och de avgör vilka serier frågan returnerar.
+
+**Larmregelns etiketter** skriver du själv i regeln. `severity: warning`, `team_name: platform` —
+de avgör vart notifieringen ska ta vägen.
+
+Instansens etiketter är summan av båda. Frågans etiketter följer med, och regelns läggs till ovanpå.
+Det är därför du kan routa på `service` utan att skriva den själv, men bara om frågan behöll den.
+
+## Vad en annotation är
+
+En **annotation** är ett fritextfält på regeln som följer med notifieringen men aldrig påverkar
+routningen.
+
+`summary` och `description` är de vanliga, och `runbook_url` är den som gör mest nytta klockan tre:
+en länk till vad man faktiskt ska göra.
+
+Två annotationer sätts av Grafana självt när larmet skapas från en panel: `__dashboardUid__` och
+`__panelId__`. De är det som gör att notifieringen kan länka tillbaka till exakt den panel du läste
+i förra delen.
+
+## Vad en kontaktpunkt är
+
+En **kontaktpunkt** är en namngiven mottagare: vart en notifiering ska skickas och i vilket format.
+
+Typen avgör kanalen. På instansen jag mätte fanns åtta stycken — tre `slack`, tre `email` och två
+`webhook`.
+
+En kontaktpunkt vet ingenting om vilka larm som finns. Den är bara en adress med ett namn, och den
+namnger sig själv i routningen.
+
+## Vad en notifieringspolicy är
+
+En **notifieringspolicy** är ett träd som matchar en larminstans etiketter mot regler och avgör
+vilken kontaktpunkt som får den.
+
+Roten har alltid en kontaktpunkt — den som tar emot allt som inte matchar något annat. Under den
+ligger grenar med matchare på etiketter.
+
+<Doodle
+  name="sorteringsfacken"
+  caption="Ett kuvert, tre fack. Etiketten på kuvertet avgör vilket fack det hamnar i."
+/>
+
+En gren utan egen kontaktpunkt ärver förälderns. Och `continue: true` på en gren betyder att
+matchningen fortsätter nedåt i stället för att stanna — så samma larm kan hamna på två ställen.
+
+## Kontaktpunkt vs policy
+
+Den sista distinktionen, och den avgör var du ska leta när fel person blir väckt.
+
+**Kontaktpunkten** svarar på *vart*. En Slack-kanal, en e-postadress, en webhook.
+
+**Policyn** svarar på *vilka*. Vilka etiketter som ska ta vilken väg genom trädet.
+
+Blir ingen väckt är felet nästan alltid i policyn — larmet gick till roten i stället för till grenen,
+eftersom etiketten inte fanns eller stavades annorlunda. Blir fel person väckt är felet också i
+policyn. Kontaktpunkten är sällan boven; den gör bara som den blir tillsagd.
+
+## Vad provisionering är
+
+**Provisionering** är att låta Grafana läsa in dashboards, larmregler, kontaktpunkter och policyer
+från filer i stället för att någon klickar in dem.
+
+Filerna ligger i repot och rullas ut som all annan kod. Förra delen slutade med precis det
+argumentet för dashboards; det gäller larmen lika mycket, och mer — en larmregel som ingen kan
+granska är en regel ingen vet varför den ser ut som den gör.
+
+Grafana märker allt som kommit utifrån med fältet `provenance`.
+
+<Split
+  leftTitle="Klickad regel"
+  rightTitle="Provisionerad regel"
+  leftTone="bad"
+  rightTone="good"
+  caption="Samma regel. Skillnaden är om gränssnittet vågar låta någon ändra den."
+>
+  <div slot="left">
+
+  Fältet `provenance` saknas.
+
+  Regeln går att ändra av vem som helst med redigeringsrätt, direkt i gränssnittet.
+
+  Nästa utrullning av filerna vet ingenting om ändringen, och den överlever tills någon råkar spara
+  över den.
+
+  </div>
+  <div slot="right">
+
+  `provenance` är satt — till exempel `api` eller `file`.
+
+  Gränssnittet visar regeln som skrivskyddad. Ändringen måste gå genom filen.
+
+  Filen är sanningen, och diffen visar vem som flyttade tröskeln och varför.
+
+  </div>
+</Split>
+
+<Del titel="Öva och förstå" />
+
+## Vad det här betyder i ditt arbete
+
+Du kommer att skriva ett fåtal larmregler och läsa många. Det du gör oftast är att svara på frågan
+*varför gick det här larmet?* — och svaret sitter nästan alltid i kedjan: vilken fråga, vilken
+reducering, vilken tröskel.
+
+Det som är värt din tid nu är etiketterna. De avgör både hur många instanser regeln blir och vem som
+väcks, och de två felen — hundra notifieringar respektive noll — har samma orsak i olika riktningar.
+
+Jourrotation, eskaleringskedjor, tystnader under planerat underhåll och larm som mäter felbudget
+kan vänta. De blir dina den dag du står i en jour — och de bygger alla på regeln, etiketten och
+policyn.
+
+## Vanliga nybörjarförväxlingar
+
+En larmregel är inte en panel. Den bor i en mapp, utvärderas även när ingen tittar, och överlever
+att panelen tas bort.
+
+Grafanas larmregel är inte ett enda uttryck. Den är en kedja där ett steg pekas ut som villkor.
+
+Ett uttryck är inte en fråga. Det har `__expr__` som datakälla och går aldrig ut på nätet.
+
+Ingen data är inte samma sak som ett falskt villkor. Det ena betyder att svaret var bra, det andra
+att det inte fanns något svar.
+
+En regel är inte en notifiering. Regeln blir så många instanser som etikettuppsättningar frågan
+returnerade.
+
+Regelns etiketter är inte mätvärdets. De ena kommer från datan, de andra skriver du för att styra
+routningen.
+
+En kontaktpunkt väljer inte sina larm. Det gör policyn.
+
+## Prova själv
+
+Vi frågar samma publika instans som i förra delen. Allt nedan är läsande.
+
+Räkna först hur många regler som finns:
+
+```bash
+G=https://play.grafana.org/api
+curl -s $G/v1/provisioning/alert-rules | jq length
+```
+
+Jag fick `121`. Titta sedan på kedjan i en regel som har den klassiska trestegsformen:
+
+```bash
+curl -s $G/v1/provisioning/alert-rules | jq -r '
+  .[] | select(.title=="ChatServiceErrorRate")
+  | .data[] | "\(.refId)  \(.datasourceUid)"'
+```
+
+```
+errorRatio  grafanacloud-prom
+reduce      __expr__
+alert       __expr__
+```
+
+**Där är hela avsnittet i tre rader.** Ett steg går ut till Prometheus; de två andra körs i Grafana.
+Fråga nu vilket steg som avgör:
+
+```bash
+curl -s $G/v1/provisioning/alert-rules | jq -r '
+  .[] | select(.title=="ChatServiceErrorRate")
+  | "\(.condition)  \(.for)  \(.noDataState)"'
+```
+
+```
+alert  1m  OK
+```
+
+Villkoret är steget som heter `alert`, väntetiden en minut, och vid utebliven data blir instansen
+normal. Se hur vanligt det valet är:
+
+```bash
+curl -s $G/v1/provisioning/alert-rules \
+  | jq -c '[.[] | .noDataState] | group_by(.)
+      | map({(.[0]): length}) | add'
+```
+
+```
+{"":20,"NoData":16,"OK":85}
+```
+
+Titta sedan på mottagarna och på trädet som väljer mellan dem:
+
+```bash
+curl -s $G/v1/provisioning/contact-points \
+  | jq -r '.[] | "\(.type)  \(.name)"'
+```
+
+```bash
+curl -s $G/v1/provisioning/policies | jq -c '
+  .routes[] | {m:.object_matchers, r:.receiver}'
+```
+
+```
+{"m":[["org","=","foo"]],"r":null}
+```
+
+Den första grenen har `null` som mottagare. Det är inte trasigt — grenen matchar bara på etiketten
+och ärver förälderns kontaktpunkt.
+
+Kontrollera slutligen hur många regler som är provisionerade:
+
+```bash
+curl -s $G/v1/provisioning/alert-rules \
+  | jq -c '[.[] | .provenance // "ingen"]
+      | group_by(.) | map({(.[0]): length}) | add'
+```
+
+```
+{"api":103,"ingen":18}
+```
+
+Tre saker som kan förvirra. **Skriver du samma fråga som `[.[].provenance // "ingen"]` får du bara
+`{"api":103}`** — de arton reglerna försvinner utan felmeddelande, eftersom `//` i jq med en ström
+till vänster returnerar de sanna värdena och tyst släpper `null`. Instansen är dessutom publik och
+regler kommer och går, så dina tal blir inte mina; formen på kedjan håller sig däremot. Och
+`/api/alertmanager/...` svarar `403` även om `/api/v1/provisioning/...` svarar `200` — det är två
+olika API:er med olika rättigheter, inte ett trasigt anrop.
+
+<Callout type="kom-ihag">
+- En **larmregel** bor i en mapp, inte i en dashboard, och utvärderas även när ingen tittar.
+- Grafanas regel är en **kedja**: fråga → `reduce` → `threshold`. `condition` pekar ut villkoret.
+- Ett **uttryck** har `__expr__` som datakälla och går aldrig ut på nätet.
+- En **larminstans** är regeln för en etikettuppsättning. En regel kan bli hundra notifieringar.
+- **Pending** är namnet på tiden `for` mäter. **Alerting** kommer först efter den.
+- `noDataState: OK` tystar larmet när datan försvinner — bekvämt, och nästan alltid fel för en tjänst.
+- `execErrState` har `KeepLast`, som räddar dig från larm om en flaky datakälla.
+- Regelns etiketter styr **routningen**. Mätvärdets etiketter kommer från datan.
+- **Kontaktpunkten** är vart. **Policyn** är vilka. Fel person väckt betyder nästan alltid policyn.
+- `provenance` markerar att regeln kom från en fil, och gör den skrivskyddad i gränssnittet.
+</Callout>
+
+<Check
+  items={[
+    {
+      q: "Varför har Grafanas larmregel tre steg där Prometheus klarar sig med ett uttryck?",
+      a: "För att villkoret ligger som ett eget steg i stället för inbakat i PromQL:en. Frågan hämtar en serie, `reduce` pressar ihop den till ett tal, och `threshold` jämför talet med en gräns. Priset är fler rutor; vinsten är att stegen kan fråga olika datakällor och att villkoret är synligt.",
+    },
+    {
+      q: "Vad skiljer ett uttryck från en query i regelns steglista?",
+      a: "Datakällan. En query har ett riktigt datakälle-uid och går ut på nätet. Ett uttryck har `__expr__`, körs i Grafanas server och räknar på ett tidigare stegs resultat. Ett långsamt larm beror på en query; ett larm med konstiga tal på ett uttryck.",
+    },
+    {
+      q: "En regel skickar plötsligt trettio notifieringar i stället för en. Vad har hänt?",
+      a: "Frågan returnerar trettio serier, och regeln blev trettio larminstanser — en per etikettuppsättning. Nästan alltid saknas en aggregering: utan `sum by (tjänst)` får du en instans per instans, sökväg och statuskod i stället för en per tjänst.",
+    },
+    {
+      q: "Er exportör slutar svara. Regeln har `noDataState: OK`. Vad ser jouren?",
+      a: "Ingenting. Serierna försvinner, instansen blir normal, och gränssnittet ser lugnt ut — samtidigt som ingen vet något om tjänsten. För något som ska svara dygnet runt är `NoData` rätt val; `OK` passar det som legitimt kan sluta rapportera, som ett nattligt batchjobb.",
+    },
+    {
+      q: "Vad är skillnaden mellan regelns etiketter och mätvärdets?",
+      a: "Mätvärdets etiketter kommer från datan och avgör vilka serier frågan returnerar. Regelns etiketter skriver du själv — `severity`, `team_name` — och de avgör vart notifieringen routas. Instansen bär båda, eftersom frågans etiketter följer med och regelns läggs till ovanpå.",
+    },
+    {
+      q: "Larmet gick, men fel team blev väckt. Var letar du?",
+      a: "I notifieringspolicyn. Kontaktpunkten är bara en adress som gör som den blir tillsagd. Antingen matchade ingen gren så larmet föll till roten, eller så matchade fel gren — ofta för att en etikett saknas på instansen eller stavas annorlunda i matcharen.",
+    },
+  ]}
+/>
+
+## Snabb sammanfattning
+
+- En larmregel är ett eget objekt i en mapp och en regelgrupp, inte en del av en dashboard.
+- Prometheus larmregel är ett uttryck. Grafanas är en kedja av steg.
+- Den vanliga kedjan är fråga → `reduce` → `threshold`.
+- Reduceringen finns för att en tröskel inte kan jämföra en kurva med ett tal.
+- Ett uttryck har `__expr__` som datakälla och räknar på ett tidigare steg.
+- `condition` namnger vilket steg som avgör larmet. Övriga steg är mellanled.
+- En larminstans är regeln utvärderad för en etikettuppsättning.
+- En regel utan aggregering i frågan kan bli hundra instanser och hundra notifieringar.
+- Normal, Pending och Alerting är de tre tillstånden. Pending är tiden `for` mäter.
+- `noDataState` gäller när frågan gav noll serier. `execErrState` när utvärderingen misslyckades.
+- `KeepLast` finns bara på `execErrState` och räddar dig från larm om en flaky datakälla.
+- Regelns etiketter styr routningen. Mätvärdets etiketter kommer från datan. Instansen bär båda.
+- En annotation följer med notifieringen men påverkar aldrig routningen.
+- `__dashboardUid__` och `__panelId__` är det som länkar notifieringen tillbaka till panelen.
+- En kontaktpunkt är en namngiven mottagare. Den vet ingenting om vilka larm som finns.
+- Policyn är ett träd av matchare på etiketter. Roten tar allt som inte matchar något annat.
+- En gren utan egen kontaktpunkt ärver förälderns. `continue: true` låter matchningen gå vidare.
+- `provenance` markerar att objektet kom från en fil, och gränssnittet gör det skrivskyddat.
+
+## Nästa del
+
+Därmed står Grafana-grunderna: panelen och frågan i förra delen, och nu regeln som frågar när ingen
+tittar.
+
+En sak har den här delen tagit för given. Larmet säger *att* något är fel och ungefär var — men
+svaret på *varför* står i loggarna, och en logg som inte går att fråga är lika tyst som ingen logg
+alls.
+
+Nästa serie handlar om Loki: varför den indexerar etiketter i stället för ord, hur LogQL liknar och
+skiljer sig från PromQL, och hur du går från larmet du just byggt till den loggrad som förklarar det.
