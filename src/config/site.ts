@@ -47,13 +47,16 @@ const site = {
         tagline: "Fullstack · Cloud · Embedded",
     },
 
-    // Vänster-nav. Learn Hub behålls devOnly (nåbar via URL, dold i prod-nav).
+    // Vänster-nav. devOnly-poster byggs inte alls i prod (se utils/content.ts),
+    // så länken och sidan försvinner tillsammans — ingen kan bli en död länk.
+    // Learn Hub har ett eget undantag: hubben ÄR publik, men bara de kategorier
+    // som har isVisible: true. Därför står den kvar utan devOnly.
     navigation: [
         { name: "Hem", subtitle: "Index", href: "/" },
         { name: "Arbete", subtitle: "Projekt", href: "/works/" },
         { name: "Fältnoteringar", subtitle: "Notes", href: "/posts/" },
-        { name: "Learn Hub", subtitle: "Docs", href: "/learn-hub/", devOnly: true },
-        { name: "För HR", subtitle: "Rekrytering", href: "/for-hr/" },
+        { name: "Learn Hub", subtitle: "Docs", href: "/learn-hub/" },
+        { name: "För HR", subtitle: "Rekrytering", href: "/for-hr/", devOnly: true },
     ] as NavItem[],
 
     social: [

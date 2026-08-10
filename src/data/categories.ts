@@ -87,6 +87,10 @@ export interface Category {
     domain: DomainSlug;
     /** Hubbens egen indelning — det som faktiskt visas. */
     group: CategoryGroupSlug;
+    /** Publik i prod-bygget. `false` = kategorin byggs inte alls där (ingen
+     *  sida, inget i sitemapen) men finns kvar i dev och i Cloudflares
+     *  preview-miljö. Grinden sitter i utils/content.ts. Att släppa en
+     *  kategori publikt = byta false → true och merga till main. */
     isVisible?: boolean;
 }
 
@@ -116,7 +120,7 @@ export const categories: Category[] = [
         slug: "helm",
         group: "containrar",
         domain: "cloud",
-        isVisible: true,
+        isVisible: false,
     },
     {
         title: "Terraform",
@@ -125,7 +129,7 @@ export const categories: Category[] = [
         slug: "terraform",
         group: "iac",
         domain: "cloud",
-        isVisible: true,
+        isVisible: false,
     },
     {
         title: "Ansible",
@@ -134,7 +138,7 @@ export const categories: Category[] = [
         slug: "ansible",
         group: "iac",
         domain: "cloud",
-        isVisible: true,
+        isVisible: false,
     },
     {
         title: "Azure",
@@ -143,7 +147,7 @@ export const categories: Category[] = [
         slug: "azure",
         group: "moln",
         domain: "cloud",
-        isVisible: true,
+        isVisible: false,
     },
     {
         title: "AWS",
@@ -152,7 +156,7 @@ export const categories: Category[] = [
         slug: "aws",
         group: "moln",
         domain: "cloud",
-        isVisible: true,
+        isVisible: false,
     },
     {
         title: "CI/CD & pipelines",
@@ -161,7 +165,7 @@ export const categories: Category[] = [
         slug: "cicd",
         group: "leverans",
         domain: "cloud",
-        isVisible: true,
+        isVisible: false,
     },
     // Bröts ut ur "cicd" 2026-08-09, av samma skäl som Prometheus och
     // OpenTelemetry lämnade "observability": principkategorin ska kunna växa
@@ -173,7 +177,7 @@ export const categories: Category[] = [
         slug: "github-actions",
         group: "leverans",
         domain: "cloud",
-        isVisible: true,
+        isVisible: false,
     },
     {
         title: "ArgoCD & GitOps",
@@ -182,7 +186,7 @@ export const categories: Category[] = [
         slug: "argocd",
         group: "leverans",
         domain: "cloud",
-        isVisible: true,
+        isVisible: false,
     },
     // Samma ordning som i observability-gruppen: principerna först, sedan ett
     // verktyg per form — strömmen som ligger kvar, och kön som töms.
@@ -193,7 +197,7 @@ export const categories: Category[] = [
         slug: "meddelanden",
         group: "meddelanden",
         domain: "cloud",
-        isVisible: true,
+        isVisible: false,
     },
     {
         title: "Kafka",
@@ -202,7 +206,7 @@ export const categories: Category[] = [
         slug: "kafka",
         group: "meddelanden",
         domain: "cloud",
-        isVisible: true,
+        isVisible: false,
     },
     {
         title: "RabbitMQ",
@@ -211,7 +215,7 @@ export const categories: Category[] = [
         slug: "rabbitmq",
         group: "meddelanden",
         domain: "cloud",
-        isVisible: true,
+        isVisible: false,
     },
     // Namnet bär tillägget "& SRE" med flit. Bredvid Grafana och Loki läser
     // "Observability" ensamt som ett sjätte verktyg; tillägget säger att det är
@@ -223,7 +227,7 @@ export const categories: Category[] = [
         slug: "observability",
         group: "observability",
         domain: "cloud",
-        isVisible: true,
+        isVisible: false,
     },
     // Ordningen i gruppen är inte alfabetisk utan pedagogisk: principerna
     // först, sedan ett verktyg per signal — mätvärde, logg, spår — och sist
@@ -235,7 +239,7 @@ export const categories: Category[] = [
         slug: "prometheus",
         group: "observability",
         domain: "cloud",
-        isVisible: true,
+        isVisible: false,
     },
     // Loki är det enda av verktygen utan varumärkeslogga i något av de fyra
     // installerade ikonpaketen — därför neutral mdi:, som ärver accenten.
@@ -246,7 +250,7 @@ export const categories: Category[] = [
         slug: "loki",
         group: "observability",
         domain: "cloud",
-        isVisible: true,
+        isVisible: false,
     },
     {
         title: "OpenTelemetry",
@@ -255,7 +259,7 @@ export const categories: Category[] = [
         slug: "opentelemetry",
         group: "observability",
         domain: "cloud",
-        isVisible: true,
+        isVisible: false,
     },
     {
         title: "Grafana",
@@ -264,7 +268,7 @@ export const categories: Category[] = [
         slug: "grafana",
         group: "observability",
         domain: "cloud",
-        isVisible: true,
+        isVisible: false,
     },
     {
         title: "InfluxDB",
@@ -273,7 +277,7 @@ export const categories: Category[] = [
         slug: "influxdb",
         group: "data",
         domain: "cloud",
-        isVisible: true,
+        isVisible: false,
     },
     {
         title: "Cybersecurity",
@@ -282,7 +286,7 @@ export const categories: Category[] = [
         slug: "cybersecurity",
         group: "sakerhet",
         domain: "web",
-        isVisible: true,
+        isVisible: false,
     },
     {
         title: "Linux & terminalen",
@@ -291,7 +295,7 @@ export const categories: Category[] = [
         slug: "linux",
         group: "fundament",
         domain: "cloud",
-        isVisible: true,
+        isVisible: false,
     },
     {
         title: "Nätverk & HTTP",
@@ -300,7 +304,7 @@ export const categories: Category[] = [
         slug: "natverk",
         group: "fundament",
         domain: "web",
-        isVisible: true,
+        isVisible: false,
     },
     {
         title: "IoT & Embedded",
@@ -309,7 +313,7 @@ export const categories: Category[] = [
         slug: "embedded",
         group: "iot",
         domain: "embedded",
-        isVisible: true,
+        isVisible: false,
     },
     {
         title: "Git & versionshantering",
@@ -318,7 +322,7 @@ export const categories: Category[] = [
         slug: "git",
         group: "fundament",
         domain: "web",
-        isVisible: true,
+        isVisible: false,
     },
     // Ligger i "fundament" och inte i en egen verktygsgrupp med flit: hela
     // poängen med kategorin är att den är oberoende av ramverk. Bo sa
@@ -331,7 +335,7 @@ export const categories: Category[] = [
         slug: "testning",
         group: "fundament",
         domain: "web",
-        isVisible: true,
+        isVisible: false,
     },
     {
         title: "API:er & REST",
@@ -340,7 +344,7 @@ export const categories: Category[] = [
         slug: "api",
         group: "data",
         domain: "web",
-        isVisible: true,
+        isVisible: false,
     },
     {
         title: "Databaser & SQL",
@@ -349,7 +353,7 @@ export const categories: Category[] = [
         slug: "sql",
         group: "data",
         domain: "web",
-        isVisible: true,
+        isVisible: false,
     },
     // Samma uppdelning som observability-gruppen: den agnostiska kategorin
     // ("Databaser & SQL") äger tabeller, nycklar, JOIN, index och
@@ -362,6 +366,6 @@ export const categories: Category[] = [
         slug: "postgresql",
         group: "data",
         domain: "web",
-        isVisible: true,
+        isVisible: false,
     },
 ];

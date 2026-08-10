@@ -1,13 +1,15 @@
 ---
 // Vänster-navigation (Breeze-port). Datadriven via site.navigation.
-// devOnly-poster (t.ex. Learn Hub) döljs i prod men syns i `astro dev`.
+// devOnly-poster (Learn Hub, För HR) döljs i prod-bygget men syns i `astro dev`
+// och i Cloudflares preview-miljö — samma grind som allt annat ofärdigt.
 // Aktiv rutt highlightas; pil glider in vid hover.
 import site from "../../config/site";
 import { Icon } from "astro-icon/components";
+import { SHOW_UNPUBLISHED } from "../../utils/content";
 
 const currentPath = Astro.url.pathname;
 const items = site.navigation.filter(
-  (item) => !item.devOnly || import.meta.env.DEV,
+  (item) => !item.devOnly || SHOW_UNPUBLISHED,
 );
 ---
 

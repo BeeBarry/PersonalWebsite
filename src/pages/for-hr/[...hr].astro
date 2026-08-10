@@ -11,7 +11,16 @@ import Translate from "../../components/hr/Translate.astro";
 import Faq from "../../components/hr/Faq.astro";
 import Glossary from "../../components/hr/Glossary.astro";
 import site from "../../config/site";
+import { SHOW_HR } from "../../utils/content";
 import "../../styles/hr.css";
+
+// Rutten heter [...hr] och inte index av ett enda skäl: en statisk index.astro
+// byggs ALLTID, och HR-guiden är ofärdig och ska inte finnas i prod-bygget.
+// Rest-parametern ger en getStaticPaths att stänga av — tom lista = ingen sida,
+// ingen URL, inget i sitemapen. Enda pathen som genereras är /for-hr/ självt.
+export function getStaticPaths() {
+  return SHOW_HR ? [{ params: { hr: undefined } }] : [];
+}
 
 // Kontaktvägarna hämtas ur site.social — samma adresser som i sidfoten.
 const linkedin = site.social.find((s) => s.name === "LinkedIn")?.href ?? "#";

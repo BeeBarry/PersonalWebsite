@@ -2,14 +2,15 @@
 import { getCollection, type CollectionEntry } from "astro:content";
 import AppLayout from "../../../layouts/AppLayout.astro";
 import { categories } from "../../../data/categories";
-import { showEntry } from "../../../utils/content";
+import { showLearnEntry } from "../../../utils/content";
 import { Icon } from "astro-icon/components";
 
 // Bara kategorier som faktiskt har minst en publicerad artikel får en sida —
-// tomma kategorier blev annars återvändsgränder. Samma showEntry-filter som
-// listningen i learn-hub/index.astro, så inga döda länkar kan uppstå.
+// tomma kategorier blev annars återvändsgränder. showLearnEntry bär BÅDA
+// grindarna (artikelns draft + kategorins isVisible), så en dold kategori
+// varken listas eller genereras.
 export async function getStaticPaths() {
-  const published = await getCollection("learn", showEntry);
+  const published = await getCollection("learn", showLearnEntry);
   return categories
     .filter(({ slug }) => published.some((a) => a.data.category === slug))
     .map(({ slug, title }) => ({
@@ -23,7 +24,7 @@ const { categoryTitle } = Astro.props;
 
 const articles = await getCollection(
   "learn",
-  (e) => e.data.category === category && showEntry(e),
+  (e) => e.data.category === category && showLearnEntry(e),
 );
 
 // Serien grupperas per del och sorteras del för del, steg för steg.

@@ -3,38 +3,46 @@ variables:
   # (annars kan jobbet hänga/faila i CI vid första nedladdningen).
   COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
 
+# GitLab publicerar inget längre — Cloudflare Pages bygger och deployar via
+# Git-integrationen (develop → preview, main → prod). Det som är kvar här är
+# en kvalitetsgrind som får blockera en merge.
+#
+# workflow:rules är GitLabs eget mönster mot dubbla pipelines: utan det får en
+# push på en gren med öppen MR både en branch-pipeline och en MR-pipeline.
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - if: $CI_COMMIT_BRANCH
+
 stages:
   - test
-  - deploy
 
-# Detta är "testet" för koden som kommer in i dev branchen.
-test_develop:
+# Bygget körs UTAN PUBLIC_SHOW_UNPUBLISHED, alltså i samma läge som prod.
+# Det är den varianten som kan gå sönder skarpt — preview-läget bygger fler
+# sidor och döljer därför inte en trasig grind.
+bygg:
   stage: test
-  image: node:lts
+  image: node:22
   before_script:
     - corepack enable
     - pnpm install --frozen-lockfile
   script:
     - pnpm build
-    - echo "Build succeeded, getting ready to deploy to main "
-  rules:
-    - if: $CI_COMMIT_BRANCH == "develop"
+    - pnpm astro check
 
-# Initieras först när "testet" i dev gått igenom utan errors.
-# GitLab Pages publicerar 'public'-artefakten nedan direkt – ingen push till
-# main eller någon token behövs (det gamla merge/push-main-steget är borttaget).
-pages:
-  stage: deploy
-  image: node:lts
-  before_script:
-    - corepack enable
-    - pnpm install --frozen-lockfile
+# Sveptestet över Learn Hub (docs/pedagogik/01-grundmodellen.md). Eget jobb på
+# python-imagen i stället för apt-get i node-imagen: det är en annan sorts
+# kontroll, och den ska kunna falla utan att bygget skuggar orsaken.
+#
+# allow_failure: true tills de 10 artiklar som svepet anmärker på är åtgärdade
+# — annars är pipelinen röd från första körningen och "Pipelines must succeed"
+# blockerar varje merge. Jobbet syns i MR:en och rapporterar; det stoppar bara
+# inte. Ta bort raden när `python3 scripts/sveptest.py` går grönt lokalt.
+sveptest:
+  stage: test
+  image: python:3.12-slim
+  allow_failure: true
   script:
-    # Bygger sajten; artefakten 'public/' deployas av GitLab Pages.
-    - pnpm build
-  artifacts:
-    paths:
-      - public
-  rules:
-    - if: $CI_COMMIT_BRANCH == "develop"
-      
+    - python3 scripts/sveptest.py

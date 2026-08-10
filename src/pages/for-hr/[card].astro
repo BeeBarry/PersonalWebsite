@@ -22,10 +22,13 @@ import Icon from "../../components/site/Icon.astro";
 import { TOC_MIN_ITEMS } from "../../scripts/toc";
 import site from "../../config/site";
 import { hrCards, isDraft, doneCards, faqForCard, typo } from "../../data/hr";
+import { SHOW_HR } from "../../utils/content";
 import "../../styles/hr.css";
 
 export const prerender = true;
+// Samma grind som /for-hr/ självt: byggs inte guiden byggs inte korten heller.
 export function getStaticPaths() {
+  if (!SHOW_HR) return [];
   return hrCards.map((card) => ({ params: { card: card.id }, props: { card } }));
 }
 

@@ -3,13 +3,16 @@ import AppLayout from "../../layouts/AppLayout.astro";
 import { getCollection } from "astro:content";
 import { Icon } from "astro-icon/components";
 import { categories, CATEGORY_GROUPS } from "../../data/categories";
-import { showEntry } from "../../utils/content";
+import { showLearnEntry, buildableCategorySlugs } from "../../utils/content";
 
-const allArticles = await getCollection("learn", showEntry);
+const allArticles = await getCollection("learn", showLearnEntry);
 // Kategorier utan publicerade artiklar listas inte — [category]/index.astro
 // genererar ingen sida för dem, så ett kort hade blivit en död länk.
+// buildableCategorySlugs i stället för c.isVisible direkt: i preview-miljön
+// ska även de dolda kategorierna listas, och då måste kortet och sidan komma
+// från samma grind.
 const withCounts = categories
-  .filter((c) => c.isVisible)
+  .filter((c) => buildableCategorySlugs.has(c.slug))
   .map((c) => ({
     ...c,
     count: allArticles.filter((a) => a.data.category === c.slug).length,

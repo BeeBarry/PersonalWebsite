@@ -10,7 +10,7 @@
 // "nästa" alltid betyder samma sak på båda ställena.
 import { getCollection, type CollectionEntry } from "astro:content";
 import { categories } from "../../data/categories";
-import { showEntry } from "../../utils/content";
+import { showLearnEntry } from "../../utils/content";
 import Icon from "./Icon.astro";
 
 interface Props {
@@ -23,7 +23,7 @@ const category = entry.data.category;
 const siblings = (
     await getCollection(
         "learn",
-        (e) => e.data.category === category && showEntry(e),
+        (e) => e.data.category === category && showLearnEntry(e),
     )
 ).sort((a, b) => a.data.part - b.data.part || a.data.order - b.data.order);
 

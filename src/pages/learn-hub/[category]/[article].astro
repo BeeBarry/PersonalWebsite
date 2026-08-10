@@ -7,7 +7,7 @@ import ArticleToc from "../../../components/site/ArticleToc.astro";
 import Icon from "../../../components/site/Icon.astro";
 import StickyBar from "../../../components/site/StickyBar.astro";
 import SeriesNav from "../../../components/site/SeriesNav.astro";
-import { showEntry } from "../../../utils/content";
+import { showLearnEntry } from "../../../utils/content";
 import { TOC_MIN_ITEMS } from "../../../scripts/toc";
 
 // Lärkitet — pedagogiska komponenter som artiklarna använder utan att behöva
@@ -22,7 +22,7 @@ import Doodle from "../../../components/learn/Doodle.astro";
 import "../../../styles/learn.css";
 
 export async function getStaticPaths() {
-  const all = await getCollection("learn", showEntry);
+  const all = await getCollection("learn", showLearnEntry);
   return all.map((entry) => ({
     params: { category: entry.data.category, article: entry.id },
     props: { entry },
