@@ -402,7 +402,7 @@
       "dom": "Tvärs över teamet",
       "one": "Arbetssättet bakom orden sprint, standup och backlog.",
       "what": "Agilt är ett samlingsnamn för arbetssätt där teamet levererar i korta omgångar och justerar riktningen efter vad det lär sig. Alternativet är att följa en plan som lades långt innan arbetet började. Scrum är den mest spridda varianten, och den som gett oss orden sprint, backlog, standup och retrospektiv. För dig som rekryterar är det värt att veta att innebörden varierar mellan team: samma ord kan beskriva mycket olika vardagar.",
-      "analogy": "Tänk på en seglats mot en hamn. Den som lägger en fast kurs i förväg måste hålla den även när vinden vänder. Den som justerar kursen var timme ser ut att ta en omväg — men är den som faktiskt kommer in i hamnen.",
+      "analogy": "Tänk på en seglats mot en ö. Den som lägger en fast kurs i förväg måste hålla den även när vinden vänder. Den som justerar kursen var timme ser ut att ta en omväg — men är den som faktiskt kommer fram.",
       "tasks": [
         "Delar upp arbetet i bitar som går att bli klar med inom en period.",
         "Står i den dagliga avstämningen och säger vad som hindrar arbetet just nu.",
@@ -426,27 +426,188 @@
       ],
       "junior": "Deltar i teamets rutiner och lär sig hur arbetet delas upp och uppskattas. Gäller de flesta, oavsett antal år.",
       "senior": "Ser när ett arbetssätt slutat fungera och vågar ändra det — även när det står i en processbeskrivning."
+    },
+    {
+      "id": "hr-fullstack",
+      "title": "Fullstackutvecklare",
+      "typ": "Roll",
+      "dom": "Tvärs över teamet",
+      "one": "Följer en funktion hela vägen — från knappen användaren ser till databasen bakom.",
+      "what": "En fullstackutvecklare är en person som bygger både gränssnittet användaren möter och koden som körs på servern bakom. Personen kan därför ta en ny funktion från skiss till drift utan att lämna över den halvvägs. Bredden är verklig, men den kostar djup — tiden räcker sällan till för att ligga längst fram på båda håll. För dig som rekryterar betyder det att en fullstackare täcker båda sidorna i ett litet team, men sällan ersätter två specialister i ett stort.",
+      "analogy": "Tänk på en kombinerad tvätt- och torkmaskin. Den gör båda jobben på samma yta, vilket räcker långt i de flesta hushåll. Men den torkar mindre än en egen torktumlare, och den kan bara göra en sak i taget.",
+      "tasks": [
+        "Bygger en ny funktion i båda ändar: sidan användaren fyller i och koden som sparar svaret.",
+        "Skriver både API:et som lämnar ut data och sidan som hämtar den, och ser till att de matchar.",
+        "Utreder var ett fel sitter när ingen vet om det ligger i gränssnittet eller på servern.",
+        "Växlar mellan sidorna efter var teamet har mest att göra just nu."
+      ],
+      "fits": [
+        "Är nyfiken på hela kedjan och nöjer sig sällan med att veta hur halva fungerar.",
+        "Gillar att byta sammanhang ofta och tappar inte tråden av att lägga ifrån sig en uppgift.",
+        "Har lätt för att säga när något ligger utanför det egna djupet, i stället för att gissa."
+      ],
+      "confuse": [
+        { "a": "Fullstack ≠ två utvecklare i en", "b": "En fullstackare täcker båda sidorna, men gör en sak i taget. Bredden ger kortare överlämningar mellan personer, inte dubbel kapacitet — räkna med en persons tid." },
+        { "a": "Fullstack ≠ senior", "b": "Bredd och nivå mäts var för sig. En junior kan ha rört båda sidorna, en senior kan ha byggt djupt i bara en — läs erfarenheten, inte antalet områden." },
+        { "a": "Fullstack ≠ hela systemet", "b": "Ordet täcker gränssnittet och servern. Drift, moln, säkerhet och test är egna hantverk — skriv ut dem separat i annonsen om rollen ska bära dem också." }
+      ],
+      "cv": ["JavaScript", "TypeScript", "React", "Node.js", "C#/.NET", "SQL", "REST", "API", "Git", "Docker", "PostgreSQL"],
+      "ask": [
+        { "q": "Vilken av de två sidorna skulle du välja om du bara fick jobba i en?", "good": "Ett rakt svar utan ursäkter visar självkännedom. Den som svarar \"båda lika mycket\" har sällan haft ansvar länge nog att märka skillnaden." },
+        { "q": "Berätta om en funktion du byggt hela vägen, från skärm till databas. Var fastnade det?", "good": "Svaret visar om personen rört båda sidorna eller mest en. Den som kan peka på var det tog emot har byggt själv, inte bara stått bredvid." }
+      ],
+      "junior": "Löser avgränsade uppgifter på båda sidor med granskning av en kollega, och lutar oftast redan åt ett håll. Ofta 0–2 år.",
+      "senior": "Äger hur en funktion hänger ihop från gränssnitt till data, och avgör när en specialist behövs i stället."
+    },
+    {
+      "id": "hr-cloud",
+      "title": "AWS & Azure",
+      "typ": "Verktyg",
+      "dom": "Cloud & DevOps",
+      "one": "Hyr ut servrar och tjänster efter förbrukning — de två vanligaste molnplattformarna i annonser.",
+      "what": "AWS och Azure är de två största molnplattformarna: företag hyr servrar, lagring och färdiga tjänster av Amazon respektive Microsoft, och betalar löpande efter användning. Utbudet överlappar till stor del, men tjänsterna heter olika saker och sätts upp på olika sätt. I Sverige lutar offentlig sektor och många storbolag åt Azure, medan produktbolagen oftare byggt i AWS. För dig som rekryterar avgör det vilka CV som matchar: er bransch styr ofta vilken plattform kandidaterna arbetat i.",
+      "analogy": "Tänk på ett kontorshotell. I stället för att bygga ett eget kontor hyr företaget rum, ström och larm, och betalar för det som används. AWS och Azure är två sådana hotell. Utbudet liknar varandra, men rummen heter olika saker hos var och en.",
+      "tasks": [
+        "Sätter upp servrar, lagring och nätverk i molnet, och kopplar ihop dem till en fungerande miljö.",
+        "Väljer bland hundratals färdiga tjänster: vilken som löser behovet, och vad den kostar att köra.",
+        "Håller koll på notan — molnet debiterar löpande, även för det ingen använder.",
+        "Styr vem som får göra vad i miljön, så att inte alla kommer åt allt."
+      ],
+      "fits": [
+        "Gillar att jämföra alternativ och motivera sitt val — i molnet finns oftast flera vägar till samma mål.",
+        "Är kostnadsmedveten och tycker att en faktura ska gå att förklara för någon annan.",
+        "Har tålamod med att läsa dokumentation — utbudet ändras snabbare än någon hinner lära sig utantill."
+      ],
+      "confuse": [
+        { "a": "AWS ≠ Azure", "b": "AWS kommer från Amazon, Azure från Microsoft. Tjänsterna löser samma behov men heter olika saker. Den som byggt i den ena läser in sig på den andra — låt båda räknas." },
+        { "a": "Molnet ≠ automatiskt billigare", "b": "En egen serverhall är en investering; molnet är en löpande faktura som följer förbrukningen. En testmiljö som ingen stängt av kostar varje dygn. Därför står kostnadskontroll i många molnannonser." },
+        { "a": "AWS och Azure ≠ hela molnmarknaden", "b": "Google Cloud är den tredje stora plattformen, och det finns svenska och europeiska leverantörer. Många organisationer använder dessutom flera moln samtidigt. Fråga vilken plattform rollen faktiskt gäller." }
+      ],
+      "cv": ["AWS", "Azure", "EC2", "S3", "Blob Storage", "Entra ID", "Terraform", "Bicep", "molnmigrering", "kostnadsoptimering", "AWS Certified"],
+      "ask": [
+        { "q": "Vad kostade det du byggde att köra per månad?", "good": "Den som kan svara i storleksordning har sett fakturan och varit nära besluten. Ett exakt tal behövs inte — poängen är om personen vet vad lösningen kostar att äga." },
+        { "q": "Om vi kör en annan molnplattform än den du arbetat i — vad skulle du behöva lära dig?", "good": "Ett svar som skiljer på vad som är samma i båda molnen och vad som är nytt visar att personen tänker i principer. En uppräkning av tjänstenamn säger mer om vad personen använt än om vad personen förstått." }
+      ],
+      "junior": "Har byggt egna miljöer i ett moln och känner igen tjänsterna, men inte burit kostnads- eller säkerhetsansvar. Ofta 0–2 år.",
+      "senior": "Äger hur organisationens molnmiljö är uppbyggd: åtkomst, kostnad, säkerhet och vad som ska ligga var. Avgör också vad ett byte skulle kosta."
+    },
+    {
+      "id": "hr-java",
+      "title": "Java & Spring",
+      "typ": "Språk",
+      "dom": "Backend",
+      "one": "Bär stora system i bank, telekom och industri — oftast med Spring som ramverk.",
+      "what": "Java är ett programspråk från 90-talet som fortfarande används för att bygga nya system, inte bara förvalta gamla. Koden körs på JVM, en körmiljö som flera språk delar — bland dem Kotlin. Spring och Spring Boot är ett ramverk ovanpå språket, från ett annat företag än det som äger Java, och det vanligaste sättet att bygga serverdelar. För dig som rekryterar: Java, Kotlin och Spring i samma CV pekar mot en och samma plattform.",
+      "analogy": "Tänk på en järnväg. Spårvidden är gemensam, så vagnar från olika tillverkare rullar på samma räls. JVM är spårvidden, Java och Kotlin är vagnarna, och Spring är den inredning de flesta trafikbolag beställer färdig. Den som byter bolag känner ofta igen sig i vagnen.",
+      "tasks": [
+        "Sätter ihop en tjänst av Springs färdiga delar: databaskoppling, säkerhet och schemalagda jobb.",
+        "Ser till att tjänsten klarar många samtidiga användare utan att svarstiderna drar iväg.",
+        "Skriver tester som körs automatiskt vid varje ändring, ofta i verktyget JUnit.",
+        "Läser sig in i kod som flera omgångar utvecklare skrivit i, och ändrar den utan att något annat går sönder."
+      ],
+      "fits": [
+        "Har tålamod med kod som någon annan skrivit, och läser hellre än gissar.",
+        "Är bekväm med att ramverket sköter mycket automatiskt, men vill förstå vad det gör.",
+        "Tycker om stora system och tappar inte modet av en kodbas med tusentals filer."
+      ],
+      "confuse": [
+        { "a": "Java ≠ JavaScript", "b": "Java bygger oftast serversidan i stora system, JavaScript det som syns i webbläsaren. Orden är dessutom två olika sökord — skriv det ni verkligen söker, så når annonsen rätt personer." },
+        { "a": "Spring ≠ Spring Boot", "b": "Spring är ramverket, Spring Boot är samma ramverk med ett startpaket som ställer in det mesta åt utvecklaren. Två ord i kravlistan, men en och samma erfarenhet." },
+        { "a": "Kotlin ≠ ett byte av plattform", "b": "Kotlin körs på samma körmiljö som Java och når samma bibliotek. Språket används både på servern och till Android-appar — fråga vilket av dem personen gjort." }
+      ],
+      "cv": ["Java", "Spring Boot", "Kotlin", "Maven", "Gradle", "Hibernate", "JUnit", "REST", "Kafka", "IntelliJ", "Git"],
+      "ask": [
+        { "q": "Vad gör Spring åt er som ni annars hade fått bygga själva?", "good": "Nämner något konkret: inloggning, koppling mot databasen eller hantering av köer. Svaret visar om personen valt delarna själv eller följt en mall som redan fanns." },
+        { "q": "Har du arbetat i en kodbas som var äldre än din tid på företaget? Hur gjorde du för att förstå den?", "good": "Beskriver ett arbetssätt: läsa tester, rita upp flödet, fråga någon som varit med. Svaret visar om personen tar sig an gammal kod med nyfikenhet eller med olust." }
+      ],
+      "junior": "Skriver kod inuti en struktur någon annan satt upp och lär sig ramverkets begrepp. Ofta 0–2 år.",
+      "senior": "Svarar för att systemet tål belastning, går att uppgradera och kan tas över av nästa utvecklare."
+    },
+    {
+      "id": "hr-qa",
+      "title": "Testare & QA-ingenjör",
+      "typ": "Roll",
+      "dom": "Tvärs över teamet",
+      "one": "Hittar felen innan användarna gör det, och bygger koden som fortsätter leta.",
+      "what": "En testare är den som tar reda på om produkten gör det den ska, innan användarna får den. Titeln QA-ingenjör beskriver oftast samma yrke: QA står för quality assurance, kvalitetssäkring. En del av arbetet är utforskande — att använda systemet som en människa och hitta det ingen tänkt på. Den andra delen är programmering, och för dig som rekryterar avgör den halvan vilka kandidater som känner igen sig i annonsen.",
+      "analogy": "Tänk på provriggen där en ny stol ska godkännas. Först sätter sig någon på den och känner efter var det gnisslar. Sedan tar maskinen över och belastar sitsen tjugotusen gånger med exakt samma tyngd. Handen hittar sådant som riggen aldrig letar efter.",
+      "tasks": [
+        "Bygger automatiska tester som körs vid varje kodändring och pekar ut vilken ändring som gick fel.",
+        "Utforskar nya funktioner för hand och letar efter det som ingen skrivit ner i kravet.",
+        "Skriver ner hur ett fel återskapas steg för steg, så att utvecklaren ser det själv.",
+        "Sitter med redan när en funktion planeras och frågar vad som ska hända när något går fel."
+      ],
+      "fits": [
+        "Är nyfiken på gränserna och vill veta vad som händer om någon gör precis fel sak.",
+        "Gillar att ställa obekväma frågor tidigt, utan att göra det till en konflikt.",
+        "Har tålamod med detaljer och orkar gå igenom samma flöde tills mönstret syns."
+      ],
+      "confuse": [
+        { "a": "Manuell testning ≠ testautomatisering", "b": "Att gå igenom en funktion för hand kräver omdöme och produktkunskap. Att bygga tester som kör sig själva är programmering. Söker ni det andra, skriv ut ordet automatisering i annonsen." },
+        { "a": "QA ≠ sista grinden före release", "b": "En grind kontrollerar en färdig funktion. Kvalitetssäkring börjar redan när funktionen planeras. Läggs allt testande sist hittas felen när de kostar mest att laga." },
+        { "a": "Testledare ≠ testare", "b": "En testledare planerar och samordnar testarbetet, ofta över flera team. En testare utför det och bygger automatiken. Det är två roller, och oftast två annonser." }
+      ],
+      "cv": ["Selenium", "Cypress", "Playwright", "Postman", "ISTQB", "testautomatisering", "regressionstest", "API-testning", "Jira", "SQL", "Git"],
+      "ask": [
+        { "q": "Vad var det senaste felet du hittade som ingen hade tänkt på?", "good": "Ett konkret exempel med hur personen kom på att prova just det. Svaret visar om nyfikenheten är egen eller om testandet följer en färdig lista." },
+        { "q": "Hur mycket av testandet på ditt förra jobb var automatiskt, och hur mycket för hand?", "good": "En siffra eller en ärlig uppskattning, och en förklaring till varför fördelningen såg ut så. Svaret placerar kandidaten mellan de två halvorna av yrket." }
+      ],
+      "junior": "Testar funktioner för hand och skriver enklare automatiska tester i en färdig uppsättning. Ofta 0–2 år.",
+      "senior": "Bestämmer vad som ska testas automatiskt, vad som inte lönar sig, och hjälper hela teamet ta ansvar för kvaliteten."
+    },
+    {
+      "id": "hr-ai",
+      "title": "Data scientist & AI-ingenjör",
+      "typ": "Roll",
+      "dom": "Data & AI",
+      "one": "Hittar svar i data och bygger modeller som pekar ut vad som troligen händer.",
+      "what": "En data scientist söker mönster i data och bygger modeller som uttalar sig om fall ingen sett förut — till exempel vilken kund som är på väg att lämna. En AI-ingenjör tar modellen, egen eller inköpt, och bygger den till en tjänst som håller i vardagen. Båda rollerna förutsätter att datan redan är hämtad och tillgänglig, och det arbetet är någon annans. För dig som rekryterar ryms båda under ordet AI, men de blir sällan samma person.",
+      "analogy": "Tänk på en väderstation. Instrumenten mäter tryck, vind och fukt, och ur årtionden av mätningar kommer morgondagens prognos. Prognosen är en sannolikhet, inte ett löfte — och den som byggt den kan säga hur ofta den brukar slå fel.",
+      "tasks": [
+        "Utreder vad verksamhetens fråga egentligen är, och gör om den till något mätbart.",
+        "Provar flera modeller mot samma data och mäter vilken som träffar bäst.",
+        "Kopplar in färdiga språkmodeller — tekniken bakom chattbotarna — och kontrollerar att svaren håller.",
+        "Följer modellen efter att den tagits i drift: den som var träffsäker i fjol behöver inte vara det idag."
+      ],
+      "fits": [
+        "Är skeptisk mot sitt eget resultat och letar efter förklaringen bakom en siffra.",
+        "Tycker om att förklara osäkerhet för någon som helst vill ha ett rakt svar.",
+        "Har tålamod — de flesta försök leder ingenstans, och det är en del av arbetet."
+      ],
+      "confuse": [
+        { "a": "Data scientist ≠ AI-ingenjör", "b": "En data scientist tar reda på om något går att förutsäga. En AI-ingenjör bygger det till en tjänst som tål riktiga användare. Fråga vilken halva rollen består av." },
+        { "a": "Data scientist ≠ dataanalytiker", "b": "Analytikern beskriver vad som redan hänt. En data scientist bygger något som uttalar sig om det som ännu inte hänt. Be om ett exempel på en fråga personen besvarat." },
+        { "a": "Använda modell ≠ träna modell", "b": "Att koppla in en färdig språkmodell är att bygga ihop system. Att träna en egen modell på verksamhetens data är ett annat hantverk. Fråga vilket av dem personen gjort." }
+      ],
+      "cv": ["Python", "pandas", "scikit-learn", "Jupyter", "statistik", "MLflow", "MLOps", "Hugging Face", "LLM", "RAG", "A/B-test"],
+      "ask": [
+        { "q": "Berätta om en modell du byggt som inte blev bra nog att använda.", "good": "Beskriver hur det upptäcktes och vad som avgjorde att den lades ner. Den som aldrig lagt ner något har sällan följt ett arbete hela vägen till ett beslut." },
+        { "q": "Hur förklarade du senast ett resultat för någon som skulle fatta beslut på det?", "good": "Nämner osäkerheten i klartext och vad mottagaren borde göra med svaret. Den som bara redovisar en procentsiffra har oftare arbetat mot ett facit än mot en verksamhet." }
+      ],
+      "junior": "Gör avgränsade analyser och tränar modeller med verktyg teamet redan valt, med granskning av en kollega. Ofta 0–2 år.",
+      "senior": "Avgör vad som är värt att modellera, äger modellerna som är i drift och stoppar förslag som datan inte räcker till för."
     }
   ],
 
   "faqCategories": ["Vanligast", "Teknik i praktiken", "Annonsen", "Screening", "CV & nivåer"],
   "faq": [
-    { "id": "f1", "cat": "Vanligast", "tags": ["hr-react", "hr-ts"], "q": "Vad är skillnaden mellan Java och JavaScript?", "a": "Ungefär den mellan bil och biljard. Två helt olika språk med olika användning — namnlikheten är ett marknadsföringsbeslut från 90-talet. En Java-utvecklare är inte en JavaScript-utvecklare, och att blanda ihop dem i en annons märks direkt." },
-    { "id": "f2", "cat": "Vanligast", "tags": ["hr-backend", "hr-fe", "hr-next"], "q": "Vad betyder fullstack egentligen?", "a": "Att personen jobbar i både frontend och backend. Nästan alla lutar åt ett håll — fråga \"vilken halva är du starkast på?\". Svaret säger mer än ordet fullstack gör." },
+    { "id": "f1", "cat": "Vanligast", "tags": ["hr-java", "hr-react", "hr-ts"], "q": "Vad är skillnaden mellan Java och JavaScript?", "a": "Ungefär den mellan bil och biljard. Två helt olika språk med olika användning — namnlikheten är ett marknadsföringsbeslut från 90-talet. En Java-utvecklare är inte en JavaScript-utvecklare, och att blanda ihop dem i en annons märks direkt." },
+    { "id": "f2", "cat": "Vanligast", "tags": ["hr-fullstack", "hr-backend", "hr-fe"], "q": "Vad betyder fullstack egentligen?", "a": "Att personen jobbar i både frontend och backend. Nästan alla lutar åt ett håll — fråga \"vilken halva är du starkast på?\". Svaret säger mer än ordet fullstack gör." },
     { "id": "f3", "cat": "Vanligast", "tags": ["hr-react", "hr-fe", "hr-next"], "q": "Kandidaten kan React men vi söker Angular — är det kört?", "a": "Nej. De löser samma problem på olika sätt. En van React-utvecklare är produktiv i Angular inom några veckor. Kräv exakt matchning bara när teamet saknar tid att lära upp — annars sållar ni bort bra folk i onödan." },
     { "id": "f12", "cat": "Teknik i praktiken", "tags": ["hr-ts"], "q": "Är JavaScript och TypeScript samma kompetens?", "a": "De hör ihop men är inte samma sak. TypeScript är JavaScript med typkontroll ovanpå — den som kan det ena arbetar i praktiken i båda. Fråga hellre om rollen ska skriva i en färdig kodbas eller införa typerna i en gammal. Det är två olika uppdrag." },
     { "id": "f13", "cat": "Teknik i praktiken", "tags": ["hr-react", "hr-ts"], "q": "Är React och TypeScript samma typ av teknik?", "a": "Nej. React bygger det användaren ser; TypeScript är ett skydd som gäller all kod, oavsett vad den gör. De används ofta ihop, men en kandidat kan vara stark i det ena och svag i det andra. Lista dem var för sig i annonsen." },
     { "id": "f14", "cat": "Teknik i praktiken", "tags": ["hr-backend", "hr-cs"], "q": "Vad betyder API — och är det ett programmeringsspråk?", "a": "Ett API är ett sätt för program att kommunicera enligt överenskomna regler, inte ett språk. API-erfarenhet kan betyda att ha byggt dem, kopplat ihop system med dem eller förvaltat dem i drift. Följ upp med vilken del rollen faktiskt ska göra." },
     { "id": "f15", "cat": "Teknik i praktiken", "tags": ["hr-docker", "hr-k8s", "hr-devops"], "q": "Är Docker och Kubernetes samma sak?", "a": "Nej, men de hör ihop. Docker packar ett program i en container. Kubernetes håller ordning på många sådana containers över många servrar. Skriv vilket djup ni behöver: att bygga en container, att arbeta i en färdig miljö, eller att ansvara för den." },
-    { "id": "f16", "cat": "Teknik i praktiken", "tags": ["hr-k8s", "hr-devops"], "q": "AWS, Azure och Kubernetes — är det samma lager?", "a": "Inte riktigt. AWS och Azure är molnen man hyr datorer av. Kubernetes är ett lager ovanpå som håller igång programmen, och det kan lika gärna köras i ett eget serverrum. Den som kan det ena kan alltså inte automatiskt det andra." },
+    { "id": "f16", "cat": "Teknik i praktiken", "tags": ["hr-cloud", "hr-k8s", "hr-devops"], "q": "AWS, Azure och Kubernetes — är det samma lager?", "a": "Inte riktigt. AWS och Azure är molnen man hyr datorer av. Kubernetes är ett lager ovanpå som håller igång programmen, och det kan lika gärna köras i ett eget serverrum. Den som kan det ena kan alltså inte automatiskt det andra." },
     { "id": "f17", "cat": "Teknik i praktiken", "tags": ["hr-devops", "hr-cicd", "hr-backend"], "q": "Vad innebär erfarenhet från produktion?", "a": "Att systemen har körts skarpt för riktiga användare. Det kan innebära allt från att följa loggar och göra releaser till att äga incidenter och jour. Be kandidaten beskriva sitt eget ansvar, snarare än att använda ordet som ett generellt senioritetsmått." },
     { "id": "f18", "cat": "Teknik i praktiken", "tags": ["hr-cicd"], "q": "Vad säger GitHub-erfarenhet egentligen?", "a": "Git håller reda på ändringar i kod; GitHub är en plattform där team kan lagra, granska och samarbeta kring den. En offentlig profil kan ge bra samtalsunderlag, men visar inte hela kompetensen eller allt arbete en person gjort. Använd den som ingång till frågor, inte som ett hårt urvalskrav." },
     { "id": "f4", "cat": "Annonsen", "tags": ["hr-k8s", "hr-devops"], "q": "Vi skrev \"Kubernetes-utvecklare\" och fick inga sökande. Varför?", "a": "Det är ingen etablerad roll, så ingen söker på den. Skriv rollen först — DevOps-ingenjör, plattformsingenjör eller backendutvecklare — och lista Kubernetes som en av färdigheterna. Då hittar både kandidater och sökmotorer annonsen." },
     { "id": "f5", "cat": "Annonsen", "tags": [], "q": "Hur många krav ska vi ha i annonsen?", "a": "Färre än ni tror. Långa kravlistor filtrerar bort bra kandidater, särskilt de som bara söker när de uppfyller allt. Dela upp i \"måste\" (max 3–5) och \"plus\", och var ärlig med vilket som är vilket." },
     { "id": "f6", "cat": "Annonsen", "tags": [], "q": "Ska vi kräva examen?", "a": "Bara om ni verkligen menar det. Många av de starkaste utvecklarna är självlärda eller kommer från yrkeshögskola. Formulera kravet som kunskap och bevis på kunskap, inte som papper." },
-    { "id": "f19", "cat": "Annonsen", "tags": ["hr-data", "hr-py"], "q": "Vi vill satsa på AI — vilken roll ska vi rekrytera först?", "a": "Oftast en data engineer. Modeller behöver data som är hämtad, tvättad och tillgänglig, och den grunden saknas i de flesta organisationer. Anställs en data scientist innan grunden finns, går mycket av tiden åt till att bygga just den." },
+    { "id": "f19", "cat": "Annonsen", "tags": ["hr-data", "hr-ai", "hr-py"], "q": "Vi vill satsa på AI — vilken roll ska vi rekrytera först?", "a": "Oftast en data engineer. Modeller behöver data som är hämtad, tvättad och tillgänglig, och den grunden saknas i de flesta organisationer. Anställs en data scientist innan grunden finns, går mycket av tiden åt till att bygga just den." },
     { "id": "f7", "cat": "Screening", "tags": ["hr-backend", "hr-fe"], "q": "Jag kan inte koda — hur bedömer jag en GitHub-profil?", "a": "Titta på tre saker: finns en README som förklarar projektet för en människa? Finns aktivitet spridd över tid och inte bara en helg? Har projektet ett syfte utöver en kursuppgift? Det säger mer om personen än koden gör." },
     { "id": "f8", "cat": "Screening", "tags": ["hr-k8s", "hr-backend"], "q": "Vilken enda fråga ger mest?", "a": "\"Förklara något du byggt, för mig som inte är teknisk.\" Den som verkligen förstår kan förenkla. Den som memorerat begrepp fastnar i dem — och det hör du utan att kunna ett dugg kod." },
+    { "id": "f22", "cat": "Annonsen", "tags": ["hr-qa"], "q": "Vi söker en testare — ska vi kräva att personen kan koda?", "a": "Det beror på vad ni menar med testare. Manuell testning kräver ingen programmering, medan testautomatisering är programmering. Skriv ut vilken av dem rollen handlar om, så känner rätt kandidater igen sig." },
     { "id": "f20", "cat": "Screening", "tags": ["hr-scrum"], "q": "Kandidaten säger att teamet körde Scrum. Vad är värt att följa upp?", "a": "Fråga hur en vanlig vecka såg ut, i stället för vilka möten de hade. Innebörden varierar mellan team, och en beskrivning av vardagen säger mer om samarbetet än metodnamnet gör." },
     { "id": "f9", "cat": "CV & nivåer", "tags": ["hr-backend", "hr-react", "hr-k8s", "hr-fe"], "q": "Hur mycket erfarenhet är junior, medior och senior?", "a": "Tumregel: junior 0–2 år, medior 2–5, senior 5+. Men år är en trubbig mätare — ansvar är bättre. Har personen ägt något i skarp drift? Lett andra? Fattat beslut som kostat pengar?" },
     { "id": "f10", "cat": "CV & nivåer", "tags": ["hr-k8s", "hr-fe"], "q": "Certifikat eller egna projekt — vad väger tyngst?", "a": "Projekt visar att personen kan bygga, certifikat att personen kan läsa in sig. För juniora roller väger ett genomtänkt projekt som faktiskt körs oftast tyngre än ett certifikat." },
@@ -461,17 +622,25 @@
     { "title": "Telefon och intervju", "sub": "Frågor och formuleringar som kan behöva konkretiseras när ni träffas." }
   ],
   "translate": [
-    { "cat": "Rollen och nivån", "source": "Annonsen", "say": "Fullstackutvecklare", "card": "hr-backend", "means": "Signalerar ett arbete som rör både gränssnittet och servern. Kandidaten vill ofta förstå var tyngdpunkten ligger.", "look": "Ska rollen främst bygga gränssnitt, serverlogik eller bära lika mycket ansvar för båda?", "watch": "Rollen har en tydlig tyngdpunkt, eller teamet söker en specialist. Skriv då ut den så att rätt personer känner igen sig." },
+    { "cat": "Rollen och nivån", "source": "Annonsen", "say": "Fullstackutvecklare", "card": "hr-fullstack", "means": "Signalerar ett arbete som rör både gränssnittet och servern. Kandidaten vill ofta förstå var tyngdpunkten ligger.", "look": "Ska rollen främst bygga gränssnitt, serverlogik eller bära lika mycket ansvar för båda?", "watch": "Rollen har en tydlig tyngdpunkt, eller teamet söker en specialist. Skriv då ut den så att rätt personer känner igen sig." },
+    { "cat": "Rollen och nivån", "source": "Annonsen", "say": "Frontendutvecklare", "card": "hr-fe", "means": "Beskriver den som bygger gränssnittet, men säger ännu inte vilket ramverk eller hur nära design arbetet ligger.", "look": "Vilket ramverk använder teamet, och kommer designen färdig eller ska personen forma den?", "watch": "Rollen ska också röra serversidan. Skriv då fullstack i stället, så att rätt personer känner igen sig." },
     { "cat": "Rollen och nivån", "source": "Annonsen", "say": "Junior utvecklare, 3 års erfarenhet", "means": "Kan uppfattas som att titel, ansvar och erfarenhetskrav drar åt olika håll. Nivåer varierar mellan företag, men kandidaten behöver förstå vad ni menar.", "look": "Vilket ansvar ska personen ta från början: avgränsade uppgifter med stöd, eller eget ansvar för leveranser och drift?", "watch": "Tre år är ett fast krav. Beskriv då även ansvar och stöd i rollen, så att titeln och förväntningarna går att läsa tillsammans." },
+    { "cat": "Rollen och nivån", "source": "Annonsen", "say": "Vi söker en testare", "card": "hr-qa", "means": "Kan betyda manuell testning, som inte kräver programmering, eller testautomatisering, som gör det.", "look": "Ska personen testa för hand, bygga automatiska tester, eller båda delarna?", "watch": "Rollen ska bygga automatik. Skriv då ut det i annonsen, eftersom de två uppdragen lockar helt olika kandidater." },
     { "cat": "Rollen och nivån", "source": "Annonsen", "say": "Självgående utvecklare", "means": "Kan betyda att personen arbetar utan daglig handledning, eller att rollen får stort eget ansvar från första veckan.", "look": "Finns det en tech lead eller kollegor att bolla med, och vilka beslut förväntas personen ta själv?", "watch": "Rollen kräver att personen driver arkitektur, leverans eller kunddialog på egen hand. Skriv då ut det ansvaret i stället för att låta ordet bära allt." },
     { "cat": "Teknik och erfarenhet", "source": "Annonsen", "say": "Erfarenhet av Kubernetes", "card": "hr-k8s", "means": "Kandidaten behöver avgöra vilken sorts erfarenhet ni menar: egna projekt, en teammiljö eller ansvar för produktion.", "look": "Räcker det att känna till grunderna, eller ska personen ha arbetat med drift, CI/CD, moln eller jour?", "watch": "Kubernetes är en viktig färdighet men inte rollen ni söker. Skriv rollen i rubriken och behåll Kubernetes som en del av kompetensen." },
     { "cat": "Teknik och erfarenhet", "source": "Annonsen", "say": "Meriterande: React, Angular eller Vue", "card": "hr-react", "means": "Kan signalera att ni är öppna för flera bakgrunder, eller att teknikvalet fortfarande är oklart.", "look": "Är ett av ramverken det teamet använder idag, eller är förmågan att arbeta i moderna frontendramverk det viktiga?", "watch": "Ett särskilt ramverk är avgörande i vardagen. Skriv då ut vilket det är; är bredden medveten kan ni gärna säga det också." },
     { "cat": "Teknik och erfarenhet", "source": "Annonsen", "say": "Bygger och underhåller API:er", "card": "hr-backend", "means": "Beskriver en arbetsuppgift inom backend, men säger ännu inte vilken teknisk miljö kandidaten ska arbeta i.", "look": "Vilket serverspråk, vilken typ av API och vilken databas eller produkt ska personen arbeta med?", "watch": "Teknikmiljön är viktig för rollen. API är ett sätt för system att prata, inte ett eget programspråk." },
-    { "cat": "Teknik och erfarenhet", "source": "Annonsen", "say": "Erfarenhet av AWS eller Azure", "card": "hr-devops", "means": "Kan betyda att ni välkomnar erfarenhet från båda plattformarna, eller att en av dem är viktig i teamets vardag.", "look": "Är molnplattformen en grundkunskap, eller ska personen kunna bygga och förvalta just er miljö?", "watch": "En plattform är ett krav för att rollen ska fungera från start. Nämn då vilken och varför; om båda fungerar är den bredden en fördel att säga öppet." },
+    { "cat": "Teknik och erfarenhet", "source": "Annonsen", "say": "Erfarenhet av Java och Spring Boot", "card": "hr-java", "means": "Beskriver samma plattform två gånger — Spring Boot är ramverket, Java är språket det skrivs i.", "look": "Är det Spring Boot ni bygger i, eller ett annat ramverk på samma plattform?", "watch": "Ni räknar Java och Spring Boot som två separata krav. Slå ihop dem, så ser kravlistan kortare ut än den känns." },
+    { "cat": "Teknik och erfarenhet", "source": "Annonsen", "say": "Erfarenhet av maskininlärning", "card": "hr-ai", "means": "Kan betyda att träna egna modeller, eller att koppla in en färdig modell i en produkt.", "look": "Ska personen bygga modellen, eller använda någon annans i er tjänst?", "watch": "De två uppdragen kräver olika bakgrund. Nämn vilket av dem ni menar, så kan kandidaten själv bedöma sin matchning." },
+    { "cat": "Teknik och erfarenhet", "source": "Annonsen", "say": "Erfarenhet av AWS eller Azure", "card": "hr-cloud", "means": "Kan betyda att ni välkomnar erfarenhet från båda plattformarna, eller att en av dem är viktig i teamets vardag.", "look": "Är molnplattformen en grundkunskap, eller ska personen kunna bygga och förvalta just er miljö?", "watch": "En plattform är ett krav för att rollen ska fungera från start. Nämn då vilken och varför; om båda fungerar är den bredden en fördel att säga öppet." },
+    { "cat": "Teknik och erfarenhet", "source": "Annonsen", "say": "Erfarenhet av Docker", "card": "hr-docker", "means": "Kan betyda att köra färdiga containers lokalt, eller att ansvara för hur hela organisationen paketerar sina program.", "look": "Ska personen använda en färdig uppsättning eller bygga och underhålla den?", "watch": "Docker är en baskunskap i rollen, inte rollen i sig. Behåll den som en färdighet i kravlistan." },
+    { "cat": "Teknik och erfarenhet", "source": "Annonsen", "say": "Meriterande: TypeScript", "card": "hr-ts", "means": "Läses ofta som att kodbasen redan använder TypeScript, eller att ni vill införa det framöver.", "look": "Skriver teamet TypeScript idag, och hur strikt är kodbasen i så fall?", "watch": "Kravet är egentligen JavaScript. TypeScript bygger på det språket, så en bredare formulering når fler kandidater utan att sänka ribban." },
+    { "cat": "Teknik och erfarenhet", "source": "Annonsen", "say": "Erfarenhet av React, gärna Next.js", "card": "hr-next", "means": "Läses som att React är grunden och Next.js ett plus, vilket stämmer med hur de förhåller sig till varandra.", "look": "Bygger ni i Next.js idag, eller är det något ni överväger?", "watch": "Next.js faktiskt krävs i vardagen. Flytta det då från gärna till krav, så slipper båda parter en felmatchning." },
     { "cat": "Teknik och erfarenhet", "source": "Annonsen", "say": "Erfarenhet av .NET", "card": "hr-cs", "means": "Kan syfta på modern .NET eller på det äldre .NET Framework, som är två olika miljöer att arbeta i.", "look": "Vilken version kör systemet idag, och ska personen bygga nytt eller förvalta det som finns?", "watch": "Systemet ligger kvar i .NET Framework. Säg det öppet — för många är en modernisering ett intressant uppdrag i sig." },
     { "cat": "Teknik och erfarenhet", "source": "Annonsen", "say": "Vi söker en Python-utvecklare", "card": "hr-py", "means": "Kandidaten behöver veta vilken sorts Python: dataflöden, modeller, webbtjänster och automatisering är fyra olika vardagar.", "look": "Vad ska personen bygga, och vem använder det som kommer ut i andra änden?", "watch": "Rollen har en tydlig tyngdpunkt. Skriv ut vilken, så att de som känner igen sig också söker." },
     { "cat": "Teknik och erfarenhet", "source": "Annonsen", "say": "Vi bygger vår dataplattform", "card": "hr-data", "means": "Kan betyda att grunden ska byggas från början, eller att en befintlig plattform ska förvaltas och byggas ut.", "look": "Finns det data att arbeta med idag, och vem äger den?", "watch": "Arbetet börjar från noll. Det är ett attraktivt uppdrag för rätt person, men något annat än att förvalta en färdig plattform." },
     { "cat": "Arbetssätt och förutsättningar", "source": "Annonsen", "say": "Vi har en DevOps-kultur", "card": "hr-devops", "means": "Kan betyda att utvecklarna tar ansvar för sin drift, eller att rollen omfattar ett bredare ansvar för plattform och incidenter.", "look": "Hur ser ansvarsfördelningen ut mellan utveckling, plattform, övervakning och jour?", "watch": "Rollen omfattar jour eller eget driftansvar. Det är viktig information för rätt kandidat, inte en detalj att gömma." },
+    { "cat": "Arbetssätt och förutsättningar", "source": "Annonsen", "say": "Vi har CI/CD på plats", "card": "hr-cicd", "means": "Kan betyda allt från automatiska tester till att kod går ut i drift flera gånger om dagen.", "look": "Hur ofta släpper ni, och hur mycket av vägen dit är automatiserad?", "watch": "Ni bygger fortfarande upp automatiken. Säg det öppet, så vet kandidaten att arbetet finns kvar att göra." },
     { "cat": "Arbetssätt och förutsättningar", "source": "Annonsen", "say": "Vi arbetar agilt", "card": "hr-scrum", "means": "Säger något om ambitionen, men innebörden varierar mellan team — från korta planeringsperioder till dagliga avstämningar.", "look": "Hur ser en vanlig vecka ut hos er, och vem bestämmer vad som görs först?", "watch": "Arbetssättet är en viktig del av erbjudandet. Beskriv då hur en vecka faktiskt ser ut, i stället för att bara namnge metoden." },
     { "cat": "Arbetssätt och förutsättningar", "source": "Annonsen", "say": "Jour ingår", "card": "hr-devops", "means": "Kandidaten behöver förstå hur ofta jouren inträffar, vad som kan hända och hur teamet delar ansvaret.", "look": "Hur ser rotationsschemat ut, vilka system omfattas och vilket stöd finns när något händer?", "watch": "Jour är en verklig del av tjänsten. Skriv gärna ut omfattning och ersättning så att förväntningen är tydlig redan före första samtalet." },
     { "cat": "Arbetssätt och förutsättningar", "source": "Annonsen", "say": "Hybridarbete möjligt", "means": "Kan uppfattas som allt från valfri distans till några dagar hemma efter överenskommelse.", "look": "Var arbetar teamet i praktiken, och finns det dagar då man förväntas vara på plats?", "watch": "Arbetsplatsen påverkar vem som kan tacka ja. Beskriv därför ramarna om närvaro eller ort är viktig för rollen." },

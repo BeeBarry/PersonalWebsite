@@ -154,6 +154,7 @@ export const hrCardIcon: Record<string, string> = {
   "hr-py": "logos:python",
   "hr-cs": "logos:c-sharp",
   "hr-docker": "logos:docker-icon",
+  "hr-java": "logos:java",
   // Enfärgad, inte logos:nextjs-icon: den senare är en svart cirkel med vit N
   // och tappar sin form mot det mörka kortet. Enfärgade märken ärver
   // currentColor och fungerar därför i båda temana — se ikonregeln i
@@ -169,6 +170,14 @@ export const hrCardIcon: Record<string, string> = {
   "hr-data": "mdi:database-sync-outline",
   "hr-cicd": "mdi:source-branch-sync",
   "hr-scrum": "mdi:view-dashboard-variant-outline",
+
+  // Fullstack är de två lagren ovanpå varandra, molnkortet en neutral sky:
+  // det handlar om BÅDE AWS och Azure, så en av de två loggorna hade sagt fel
+  // sak. Provriggen står för test, hjärnan för modellerna som lär sig.
+  "hr-fullstack": "mdi:layers-triple-outline",
+  "hr-cloud": "mdi:cloud-outline",
+  "hr-qa": "mdi:clipboard-check-outline",
+  "hr-ai": "mdi:brain",
 };
 
 export const iconFor = (id: string): string =>
