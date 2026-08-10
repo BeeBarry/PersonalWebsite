@@ -155,6 +155,8 @@ export const hrCardIcon: Record<string, string> = {
   "hr-cs": "logos:c-sharp",
   "hr-docker": "logos:docker-icon",
   "hr-java": "logos:java",
+  "hr-js": "logos:javascript",
+  "hr-terraform": "logos:terraform-icon",
   // Enfärgad, inte logos:nextjs-icon: den senare är en svart cirkel med vit N
   // och tappar sin form mot det mörka kortet. Enfärgade märken ärver
   // currentColor och fungerar därför i båda temana — se ikonregeln i
@@ -178,6 +180,15 @@ export const hrCardIcon: Record<string, string> = {
   "hr-cloud": "mdi:cloud-outline",
   "hr-qa": "mdi:clipboard-check-outline",
   "hr-ai": "mdi:brain",
+
+  // SQL får sökikonen och inte databasikonen — hr-data äger redan
+  // database-sync, och kortets tes är frågan mot datan, inte lagringen.
+  // Vägvisaren speglar systemutvecklar-kortets analogi (skylten över en
+  // varuhusavdelning): titeln pekar vidare, den beskriver inte arbetet.
+  "hr-sql": "mdi:database-search-outline",
+  "hr-systemutvecklare": "mdi:sign-direction",
+  "hr-tillganglighet": "mdi:human",
+  "hr-sakerhetsprovning": "mdi:shield-key-outline",
 };
 
 export const iconFor = (id: string): string =>

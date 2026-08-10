@@ -586,15 +586,208 @@
       ],
       "junior": "Gör avgränsade analyser och tränar modeller med verktyg teamet redan valt, med granskning av en kollega. Ofta 0–2 år.",
       "senior": "Avgör vad som är värt att modellera, äger modellerna som är i drift och stoppar förslag som datan inte räcker till för."
+    },
+    {
+      "id": "hr-sql",
+      "title": "SQL & databaser",
+      "typ": "Språk",
+      "dom": "Backend",
+      "one": "Hämtar svaren ur databasen — ett språk många kan, på mycket olika djup.",
+      "what": "SQL är frågespråket mot en databas: man beskriver vilket svar man vill ha, inte hur databasen ska leta fram det. Samma språk skapar också tabellerna, ändrar innehållet och tar bort det som inte ska finnas kvar. Grunderna går snabbt att lära sig, och skillnaden mellan kandidater ligger i vad de gjort utanför själva frågan. För dig som rekryterar är raden \"SQL\" i ett CV därför en början — frågan om vad personen gjort i databasen tar dig vidare.",
+      "analogy": "Tänk på ett arkivskåp med ett register längst fram. Mapparna i lådorna är raderna, och registret talar om var varje mapp står. SQL är lappen du lämnar in: vilka mappar du vill ha och i vilken ordning. Utan register finns allt kvar — men någon får bläddra igenom varje mapp.",
+      "tasks": [
+        "Skriver frågor som hämtar och slår ihop uppgifter ur flera tabeller till ett svar.",
+        "Lägger till index, alltså register som gör att databasen slipper läsa varenda rad.",
+        "Ändrar tabellernas form medan systemet är i drift, utan att befintlig data går förlorad.",
+        "Tar reda på varför en fråga som brukade gå på ett ögonblick plötsligt tar trettio sekunder."
+      ],
+      "fits": [
+        "Vill veta exakt vad en siffra svarar på — en fråga kan ge fel svar utan att se fel ut.",
+        "Gillar att se hur uppgifter hänger ihop: kunden, ordern och raderna på fakturan.",
+        "Har tålamod att gräva vidare när något blivit långsamt, i stället för att vänta ut det."
+      ],
+      "confuse": [
+        { "a": "SQL ≠ T-SQL", "b": "Varje databas har sin egen variant av språket: T-SQL i SQL Server, PL/SQL i Oracle. Grunderna är gemensamma, så den som kan en dialekt lär sig nästa på kort tid." },
+        { "a": "SQL ≠ ORM", "b": "Ett ORM skriver frågan åt utvecklaren — Hibernate i Java, Entity Framework i .NET. SQL är frågan själv. Erfarenhet av det ena är inte vana vid det andra." },
+        { "a": "SQL ≠ NoSQL", "b": "En relationsdatabas lagrar data i tabeller som hänger ihop. En NoSQL-databas som MongoDB lagrar dokument var för sig. Står MongoDB ensamt i ett CV har personen kanske aldrig skrivit SQL." }
+      ],
+      "cv": ["SQL", "PostgreSQL", "MySQL", "SQL Server", "Oracle", "T-SQL", "PL/SQL", "stored procedures", "indexering", "databasmigrering", "MongoDB"],
+      "ask": [
+        { "q": "Vad har du gjort med en databas utöver att hämta data ur den?", "good": "Svaret placerar personen: att slå upp ett testresultat i databasen är något annat än att ha indexerat och byggt om tabeller i drift. Båda kan vara rätt för rollen — men de är olika hantverk." },
+        { "q": "Berätta om en fråga som plötsligt blev långsam. Vad gjorde du?", "good": "Den som varit med beskriver hur mycket data som tillkommit och vad ändringen bestod i. Den som mest arbetat genom ett färdigt lager har sällan stått i det läget." }
+      ],
+      "junior": "Skriver frågor mot tabeller någon annan satt upp, och ber om hjälp när svaret ser konstigt ut. Ofta 0–2 år.",
+      "senior": "Ansvarar för hur tabellerna hänger ihop, vad en fråga får kosta i drift och hur de ändras utan avbrott för användarna."
+    },
+    {
+      "id": "hr-terraform",
+      "title": "Terraform & infrastruktur som kod",
+      "typ": "Verktyg",
+      "dom": "Cloud & DevOps",
+      "one": "Visar vad en miljöändring gör innan den körs — miljön beskrivs i filer.",
+      "what": "Terraform är ett av de vanligaste verktygen för infrastruktur som kod: miljön beskrivs i filer i stället för i en portal. Verktyget håller reda på vad det redan byggt och jämför det med filerna. Resultatet är en lista över varje resurs som skulle skapas, ändras eller tas bort. För dig som rekryterar betyder det att en kandidat kan berätta vad listan visade och vad som ändrades.",
+      "analogy": "Tänk på ett stickmönster. Den som stickar efter minnet får en tröja som ingen annan kan göra om. Den som skriver ner varje varv kan lämna över mönstret, låta någon läsa igenom det, och sticka exakt samma tröja igen.",
+      "tasks": [
+        "Delar upp beskrivningen i moduler som återanvänds, så att test och produktion byggs efter samma mall.",
+        "Läser listan över planerade ändringar innan körningen och stoppar den när något oväntat skulle tas bort.",
+        "Fångar upp när någon ändrat direkt i molnportalen, så att filerna och verkligheten inte glider isär.",
+        "Låter en kollega granska en miljöändring innan den körs, precis som en kodändring granskas."
+      ],
+      "fits": [
+        "Är obekväm med att vara den enda som vet hur en miljö är uppsatt.",
+        "Ser hellre en ändring granskad av en kollega än utförd snabbt på egen hand.",
+        "Tycker om att läsa igenom vad som ska hända, innan något faktiskt händer."
+      ],
+      "confuse": [
+        { "a": "Terraform ≠ Bicep", "b": "Terraform beskriver miljöer hos flera molnleverantörer. Bicep är Microsofts eget språk och riktar sig mot Azure. Tänket överlappar, men bara den ena kunskapen följer med till en annan plattform." },
+        { "a": "Terraform ≠ Ansible", "b": "Terraform skapar och river resurser: servrar, nätverk, databaser. Ansible ställer in och uppdaterar sådant som redan finns. Många CV listar båda — fråga vilket av dem personen använt i skarp drift." },
+        { "a": "Terraform ≠ att kunna molnet", "b": "Verktyget beskriver resurser, men avgör inte vilka som behövs. Den som inte förstår nätverk, åtkomst och kostnad beskriver också fel miljö i filerna. Fråga om molnet, inte bara om verktyget." }
+      ],
+      "cv": ["Terraform", "IaC", "HCL", "OpenTofu", "Bicep", "CloudFormation", "Pulumi", "Ansible", "AWS", "Azure", "Git"],
+      "ask": [
+        { "q": "Hur lång tid tog det att bygga upp en testmiljö från noll på ditt förra jobb?", "good": "Ett svar i timmar eller dagar, med en förklaring till varför det såg ut så. Den som aldrig rivit och byggt upp miljön igen har oftast bara ärvt den." },
+        { "q": "Har du någon gång stoppat en ändring för att listan visade något du inte väntade dig?", "good": "Ett konkret exempel på vad listan visade och vad som gjordes i stället. Svaret skiljer den som läser före körningen från den som upptäcker fel först efteråt." }
+      ],
+      "junior": "Ändrar i en beskrivning som redan finns, med en kollegas granskning innan körning. Ofta 0–2 år.",
+      "senior": "Bestämmer hur miljöerna beskrivs, vilka moduler som gäller för alla team och vem som får köra i produktion."
+    },
+    {
+      "id": "hr-systemutvecklare",
+      "title": "Systemutvecklare",
+      "typ": "Roll",
+      "dom": "Tvärs över teamet",
+      "one": "En av de vanligaste rubrikerna i svenska annonser, och en av de bredaste.",
+      "what": "Systemutvecklare är en svensk samlingstitel för den som bygger och förvaltar programvara, och den pekar ut en yrkeskategori snarare än ett bestämt arbete. Ordet används brett: i offentlig sektor, hos konsultbolag och i yrkeshögskolan, där flera utbildningar bär exakt det namnet. Samma rubrik kan därför sitta över helt olika vardagar. För dig som rekryterar är ordet en ingång, inte ett svar — arbetet bakom det beskrivs i korten om backend, frontend och fullstack.",
+      "analogy": "Tänk på skylten som hänger över en avdelning i ett varuhus. Det står \"Kök\" på den, men bakom skylten står kastrullerna på en hylla och porslinet på en annan. Skylten visar vilken avdelning du står i, inte vad du går därifrån med.",
+      "tasks": [
+        "Bygger oftast serverdelen i ett produktteam — den innebörd titeln har i många svenska annonser.",
+        "Skriver integrationer, ett arbete rubriken ofta rymmer utan att nämna det.",
+        "Förvaltar system som varit i drift längre än den som nu underhåller dem.",
+        "Anpassar en inköpt plattform åt verksamheten, med mindre egen kod än titeln antyder."
+      ],
+      "fits": [
+        "Gillar att uppdraget avgör vad arbetet blir, mer än vad titeln lovar.",
+        "Är bekväm med att växla mellan att bygga nytt, koppla ihop och underhålla.",
+        "Ser ett värde i att något fortsätter fungera, inte bara i att något blir nytt."
+      ],
+      "confuse": [
+        { "a": "Systemutvecklare ≠ en kompetens", "b": "Titeln namnger en yrkeskategori, inte en färdighet. Två annonser med samma rubrik kan söka personer som inte skulle klara varandras jobb — läs kravlistan, inte titeln." },
+        { "a": "Systemutvecklare ≠ systemvetare", "b": "Systemvetare beskriver en akademisk bakgrund i informatik, ofta med krav och verksamhet i fokus. Systemutvecklare beskriver ett jobb. Fråga vilket ordet syftar på i CV:t." },
+        { "a": "Systemutvecklare ≠ att utveckla nya system", "b": "Nybygge är en del av jobben bakom ordet. En annan del är att förvalta det guiden kallar legacy — ett annat uppdrag, attraktivt för rätt person." }
+      ],
+      "cv": ["C#/.NET", "Java", "SQL", "REST", "integrationer", "systemförvaltning", "Git", "Azure DevOps", "Scrum", "kravanalys", "YH-utbildning"],
+      "ask": [
+        { "q": "Vad stod det i din senaste titel, och vad gjorde du en vanlig vecka?", "good": "Ett svar där vardagen skiljer sig från titeln visar var tyngdpunkten ligger. Den som bara upprepar titeln har sällan satt ord på sitt eget arbete." },
+        { "q": "Vilken sorts system har du arbetat i: nybyggda, inköpta eller sådana som funnits länge?", "good": "Ett konkret exempel per sort visar var erfarenheten faktiskt sitter. Svaret placerar kandidaten mot er roll bättre än antalet år i CV:t gör." }
+      ],
+      "junior": "Kommer ofta från en yrkeshögskoleutbildning med samma namn som titeln och behöver en tydlig uppgift i taget. Ofta 0–2 år.",
+      "senior": "Bär ansvaret för ett helt systemområde och för underlaget när något ska byggas, köpas eller avvecklas."
+    },
+    {
+      "id": "hr-tillganglighet",
+      "title": "Tillgänglighet och WCAG",
+      "typ": "Arbetssätt",
+      "dom": "Tvärs över teamet",
+      "one": "Att tjänsten fungerar även utan syn, hörsel eller mus — mätt mot WCAG.",
+      "what": "Tillgänglighet är att en digital tjänst går att använda även av den som inte ser skärmen, inte hör ljudet eller inte kan använda mus. WCAG är de internationella riktlinjer som gör kravet mätbart: kontrast, tangentbord, textalternativ till bilder och tydlig rubrikstruktur. Lagen ställer kraven på offentlig sektor sedan flera år, och de har utvidgats till delar av privat sektor. För dig som rekryterar betyder det att ordet dyker upp i fler annonser och fler CV, och att det är värt att fråga vad personen faktiskt gjort.",
+      "analogy": "Tänk på en entrédörr. Hur bred den är, hur högt handtaget sitter och hur tungt den går att öppna står i byggreglerna, med mått. Det är alltså inget tyckande. Måtten bestäms dessutom av den som ritar, inte av den som skruvar fast handtaget.",
+      "tasks": [
+        "Väljer färg och textstorlek så att innehållet går att läsa också för den som ser svagt.",
+        "Bygger sidan så att varje knapp och fält går att nå och styra med tangentbord.",
+        "Skriver texter som beskriver bilder, knappar och felmeddelanden för den som inte ser dem.",
+        "Provar sidan med skärmläsare — programmet som läser upp innehållet — och inte bara med ett automatiskt kontrollverktyg."
+      ],
+      "fits": [
+        "Är nyfiken på hur andra använder en tjänst, och utgår inte från sitt eget sätt.",
+        "Gillar att arbeta mot ett mätbart facit i stället för att luta sig mot smak.",
+        "Har tålamod att återkomma till samma fråga tills den blivit en del av rutinen."
+      ],
+      "confuse": [
+        { "a": "WCAG ≠ en åsikt om design", "b": "Kriterierna är mätbara: kontrasten mellan text och bakgrund är ett tal, inte en känsla. Nivån heter oftast AA, och den går att kontrollera som vilket annat krav som helst." },
+        { "a": "Tillgänglighet ≠ frontendutvecklarens ensak", "b": "Designern bestämmer kontrasten, redaktören skriver texten som beskriver en bild, och den som upphandlar formulerar kravet. Ansvaret ligger alltså i flera roller, inte i en." },
+        { "a": "Tillgänglighet ≠ att det funkar på mobil", "b": "Responsiv design handlar om skärmens storlek. Tillgänglighet handlar om användarens förutsättningar. En sida kan vara perfekt på mobilen och ändå omöjlig att använda utan mus." }
+      ],
+      "cv": ["WCAG 2.2", "tillgänglighet", "a11y", "semantisk HTML", "ARIA", "skärmläsare", "NVDA", "VoiceOver", "axe", "EN 301 549", "DOS-lagen"],
+      "ask": [
+        { "q": "Berätta om ett tillgänglighetsfel du hittat och rättat. Hur upptäcktes det?", "good": "Ett konkret exempel väger tyngst. Den som bara hänvisar till betyget från ett kontrollverktyg har oftare läst en rapport än provat sidan själv." },
+        { "q": "Vilken nivå skulle produkten hålla, och hur visste ni att den gjorde det?", "good": "Svaret visar om kravet följdes upp eller bara uttalades. Den som kan namnge både nivån och sättet att kontrollera den har arbetat med frågan på riktigt." }
+      ],
+      "junior": "Rättar utpekade fel och följer de riktlinjer teamet redan satt, men driver dem inte själv. Ofta 0–2 år.",
+      "senior": "Äger nivån organisationen ska hålla, provar med riktiga hjälpmedel och får in kraven i design, innehåll och inköp."
+    },
+    {
+      "id": "hr-js",
+      "title": "JavaScript",
+      "typ": "Språk",
+      "dom": "Frontend",
+      "one": "Driver det som händer på en webbsida — och ligger under varje frontendramverk.",
+      "what": "JavaScript är programspråket som webbläsare kör direkt — andra språk som används för webben översätts i praktiken först till JavaScript. React, Angular och Vue vilar på språket, och TypeScript lägger ett lager ovanpå det; ingen av dem ersätter det. Samma språk används dessutom på servern, i tjänster som användaren aldrig ser. För dig som rekryterar: ingen valde JavaScript, det följde med webben — så raden sorterar få, och skillnaden ligger i var koden kördes.",
+      "analogy": "Tänk på ett vägguttag. Ingen som tillverkar en lampa eller en laddare väljer vilken kontakt den ska ha — uttaget satt där först, och allt som säljs byggs för det. Ramverken är olika apparater, men uttaget är detsamma för alla.",
+      "tasks": [
+        "Bygger det som händer i webbläsaren: formulär som reagerar, listor som filtreras, sidor som uppdateras utan omladdning.",
+        "Skriver servertjänster och API:er i Node.js — samma språk, en annan sorts arbete.",
+        "Underhåller äldre kod sida vid sida med ny; språket har fått mycket nytt sedan 2015.",
+        "Håller ordning på de färdiga bibliotek projektet lånar in, och byter ut dem som slutat underhållas."
+      ],
+      "fits": [
+        "Vill förstå vad som händer under ramverket, inte bara att det fungerar.",
+        "Är noggrann av egen vilja — språket säger sällan ifrån, så ordningen får komma från personen.",
+        "Tycker om att lära nytt: grunden håller, men verktygen omkring den byts ut med jämna mellanrum."
+      ],
+      "confuse": [
+        { "a": "JavaScript ≠ ett teknikval", "b": "Python, Java och C# valdes bland alternativ. JavaScript följde med webben — ingen valde det. En rad som alla har säger därför lite; leta i vad koden gjorde och var den kördes." },
+        { "a": "Kan ett ramverk ≠ kan språket", "b": "Ramverket ger en färdig struktur att fylla i. Språket är det som finns kvar när strukturen tas bort. Den som har båda flyttar sig lättare mellan projekt." },
+        { "a": "Egen kod ≠ all kod som körs", "b": "Ett JavaScript-projekt lånar in hundratals färdiga bibliotek. De uppdateras hela tiden, och gamla versioner blir en säkerhetsfråga. Fråga vem i teamet som håller dem aktuella." }
+      ],
+      "cv": ["TypeScript", "React", "Node.js", "Angular", "Vue", "ES6", "HTML", "CSS", "npm", "Jest", "Git"],
+      "ask": [
+        { "q": "Vad är det senaste du byggt utan hjälp av ett ramverk?", "good": "Ett konkret exempel, hur litet det än är, visar att kunnandet sitter i språket. Den som bara beskriver arbete inuti en färdig mall har oftast lärt sig verktyget före språket — vanligt, och värt en följdfråga." },
+        { "q": "Har din JavaScript-kod körts i webbläsaren, på servern, eller båda?", "good": "Svaret placerar personen i systemet på ett sätt som ordet JavaScript inte gör. Följ upp med hur stor den delen var — svaret skiljer ett skript från en tjänst i drift." }
+      ],
+      "junior": "Skriver JavaScript i ett projekt någon annan satt upp, oftast inne i ett ramverk. Ofta 0–2 år.",
+      "senior": "Väljer vad kodbasen ska luta sig mot, håller de inlånade biblioteken uppdaterade och avgör när ett ramverksbyte är värt priset."
+    },
+    {
+      "id": "hr-sakerhetsprovning",
+      "title": "Säkerhetsprövning och säkerhetsskydd",
+      "typ": "Arbetssätt",
+      "dom": "Tvärs över teamet",
+      "one": "Avgör vem som får tillträda en tjänst i verksamhet som rör Sveriges säkerhet.",
+      "what": "Säkerhetsprövning är den kontroll som säkerhetsskyddslagen kräver innan en person får delta i verksamhet som rör Sveriges säkerhet. Verksamheten gör den själv, normalt med en säkerhetsprövningsintervju, betyg och referenser. Har tjänsten placerats i en säkerhetsklass tillkommer en registerkontroll hos Säkerhetspolisen, och kraven skiljer sig mellan de tre klasserna. För dig som rekryterar är det ett eget steg med egen ledtid, som avgör vem som kan tillträda.",
+      "analogy": "Tänk på nyckeln till ett lås med skyddad profil. Den går inte att kopiera hos vilken nyckelservice som helst — tillverkaren gör den, mot bevis på att beställaren får ha den, och leveransen tar sin tid. Sätts startdatumet innan nyckeln är beställd står personen utanför dörren på första arbetsdagen.",
+      "tasks": [
+        "Placerar tjänsten i en säkerhetsklass — klassen styr vilka kontroller som gäller och, för de två högsta klasserna i offentlig sektor, om svenskt medborgarskap krävs.",
+        "Genomför en säkerhetsprövningsintervju, som är något annat än anställningsintervjun och kan handla om ekonomi, utlandsvistelser och nära relationer.",
+        "Hämtar in personens samtycke, begär registerkontroll hos Säkerhetspolisen och väntar in svaret innan tillträde.",
+        "Följer upp prövningen så länge personen deltar i verksamheten, oavsett om personen är anställd eller inhyrd konsult."
+      ],
+      "fits": [
+        "Är bekväm med att lämna ut mer om sig själv än en vanlig rekrytering kräver.",
+        "Har tålamod med att ett besked dröjer och att processen inte går att skynda på.",
+        "Tycker om tydliga ramar för vad som får sägas och till vem, även utanför arbetstid."
+      ],
+      "confuse": [
+        { "a": "Säkerhetsprövning ≠ utdrag ur belastningsregistret", "b": "Utdraget hämtar personen själv hos Polismyndigheten. Säkerhetsprövningen är en reglerad process med intervju och, när tjänsten är säkerhetsklassad, en registerkontroll hos Säkerhetspolisen. Räkna inte det ena som det andra." },
+        { "a": "Säkerhetsprövning ≠ IT-säkerhet", "b": "IT-säkerhet handlar om hur ett system skyddas tekniskt. Säkerhetsprövning handlar om vem som får se informationen. De kan stå som två krav i samma annons och bedöms var för sig." },
+        { "a": "Säkerhetsprövning ≠ något som ordnas efter anställningen", "b": "Prövningen ska vara klar innan personen deltar i verksamheten, inte efteråt. Ledtiden beror på säkerhetsklass och går inte att styra själv. Lägg in den i tidplanen redan när annonsen skrivs." }
+      ],
+      "cv": ["säkerhetsprövad", "säkerhetsklass", "registerkontroll", "säkerhetsskyddslagen", "säkerhetsskyddsavtal", "SUA", "säkerhetsskyddschef", "Försvarsmakten", "FMV", "sekretess", "totalförsvar"],
+      "ask": [
+        { "q": "Har du varit säkerhetsprövad tidigare, och vad innebar prövningen i den rollen?", "good": "Ett rakt svar om att prövning skett och ungefär när. Den som gått igenom den vet att prövningen hör till en tjänst, inte till personen, och att den följs upp löpande." },
+        { "q": "Hur har du hanterat att du inte kunnat berätta för andra vad du arbetade med?", "good": "Ett konkret svar om vad som gick att säga och vad som inte gjorde det. Den som prövats för en säkerhetsklassad tjänst drar den gränsen utan att göra det märkvärdigt." }
+      ],
+      "junior": "Har inte prövats förut och behöver hela processen från början. Ofta 0–2 år, men gäller alla utan tidigare säkerhetsklassad tjänst.",
+      "senior": "Ansvarar för att prövningarna görs och följs upp i verksamheten — i vissa organisationer som utsedd säkerhetsskyddschef."
     }
   ],
 
   "faqCategories": ["Vanligast", "Teknik i praktiken", "Annonsen", "Screening", "CV & nivåer"],
   "faq": [
-    { "id": "f1", "cat": "Vanligast", "tags": ["hr-java", "hr-react", "hr-ts"], "q": "Vad är skillnaden mellan Java och JavaScript?", "a": "Ungefär den mellan bil och biljard. Två helt olika språk med olika användning — namnlikheten är ett marknadsföringsbeslut från 90-talet. En Java-utvecklare är inte en JavaScript-utvecklare, och att blanda ihop dem i en annons märks direkt." },
+    { "id": "f1", "cat": "Vanligast", "tags": ["hr-js", "hr-java", "hr-ts"], "q": "Vad är skillnaden mellan Java och JavaScript?", "a": "Ungefär den mellan bil och biljard. Två helt olika språk med olika användning — namnlikheten är ett marknadsföringsbeslut från 90-talet. En Java-utvecklare är inte en JavaScript-utvecklare, och att blanda ihop dem i en annons märks direkt." },
     { "id": "f2", "cat": "Vanligast", "tags": ["hr-fullstack", "hr-backend", "hr-fe"], "q": "Vad betyder fullstack egentligen?", "a": "Att personen jobbar i både frontend och backend. Nästan alla lutar åt ett håll — fråga \"vilken halva är du starkast på?\". Svaret säger mer än ordet fullstack gör." },
     { "id": "f3", "cat": "Vanligast", "tags": ["hr-react", "hr-fe", "hr-next"], "q": "Kandidaten kan React men vi söker Angular — är det kört?", "a": "Nej. De löser samma problem på olika sätt. En van React-utvecklare är produktiv i Angular inom några veckor. Kräv exakt matchning bara när teamet saknar tid att lära upp — annars sållar ni bort bra folk i onödan." },
-    { "id": "f12", "cat": "Teknik i praktiken", "tags": ["hr-ts"], "q": "Är JavaScript och TypeScript samma kompetens?", "a": "De hör ihop men är inte samma sak. TypeScript är JavaScript med typkontroll ovanpå — den som kan det ena arbetar i praktiken i båda. Fråga hellre om rollen ska skriva i en färdig kodbas eller införa typerna i en gammal. Det är två olika uppdrag." },
+    { "id": "f24", "cat": "Teknik i praktiken", "tags": ["hr-terraform", "hr-cloud"], "q": "Vad betyder infrastruktur som kod i en annons?", "a": "Att servrar och molnresurser beskrivs i filer i stället för att klickas fram i en portal. Det säger något om mognaden: miljöer går att återskapa och granska. Terraform är ett av de vanligaste verktygen, men kravet handlar om arbetssättet." },
+    { "id": "f12", "cat": "Teknik i praktiken", "tags": ["hr-js", "hr-ts"], "q": "Är JavaScript och TypeScript samma kompetens?", "a": "De hör ihop men är inte samma sak. TypeScript är JavaScript med typkontroll ovanpå — den som kan det ena arbetar i praktiken i båda. Fråga hellre om rollen ska skriva i en färdig kodbas eller införa typerna i en gammal. Det är två olika uppdrag." },
     { "id": "f13", "cat": "Teknik i praktiken", "tags": ["hr-react", "hr-ts"], "q": "Är React och TypeScript samma typ av teknik?", "a": "Nej. React bygger det användaren ser; TypeScript är ett skydd som gäller all kod, oavsett vad den gör. De används ofta ihop, men en kandidat kan vara stark i det ena och svag i det andra. Lista dem var för sig i annonsen." },
     { "id": "f14", "cat": "Teknik i praktiken", "tags": ["hr-backend", "hr-cs"], "q": "Vad betyder API — och är det ett programmeringsspråk?", "a": "Ett API är ett sätt för program att kommunicera enligt överenskomna regler, inte ett språk. API-erfarenhet kan betyda att ha byggt dem, kopplat ihop system med dem eller förvaltat dem i drift. Följ upp med vilken del rollen faktiskt ska göra." },
     { "id": "f15", "cat": "Teknik i praktiken", "tags": ["hr-docker", "hr-k8s", "hr-devops"], "q": "Är Docker och Kubernetes samma sak?", "a": "Nej, men de hör ihop. Docker packar ett program i en container. Kubernetes håller ordning på många sådana containers över många servrar. Skriv vilket djup ni behöver: att bygga en container, att arbeta i en färdig miljö, eller att ansvara för den." },
@@ -607,12 +800,16 @@
     { "id": "f19", "cat": "Annonsen", "tags": ["hr-data", "hr-ai", "hr-py"], "q": "Vi vill satsa på AI — vilken roll ska vi rekrytera först?", "a": "Oftast en data engineer. Modeller behöver data som är hämtad, tvättad och tillgänglig, och den grunden saknas i de flesta organisationer. Anställs en data scientist innan grunden finns, går mycket av tiden åt till att bygga just den." },
     { "id": "f7", "cat": "Screening", "tags": ["hr-backend", "hr-fe"], "q": "Jag kan inte koda — hur bedömer jag en GitHub-profil?", "a": "Titta på tre saker: finns en README som förklarar projektet för en människa? Finns aktivitet spridd över tid och inte bara en helg? Har projektet ett syfte utöver en kursuppgift? Det säger mer om personen än koden gör." },
     { "id": "f8", "cat": "Screening", "tags": ["hr-k8s", "hr-backend"], "q": "Vilken enda fråga ger mest?", "a": "\"Förklara något du byggt, för mig som inte är teknisk.\" Den som verkligen förstår kan förenkla. Den som memorerat begrepp fastnar i dem — och det hör du utan att kunna ett dugg kod." },
+    { "id": "f25", "cat": "Annonsen", "tags": ["hr-systemutvecklare", "hr-backend"], "q": "Ska vi skriva systemutvecklare eller backendutvecklare i rubriken?", "a": "Det beror på vem ni vill nå. Systemutvecklare är bredare och används mycket i offentlig sektor, hos konsultbolag och i yrkeshögskolan. Backendutvecklare är mer precist. Vilket ord ni än väljer får kravlistan bära det som rubriken inte säger." },
+    { "id": "f26", "cat": "Annonsen", "tags": ["hr-tillganglighet", "hr-fe"], "q": "Behöver vi ställa krav på tillgänglighet?", "a": "För offentlig sektor och allt fler andra är det ett lagkrav, inte en ambition. I praktiken byggs det in av frontendutvecklare, designers och testare tillsammans. Fråga hellre vad kandidaten faktiskt gjort än om personen känner till WCAG." },
     { "id": "f22", "cat": "Annonsen", "tags": ["hr-qa"], "q": "Vi söker en testare — ska vi kräva att personen kan koda?", "a": "Det beror på vad ni menar med testare. Manuell testning kräver ingen programmering, medan testautomatisering är programmering. Skriv ut vilken av dem rollen handlar om, så känner rätt kandidater igen sig." },
+    { "id": "f27", "cat": "Screening", "tags": ["hr-sakerhetsprovning"], "q": "Vad innebär det att tjänsten kräver säkerhetsprövning?", "a": "Att personen måste godkännas innan tjänsten kan tillträdas, genom intervju och registerkontroll. Processen tar tid och går inte att skynda på. Skriv ut det i annonsen — det avgör vem som kan tacka ja." },
     { "id": "f20", "cat": "Screening", "tags": ["hr-scrum"], "q": "Kandidaten säger att teamet körde Scrum. Vad är värt att följa upp?", "a": "Fråga hur en vanlig vecka såg ut, i stället för vilka möten de hade. Innebörden varierar mellan team, och en beskrivning av vardagen säger mer om samarbetet än metodnamnet gör." },
     { "id": "f9", "cat": "CV & nivåer", "tags": ["hr-backend", "hr-react", "hr-k8s", "hr-fe"], "q": "Hur mycket erfarenhet är junior, medior och senior?", "a": "Tumregel: junior 0–2 år, medior 2–5, senior 5+. Men år är en trubbig mätare — ansvar är bättre. Har personen ägt något i skarp drift? Lett andra? Fattat beslut som kostat pengar?" },
     { "id": "f10", "cat": "CV & nivåer", "tags": ["hr-k8s", "hr-fe"], "q": "Certifikat eller egna projekt — vad väger tyngst?", "a": "Projekt visar att personen kan bygga, certifikat att personen kan läsa in sig. För juniora roller väger ett genomtänkt projekt som faktiskt körs oftast tyngre än ett certifikat." },
     { "id": "f11", "cat": "CV & nivåer", "tags": ["hr-backend", "hr-react"], "q": "Kandidaten listar 25 tekniker. Bra eller varningsflagga?", "a": "Oftast ett tecken på osäkerhet snarare än bredd. Fråga vilka tre personen skulle välja att jobba med imorgon och varför — djupet syns direkt." },
-    { "id": "f21", "cat": "CV & nivåer", "tags": ["hr-py", "hr-data"], "q": "Kandidaten har Python i CV:t. Vad säger det?", "a": "Mindre än man tror. Python används till dataflöden, AI-modeller, webbtjänster och automatisering — fyra vardagar som knappt liknar varandra. Fråga vad koden gjorde och vem som använde resultatet, så blir raden begriplig." }
+    { "id": "f21", "cat": "CV & nivåer", "tags": ["hr-py", "hr-data"], "q": "Kandidaten har Python i CV:t. Vad säger det?", "a": "Mindre än man tror. Python används till dataflöden, AI-modeller, webbtjänster och automatisering — fyra vardagar som knappt liknar varandra. Fråga vad koden gjorde och vem som använde resultatet, så blir raden begriplig." },
+    { "id": "f23", "cat": "CV & nivåer", "tags": ["hr-sql"], "q": "Kandidaten har SQL i CV:t — hur mycket säger det?", "a": "Att personen kan hämta data. Djupet varierar kraftigt: att ställa en fråga i ett färdigt system är något annat än att modellera, indexera och felsöka när samma fråga plötsligt tar trettio sekunder. Fråga vad personen gjort med databasen." }
   ],
 
   "translateCategories": [
