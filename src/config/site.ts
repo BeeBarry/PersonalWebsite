@@ -51,11 +51,13 @@ const site = {
     // så länken och sidan försvinner tillsammans — ingen kan bli en död länk.
     // Learn Hub har ett eget undantag: hubben ÄR publik, men bara de kategorier
     // som har isVisible: true. Därför står den kvar utan devOnly.
+    // Underetiketten säger vad fliken INNEHÅLLER, på svenska. "Notes" och "Docs"
+    // var engelska genrenamn som upprepade rubriken snarare än förklarade den.
     navigation: [
-        { name: "Hem", subtitle: "Index", href: "/" },
+        { name: "Hem", subtitle: "Om mig", href: "/" },
         { name: "Arbete", subtitle: "Projekt", href: "/works/" },
-        { name: "Fältnoteringar", subtitle: "Notes", href: "/posts/" },
-        { name: "Learn Hub", subtitle: "Docs", href: "/learn-hub/" },
+        { name: "Fältnoteringar", subtitle: "Blogg", href: "/posts/" },
+        { name: "Learn Hub", subtitle: "Artiklar", href: "/learn-hub/" },
         { name: "För HR", subtitle: "Rekrytering", href: "/for-hr/", devOnly: true },
     ] as NavItem[],
 
@@ -76,8 +78,31 @@ const site = {
 
     // "Om mig"-text på startsidan (redigera fritt — detta är dina egna ord).
     about: [
-        "Jag började i projektledning och rörde mig mot koden. Idag arbetar jag helst där applikationen och infrastrukturen möts — det är där jag lär mig mest, och där jag har lättast att se vad som faktiskt håller när det väl körs skarpt.",
+        "Jag är utbildad IT-projektledare och har 1,5 års erfarenhet av arbete i leveransteam. När jag rörde mig närmare koden följde leveransperspektivet med. Idag arbetar jag helst där applikationen och infrastrukturen möts — med blick för implementation, beroenden och vad som faktiskt håller när det körs skarpt.",
         "Fokus ligger på molnnativ utveckling och skalbar infrastruktur, med ett genuint intresse för IoT och embedded. Jag gillar DevOps-tänk, tydlig arkitektur — och att förklara det jag lär mig, därav Learn Hub.",
+    ],
+
+    // Genomförd utbildning och faktisk erfarenhet. Sökta utbildningar hör inte
+    // hemma här förrän de är pågående eller avslutade.
+    educationAndExperience: [
+        {
+            title: "IT-projektledning",
+            description:
+                "Utbildad IT-projektledare med 1,5 års erfarenhet i rollen, med arbete i leveransteam och inom Continuous Improvements.",
+            label: "Utbildning & erfarenhet",
+        },
+        {
+            title: "Mjukvaruutveckling · Cloud & DevOps",
+            description:
+                "Utbildning till mjukvaruutvecklare med inriktning mot Cloud & DevOps.",
+            label: "Utbildning",
+        },
+        {
+            title: "Scrum Master & Product Owner",
+            description:
+                "Certifierad Scrum Master och genomförda kortare YH-utbildningar inom Scrum Master och Product Owner.",
+            label: "Certifiering & YH-utbildningar",
+        },
     ],
 
     // Certifikat. Renderas i index.astro som Iconify-ikon (`icon`) + namn.

@@ -7,6 +7,8 @@ domains: ['embedded']
 read: '7 min'
 tags: 'IoT · MQTT · CoAP'
 icon: Activity
+# Dold i prod tills texten är reviderad. Syns i dev och i preview-miljön.
+draft: true
 ---
 
 När jag började titta på uppkopplade enheter var min första reflex den mest webbutvecklarmässiga

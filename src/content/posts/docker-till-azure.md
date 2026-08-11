@@ -7,6 +7,8 @@ domains: ['cloud']
 read: '6 min'
 tags: 'Docker · Azure · .NET'
 icon: Server
+# Dold i prod tills texten är reviderad. Syns i dev och i preview-miljön.
+draft: true
 ---
 
 DevOps Tools började som ett sätt att lära mig namnen på verktygen i pipelinen. Jag byggde en
