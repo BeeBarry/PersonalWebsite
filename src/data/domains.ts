@@ -21,15 +21,15 @@ export interface Domain {
      * Iconify-namn för kortets ikon (t.ex. "mdi:cloud-outline"). Utelämnas →
      * ingen ikon renderas.
      *
-     * De tre står bredvid varandra på startsidan och måste därför ha samma
+     * Ikonerna står bredvid varandra på startsidan och måste därför ha samma
      * optiska vikt. Det avgörs inte av ikonrutan (den är alltid 20px) utan av
      * hur mycket av viewBoxen glyfen faktiskt fyller. Den gamla uppsättningen
      * mätte 16,7 / 13,3 / 11,8 enheter av 24 — den ena läste som en tung ruta,
      * den andra som ett litet märke, trots identiska rutor.
      *
-     * Nuvarande: 15,9 / 13,3 / 15,0, alla med bläckcentrum ~10. Byter du en:
-     * mät med svg.getBBox() och håll höjden inom ett par enheter från de
-     * andra, och centrum kring 10 — annars hamnar den i otakt vertikalt.
+     * De tre domänikonerna mäter 15,9 / 13,3 / 15,0, alla med bläckcentrum
+     * ~10. Byter du en: mät med svg.getBBox() och håll höjden inom ett par
+     * enheter från de andra, och centrum kring 10 — annars hamnar den i otakt.
      */
     icon?: string;
 }
@@ -69,6 +69,27 @@ export const domains: Domain[] = [
             "CoAP och MQTT över LTE-M och WiFi",
             "Sensordata från fält till moln",
             "Förvaltat embedded firmware i Zephyr och nRF",
+        ],
+    },
+];
+
+/**
+ * Inriktningarna på startsidan. De tre tekniska posterna återanvänder
+ * domäntaxonomin, medan IT-projektledning är en tvärgående kompetens och ska
+ * därför inte bli en filterbar innehållsdomän i projekt eller fältnoteringar.
+ */
+export type Direction = Pick<Domain, "short" | "description" | "bullets" | "icon">;
+
+export const directions: Direction[] = [
+    ...domains,
+    {
+        short: "IT-projektledning",
+        description: "Projektledning nära teknik, leverans och förbättringsarbete.",
+        icon: "mdi:clipboard-check-outline",
+        bullets: [
+            "Certifierad Scrum Master",
+            "Kortare YH-utbildningar inom Product Owner och Scrum Master",
+            "1,5 år i leveransteam och Continuous Improvements",
         ],
     },
 ];
