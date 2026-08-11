@@ -4,7 +4,7 @@ import { Image } from "astro:assets";
 import { Icon } from "astro-icon/components";
 import profilePic from "../assets/images/profilepic.png";
 import site from "../config/site";
-import { domains } from "../data/domains";
+import { directions } from "../data/domains";
 import { SHOW_HR } from "../utils/content";
 
 // Kontaktsektionens adresser — samma källa som sidfoten/sidebaren.
@@ -119,9 +119,8 @@ const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
 
     <!-- Inriktningar: det unika, lyft högt -->
     <section class="mb-11">
-      {/* SEKTIONSRUBRIKEN — 12px/85%. Måttet delas av alla fyra sektionerna på
-          sidan (Inriktningar, Om, Verktyg & tekniker, Kontakt) och får inte
-          ändras på en av dem i taget.
+      {/* SEKTIONSRUBRIKEN — 12px/85%. Måttet delas av sidans sektioner och får
+          inte ändras på en av dem i taget.
 
           Den låg tidigare på 10px/50% medan gruppetiketterna inne i ”Verktyg &
           tekniker” låg på 9,5px/70%: sektionsrubriken var alltså en halv pixel
@@ -137,20 +136,20 @@ const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
       >
         Inriktningar
       </h2>
-      {/* Ingen ram, ingen bakgrund, ingen rundning — kortchromet var identiskt
-          med den länk som låg ovanför, så tre statiska textblock lovade ett
-          klick som inte finns. Ikonen och den feta rubriken bär strukturen i
-          stället. Kolumnerna hålls isär av gapet allena. */}
-      <div class="grid gap-x-7 gap-y-8 sm:grid-cols-3">
+      {/* Ingen ram, ingen bakgrund, ingen rundning — statiska textblock ska inte
+          se klickbara ut. Fyra inriktningar läggs i ett balanserat 2×2-flöde;
+          fyra kolumner skulle göra textspalterna för smala i max-w-3xl. */}
+      <div class="grid gap-x-8 gap-y-8 sm:grid-cols-2">
         {
-          domains.map((d) => (
+          directions.map((d) => (
             <div>
               {/* -2,5px är uppmätt, inte gissat. items-center linjerar ikonens
                   och rubrikens RUTOR, men ögat linjerar mot versalhöjden — och
                   textrutan bär nedhängsutrymme som versalerna inte fyller.
-                  Mätt låg ikonens bläckmitt 3,9–4,2 px UNDER rubrikens
-                  versalmitt på alla tre kolumnerna. -2,5px nollar det (tidigare
-                  +1,5 gick åt fel håll). Byter du ikon: mät om, se domains.ts. */}
+                  Mätt låg de ursprungliga ikonernas bläckmitt 3,9–4,2 px UNDER
+                  rubrikens versalmitt. -2,5px nollar det (tidigare +1,5 gick åt
+                  fel håll). Den fjärde ikonens placering är verifierad i samma
+                  20px-ruta. Byter du ikon: mät om, se domains.ts. */}
               <div class="flex items-center gap-2">
                 {d.icon && (
                   <Icon
@@ -201,6 +200,34 @@ const mail = site.social.find((s) => s.name === "Mail")?.href ?? "#";
           </p>
         ))
       }
+    </section>
+
+    <!-- Utbildning & erfarenhet: strukturerad meritöversikt, utan kortchrome. -->
+    <section class="mb-11">
+      <h2
+        class="mb-4 font-mono text-[12px] tracking-[0.2em] text-muted-foreground/85 uppercase"
+      >
+        Utbildning &amp; erfarenhet
+      </h2>
+      <div class="divide-y divide-border">
+        {
+          site.educationAndExperience.map((item) => (
+            <article class="grid gap-2 py-4 first:pt-0 last:pb-0 sm:grid-cols-[minmax(0,13rem)_minmax(0,1fr)] sm:gap-7">
+              <div>
+                <h3 class="text-[14px] leading-snug font-bold tracking-tight text-foreground">
+                  {item.title}
+                </h3>
+                <p class="mt-1 mb-0 font-mono text-[9.5px] leading-relaxed tracking-[0.12em] text-muted-foreground/70 uppercase">
+                  {item.label}
+                </p>
+              </div>
+              <p class="mb-0 text-[13px] leading-relaxed text-muted-foreground">
+                {item.description}
+              </p>
+            </article>
+          ))
+        }
+      </div>
     </section>
 
     <!-- Verktyg & tekniker: grupperade. Rena färgade loggor, ingen container/hover -->
