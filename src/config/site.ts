@@ -78,17 +78,22 @@ const site = {
 
     // "Om mig"-text på startsidan (redigera fritt — detta är dina egna ord).
     about: [
-        "Jag är utbildad IT-projektledare och har 1,5 års erfarenhet av arbete i leveransteam. När jag rörde mig närmare koden följde leveransperspektivet med. Idag arbetar jag helst där applikationen och infrastrukturen möts — med blick för implementation, beroenden och vad som faktiskt håller när det körs skarpt.",
+        "Jag är utbildad IT-projektledare med erfarenhet av arbete i leveransteam. När jag rörde mig närmare koden följde leveransperspektivet med. Idag arbetar jag helst där applikationen och infrastrukturen möts — med blick för implementation, beroenden och vad som faktiskt håller när det körs skarpt.",
         "Fokus ligger på molnnativ utveckling och skalbar infrastruktur, med ett genuint intresse för IoT och embedded. Jag gillar DevOps-tänk, tydlig arkitektur — och att förklara det jag lär mig, därav Learn Hub.",
     ],
 
     // Genomförd utbildning och faktisk erfarenhet. Sökta utbildningar hör inte
     // hemma här förrän de är pågående eller avslutade.
+    //
+    // Beskrivningarna får INTE upprepa inriktningskorten längre upp på sidan.
+    // Årtal, leveransteam och Continuous Improvements står redan i punktlistan
+    // under IT-projektledning — samma mening tre gånger på en skärm läses som
+    // utfyllnad, inte som meriter.
     educationAndExperience: [
         {
             title: "IT-projektledning",
             description:
-                "Utbildad IT-projektledare med 1,5 års erfarenhet i rollen, med arbete i leveransteam och inom Continuous Improvements.",
+                "Genomförd utbildning till IT-projektledare, med efterföljande arbete i rollen.",
             label: "Utbildning & erfarenhet",
         },
         {
